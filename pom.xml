@@ -6,5 +6,6 @@
   <packaging>pom</packaging>
   <modules>
   	<module>bt.grants</module>
+  	<module>bt.starter</module>
   </modules>
 </project>
