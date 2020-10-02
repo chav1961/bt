@@ -7,5 +7,6 @@
   <modules>
   	<module>bt.grants</module>
   	<module>bt.starter</module>
+  	<module>bt.nanoserviceservlet</module>
   </modules>
 </project>
