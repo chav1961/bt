@@ -5,7 +5,7 @@
     <artifactId>bt</artifactId>
     <version>0.0.1-SNAPSHOT</version>
   </parent>
-  <artifactId>bt.starter</artifactId>
+  <artifactId>bt.monitoring</artifactId>
 
 	<developers>
 		<developer>
@@ -73,7 +73,7 @@
 	</distributionManagement>
   
      <build>
-       <finalName>starter-0.0.1</finalName>
+       <finalName>monitoring-0.0.1</finalName>
         <resources>
             <resource>
                 <directory>src/main/java</directory>
@@ -128,7 +128,6 @@
                        <manifest>
                            <addClasspath>true</addClasspath>
                            <classpathPrefix>./</classpathPrefix>
-                            <mainClass>chav1961.bt.starter.Application</mainClass>
                        </manifest>
                    </archive>
                </configuration>
@@ -158,5 +157,4 @@
 	    </plugin>
  -->	    
        </plugins>
-   </build>
-</project>
+   </build></project>
