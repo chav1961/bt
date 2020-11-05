@@ -9,5 +9,6 @@
   	<module>bt.starter</module>
   	<module>bt.nanoserviceservlet</module>
   	<module>bt.monitoring</module>
+  	<module>bt.xsys</module>
   </modules>
 </project>

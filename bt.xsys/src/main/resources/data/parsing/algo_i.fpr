@@ -1,0 +1,90 @@
+% ---------------------------------------------------------------------------- :
+%                                                                              :
+%       Система автоматизированного проектирования программного обеспечения    :
+% для различных систем программирования с ЕЯИ-вводом.      (GSERV204)          :
+%                                                                              :
+%       Словарь обработки описания алгоритмов, использованных в системе.       :
+%                                                                              :
+%       Словарь содержит правила внутренних преобразований предикатов.         :
+%                                                                              :
+%                                                                              :
+%       (с) 1995г, А.В.Черномырдин, (3511-37-83-26).                           :
+%       Версия 2.00 от 01.05.95.                                               :
+%                                                                              :
+% ---------------------------------------------------------------------------- :
+
+% ---------------------------------------------------------------------------- :
+%                                                                              :
+%       Внутренние преобразования для алгоритмов.                              :
+%                                                                              :
+% ---------------------------------------------------------------------------- :
+
+internal.
+
+%
+%       Дополнение групп документов теми, которые используются в алгоритме баланса остатков.
+%
+
+        [group(NewDoc,List), algo(r_b,use,recv(Doc,_,Name,_,_),recv(Doc1,_,Name1,_,_),_), in_list(Doc1,List), not(in_list(Doc,List))]
+                ::= [del(group(NewDoc,List)), add(group(NewDoc,[Doc | List]))].
+
+        [group(NewDoc,List), algo(r_b,use,recv(Doc,_,Name,_,_),_,recv(Doc2,_,Name2,_,_)), in_list(Doc2,List), not(in_list(Doc,List))]
+                ::= [del(group(NewDoc,List)), add(group(NewDoc,[Doc | List]))].
+
+%
+%       Дополнение групп документов теми, которые используются в алгоритме баланса счетчиков.
+%
+
+        [group(NewDoc,List), algo(c_b,use,recv(Doc,_,Name,_,_),recv(Doc1,_,Name1,_,_),_), in_list(Doc1,List), not(in_list(Doc,List))]
+                ::= [del(group(NewDoc,List)), add(group(NewDoc,[Doc | List]))].
+
+        [group(NewDoc,List), algo(c_b,use,recv(Doc,_,Name,_,_),_,recv(Doc2,_,Name2,_,_)), in_list(Doc2,List), not(in_list(Doc,List))]
+                ::= [del(group(NewDoc,List)), add(group(NewDoc,[Doc | List]))].
+
+%
+%       Дополнение индексов связью с другими алгоритмами.
+%
+
+        [index(Doc,List), algo(extract,Doc,_,_,_), not(in_list(index($1$,_),List))] ::=
+                [del(index(Doc,List)), add(index(Doc,[index($1$,none) | List]))].
+
+%
+%       Доработка описателей конечного автомата для раскрытия описаний "все подчиненные"...
+%
+
+        [algo(automat,Doc,Name,Value,del_all_child), bagof(Child,under(Doc,Child),ChildList)] ::=
+                [del(algo(automat,Doc,Name,Value,del_all_child)), add(algo(automat,Doc,Name,Value,del_all_child(ChildList)))].
+
+        [algo(automat,Doc,Name,Value,del_all_child([]))] ::=
+                [del(automat,Doc,Name,Value,del_all_child([]))].
+
+        [algo(automat,Doc,Name,Value,del_all_child([Child | T]))] ::=
+                [add(algo(automat,Doc,Name,Value,del_child(Child))),
+                 add(algo(automat,Doc,Name,Value,del_all_child(T))),
+                 del(algo(automat,Doc,Name,Value,del_all_child([Child | T])))
+                ].
+
+        [algo(automat,Doc,Name,Value,add_all_child), bagof(Child,under(Doc,Child),ChildList)] ::=
+                [del(algo(automat,Doc,Name,Value,add_all_child)), add(algo(automat,Doc,Name,Value,add_all_child(ChildList)))].
+
+        [algo(automat,Doc,Name,Value,add_all_child([]))] ::=
+                [del(automat,Doc,Name,Value,add_all_child([]))].
+
+        [algo(automat,Doc,Name,Value,add_all_child([Child | T]))] ::=
+                [add(algo(automat,Doc,Name,Value,add_child(Child))),
+                 add(algo(automat,Doc,Name,Value,add_all_child(T))),
+                 del(algo(automat,Doc,Name,Value,add_all_child([Child | T])))
+                ].
+
+        [algo(automat,Doc,Name,Value,rep_all_fields), bagof(recv(Type,RecvName,RecvChars,RecvFrom),recv(Doc,Type,RecvName,RecvChars,RecvFrom),RecvList)] ::=
+                [del(algo(automat,Doc,Name,Value,rep_all_fields)), add(algo(automat,Doc,Name,Value,rep_all_fields(RecvList)))].
+
+        [algo(automat,Doc,Name,Value,rep_all_fields([]))] ::=
+                [del(automat,Doc,Name,Value,rep_all_fields([]))].
+
+        [algo(automat,Doc,Name,Value,rep_all_fields([recv(_,Child,_,_) | T]))] ::=
+                [add(algo(automat,Doc,Name,Value,rep_field(Child))),
+                 add(algo(automat,Doc,Name,Value,rep_all_fields(T))),
+                 del(algo(automat,Doc,Name,Value,rep_all_fields([recv(_,Child,_,_) | T])))
+                ].
+

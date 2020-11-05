@@ -1,0 +1,362 @@
+% ---------------------------------------------------------------------------- :
+%                                                                              :
+%       Система автоматизированного проектирования программного обеспечения    :
+% для различных систем программирования с ЕЯИ-вводом.      (GSERV205)          :
+%                                                                              :
+%       Правила генерации программ ввода-корректировки на Clipper.             :
+%       Подсистема обработки алгоритмов.                                       :
+%                                                                              :
+%       (с) 1996г, А.В.Черномырдин, (3511-37-83-26).                           :
+%       Версия 2.10 от 01.05.96.                                               :
+%                                                                              :
+% ---------------------------------------------------------------------------- :
+
+generate.
+
+% ---------------------------------------------------------------------------- :
+%                                                                              :
+%       Схема генерации программ алгоритма баланса остатков.                   :
+%                                                                              :
+% ---------------------------------------------------------------------------- :
+
+        % Обработка удаления записей.
+        [algo_r_b(del,Doc)] : bagof(algo(r_b,use,Main,Plus,Minus),algo(r_b,use,Main,Plus,Minus),AlgoList) ::=
+                [algo_r_b(del,Doc,AlgoList)].
+
+        [algo_r_b(del,Doc,[])] ::= [].
+        [algo_r_b(del,Doc,[algo(r_b,use,recv(Main,Y1,RestName,Y2,Y3),recv(Doc,X1,Name,X2,X3),Minus) | T])] : get(algo(r_b,group,Main,RestName,Keys)) ::=
+                [3 * tab, $self:Server:RestCount("$, txt(Main), $","$, txt(RestName), $",-$, txt(Doc), $->$, txt(Name), $)$, nl,
+                 algo_r_b(del,Doc,T)
+                ].
+        [algo_r_b(del,Doc,[algo(r_b,use,recv(Main,Y1,RestName,Y2,Y3),Plus,recv(Doc,X1,Name,X2,X3)) | T])] : get(algo(r_b,group,Main,RestName,Keys)) ::=
+                [3 * tab, $self:Server:RestCount("$, txt(Main), $","$, txt(RestName), $",$, txt(Doc), $->$, txt(Name), $)$, nl,
+                 algo_r_b(del,Doc,T)
+                ].
+        [algo_r_b(del,Doc,[_ | T])] ::= [algo_r_b(del,Doc,T)].
+
+
+        % Обработка восстановления записей.
+        [algo_r_b(rst,Doc)] : bagof(algo(r_b,use,Main,Plus,Minus),algo(r_b,use,Main,Plus,Minus),AlgoList) ::=
+                [algo_r_b(rst,Doc,AlgoList)].
+
+        [algo_r_b(rst,Doc,[])] ::= [].
+        [algo_r_b(rst,Doc,[algo(r_b,use,recv(Main,Y1,RestName,Y2,Y3),recv(Doc,X1,Name,X2,X3),Minus) | T])] : get(algo(r_b,group,Main,RestName,Keys)) ::=
+                [3 * tab, $self:Server:RestCount("$, txt(Main), $","$, txt(RestName), $",$, txt(Doc), $->$, txt(Name), $)$, nl,
+                 algo_r_b(rst,Doc,T)
+                ].
+        [algo_r_b(rst,Doc,[algo(r_b,use,recv(Main,Y1,RestName,Y2,Y3),Plus,recv(Doc,X1,Name,X2,X3)) | T])] : get(algo(r_b,group,Main,RestName,Keys)) ::=
+                [3 * tab, $self:Server:RestCount("$, txt(Main), $","$, txt(RestName), $",-$, txt(Doc), $->$, txt(Name), $)$, nl,
+                 algo_r_b(rst,Doc,T)
+                ].
+        [algo_r_b(rst,Doc,[_ | T])] ::= [algo_r_b(rst,Doc,T)].
+
+
+        % Обработка изменения компонента.
+        [algo_r_b(one,Doc,Recv)] : bagof(algo(r_b,use,Main,Plus,Minus),algo(r_b,use,Main,Plus,Minus),AlgoList) ::=
+                [algo_r_b(one,Doc,Recv,AlgoList)].
+
+        [algo_r_b(one,_,_,[])] ::= [].
+        [algo_r_b(one,Doc,Name,[algo(r_b,use,recv(Main,Y1,RestName,Y2,Y3),recv(Doc,X1,Name,X2,X3),Minus) | T])] : get(algo(r_b,group,Main,RestName,Keys)) ::=
+                [rcase_check(Name),
+                 3 * tab, $self:Server:RestCount("$, txt(Main), $","$, txt(RestName), $",$, txt(Doc), $->$, txt(Name), $-OldVal)$, nl,
+                 algo_r_b(one,Doc,Name,T)
+                ].
+        [algo_r_b(one,Doc,Name,[algo(r_b,use,recv(Main,Y1,RestName,Y2,Y3),Plus,recv(Doc,X1,Name,X2,X3)) | T])] : get(algo(r_b,group,Main,RestName,Keys)) ::=
+                [rcase_check(Name),
+                 3 * tab, $self:Server:RestCount("$, txt(Main), $","$, txt(RestName), $",OldVal-$, txt(Doc), $->$, txt(Name), $)$, nl,
+                 algo_r_b(one,Doc,Name,T)
+                ].
+        [algo_r_b(one,Doc,Name,[_ | T])] ::= [algo_r_b(one,Doc,Name,T)].
+
+
+        % Очистка полей остатков при дублировании записей.
+        [algo_r_b(dbl,Doc)] : bagof(algo(r_b,use,Main,Plus,Minus),algo(r_b,use,Main,Plus,Minus),AlgoList) ::=
+                [algo_r_b(dbl,Doc,AlgoList)].
+        [algo_r_b(dbl,_)] ::= [].
+
+        [algo_r_b(dbl,_,[])] ::= [].
+        [algo_r_b(dbl,Doc,[algo(r_b,use,_,recv(Doc,X1,Name,X2,X3),Minus) | T])] : get(algo(r_b,group,Main,RestName,Keys)) ::=
+                [3 * tab, $self:Server:$, txt(Name), $ := 0  // От баланса.$, nl,
+                 algo_r_b(dbl,Doc,T)
+                ].
+        [algo_r_b(dbl,Doc,[algo(r_b,use,_,Plus,recv(Doc,X1,Name,X2,X3)) | T])] : get(algo(r_b,group,Main,RestName,Keys)) ::=
+                [3 * tab, $self:Server:$, txt(Name), $ := 0  // От баланса.$, nl,
+                 algo_r_b(dbl,Doc,T)
+                ].
+        [algo_r_b(dbl,Doc,[_ | T])] ::= [algo_r_b(dbl,Doc,T)].
+
+        [algo_r_b(_,_)] ::= [].
+        [algo_r_b(_,_,_)] ::= [].
+
+        % Формирование ключей групп.
+        [grp_r_b(_,[])] ::= [].
+        [grp_r_b(Pref,[recv(_,_,Name,char(_,_),_) | T])] ::= [txt(Pref), txt(Name), grp_r_b($+$,T)].
+        [grp_r_b(Pref,[recv(_,_,Name,digit(_,_),_) | T])] ::= [txt(Pref), $str($, txt(Name), $)$, grp_r_b($+$,T)].
+        [grp_r_b(Pref,[recv(_,_,Name,date,_) | T])] ::= [txt(Pref), $dtos($, txt(Name), $)$, grp_r_b($+$,T)].
+        [grp_r_b(Pref,[recv(_,_,Name,time,_) | T])] ::= [txt(Pref), $str($, txt(Name), $)$, grp_r_b($+$,T)].
+        [grp_r_b(Pref,[recv(_,_,Name,boolean,_) | T])] ::= [txt(Pref), $iif($, txt(Name), $,"T","F")$, grp_r_b($+$,T)].
+
+
+        % Программа восстановления остатков по база данных.
+[algo(r_b,use,_,_,_)] ??
+        [algo_r_b_menu(menu3,Arm)] ::= [$3C REST_REST Пересчет остатков$, nl].
+        [algo_r_b_menu(menu3,Arm)] ::= [].
+
+        % Программа восстановления остатков по база данных.
+[algo(r_b,use,_,_,_)] ??
+        [algo_r_b(restore)] : bagof(algo(r_b,use,Recv1,Recv2,Recv3),algo(r_b,use,Recv1,Recv2,Recv3),RestList) ::=
+                [$function REST_REST$, nl,
+                 $// Программа полного восстановления остатков по БД.$, 2 * nl,
+                 algo_r_b_restore(RestList),
+                 tab, $return 1$, nl,
+                 $* $, 80 * txt($-$), 2 * nl
+                ].
+        [algo_r_b(restore)] ::= [].
+
+        % Построение программы восстановления остатков.
+        [algo_r_b_restore([])] ::= [].
+        [algo_r_b_restore([algo(r_b,use,recv(Doc1,_,Name1,_,_),recv(Doc2,_,Name2,_,_),none) | T])] ::=
+                [tab, $qq__RestRest({"$, txt(Doc1), $","$, txt(Doc1), $"},"$, txt(Name1), $",{"$, txt(Doc2), $","$, txt(Doc2), $"},"$, txt(Name2), $",{},"")$, nl,
+                 algo_r_b_restore(T)
+                ].
+        [algo_r_b_restore([algo(r_b,use,recv(Doc1,_,Name1,_,_),none,recv(Doc2,_,Name2,_,_)) | T])] ::=
+                [tab, $qq__RestRest({"$, txt(Doc1), $","$, txt(Doc1), $"},"$, txt(Name1), $",{},"",{"$, txt(Doc2), $","$, txt(Doc2), $"},"$, txt(Name2), $")$, nl,
+                 algo_r_b_restore(T)
+                ].
+        [algo_r_b_restore([algo(r_b,use,recv(Doc1,_,Name1,_,_),recv(Doc2,_,Name2,_,_),recv(Doc3,_,Name3,_,_)) | T])] ::=
+                [tab, $qq__RestRest({"$, txt(Doc1), $","$, txt(Doc1), $"},"$, txt(Name1), $",{"$, txt(Doc2), $","$, txt(Doc2), $"},"$, txt(Name2), $",{"$, txt(Doc3), $","$, txt(Doc3), $"},"$, txt(Name3), $")$, nl,
+                 algo_r_b_restore(T)
+                ].
+
+
+% ---------------------------------------------------------------------------- :
+%                                                                              :
+%       Схема генерации программ алгоритма сквозной автонумерации.             :
+%                                                                              :
+% ---------------------------------------------------------------------------- :
+
+        % Глобальная автонумерация поля.
+        [algo_glo(ins,Doc)] : bagof(algo(glo_num,recv(Doc,X1,Name,Chars,X2)),algo(glo_num,recv(Doc,X1,Name,Chars,X2)),AlgoList) ::=
+                [algo_glo(ins,Doc,AlgoList)].
+        [algo_glo(ins,Doc)] ::= [].
+
+        [algo_glo(ins,_,[])] ::= [].
+        [algo_glo(ins,Doc,[algo(glo_num,recv(Doc,X1,Name,Chars,X2)) | T])] ::=
+                [3 * tab, $self:Server:$, txt(Name), $ := self:Global_Set("$, txt(Name), $",1)$, nl,
+                 algo_glo(ins,Doc,T)
+                ].
+        [algo_glo(dbl,Doc)] ::= [algo_glo(ins,Doc)].
+
+
+% ---------------------------------------------------------------------------- :
+%                                                                              :
+%       Схема генерации программ алгоритма локальной автонумерации.            :
+%                                                                              :
+% ---------------------------------------------------------------------------- :
+
+        % Локальная автонумерация поля.
+        [algo_loc(ins,Doc)] : bagof(algo(loc_num,recv(Doc,X1,Name,Chars,X2)),algo(loc_num,recv(Doc,X1,Name,Chars,X2)),AlgoList) ::=
+                [algo_loc(ins,Doc,AlgoList)].
+        [algo_loc(ins,Doc)] ::= [].
+
+        [algo_loc(ins,_,[])] ::= [].
+[under(Src,Doc)] ??
+        [algo_loc(ins,Doc,[algo(loc_num,recv(Doc,X1,Name,Chars,X2)) | T])] ::=
+                [$//  Локальная автонумерация поля $, txt(Name), nl,
+                 3 * tab, $self:Server:$, txt(Name), $ := self:Local_Set("$, txt(Name), $")$, nl
+                ].
+        [algo_loc(ins,Doc,[_ | T])] ::= [algo_loc(ins,Doc,T)].
+
+        [algo_loc(dbl,Doc)] ::= [algo_loc(ins,Doc)].
+
+        % Максимумы значений.
+        [max_algo_glo(char(Len,_))] ::= [$replicate(chr(255),$, Len, $)$].
+        [max_algo_glo(digit(Len,0))] ::= [Len * txt($9$)].
+[NewLen is Len - Dec - 1] ??
+        [max_algo_glo(digit(Len,Dec))] ::= [NewLen * txt($9$), $.$, Dec * (txt($9$))].
+        [max_algo_glo(date)] ::= [$ctod("31/12/99")$].
+        [max_algo_glo(time)] ::= [$23.59$].
+        [max_algo_glo(boolean)] ::= [$.t.$].
+
+        % Минимумы значений.
+        [min_algo_glo(char(_,_))] ::= [$"0"$].
+        [min_algo_glo(digit(_,_))] ::= [0].
+        [min_algo_glo(date)] ::= [$ctod("")$].
+        [min_algo_glo(time)] ::= [0].
+        [min_algo_glo(boolean)] ::= [$.f.$].
+
+        % Инкременты значений.
+        [inc_algo_glo(char(Len,_))] ::= [$str(val(last_val)+1,$, Len, $)$].
+        [inc_algo_glo(digit(_,_))] ::= [$last_val + 1$].
+        [inc_algo_glo(date)] ::= [$last_val + 1$].
+        [inc_algo_glo(time)] ::= [$last_val + 0.01$].
+        [inc_algo_glo(boolean)] ::= [$.t.$].
+
+% ---------------------------------------------------------------------------- :
+%                                                                              :
+%       Схема генерации программ алгоритма текущего датирования.               :
+%                                                                              :
+% ---------------------------------------------------------------------------- :
+
+        % Текущее датирование полей.
+        [algo_curd(ins,Doc)] : bagof(algo(cur_date,recv(Doc,X1,Name,Chars,X2)),algo(cur_date,recv(Doc,X1,Name,Chars,X2)),AlgoList) ::=
+                [algo_curd(ins,Doc,AlgoList)].
+        [algo_curd(ins,Doc)] ::= [].
+
+        [algo_curd(ins,_,[])] ::= [].
+        [algo_curd(ins,Doc,[algo(cur_date,recv(Doc,X1,Name,Chars,X2)) | T])] ::=
+                [3 * tab, $self:Server:$, txt(Name), $ := date()$, nl,
+                 algo_curd(ins,Doc,T)
+                ].
+
+        [algo_curd(Dbl,Doc)] ::= [algo_curd(ins,Doc)].
+
+% ---------------------------------------------------------------------------- :
+%                                                                              :
+%       Схема генерации программ алгоритма парольной защиты.                   :
+%                                                                              :
+% ---------------------------------------------------------------------------- :
+
+[algo(pwd,_)] ??
+        [algo_pwd(init)] ::=
+                [$* Подготовка алгоритма парольной защиты полей.$, nl,
+                 $private _passwd := space(12)$, nl,
+                 $_AllocMem()$, nl].
+        [algo_pwd(init)] ::= [].
+
+[algo(pwd,_)] ??
+        [algo_pwd(proc)] ::=
+                [nl, nl,
+                 40 * txt($* $), nl,
+                 $* Процедура ввода пароля для алгоритма парольной защиты полей.$, nl,
+                 40 * txt($* $), nl, nl,
+                 $procedure IN_PASSWD$, nl,
+                 $_passwd := space(12)$, nl,
+                 $USER_DIALOG(10,10,"Парольная защита полей","N/W,R/R","Введите пароль",@_passwd)$, nl,
+                 $_passwd := alltrim(_passwd)$, nl,
+                 $return$, nl, nl,
+                 $* $, 78 * txt($-$), nl, nl].
+        [algo_pwd(proc)] ::= [].
+
+
+[algo(pwd,recv(Doc,_,_,_))] ??
+        [algo_pwd(define,Doc)] : bagof(recv(Name,Empty1,Empty2),algo(pwd,recv(Doc,Name,Empty1,_Empty2)),RecvList) ::=
+                [$* Объявления парольных полей.$, nl,
+                 algo_pwd(define,$private $,RecvList)].
+        [algo_pwd(define,Doc)] ::= [].
+
+         [algo_pwd(define,_,[])] ::= [nl].
+         [algo_pwd(define,Pref,[recv(Name,_,_) | T])] ::=
+                [txt(Pref), $_$, txt(Name), algo_pwd(define,$,$,T)].
+
+
+[algo(pwd,recv(Doc,_,_,_))] ??
+        [algo_pwd(in,Doc)] : bagof(recv(Name,Empty1,Empty2),algo(pwd,recv(Doc,Name,Empty1,Empty2)),RecvList) ::=
+                [$* Перекодировка парольных реквизитов.$, nl,
+                algo_pwd(in,Doc,RecvList)].
+[algo_pwd(in,Doc)] ::= [].
+
+        [algo_pwd(in,_,[])] ::= [].
+        [algo_pwd(in,Doc,[recv(Name,_,_) | T])] ::=
+                [$  _$, txt(Name), $ := _Decrypt(alltrim($, txt(Doc), $->$, txt(Name), $),_passwd)$, nl,
+                 algo_pwd(in,Doc,T)].
+
+
+[algo(pwd,recv(Doc,Name,_,_))] ??
+        [algo_pwd(one,Doc,Name)] ::=
+                [rcase_check(Name),
+                 $  $, txt(Doc), $->$, txt(Name), $ := _Encrypt(alltrim(_$, txt(Name), $),_passwd)$, nl].
+        [algo_pwd(one,_,_)] ::= [].
+
+
+        % Генерация меню для алгоритма парольной защиты.
+[algo(pwd,_)] ??
+        [algo_pwd(menu1)] ::= [$3C IN_PASSWD Ввод пароля$, nl].
+        [algo_pwd(menu1)] ::= [].
+
+
+% ---------------------------------------------------------------------------- :
+%                                                                              :
+%       Схема генерации программ алгоритма извлечения подобной информации.     :
+%                                                                              :
+% ---------------------------------------------------------------------------- :
+
+[algo(extract,Doc,Name,_)] ??
+        [algo_extract(one,Doc,Name)] : bagof(Recv,algo(extract,Doc,Name,Recv),RecvList) ::=
+                [rcase_check(Name),
+                 $// Перепись подобной информации.$, nl,
+                 3 * Tab, $self:Server:Extract(2,"$, txt(Name), $",$, ext_name(${$,RecvList), ext_text($},{$,Doc,RecvList), $})$, nl
+                ].
+        [algo_extract(one,Doc,Name)] ::= [].
+
+        % Формирование списка имен всех полей.
+        [ext_name(_,[])] ::= [].
+        [ext_name(Pref,[recv(_,_,Name,_,_) | T])] ::=
+                [txt(Pref), $"$, txt(Name), $"$, ext_name($,$,T)].
+
+        % Формирование списка названий всех полей.
+        [ext_text(_,_,[])] ::= [].
+        [ext_text(Pref,Doc,[Recv | T])] : get(word(_,Recv,Text)) ::=
+                [txt(Pref), $"$, txt(Text), $"$, ext_text($,$,Doc,T)].
+
+        % Формирование списка всех переписываемых полей.
+        [ext_field(_,[])] ::= [].
+        [ext_field(Pref,[recv(_,_,Name,_,_) | T])] ::=
+                [txt(Pref), txt(Name), ext_field($,$,T)].
+
+
+% ---------------------------------------------------------------------------- :
+%                                                                              :
+%       Схема генерации программ алгоритма пересчета полей по коэффициентам.   :
+%                                                                              :
+% ---------------------------------------------------------------------------- :
+
+[algo(recount,rec(Doc,_Name,Chars,_))] ??
+        [algo_recount(Doc)] ::=
+                [$  SetKey(K_F4,{||qq__Recount(indexkey(),,"$, txt(Name),$")$, nl].
+        [algo_recount(_)] ::= [].
+
+% ---------------------------------------------------------------------------- :
+%                                                                              :
+%       Схема генерации программ алгоритма последних значений.                 :
+%                                                                              :
+% ---------------------------------------------------------------------------- :
+
+        % Объявления последних значений.
+        [algo_last_val(define,Doc)] : bagof(algo(last_val,Doc,Name,Chars),algo(last_val,Doc,Name,Chars),AlgoList) ::=
+                [tab, $protect$, tab, algo_last_val(define,Doc,$$,AlgoList), nl].
+        [algo_last_val(define,Doc)] ::= [].
+
+        [algo_last_val(define,_,_,[])] ::= [].
+        [algo_last_val(define,Doc,Pref,[algo(last_val,Doc,Name,Chars) | T])] ::=
+                [txt(Pref), $_$, txt(Name), algo_last_val(define,Doc,$,$,T)].
+
+        % Первоначальная инициализация последних значений.
+        [algo_last_val(start,Doc)] : bagof(algo(last_val,Doc,Name,Chars),algo(last_val,Doc,Name,Chars),AlgoList) ::=
+                [algo_last_val(start,Doc,AlgoList), nl].
+        [algo_last_val(define,Doc)] ::= [].
+
+        [algo_last_val(start,_,[])] ::= [].
+        [algo_last_val(start,Doc,[algo(last_val,Doc,Name,Chars) | T])] ::=
+                [tab, $self:_$, txt(Name), $ := $, min_algo_glo(Chars), algo_last_val(start,Doc,T)].
+
+        % Заполнение полей при вставке.
+        [algo_last_val(ins,Doc)] : bagof(algo(last_val,Doc,Name,Chars),algo(last_val,Doc,Name,Chars),AlgoList) ::=
+                [algo_last_val(ins,Doc,AlgoList)].
+        [algo_last_val(ins,Doc)] ::= [].
+
+        [algo_last_val(ins,_,[])] ::= [].
+        [algo_last_val(ins,Doc,[algo(last_val,Doc,Name,Chars) | T])] ::=
+                [3 * tab, $self:Server:$, txt(Name), $ := self:_$, txt(Name), $  // Алгоритм полсдний значений.$, nl,
+                 algo_last_val(ins,Doc,T)
+                ].
+
+
+        % Сохранение полей при изменении.
+        [algo_last_val(one,Doc,Name)] : bagof(algo(last_val,Doc,Name,Chars),algo(last_val,Doc,Name,Chars),AlgoList) ::=
+                [algo_last_val(one,Doc,Name,AlgoList)].
+        [algo_last_val(one,Doc,Name)] ::= [].
+
+        [algo_last_val(one,_,_,[])] ::= [].
+        [algo_last_val(one,Doc,Name,[algo(last_val,Doc,Name,Chars) | T])] ::=
+                [rcase_check(Name), 3 * tab, $self:_$, txt(Name), $ := $, txt(Doc), $->$, txt(Name), $  // Алгоритм Последних значений.$, nl].

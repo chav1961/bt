@@ -1,0 +1,186 @@
+% ---------------------------------------------------------------------------- :
+%                                                                              :
+%       Система автоматизированного проектирования программного обеспечения    :
+% для различных систем программирования с ЕЯИ-вводом.      (GSERV204)          :
+%                                                                              :
+%       Правила генерации программ ввода-корректировки на Clipper.             :
+%       Подсистема решения функциональных зодачь.                              :
+%                                                                              :
+%       (с) 1995г, А.В.Черномырдин, (3511-37-83-26).                           :
+%       Версия 2.00 от 01.05.95.                                               :
+%                                                                              :
+% ---------------------------------------------------------------------------- :
+
+generate.
+
+        % Правила построения функциональных задач.
+[ctr_set(10,100)] ??
+        [make(ftask,Arm,_)] : bagof(task(Task,Name,Doc,Type),task(Task,Name,Doc,Type),TaskList) ::=
+                [file($.\target\$,tasks,prg),
+                 ftask(Arm,TaskList)
+                ].
+
+        % Правила позадачной генерации.
+        [ftask(_,[])] ::= [].
+
+        % Генерация задачи с опорным НСИ.
+[access(Arm,Task), ctr_inc(10,Val)] ??
+        [ftask(Arm,[task(Task,Name,Doc,form(NSI,NSIRecv)) | T])] : [get(f_group(Doc,Group)), get(main_link(Doc,FirstDoc))] ::=
+                [$class $, txt(Task), $ inherit TaskType_2$, nl,
+                 $// Задача : $, txt(Name), nl,
+                 server_ftask(Doc,FirstDoc,Group), nl,
+                 tab, $export$, tab, $oPP as PrintPart$, 2 * nl,
+                 $method Init(oParent,oCond) class $, txt(Task), nl,
+                 $// Создание задачи $, nl,
+                 tab, $super:Init(oParent,"Загрузка определителей",ShowServer{".\NSI\$, txt(NSI), $",DBEXCLUSIVE,DBREADWRITE},;$, nl,
+                 2 * tab, $ShowServer{"$, txt(Doc), $",DBSHARED},oCond,{|Task|{&("{||"+Task:NSIServer:$, txt(NSIRecv), $+"}"),Task:NSIServer:RecNo}},{|Task|.t.$, null_task2(Task), $})$, nl,
+                 tab, $self:oPP$, tab, $:= PrintPart{"$, txt(Doc), $",62,{">>ks",">>page",">>zs"}}$, nl,
+                 relation_ftask(Doc,FirstDoc,Group),
+                 tab, $return$, tab, $self$, 2 * nl,
+                 $method Detailed() class $, txt(Task), nl,
+                 $// Суммирование полей НСИ$, nl,
+                 summ_task2(Task), nl,
+                 $method Printed() class $, txt(Task), nl,
+                 $// Печать выходного документа$, nl,
+                 tab, $self:oPP:Print(">>ds")$, 2 * nl,
+                 $method Close() class $, txt(Task), nl,
+                 $// Завершение задачи$, nl,
+                 close_server_ftask(Doc,FirstDoc,Group),
+                 tab, $self:oPP:Close()$, nl,
+                 tab, $super:Close()$, 2 * nl,
+                 ftask(Arm,T)
+                ].
+
+[access(Arm,Task), ctr_inc(10,Val)] ??
+        [ftask(Arm,[task(Task,Name,Doc,form) | T])] : [get(f_group(Doc,Group)), get(main_link(Doc,FirstDoc))] ::=
+                [$class $, txt(Task), $ inherit TaskType_1$, nl,
+                 $// Задача : $, txt(Name), nl,
+                 server_ftask(Doc,FirstDoc,Group), nl,
+                 tab, $export$, tab, $oPP as PrintPart$, 2 * nl,
+                 $method Init(oParent,oCond) class $, txt(Task), nl,
+                 $// Создание задачи $, nl,
+                 tab, $super:Init(ShowServer{"$, txt(Doc), $",DBSHARED},oCond,{$, group_task1(Task), $})$, nl,
+                 tab, $self:oPP$, tab, $:= PrintPart{"$, txt(Doc), $",62,{">>ks",">>page",">>zs"}}$, nl,
+                 relation_ftask(Doc,FirstDoc,Group),
+                 tab, $return$, tab, $self$, 2 * nl,
+                 $method Detailed() class $, txt(Task), nl,
+                 $// Суммирование и вывод данных$, nl,
+                 tab, $local$, tab, $iPoz as int$, 2 * nl,
+                 tab, $self:oPP:Print(">>ds")$, nl,
+                 summ_task1(Task), nl,
+                 $method Close() class $, txt(Task), nl,
+                 $// Завершение задачи$, nl,
+                 close_server_ftask(Doc,FirstDoc,Group),
+                 tab, $self:oPP:Close()$, nl,
+                 tab, $super:Close()$, 2 * nl,
+                 groups_ftask(Task),
+                 ftask(Arm,T)
+                ].
+
+        [ftask(Arm,[_ | T])] ::= [ftask(Arm,T)].
+
+
+% *****************************************************************************
+
+        % Генерация подчиненных серверов в задаче.
+        [server_ftask(Doc,First,[])] ::= [].
+        [server_ftask(Doc,First,[Next | T])] : get(link(Doc,First,Next,List)) ::=
+                [tab, $protect$, tab, $_$, txt(Next), $ as ShowServer$, nl, server_ftask(Doc,First,T)].
+
+        % Установка отношений подчиненных серверов.
+        [relation_ftask(Doc,First,[])] ::= [].
+        [relation_ftask(Doc,First,[Next | T])] : get(link(Doc,First,Next,List)) ::=
+                [tab, $_$, txt(Next), tab, $:= ShowServer{{"$, txt(Next), $","$, txt(Next), $"},DBSHARED}$, nl,
+                 tab, $self:Server:SetRelation(_$, txt(Next), $,&("{||"+self:Server:IndexKey()+"}"))$, nl,
+                 relation_ftask(Doc,First,T)
+                ].
+
+        % Завершение работы серверов в задаче.
+        [close_server_ftask(Doc,First,[])] ::= [].
+        [close_server_ftask(Doc,First,[Next | T])] ::=
+                [tab, $_$, txt(Next), $:Close()$, nl, close_server_ftask(Doc,First,T)].
+
+
+% *****************************************************************************
+
+        % Обнуление полей НСИ для задач типа 2.
+        [null_task2(Task)] : bagof(summ(Recv1,Recv2),f_task(Task,summ,Recv1,Recv2),RecvList) ::=
+                [null_task2(Task,RecvList)].
+
+        [null_task2(_,[])] ::= [].
+        [null_task2(Task,[summ(_,recv(_,_,Name,_,_)) | T])] ::=
+                [tab, $,Task:NSIServer:$, txt(Name), tab, $:= 0$, null_task2(Task,T)].
+
+        % Суммирование полей НСИ для задач типа 2.
+        [summ_task2(Task)] : bagof(summ(Recv1,Recv2),f_task(Task,summ,Recv1,Recv2),RecvList) ::=
+                [summ_task2(Task,RecvList)].
+
+        [summ_task2(_,[])] ::= [].
+        [summ_task2(Task,[summ(recv(_,_,Name1,_,_),recv(_,_,Name2,_,_)) | T])] ::=
+                [tab, $self:NSIServer:$, txt(Name2), tab, $+= self:Server:$, txt(Name1), nl, summ_task2(Task,T)].
+
+
+% *****************************************************************************
+
+        % Групповые выходы печати для задач типа 1.
+        [groups_ftask(Task)] : bagof(Groups,f_task(Task,group,Groups),GroupList) ::=
+                [groups_ftask(Task,[1,2,3,4,5,6,7,8,9],GroupList)].
+
+        [groups_ftask(_,_,[])] ::= [].
+[Num1 is Num +1] ??
+        [groups_ftask(Task,[Num | T1],[_ | T2])] ::=
+                [$method Group_$, Num, $(Mode) class $, txt(Task), nl,
+                 $// Вывод промежуточных итогов и их обнуление.$, nl,
+                 tab, $if Mode$, nl,
+                 2 * tab, $self:Group_$, Num1, $(Mode)$, nl,
+                 2 * tab, $self:oPP:Print(">>ig$, Num, $")$, nl,
+                 2 * tab, $afill(S[$, Num1, $],0)$, nl,
+                 tab, $else$, nl,
+                 2 * tab, $G$, tab, $:= self:G$, nl,
+                 2 * tab, $self:oPP:Print(">>zg$, Num, $")$, nl,
+                 2 * tab, $self:Group_$, Num1, $(Mode)$, nl,
+                 tab, $endif$, 2 * nl,
+                 groups_ftask(Task,T1,T2)
+                ].
+
+% *****************************************************************************
+
+        % Суммирование реквизитов для задач типа 1.
+[f_task(Task,summ,_)] ??
+        [summ_task1(Task)] : bagof(Summs,f_task(Task,summ,Summs),SummList) ::=
+                [tab, $for iPoz := 1 to len(S)$, nl,
+                 summ_task1(Task,[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16],SummList),
+                 2 * tab, $next$, nl
+                ].
+        [summ_task1(_)] ::= [].
+
+        [summ_task1(_,_,[])] ::= [].
+        [summ_task1(Task,[Num | T1],[recv(Doc,_,Name,_,_) | T2])] ::=
+                [2 * tab, $S[iPoz,$, Num, $]$, tab, $+= $, txt(Doc), $->$, txt(Name), nl, summ_task1(Task,T1,T2)].
+
+
+% *****************************************************************************
+
+        % Объявления групп для задачи типа 1.
+        [group_task1(Task)] : bagof(f_task(Groups),f_task(Task,group,Groups),GroupList) ::=
+                [group_task1(Task,$$,GroupList)].
+
+        [group_task1(_,_,[])] ::= [].
+        [group_task1(Task,Pref,[f_task(GroupList) | T])] ::=
+                [txt(Pref), ${$, group1_task1($$,GroupList), $}$, group_task1(Task,$,$,T)].
+
+        [group1_task1(_,[])] ::= [].
+        [group1_task1(Pref,[recv(Doc,_,Name,char(_,_),_) | T])] ::=
+                [txt(Pref), txt(Doc), $->$, txt(Name), group1_task1($+$,T)].
+        [group1_task1(Pref,[recv(Doc,_,Name,digit(_,_),_) | T])] ::=
+                [txt(Pref), $str($, txt(Doc), $->$, txt(Name), $)$, group1_task1($+$,T)].
+        [group1_task1(Pref,[recv(Doc,_,Name,date,_) | T])] ::=
+                [txt(Pref), $dtos($, txt(Doc), $->$, txt(Name), $)$, group1_task1($+$,T)].
+        [group1_task1(Pref,[recv(Doc,_,Name,time,_) | T])] ::=
+                [txt(Pref), $str($, txt(Doc), $->$, txt(Name), $)$, group1_task1($+$,T)].
+        [group1_task1(Pref,[recv(Doc,_,Name,boolean,_) | T])] ::=
+                [txt(Pref), $iif($, txt(Doc), $->$, txt(Name), $,"T","F")$, group1_task1($+$,T)].
+
+
+% *****************************************************************************
+

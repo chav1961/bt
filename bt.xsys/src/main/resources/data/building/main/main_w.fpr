@@ -1,0 +1,50 @@
+% ---------------------------------------------------------------------------- :
+%                                                                              :
+%       Система автоматизированного проектирования программного обеспечения    :
+% для различных систем программирования с ЕЯИ-вводом.      (GSERV204)          :
+%                                                                              :
+%       Правила генерации пакетных файлов для создания системы в среде Windows.:
+%                                                                              :
+%                                                                              :
+%       (с) 1995г, А.В.Черномырдин, (3511-37-83-26).                           :
+%       Версия 2.00 от 01.05.95.                                               :
+%                                                                              :
+% ---------------------------------------------------------------------------- :
+
+generate.
+
+        % Общее правило построения пакетных файлов.
+[make(main)] ::= [prg_make, hlp_make].
+
+        % Правило генерации пакетного файла по созданию программ.
+        [prg_make] : bagof(arm(Name,Text),arm(Name,Text),ArmList) ::=
+                    [make(prg,ArmList)].
+[make(prg,[])] ::= [].
+[make_arm(_), not(make_arm(Name))] ??
+[make(prg,[arm(Name,Text) | T])] ::= [make(prg,T)].
+[make(prg,[arm(Name,Text) | T])] ::=
+                    [file($.\target\$,Name,bat),
+                     $rem Пакетный файл генерации программ для АРМа "$, txt(Text), $" для Windows.$, nl,
+                     $@echo off$, nl,
+                     $cd .\resource$, nl,
+                     $copy $, txt(Name), $.* tempfile.out$, nl,
+                     $ansi_oem tempfile.out $, txt(Name), $.rc$, nl,
+                     $rc -r $, txt(Name), $.rc$, nl,
+                     $cd ..$, nl,
+                     $clipper $, txt(Name), nl,
+                     $if not errorlevel 1 rtlink fi $, txt(Name), $ lib clipper,extend,terminal,dbfntx,serv105,lsocket,ldomain,lnetlib,lpc$, nl,
+                     $if not errorlevel 1 $, txt(Name), nl,
+                     make(prg,T)
+                    ].
+
+        % Правило генерации файла помощи.
+        [hlp_make] : get(system(Name,_)) ::=
+                [file($.\target\$,mk_help,bat),
+                 $rem Пакетный файл генерации файла помощи для Windows.$, nl,
+                 $@echo off$, nl,
+                 $cd .\help$, nl,
+                 $ansi_oem $, txt(Name), $.rtf $, txt(Name), $.rt1$, nl,
+                 $hc $, txt(Name), $.hpj$, nl,
+                 $cd ..$, nl
+                ].
+

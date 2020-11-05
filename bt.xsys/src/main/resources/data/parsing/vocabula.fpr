@@ -1,0 +1,622 @@
+% ---------------------------------------------------------------------------- :
+%                                                                              :
+%       Система автоматизированного проектирования программного обеспечения    :
+% для различных систем программирования с ЕЯИ-вводом.      (GSERV205)          :
+%                                                                              :
+%       Словарь обработки общего описания системы без алгоритмов.              :
+%                                                                              :
+%       Словарь содержит схемы синтаксического разбора для описания системы и  :
+% схемы построения предикатов и отношений в базе знаний.                       :
+%                                                                              :
+%                                                                              :
+%       (с) 1996г, А.В.Черномырдин, (3511-37-83-26).                           :
+%       Версия 3.00 от 01.05.96.                                               :
+%                                                                              :
+% ---------------------------------------------------------------------------- :
+
+
+% ---------------------------------------------------------------------------- :
+%                                                                              :
+%       Зарезервированные слова, используемые в системе.                       :
+%                                                                              :
+% ---------------------------------------------------------------------------- :
+
+words.
+
+        $АРМ$           ::= arm.
+        $Алгоритм$      ::= algo.
+        $алгоритм$      ::= algo.
+        $Аналогично$    ::= l_like.
+        $аналогично$    ::= l_like.
+
+        $Баз$           ::= base.
+        $баз$           ::= base.
+        $Без$           ::= without.
+        $без$           ::= without.
+
+        $Все$           ::= all.
+        $все$           ::= all.
+        $Врем$          ::= time.
+        $врем$          ::= time.
+
+        $Группир$       ::= group.
+        $группир$       ::= group.
+        $График$        ::= graphic.
+        $график$        ::= graphic.
+        $Групп$         ::= group.
+        $групп$         ::= group.
+
+        $Данн$          ::= data.
+        $данн$          ::= data.
+        $дат$           ::= date.
+        $Диапазон$      ::= interval.
+        $диапазон$      ::= interval.
+        $Длин$          ::= length.
+        $длин$          ::= length.
+        $Для$           ::= for.
+        $для$           ::= for.
+        $Добавлени$     ::= add.
+        $добавлени$     ::= add.
+        $Документ$      ::= doc.
+        $документ$      ::= doc.
+
+        $Заголов$       ::= head_of.
+        $заголов$       ::= head_of.
+        $Задач$         ::= task.
+        $задач$         ::= task.
+        $Запрос$        ::= request.
+        $запрос$        ::= request.
+
+        $из$            ::= from.
+        $Изменени$      ::= rep.
+        $изменени$      ::= rep.
+        $Использ$       ::= use.
+        $использ$       ::= use.
+
+        $Как$           ::= as.
+        $как$           ::= as.
+        $Ключ$          ::= key.
+        $ключ$          ::= key.
+        $Конец_групп$   ::= end_group.
+        $конец_групп$   ::= end_group.
+        $Кроме$         ::= without.
+        $кроме$         ::= without.
+
+        $Логическ$      ::= boolean.
+        $логическ$      ::= boolean.
+
+        $Набор$         ::= set_of.
+        $набор$         ::= set_of.
+        $Не$            ::= not.
+        $не$            ::= not.
+        $НСИ$           ::= nsi.
+
+        $Параметр$      ::= parameter.
+        $параметр$      ::= parameter.
+        $подчиненн$     ::= under.
+        $Подсчитыва$    ::= calc.
+        $подсчитыва$    ::= calc.
+        $Построи$       ::= make.
+        $построи$       ::= make.
+        $по$            ::= by.
+        $программ$      ::= program.
+        $Программ$      ::= program.
+        $Просмотр$      ::= sel.
+        $просмотр$      ::= sel.
+
+        $равн$          ::= equal.
+        $Режим$         ::= mmode.
+        $режим$         ::= mmode.
+        $Реквизит$      ::= recv.
+        $реквизит$      ::= recv.
+
+        $Cимвол$        ::= char.
+        $символ$        ::= char.
+        $Систем$        ::= system.
+        $систем$        ::= system.
+        $Следующ$       ::= next.
+        $следующ$       ::= next.
+        $Cодерж$        ::= consist.
+        $содерж$        ::= consist.
+        $спис$          ::= by_list.
+        $Cредн$         ::= middle.
+        $средн$         ::= middle.
+        $Стандартн$     ::= canonical.
+        $стандартн$     ::= canonical.
+        $Суммир$        ::= summ.
+        $суммир$        ::= summ.
+
+        $Таблиц$        ::= table_of.
+        $таблиц$        ::= table_of.
+        $Точност$       ::= precision.
+        $точност$       ::= precision.
+
+        $Устанавлива$   ::= set.
+        $устанавлива$   ::= set.
+        $Уров$          ::= level.
+        $уров$          ::= level.
+        $Удалени$       ::= del.
+        $удалени$       ::= del.
+
+        $Форм$          ::= form.
+        $форм$          ::= form.
+
+        $Хвост$         ::= tail_of.
+        $хвост$         ::= tail_of.
+
+        $Цифр$          ::= digit.
+        $цифр$          ::= digit.
+
+% ---------------------------------------------------------------------------- :
+%                                                                              :
+%       Правила бесконтекстной свертки лексем.                                 :
+%                                                                              :
+% ---------------------------------------------------------------------------- :
+
+common.
+
+                % Свертка описаний реквизитов (их длины и типы).
+
+        [level, number(Value)]          ::= [level(Value)].
+        [length, number(Value)]         ::= [length(Value)].
+
+        [length(Value), char, divizor, middle, length, number(Mid)] ::= [char(Value,Mid)].
+        [length(Value), char, middle, length, number(Mid)] ::= [char(Value,Mid)].
+        [length(Value), char]           ::= [char(Value,Value)].
+
+        [length(Value), digit, divizor, precision, number(Prec)] ::= [digit(Value,Prec)].
+        [length(Value), digit, precision, number(Prec)] ::= [digit(Value,Prec)].
+        [length(Value), digit]          ::= [digit(Value,0)].
+
+
+                % Свертка шумовых слов.
+
+        [next, doc]                     ::= [doc].
+        [next, recv]                    ::= [recv].
+        [next, task]                    ::= [task].
+        [next, form]                    ::= [form].
+        [next, arm]                     ::= [arm].
+
+        [from, doc]                     ::= [from].
+        [from, nsi]                     ::= [from].
+        [under, doc]                    ::= [under].
+        [divizor, under]                ::= [under].
+
+        [base, data]                    ::= [database].
+
+        [all, recv, table]              ::= [all, recv].
+
+        [task, task(X1,X2,X3,X4)]       ::= [task(X1,X2,X3,X4)].
+        [form, doc(X1,X2,form)]         ::= [doc(X1,X2,form)].
+        [doc,  doc(X1,X2,oper)]         ::= [doc(X1,X2,oper)].
+        [nsi,  doc(X1,X2,nsi)]          ::= [doc(X1,X2,nsi)].
+        [arm,  arm(X1,X2)]              ::= [arm(X1,X2)].
+
+        [from, name(Doc)]               ::= [f_from(Doc)].
+        [from, doc(Doc,Text,Type)]      ::= [f_from(Doc,Text,Type)].
+
+        [l_like, recv(_,_,RName,_)]     ::= [l_like(RName)].
+        [l_like, recv, name(Name)]      ::= [l_like(Name)].
+        [l_like, name(Name)]            ::= [l_like(Name)].
+
+        [algo, algo(Mode)]              ::= [algo(Mode)].
+
+
+% ---------------------------------------------------------------------------- :
+%                                                                              :
+%       Правила контекстной свертки лексем.                                    :
+%                                                                              :
+% ---------------------------------------------------------------------------- :
+
+context.
+
+%
+%       Свертка лексем на верхнем уровне.
+%
+
+        % Свертка описания системы (фиксация системных реквизитов и установка контекста).
+
+Any             : [system, name(Name), term(Text,Words)] ::=
+            Any/
+                [word(Words,system(Name,Text),Text),
+                 nameword(Name,system(Name,Text),Text),
+                 system(Name,Text)
+                ] : [system].
+
+_               : [system, consist, arm, colon] ::=
+            armlist/
+                [] : [].
+_               : [system, consist, doc, colon] ::=
+            doc(none,none,none)/
+                [] : [].
+_               : [system, consist, task, colon] ::=
+            task(none,none,none)/
+                [] : [].
+
+_               : [arm, arm(Name,_), use, doc, colon] ::=
+            access(Name)/
+                [] : [].
+_               : [doc(Doc,_,form), use, doc, colon] ::=
+            link(Doc,form)/
+                [] : [].
+
+Any             : [doc(Doc,_,form), use, doc, l_like, doc(DDoc,NName,form), point] ::=
+            link(Doc,form)/
+                [get(main_link(DDoc,Main)), main_link(Doc,Main),
+                 bagof(link(Doc,Doc1,Doc2,List),link(DDoc,Doc1,Doc2,List),LinkList)]
+                : [link(LinkList)].
+link(Doc,Form)  : [doc(NewDoc,X1,form), use, doc, l_like] ::=
+            link(NewDoc,form)/
+                [get(doc(Doc,X2,X3))] : [doc(NewDoc,X1,form), use, doc, l_like, doc(Doc,X2,X3), point].
+
+Any             : [link([])] ::=
+            Any/
+                [] : [].
+Any             : [link([Link | Tail])] ::=
+            Any/
+                [Link] : [link(Tail)].
+
+_               : [doc(Doc,_,graphic), use, doc, colon] ::=
+            link(Doc,graphic)/
+                [] : [].
+
+_               : [task(Task,_,Type), use, recv, colon] ::=
+            task(Task,Type)/
+                [] : [].
+
+
+%
+%       Свертка описаний АРМов.
+%
+
+armlist         : [dephis, arm, name(Name), term(Text,Words), point] ::=
+            armlist/
+                [word(Words,arm(Name,Text),Text), nameword(Name,arm(Name,Text),Text), arm(Name,Text)]
+                : [].
+armlist         : [dephis, group, term(Text,Words), colon] ::=
+            armlist(Text)/
+                [word(Words,group(arm,Text),Text), group(arm,Text)]
+                : [].
+armlist(Group)  : [dephis, arm, name(Name), term(Text,Words), point] ::=
+            armlist(Group)/
+                [word(Words,arm(Name,Text),Text), nameword(Name,arm(Name,Text),Text),
+                 arm(Name,Text), group(arm,Group,arm(Name,Text))
+                ] : [].
+armlist(Group)  : [dephis, end_group] ::=
+            armlist/
+                [] : [].
+
+%
+%       Свертка описаний документов.
+%
+
+doc(_,_,_)      : [dephis, nsi, name(Name), term(Text,Words), colon] ::=
+            doc(Name,nsi,none)/
+                [word(Words,doc(Name,Text,nsi),Text), nameword(Name,doc(Name,Text,nsi),Text), doc(Name,Text,nsi)]
+                : [].
+
+doc(_,_,_)      : [dephis, doc, name(Name), term(Text,Words), under, doc(Doc,_,oper), colon] ::=
+            doc(Name,oper,none)/
+                [word(Words,doc(Name,Text,oper),Text), nameword(Name,doc(Name,Text,oper),Text),
+                 doc(Name,Text,oper), under(Doc,Name)
+                ] : [].
+doc(_,_,_)      : [dephis, doc, name(Name), term(Text,Words), under, doc(Doc,_,oper), divizor] ::=
+            doc(Name,oper,none)/
+                [under(Doc,Name)]
+                : [dephis, doc, name(Name), term(Text,Words), under].
+doc(_,_,_)      : [dephis, doc, name(Name), term(Text,Words), colon] ::=
+            doc(Name,oper,none)/
+                [word(Words,doc(Name,Text,oper),Text), nameword(Name,doc(Name,Text,oper),Text), doc(Name,Text,oper)]
+                : [].
+
+doc(_,_,_)      : [dephis, form, name(Name), term(Text,Words), under, doc(Doc,_,oper), colon] ::=
+            doc(Name,form,table)/
+                [word(Words,doc(Name,Text,form),Text), nameword(Name,doc(Name,Text,form),Text),
+                 doc(Name,Text,form), under_f(Doc,Name)
+                ] : [].
+doc(_,_,_)      : [dephis, form, name(Name), term(Text,Words), under, doc(Doc,_,oper), divizor] ::=
+            doc(Name,form,table)/
+                [under_f(Doc,Name)]
+                : [dephis, form, name(Name), term(Text,Words), under].
+doc(_,_,_)      : [dephis, form, name(Name), term(Text,Words), colon] ::=
+            doc(Name,form,table)/
+                [word(Words,doc(Name,Text,form),Text), nameword(Name,doc(Name,Text,form),Text), doc(Name,Text,form)]
+                : [].
+
+doc(_,_,_)      : [dephis, graphic, name(Name), term(Text,Words), under, doc(Doc,_,oper), colon] ::=
+            doc(Name,graphic,none)/
+                [word(Words,doc(Name,Text,graphic),Text), nameword(Name,doc(Name,Text,graphic),Text),
+                 doc(Name,Text,graphic), under_g(Doc,Name)
+                ] : [].
+doc(_,_,_)      : [dephis, graphic, name(Name), term(Text,Words), under, doc(Doc,_,oper), divizor] ::=
+            doc(Name,graphic,none)/
+                [under_g(Doc,Name)]
+                : [dephis, graphic, name(Name), term(Text,Words), under].
+doc(_,_,_)      : [dephis, graphic, name(Name), term(Text,Words), colon] ::=
+            doc(Name,graphic,none)/
+                [word(Words,doc(Name,Text,graphic),Text), nameword(Name,doc(Name,Text,graphic),Text), doc(Name,Text,graphic)]
+                : [].
+
+doc(Doc,X2,X3)   : [dephis, request, name(Name), term(Text,Words), by, doc(Doc,_,oper)] ::=
+            doc(Doc,X2,X3)/
+                [word(Words,doc(Name,Text,request,Doc),Text), nameword(Name,doc(Name,Text,request,Doc),Text), doc(Name,Text,request,Doc)]
+                : [].
+
+doc(Doc,X2,X1): [dephis, request, name(Name), term(Text,Words)] ::=
+            doc(Doc,X2,X1)/
+                [word(Words,doc(Name,Text,request,Doc),Text), nameword(Name,doc(Name,Text,request,Doc),Text), doc(Name,Text,request,Doc)]
+                : [].
+
+doc(Doc,X1,_)   : [dephis, group, term(Name,Words), colon] ::=
+            doc(Doc,X1,group(Name))/
+                [word(Words,group_doc(Doc,Name),Text)] : [].
+doc(X1,X2,group(_)) : [dephis, end_group, point] ::=
+            doc(X1,X2,none)/
+                [] : [].
+
+
+%
+%       Свертка описаний задач.
+%
+
+task(_,_,_)     : [dephis, task, name(Name), term(Text,Words), by, doc(Doc,_,form), colon] ::=
+            task(Name,Doc,form)/
+                [task(Name,Text,Doc,form)]
+                : [].
+task(_,_,_)     : [dephis, task, name(Name), term(Text,Words), by, doc(Doc,_,graphic), colon] ::=
+            task(Name,Doc,graphic)/
+                [task(Name,Text,Doc,graphic)]
+                : [].
+task(_,_,_)     : [dephis, task, name(Name), term(Text,Words), by, doc(Doc,_,form), use, recv(NSI,_,RName,_,_), doc(NSI,_,nsi), colon] ::=
+            task(Name,Doc,form(NSI,RName))/
+                [task(Name,Text,Doc,form(NSI,RName))]
+                : [].
+
+%
+%       Свертка описаний параметров доступа АРМов.
+%
+
+access(Name)    : [dephis, all, doc, dephis] ::=
+            access(Name)/
+                [bagof(doc(Doc,Text,oper),doc(Doc,Text,oper),DocList)]
+                : [doclist(DocList), next].
+
+access(Name)    : [dephis, doc(Doc,Text,oper)] ::=
+            access(Name)/
+                [] : [doclist([doc(Doc,Text,oper)])].
+access(Name)    : [doclist(DocList), divizor, doc(Doc,Text,oper)] ::=
+            access(Name)/
+                [] : [doclist([doc(Doc,Text,oper) | DocList])].
+
+access(Name)    : [doclist(DocList), dephis, all, mmode] ::=
+            access(Name)/
+                [] : [doclist(DocList), modelist([sel, ins, rep, del]), make].
+
+access(Name)    : [doclist(DocList), dephis, Mode] ::=
+            access(Name)/
+                [] : [doclist(DocList), modelist([Mode])].
+access(Name)    : [doclist(DocList), modelist(List), divizor, Mode] ::=
+            access(Name)/
+                [] : [doclist(DocList), modelist([Mode | List])].
+access(Name)    : [doclist(DocList), modelist(List), point] ::=
+            access(Name)/
+                [] : [doclist(DocList), modelist(List), make].
+
+access(Name)    : [doclist([]), _, make] ::=
+            access(Name)/
+                [] : [].
+access(Name)    : [doclist([doc(Doc,_,_) | DocList]), modelist(ModeList), make] ::=
+            access(Name)/
+                [access(Name,Doc,ModeList)] : [doclist(DocList), modelist(ModeList), make].
+
+access(Name)    : [dephis, all, task] ::=
+            access(Name)/
+                [bagof(task(Task,Text,Doc,Type),task(Task,Text,Doc,Type),TaskList)]
+                : [tasklist(TaskList), make].
+
+access(Name)    : [dephis, task(Task,Text,Doc,Type)] ::=
+            access(Name)/
+                [] : [tasklist([task(Task,Text,Doc,Type)])].
+access(Name)    : [tasklist(TaskList), divizor, task(Task,Text,Doc,Type)] ::=
+            access(Name)/
+                [] : [tasklist([task(Task,Text,Doc,Type) | TaskList])].
+access(Name)    : [tasklist(TaskList), point] ::=
+            access(Name)/
+                [] : [tasklist(TaskList), make].
+
+access(Name)    : [tasklist([]), make] ::=
+            access(Name)/
+                [] : [].
+access(Name)    : [tasklist([task(Task,_,_,_) | TaskList]), make] ::=
+            access(Name)/
+                [access(Name,Task)] : [tasklist(TaskList), make].
+
+%
+%       Свертка связей документов.
+%
+
+link(Doc,Type)  : [dephis, doc(NewDoc,_,_), by] ::=
+            link(Doc,Type)/
+                [] : [link(Doc,NewDoc,[]), divizor].
+link(Doc,Type)  : [link(Doc,NewDoc,RList), divizor, recv(_,_,RName,_,_)] ::=
+            link(Doc,Type)/
+                [] : [link(Doc,NewDoc,[recv(NewDoc,_,RName,_,_) | RList])].
+link(Doc,Type)  : [link(Doc,NewDoc,RList), under, doc(UnderDoc,_,_)] ::=
+            link(Doc,Type)/
+                [get(inv_list(RList,NewList)), link(Doc,NewDoc,UnderDoc,NewList)] : [].
+
+link(Doc,Type)  : [dephis, doc(NewDoc,_,_), point] ::=
+            link(Doc,Type)/
+                [main_link(Doc,NewDoc)] : [].
+
+%
+%       Свертка реквизитов документов.
+%
+
+doc(Doc,Type,V) : [dephis, key, f_from(DDoc,TText,TType)] ::=
+        doc(Doc,Type,V)/
+                [bagof(recv(Doc,k,RName,RChar,RFrom),recv(DDoc,k,RName,RChar,RFrom),RecvList)] :
+                [recvlist(RecvList), f_from(DDoc,TText,TType)].
+
+doc(Doc,Type,V) : [dephis, all, recv, f_from(DDoc,TText,TType)] ::=
+        doc(Doc,Type,V)/
+                [bagof(recv(Doc,Key,RName,RChar,RFrom),recv(DDoc,Key,RName,RChar,RFrom),RecvList)] :
+                [recvlist(RecvList), f_from(DDoc,TText,TType)].
+
+doc(Doc,form,_) : [dephis, head_of, colon] ::=
+        doc(Doc,form,head_of)/
+            [] : [].
+doc(Doc,form,_) : [dephis, table_of, colon] ::=
+        doc(Doc,form,table_of)/
+            [] : [].
+doc(Doc,form,_) : [dephis, tail_of, colon] ::=
+        doc(Doc,form,tail_of)/
+            [] : [].
+doc(Doc,form,_) : [dephis, not, used, colon] ::=
+        doc(Doc,form,not_used)/
+            [] : [].
+
+doc(Doc,X1,X2)  : [dephis, group_doc(_,Name)] ::=
+        doc(Doc,X1,X2)/
+            [bagof(R,group(recv,Name,R),RList)] : [recvlist(RList)].
+
+doc(Doc,Type,V) : [dephis] ::=
+        doc(Doc,Type,V)/
+            [] : [recvlist([]), divizor].
+
+doc(Doc,Type,V) : [recvlist(RList), divizor, key, name(Name), term(Text,Words)] ::=
+        doc(Doc,Type,V)/
+            [] : [recvlist([recv(Doc,k,Name,Text,Words) | RList])].
+doc(Doc,Type,V) : [recvlist(RList), divizor, level(Level), name(Name), term(Text,Words)] ::=
+        doc(Doc,Type,V)/
+            [] : [recvlist([recv(Doc,k,Name,Text,Words) | RList])].
+doc(Doc,Type,V) : [recvlist(RList), divizor, recv, name(Name), term(Text,Words)] ::=
+        doc(Doc,Type,V)/
+            [] : [recvlist([recv(Doc,r,Name,Text,Words) | RList])].
+doc(Doc,Type,V) : [recvlist(RList), divizor, name(Name), term(Text,Words)] ::=
+        doc(Doc,Type,V)/
+            [] : [recvlist([recv(Doc,r,Name,Text,Words) | RList])].
+
+doc(Doc,Type,V) : [recvlist(RList), divizor, level(N), recv(DDoc,TType,Name,Chars,_)] ::=
+        doc(Doc,Type,V)/
+            [] : [recvlist([recv(Doc,k,Name,Chars,From) | RList])].
+doc(Doc,Type,V) : [recvlist(RList), divizor, key, recv(DDoc,TType,Name,Chars,_)] ::=
+        doc(Doc,Type,V)/
+            [] : [recvlist([recv(Doc,k,Name,Chars,From) | RList])].
+doc(Doc,Type,V) : [recvlist(RList), divizor, recv, recv(DDoc,TType,Name,Chars,From)] ::=
+        doc(Doc,Type,V)/
+            [] : [recvlist([recv(Doc,r,Name,Chars,From) | RList])].
+doc(Doc,Type,V) : [recvlist(RList), divizor, recv(DDoc,TType,Name,Chars,From)] ::=
+        doc(Doc,Type,V)/
+            [] : [recvlist([recv(Doc,TType,Name,Chars,From) | RList])].
+
+doc(Doc,Type,V) : [recvlist(RecvList), char(Len,Mid)] ::=
+        doc(Doc,Type,V)/
+            [] : [make_, recvlist(RecvList), char(Len,Mid), none].
+doc(Doc,Type,V) : [recvlist(RecvList), digit(Len,Dec)] ::=
+        doc(Doc,Type,V)/
+            [] : [make_, recvlist(RecvList), digit(Len,Dec), none].
+doc(Doc,Type,V) : [recvlist(RecvList), date] ::=
+        doc(Doc,Type,V)/
+            [] : [make_, recvlist(RecvList), date, none].
+doc(Doc,Type,V) : [recvlist(RecvList), time] ::=
+        doc(Doc,Type,V)/
+            [] : [make_, recvlist(RecvList), time, none].
+doc(Doc,Type,V) : [recvlist(RecvList), boolean] ::=
+        doc(Doc,Type,V)/
+            [] : [make_, recvlist(RecvList), boolean, none].
+
+doc(Doc,Type,V) : [recvlist(RecvList), l_like(RRecv), f_from(DDoc,_,_)] ::=
+        doc(Doc,Type,V)/
+            [get(recv(DDoc,_,RRecv,Chars,_))] : [make_, recvlist(RecvList), Chars, none].
+
+doc(Doc,Type,V) : [recvlist(RecvList), from, recv(_,_,RRecv,_), doc(DDoc,_,TType)] ::=
+        doc(Doc,Type,V)/
+            [get(recv(DDoc,_,RRecv,Chars,_))] : [make_, recvlist(RecvList), Chars, from(Doc,TType,RRecv)].
+
+
+doc(Doc,Type,V) : [recvlist([]), f_from(DDoc,TText,TType)] ::=
+        doc(Doc,Type,V)/
+            [] : [].
+doc(Doc,Type,V) : [recvlist([recv(X1,X2,X3,Chars,_) | Rest]), f_from(DDoc,TText,TType)] ::=
+        doc(Doc,Type,V)/
+            [recv(Doc,X2,X3,Chars,from(DDoc,TType,X3))] : [recvlist(Rest), f_from(DDoc,TText,TType)].
+
+doc(Doc,Type,V) : [make_, recvlist([]), _, _] ::= doc(Doc,Type,V)/[] : [].
+
+doc(Doc,form,V) : [make_, recvlist([recv(Doc,Type,Name,Text,Words) | Rest]), Chars, From] ::=
+        doc(Doc,form,V)/
+            [recv(Doc,Type,Name,Chars,From), part(Doc,Name,V), word(Words,recv(Doc,Type,Name,Chars,From),Text), nameword(Name,recv(Doc,Type,Name,Chars,From),Text)]
+            : [make_, recvlist(Rest), Chars, From].
+doc(Doc,X1,group(V)) : [make_, recvlist([recv(Doc,Type,Name,Text,Words) | Rest]), Chars, From] ::=
+        doc(Doc,X1,group(V))/
+            [recv(Doc,Type,Name,Chars,From), group(recv,V,recv(Doc,Type,Name,Chars,From)),
+            word(Words,recv(Doc,Type,Name,Chars,From),Text), nameword(Name,recv(Doc,Type,Name,Chars,From),Text)]
+            : [make_, recvlist(Rest), Chars, From].
+doc(Doc,X1,X2) : [make_, recvlist([recv(Doc,Type,Name,Text,Words) | Rest]), Chars, From] ::=
+        doc(Doc,X1,X2)/
+            [recv(Doc,Type,Name,Chars,From), word(Words,recv(Doc,Type,Name,Chars,From),Text), nameword(Name,recv(Doc,Type,Name,Chars,From),Text)]
+            : [make_, recvlist(Rest), Chars, From].
+
+%
+%       Свертка реквизитов задач.
+%
+
+task(Task,Doc,NSI) : [dephis, group, by] ::=
+        task(Task,Doc,NSI)/
+            [] : [group([]), divizor].
+task(Task,Doc,NSI) : [group(Group), divizor, Recv] ::=
+        task(Task,Doc,NSI)/
+            [] : [group([Recv | Group])].
+task(Task,Doc,NSI) : [group(Group), point] ::=
+        task(Task,Doc,NSI)/
+            [f_task(Task,group,Group)] : [].
+
+task(Task,Doc,NSI) : [dephis, summ, by] ::=
+        task(Task,Doc,NSI)/
+            [] : [summ, divizor].
+task(Task,Doc,form(NSI,Field)) : [summ, divizor, Recv, use, NSIRecv] ::=
+        task(Task,Doc,form(NSI,Field))/
+            [f_task(Task,summ,Recv,NSIRecv)] : [summ].
+task(Task,Doc,NSI) : [summ, divizor, Recv] ::=
+        task(Task,Doc,NSI)/
+            [f_task(Task,summ,Recv)] : [summ].
+task(Task,Doc,NSI) : [summ, point] ::=
+        task(Task,Doc,NSI)/
+            [] : [].
+
+task(Task,Doc,NSI) : [dephis, parameter, by] ::=
+        task(Task,Doc,NSI)/
+            [] : [parm, divizor].
+task(Task,Doc,NSI) : [parm, divizor, Recv, interval] ::=
+        task(Task,Doc,NSI)/
+            [f_task(Task,parm,intvl,Recv)] : [parm].
+task(Task,Doc,NSI) : [parm, divizor, Recv] ::=
+        task(Task,Doc,NSI)/
+            [f_task(Task,parm,single,Recv)] : [parm].
+task(Task,Doc,NSI) : [parm, point] ::=
+        task(Task,Doc,NSI)/
+            [] : [].
+
+%
+%       Свертка лексем на уровне директив генерации.
+%
+
+        % Генерация по видам обеспечения.
+_               : [make]                 ::= make/[make(main)] : [].
+make            : [database, divizor]    ::= make/[make(database)] : [].
+make            : [database]             ::= make/[make(database)] : [mk].
+make            : [form, divizor]        ::= make/[make(form_in), make(form_out)] : [].
+make            : [form]                 ::= make/[make(form_in), make(form_out)] : [mk].
+make            : [doc, divizor]         ::= make/[make(user_doc), make(doc_oib), make(acad_doc)] : [].
+make            : [doc]                  ::= make/[make(user_doc), make(doc_oib), make(acad_doc)] : [mk].
+make            : [program, divizor]     ::= make/[make(program)] : [].
+make            : [program]              ::= make/[make(program)] : [mk].
+make            : [all]                  ::= make/[] : [doc, divizor, form, divizor, database, divizor, program].
+
+        % Генерация по АРМам.
+make            : [mk, point]                   ::= system/[make_arm(_)] : [].
+make            : [mk, arm(Name,Text), divizor] ::= make/[make_arm(Name)] : [mk].
+make            : [mk, arm(Name,Text), point]   ::= system/[make_arm(Name)] : [].
+
+

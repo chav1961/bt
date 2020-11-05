@@ -1,0 +1,82 @@
+% ---------------------------------------------------------------------------- :
+%                                                                              :
+%       Система автоматизированного проектирования программного обеспечения    :
+% для различных систем программирования с ЕЯИ-вводом.      (GSERV205)          :
+%                                                                              :
+%       Правила генерации алгоритмов в системе ORACLE/Java.                    :
+%       Правила обработки меню.                                                :
+%                                                                              :
+%       (с) 2003г, А.В.Черномырдин, (35-24-65 аб 1326).                        :
+%       Версия 1.00 от 01.03.2003.                                             :
+%                                                                              :
+% ---------------------------------------------------------------------------- :
+
+generate.
+
+        % Правила формирования меню.
+        [make(menu,Arm,Text)] : [bagof(doc(Doc1,Text1,Type1),doc(Doc1,Text1,Type1),Doc1List),
+                                 bagof(doc(Doc2,Text2,Type2,From2),doc(Doc2,Text2,Type2,From2),Doc2List),
+                                 bagof(task(Task3,Name3,From3,Type3),task(Task3,Name3,From3,Type3),Task3List),
+                                 bagof(task(Task4,Name4,From4,graphic),task(Task4,Name4,From4,graphic),Task4List),
+                                 get(system(SName,STxt))] ::=
+                [file($.\target\picture\$,SName,txt),
+                 $1M main 10 10 B/W,N/G,,N/W Головное меню АРМа $, txt(Text), nl,
+                 $2M enter 12 12 B/W,N/G,,N/W,N/W Документы$, nl,
+%                 make_menu1(Doc1List,Arm),
+                 $3C SEPARATOR Комментарий$, nl,
+ %                make_menu2(Doc2List,Arm),
+                 $3C SEPARATOR Комментарий$, nl,
+  %               algo(menu1,Arm),
+                 $3C SEPARATOR Комментарий$, nl,
+                 $3C setup Настройка системы$, nl,
+                 $3C nsiEdit Работа со справочниками$, nl,
+                 $3C SEPARATOR КОмментарий$, nl,
+                 $3C showTaskPanel Панель задач  ^T$, nl,
+                 $3C showLRUPanel Последние...   ALt+Enter$, nl,
+                 $3C SEPARATOR КОмментарий$, nl,
+                 $3C exitProgram Выход  Alt+F4$, nl,
+                 $2M tasks 12 12 B/W,N/G,,N/W,N/W Задачи$, nl,
+   %              make_menu3(Task3List,Arm),
+                 $3C SEPARATOR Комментарий$, nl,
+    %             make_menu4(Task4List,Arm),
+                 $3C SEPARATOR Комментарий$, nl,
+     %            algo(menu2,Arm),
+                 $2M modes 12 12 B/W,N/G,,N/W,N/W Окна$, nl,
+      %           algo(menu4,Arm),
+                 $3C SEPARATOR Комментарий$, nl,
+                 $2M modes 12 12 B/W,N/G,,N/W,N/W Справка$, nl,
+                 $3C about О программе...$, nl,
+                 $1M$
+                ].
+        [make(menu,Arm,Text)] ::= [].
+
+
+        % Первая группа меню.
+        [make_menu1([],_)] ::= [].
+[access(Arm,Doc,_), not(under(_,Doc))] ??
+        [make_menu1([doc(Doc,Name,oper) | T],Arm)] ::=
+                [$3C $, txt(Doc), $ $, txt(Name), nl, make_menu1(T,Arm)].
+        [make_menu1([_ | T],Arm)] ::= [make_menu1(T,Arm)].
+
+        % Вторая группа меню.
+        [make_menu2([],_)] ::= [].
+[access(Arm,Doc,_)] ??
+        [make_menu2([doc(Rq,Name,oper,Doc) | T],Arm)] ::=
+                [$3C $, txt(Rq), $ $, txt(Name), nl, make_menu2(T,Arm)].
+        [make_menu2([_ | T],Arm)] ::= [make_menu2(T,Arm)].
+
+        % Третья группа меню.
+        [make_menu3([],_)] ::= [].
+        [make_menu3([task(Task,Name,_,graphic) | T],Arm)] ::= [make_menu3(T,Arm)].
+[access(Arm,Task)] ??
+        [make_menu3([task(Task,Name,_,_) | T],Arm)] ::=
+                [$3C $, txt(Task), $ $, txt(Name), nl, make_menu3(T,Arm)].
+        [make_menu3([_ | T],Arm)] ::= [make_menu3(T,Arm)].
+
+        % Четвертая группа меню.
+        [make_menu4([],_)] ::= [].
+[access(Arm,Task)] ??
+        [make_menu4([task(Task,Name,_,_) | T],Arm)] ::=
+                [$3C $, txt(Task), $ $, txt(Name), nl, make_menu4(T,Arm)].
+        [make_menu4([_ | T],Arm)] ::= [make_menu4(T,Arm)].
+

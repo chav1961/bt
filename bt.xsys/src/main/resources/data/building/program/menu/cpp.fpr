@@ -1,0 +1,446 @@
+% ---------------------------------------------------------------------------- :
+%                                                                              :
+%       Система автоматизированного проектирования программного обеспечения    :
+% для различных систем программирования с ЕЯИ-вводом.      (GSERV205)          :
+%                                                                              :
+%       Правила генерации программ в среде Window-95/Microsoft C++.            :
+%       Общая часть.                                                           :
+%                                                                              :
+%                                                                              :
+%       (с) 2000г, А.В.Черномырдин, (3513-35-24-65 аб 1326).                   :
+%       Версия 1.00 от 01.04.2000.                                             :
+%                                                                              :
+% ---------------------------------------------------------------------------- :
+
+generate.
+
+% ---------------------------------------------------------------------------- :
+%                                                                              :
+%       Правила генерации головного окна системы.                              :
+%                                                                              :
+% ---------------------------------------------------------------------------- :
+
+[ctr_set(10,1000)] ??
+        [make_main_module(Sys,Text)] : [bagof(doc(Doc,Name),doc(Doc,Name,oper),DocList), bagof(task(Task,TName,TDoc,Type),task(Task,TName,TDoc,Type),TaskList)] ::=
+                [$//$, nl, $//$, nl, $//$, tab, $Головное окно системы.$, nl, $//$, nl, $//$, 2 * nl,
+                 make_main_doc(Sys,Text,DocList),
+                 make_main_task(Sys,Text,TaskList),
+                 make_main_advanced(Sys,Text),
+                 make_main_advanced(Sys,Text,DocList),
+                 make_main_advanced(Sys,Text,TaskList),
+                 make_main_app(Sys,Text)
+                ].
+
+                % Обработка НЕ-подчиненных документов.
+        [make_main_doc(_,_,[])] ::= [].
+[under(_,Doc)] ??
+        [make_main_doc(Sys,Text,[doc(Doc,Name) | T])] ::=
+                [make_main_doc(Sys,Text,T)].
+        [make_main_doc(Sys,Text,[doc(Doc,Name) | T])] : bagof(under(List),under(Doc,List),UnderList) ::=
+                [$afx_msg void $, txt(Sys), $_Window::$, txt(Sys), $_$, txt(Doc), $()$, nl,
+                tab, $// Работа с документом "$, txt(Name), $".$, nl,
+                ${$, tab, $if (!Activated)$, tab, $// Защита от двойного открытия.$, nl,
+                2 * tab, ${Activated = true;$, nl,
+                2 * tab, $MK_CLIENT($, txt(Doc), $_W,"$, txt(Name), $","$, txt(Sys), $_$, txt(Doc), $",$, txt(Doc), $_T,$, txt(Doc), $_Win,"$, txt(Doc), $.TABLE","$, txt(Doc), $",$, txt(Doc), $_ID)$, nl,
+                2 * tab, txt(Doc), $_T->Parent = this;$, 2 * nl,
+                make_main_subdoc(Sys,Text,UnderList),
+                2 * tab, $MDIActivate($, txt(Doc), $_W);$, nl,
+                2 * tab, $};$, nl,
+                $}$, 2 * nl,
+                make_main_doc(Sys,Text,T)
+                ].
+
+        [make_main_subdoc(_,_,[])] ::= [].
+        [make_main_subdoc(Sys,Text,[under(Doc) | T])] : [bagof(under(List),under(Doc,List),UnderList), get(doc(Doc,Name,_))] ::=
+                [2 * tab, $MK_CHILDCLIENT($, txt(Doc), $_W,"$, txt(Name), $","$, txt(Sys), $_$, txt(Doc), $",$, txt(Doc), $_T,$, txt(Doc), $_Win,"$, txt(Doc), $.TABLE","$, txt(Doc), $",$, txt(Doc), $_ID,"*** between ? and ?")$, nl,
+                 2 * tab, txt(Doc), $_T->Parent = this;$, nl,
+                 make_main_subdoc(Sys,Text,UnderList),
+                 make_main_subdoc(Sys,Text,T)
+                ].
+
+
+                % Формирование задач.
+        [make_main_task(_,_,[])] ::= [].
+        [make_main_task(Sys,Text,[task(Task,TName,TDoc,form) | T])] ::=
+                [$afx_msg void $, txt(Sys), $_Window::$, txt(Sys), $_$, txt(Task), $()$, nl,
+                 tab, $// $, txt(TName), nl,
+                 ${$, txt(Task), tab, $T;$, nl,
+                 make_main_task_param(Sys,Text,Task), nl,
+                 tab, $if (USER_Dialog(this,"$, txt(TName), $",MB_ICONEXCLAMATION$, make_main_task_ask(Sys,Text,Task), $) == IDOK)$, nl,
+                 2 * tab, ${T.SetFilter("$, txt(TDoc), $","select * from $, make_main_task_tables(Sys,Text,Task,TDoc), $ where $, make_main_task_cond(Sys,Text,Task,TDoc), make_main_task_filter(Sys,Text,Task),  $"$, make_main_task_subst(Sys,Text,Task), $);$, nl,
+                 2 * tab, $T.SetGroup("$, make_main_task_group(Sys,Text,Task), $");$, nl,
+                 2 * tab, $T.TaskMode = 0; T.Process("$, txt(TName), $ - шаг 1"); T.Close();$, 2 * nl,
+                 2 * tab, $T.SetFilter("$, txt(TDoc), $","select * from $, make_main_task_tables(Sys,Text,Task,TDoc), $ where $, make_main_task_cond(Sys,Text,Task,TDoc), make_main_task_filter(Sys,Text,Task),  $"$, make_main_task_subst(Sys,Text,Task), $);$, 2 * nl,
+                 2 * tab, $T.SetGroup("$, make_main_task_group(Sys,Text,Task), $");$, nl,
+                 2 * tab, $T.PP.Prepare("$, txt(Task), $",62,"ks,page,zs",NULL);$, nl,
+                 2 * tab, $T.PP << "zd";$, nl,
+                 2 * tab, $T.TaskMode = 1; T.Process("$, txt(TName), $ - шаг 1"); T.Close();$, nl,
+                 2 * tab, $T.PP << "kd";$, tab, $T.Close();$, nl,
+                 2 * tab, $T.PP.Close();$, tab, $T.PP.ShowFile();$, nl,
+                 2 * tab, $};$, nl,
+                 $}$, 2 * nl,
+                 make_main_task(Sys,Text,T)
+                ].
+        [make_main_task(Sys,Text,[task(Task,TName,TDoc,form(NSI,Def)) | T])] ::=
+                [$!!!ERROR!!!$, nl,
+                 make_main_task(Sys,Text,T)
+                ].
+
+
+                % Формирование рабочих переменных.
+        [make_main_task_param(Sys,Text,Task)] : bagof(f_task(Type,Recv),f_task(Task,parm,Type,Recv),RecvList) ::=
+                [make_main_task_param(Sys,Text,Task,RecvList)
+                ].
+
+        [make_main_task_param(_,_,_,[])] ::= [].
+        [make_main_task_param(Sys,Text,Task,[f_task(single,recv(_,_,Recv,char(Len,_),_)) | T])] ::=
+                [$DEF_FIELD(_$, txt(Recv), $,DT_Char,$, Len, $)$, nl,
+                 make_main_task_param(Sys,Text,Task,T)
+                ].
+        [make_main_task_param(Sys,Text,Task,[f_task(intvl,recv(_,_,Recv,char(Len,_),_)) | T])] ::=
+                [$DEF_FIELD(_1$, txt(Recv), $,DT_Char,$, Len, $)$, tab, $DEF_FIELD(_2$, txt(Recv), $,DT_Char,$, Len, $)$, nl,
+                 make_main_task_param(Sys,Text,Task,T)
+                ].
+        [make_main_task_param(Sys,Text,Task,[f_task(single,recv(_,_,Recv,digit(_,_),_)) | T])] ::=
+                [$DEF_FIELD(_$, txt(Recv), $,DT_Number,sizeof(double))$, nl,
+                 make_main_task_param(Sys,Text,Task,T)
+                ].
+        [make_main_task_param(Sys,Text,Task,[f_task(intvl,recv(_,_,Recv,digit(_,_),_)) | T])] ::=
+                [$DEF_FIELD(_1$, txt(Recv), $,DT_Number,sizeof(double))$, tab, $DEF_FIELD(_2$, txt(Recv), $,DT_Number,sizeof(double))$, nl,
+                 make_main_task_param(Sys,Text,Task,T)
+                ].
+        [make_main_task_param(Sys,Text,Task,[f_task(single,recv(_,_,Recv,date,_)) | T])] ::=
+                [$DEF_FIELD(_$, txt(Recv), $,DT_Date,sizeof(SYSTEMTIME))$, nl,
+                 make_main_task_param(Sys,Text,Task,T)
+                ].
+        [make_main_task_param(Sys,Text,Task,[f_task(intvl,recv(_,_,Recv,date,_)) | T])] ::=
+                [$DEF_FIELD(_1$, txt(Recv), $,DT_Date,sizeof(SYSTEMTIME))$, tab, $DEF_FIELD(_2$, txt(Recv), $,DT_Date,sizeof(SYSTEMTIME))$, nl,
+                 make_main_task_param(Sys,Text,Task,T)
+                ].
+        [make_main_task_param(Sys,Text,Task,[f_task(single,recv(_,_,Recv,time,_)) | T])] ::=
+                [$DEF_FIELD(_$, txt(Recv), $,DT_Time,sizeof(SYSTEMTIME))$, nl,
+                 make_main_task_param(Sys,Text,Task,T)
+                ].
+        [make_main_task_param(Sys,Text,Task,[f_task(intvl,recv(_,_,Recv,time,_)) | T])] ::=
+                [$DEF_FIELD(_1$, txt(Recv), $,DT_Time,sizeof(SYSTEMTIME))$, tab, $DEF_FIELD(_2$, txt(Recv), $,DT_Time,sizeof(SYSTEMTIME))$, nl,
+                 make_main_task_param(Sys,Text,Task,T)
+                ].
+        [make_main_task_param(Sys,Text,Task,[f_task(single,recv(_,_,Recv,boolean,_)) | T])] ::=
+                [$DEF_FIELD(_$, txt(Recv), $,DT_Bool,sizeof(bool))$, nl,
+                 make_main_task_param(Sys,Text,Task,T)
+                ].
+        [make_main_task_param(Sys,Text,Task,[f_task(intvl,recv(_,_,Recv,boolean,_)) | T])] ::=
+                [$DEF_FIELD(_1$, txt(Recv), $,DT_Bool,sizeof(bool))$, tab, $DEF_FIELD(_2$, txt(Recv), $,DT_Bool,sizeof(bool))$, nl,
+                 make_main_task_param(Sys,Text,Task,T)
+                ].
+
+
+                % Формирование запроса параметров.
+        [make_main_task_ask(Sys,Text,Task)] : bagof(f_task(Type,Recv),f_task(Task,parm,Type,Recv),RecvList) ::=
+                [make_main_task_ask(Sys,Text,Task,RecvList)
+                ].
+
+        [make_main_task_ask(_,_,_,[])] ::= [].
+        [make_main_task_ask(Sys,Text,Task,[f_task(single,recv(Doc,_,Recv,char(Len,_),_)) | T])] : get(nameword(Recv,recv(Doc,_,Recv,_,_),RName)) ::=
+                [$,AD_Edit("_$, txt(Recv), $","$, txt(RName), $","")$,
+                 make_main_task_ask(Sys,Text,Task,T)
+                ].
+        [make_main_task_ask(Sys,Text,Task,[f_task(intvl,recv(Doc,_,Recv,char(Len,_),_)) | T])] : get(nameword(Recv,recv(Doc,_,Recv,_,_),RName)) ::=
+                [$,AD_Edit("_1$, txt(Recv), $","$, txt(RName), $ - от","")$,
+                 $,AD_Edit("_2$, txt(Recv), $","$, txt(RName), $ - до","")$,
+                 make_main_task_ask(Sys,Text,Task,T)
+                ].
+        [make_main_task_ask(Sys,Text,Task,[f_task(single,recv(Doc,_,Recv,digit(Len,_),_)) | T])] : get(nameword(Recv,recv(Doc,_,Recv,_,_),RName)) ::=
+                [$,AD_Edit("_$, txt(Recv), $","$, txt(RName), $","0.00")$,
+                 make_main_task_ask(Sys,Text,Task,T)
+                ].
+        [make_main_task_ask(Sys,Text,Task,[f_task(intvl,recv(Doc,_,Recv,digit(Len,_),_)) | T])] : get(nameword(Recv,recv(Doc,_,Recv,_,_),RName)) ::=
+                [$,AD_Edit("_1$, txt(Recv), $","$, txt(RName), $ - от","0.00")$,
+                 $,AD_Edit("_2$, txt(Recv), $","$, txt(RName), $ - до","0.00")$,
+                 make_main_task_ask(Sys,Text,Task,T)
+                ].
+        [make_main_task_ask(Sys,Text,Task,[f_task(single,recv(Doc,_,Recv,date,_)) | T])] : get(nameword(Recv,recv(Doc,_,Recv,_,_),RName)) ::=
+                [$,AD_Calendar("_$, txt(Recv), $","$, txt(RName), $","Today()")$,
+                 make_main_task_ask(Sys,Text,Task,T)
+                ].
+        [make_main_task_ask(Sys,Text,Task,[f_task(intvl,recv(Doc,_,Recv,date,_)) | T])] : get(nameword(Recv,recv(Doc,_,Recv,_,_),RName)) ::=
+                [$,AD_Calendar("_1$, txt(Recv), $","_2$, txt(Recv), $","Диапазон - $, txt(RName), $","FirstDay(Today())","LastDay(Today())")$,
+                 make_main_task_ask(Sys,Text,Task,T)
+                ].
+        [make_main_task_ask(Sys,Text,Task,[f_task(single,recv(Doc,_,Recv,time,_)) | T])] : get(nameword(Recv,recv(Doc,_,Recv,_,_),RName)) ::=
+                [$,AD_Edit("_$, txt(Recv), $","$, txt(RName), $","0.00")$,
+                 make_main_task_ask(Sys,Text,Task,T)
+                ].
+        [make_main_task_ask(Sys,Text,Task,[f_task(intvl,recv(Doc,_,Recv,time,_)) | T])] : get(nameword(Recv,recv(Doc,_,Recv,_,_),RName)) ::=
+                [$,AD_Edit("_1$, txt(Recv), $","$, txt(RName), $ - от","12.00")$,
+                 $,AD_Edit("_2$, txt(Recv), $","$, txt(RName), $ - до","12.00")$,
+                 make_main_task_ask(Sys,Text,Task,T)
+                ].
+        [make_main_task_ask(Sys,Text,Task,[f_task(single,recv(Doc,_,Recv,boolean,_)) | T])] : get(nameword(Recv,recv(Doc,_,Recv,_,_),RName)) ::=
+                [$,AD_CheckBox("_$, txt(Recv), $","$, txt(RName), $","0")$,
+                 make_main_task_ask(Sys,Text,Task,T)
+                ].
+        [make_main_task_ask(Sys,Text,Task,[f_task(intvl,recv(Doc,_,Recv,boolean,_)) | T])] : get(nameword(Recv,recv(Doc,_,Recv,_,_),RName)) ::=
+                [$,AD_CheckBox("_1$, txt(Recv), $","$, txt(RName), $ - от","0")$,
+                 $,AD_CheckBox("_2$, txt(Recv), $","$, txt(RName), $ - до","1")$,
+                 make_main_task_ask(Sys,Text,Task,T)
+                ].
+
+
+                % Формирование списка таблиц для задачи.
+        [make_main_task_tables(Sys,Text,Task,Form)] : get(f_group(Form,List)) ::=
+                [make_main_task_tables(Sys,Text,Task,List,$$)
+                ].
+
+        [make_main_task_tables(_,_,_,[],_)] ::= [].
+        [make_main_task_tables(Sys,Text,Task,[Base | T],Prefix)] ::=
+                [txt(Prefix), txt(Base),
+                 make_main_task_tables(Sys,Text,Task,T,$,$)
+                ].
+
+
+                % Формирование стыковки таблиц.
+        [make_main_task_cond(Sys,Text,Task,Form)] : bagof(link(Doc1,Doc,Recv),link(Form,Doc1,Doc2,Recv),LinkList) ::=
+                [make_main_task_cond(Sys,Text,Task,LinkList,$$)
+                ].
+
+        [make_main_task_cond(_,_,_,[],_)] ::= [].
+        [make_main_task_cond(Sys,Text,Task,[link(_,_,[]) | T],Prefix)] ::=
+                [make_main_task_cond(Sys,Text,Task,T,Prefix)
+                ].
+        [make_main_task_cond(Sys,Text,Task,[link(Doc1,Doc2,[recv(_,_,Recv,_,_) | T1]) | T2],Prefix)] ::=
+                [txt(Prefix), txt(Doc1), $.$, txt(Recv), $=$, txt(Doc2), $.$, txt(Recv),
+                 make_main_task_cond(Sys,Text,Task,[link(Doc1,Doc2,T1) | T2],$ and $)
+                ].
+
+
+                % Формирование фильтра по параметрам.
+        [make_main_task_filter(Sys,Text,Task)] : bagof(f_task(Type,Recv),f_task(Task,parm,Type,Recv),RecvList) ::=
+                [make_main_task_filter(Sys,Text,Task,RecvList,$$)
+                ].
+
+        [make_main_task_filter(_,_,_,[],_)] ::= [].
+        [make_main_task_filter(Sys,Text,Task,[f_task(single,recv(Doc,_,Name,char(_,_),_)) | T],Prefix)] ::=
+                [txt(Prefix), txt(Doc), $.$, txt(Name), $ = \"%s\"$,
+                 make_main_task_filter(Sys,Text,Task,T,$ and $)
+                ].
+        [make_main_task_filter(Sys,Text,Task,[f_task(intvl,recv(Doc,_,Name,char(_,_),_)) | T],Prefix)] ::=
+                [txt(Prefix), txt(Doc), $.$, txt(Name), $ between \"%s\" and \"%s\"$,
+                 make_main_task_filter(Sys,Text,Task,T,$ and $)
+                ].
+        [make_main_task_filter(Sys,Text,Task,[f_task(single,recv(Doc,_,Name,digit(_,0),_)) | T],Prefix)] ::=
+                [txt(Prefix), txt(Doc), $.$, txt(Name), $ = %d$,
+                 make_main_task_filter(Sys,Text,Task,T,$ and $)
+                ].
+        [make_main_task_filter(Sys,Text,Task,[f_task(intvl,recv(Doc,_,Name,digit(_,0),_)) | T],Prefix)] ::=
+                [txt(Prefix), txt(Doc), $.$, txt(Name), $ between %d and %d$,
+                 make_main_task_filter(Sys,Text,Task,T,$ and $)
+                ].
+        [make_main_task_filter(Sys,Text,Task,[f_task(single,recv(Doc,_,Name,digit(_,_),_)) | T],Prefix)] ::=
+                [txt(Prefix), txt(Doc), $.$, txt(Name), $ = %f$,
+                 make_main_task_filter(Sys,Text,Task,T,$ and $)
+                ].
+        [make_main_task_filter(Sys,Text,Task,[f_task(intvl,recv(Doc,_,Name,digit(_,_),_)) | T],Prefix)] ::=
+                [txt(Prefix), txt(Doc), $.$, txt(Name), $ between %f and %f$,
+                 make_main_task_filter(Sys,Text,Task,T,$ and $)
+                ].
+        [make_main_task_filter(Sys,Text,Task,[f_task(single,recv(Doc,_,Name,date,_)) | T],Prefix)] ::=
+                [txt(Prefix), txt(Doc), $.$, txt(Name), $ = DateValue(\"%s\")$,
+                 make_main_task_filter(Sys,Text,Task,T,$ and $)
+                ].
+        [make_main_task_filter(Sys,Text,Task,[f_task(intvl,recv(Doc,_,Name,date,_)) | T],Prefix)] ::=
+                [txt(Prefix), txt(Doc), $.$, txt(Name), $ between DateValue(\"%s\") and DateValue(\"%s\")$,
+                 make_main_task_filter(Sys,Text,Task,T,$ and $)
+                ].
+        [make_main_task_filter(Sys,Text,Task,[f_task(single,recv(Doc,_,Name,time,_)) | T],Prefix)] ::=
+                [txt(Prefix), txt(Doc), $.$, txt(Name), $ = \"%s\"$,
+                 make_main_task_filter(Sys,Text,Task,T,$ and $)
+                ].
+        [make_main_task_filter(Sys,Text,Task,[f_task(intvl,recv(Doc,_,Name,time,_)) | T],Prefix)] ::=
+                [txt(Prefix), txt(Doc), $.$, txt(Name), $ between \"%s\" and \"%s\"$,
+                 make_main_task_filter(Sys,Text,Task,T,$ and $)
+                ].
+        [make_main_task_filter(Sys,Text,Task,[f_task(single,recv(Doc,_,Name,boolean,_)) | T],Prefix)] ::=
+                [txt(Prefix), $ %s $, txt(Doc), $.$, txt(Name),
+                 make_main_task_filter(Sys,Text,Task,T,$ and $)
+                ].
+        [make_main_task_filter(Sys,Text,Task,[f_task(intvl,recv(Doc,_,Name,boolean,_)) | T],Prefix)] ::=
+                [txt(Prefix), $ %s $, txt(Doc), $.$, txt(Name),
+                 make_main_task_filter(Sys,Text,Task,T,$ and $)
+                ].
+
+
+                % Формирование ответной части фильтра по параметрам.
+        [make_main_task_subst(Sys,Text,Task)] : bagof(f_task(Type,Recv),f_task(Task,parm,Type,Recv),RecvList) ::=
+                [make_main_task_subst(Sys,Text,Task,RecvList,$,$)
+                ].
+
+        [make_main_task_subst(_,_,_,[],_)] ::= [].
+        [make_main_task_subst(Sys,Text,Task,[f_task(single,recv(Doc,_,Name,char(_,_),_)) | T],Prefix)] ::=
+                [txt(Prefix), $(LPSTR)_$, txt(Name),
+                 make_main_task_subst(Sys,Text,Task,T,$,$)
+                ].
+        [make_main_task_subst(Sys,Text,Task,[f_task(intvl,recv(Doc,_,Name,char(_,_),_)) | T],Prefix)] ::=
+                [txt(Prefix), $(LPSTR)_1$, txt(Name), $,(LPSTR)_2$, txt(Name),
+                 make_main_task_subst(Sys,Text,Task,T,$,$)
+                ].
+        [make_main_task_subst(Sys,Text,Task,[f_task(single,recv(Doc,_,Name,digit(_,0),_)) | T],Prefix)] ::=
+                [txt(Prefix), $(long)_$, txt(Name),
+                 make_main_task_subst(Sys,Text,Task,T,$,$)
+                ].
+        [make_main_task_subst(Sys,Text,Task,[f_task(intvl,recv(Doc,_,Name,digit(_,0),_)) | T],Prefix)] ::=
+                [txt(Prefix), $(long)_1$, txt(Name), $,(long)_2$, txt(Name),
+                 make_main_task_subst(Sys,Text,Task,T,$,$)
+                ].
+        [make_main_task_subst(Sys,Text,Task,[f_task(single,recv(Doc,_,Name,digit(_,_),_)) | T],Prefix)] ::=
+                [txt(Prefix), $(double)_$, txt(Name),
+                 make_main_task_subst(Sys,Text,Task,T,$,$)
+                ].
+        [make_main_task_subst(Sys,Text,Task,[f_task(intvl,recv(Doc,_,Name,digit(_,_),_)) | T],Prefix)] ::=
+                [txt(Prefix), $(double)_1$, txt(Name), $,(double)_2$, txt(Name),
+                 make_main_task_subst(Sys,Text,Task,T,$,$)
+                ].
+        [make_main_task_subst(Sys,Text,Task,[f_task(single,recv(Doc,_,Name,date,_)) | T],Prefix)] ::=
+                [txt(Prefix), $(LPSTR)_$, txt(Name),
+                 make_main_task_subst(Sys,Text,Task,T,$,$)
+                ].
+        [make_main_task_subst(Sys,Text,Task,[f_task(intvl,recv(Doc,_,Name,date,_)) | T],Prefix)] ::=
+                [txt(Prefix), $(LPSTR)_1$, txt(Name), $,(LPSTR)_2$, txt(Name),
+                 make_main_task_subst(Sys,Text,Task,T,$,$)
+                ].
+        [make_main_task_subst(Sys,Text,Task,[f_task(single,recv(Doc,_,Name,time,_)) | T],Prefix)] ::=
+                [txt(Prefix), $(LPSTR)_$, txt(Name),
+                 make_main_task_subst(Sys,Text,Task,T,$,$)
+                ].
+        [make_main_task_subst(Sys,Text,Task,[f_task(intvl,recv(Doc,_,Name,time,_)) | T],Prefix)] ::=
+                [txt(Prefix), $(LPSTR)_1$, txt(Name), $,(LPSTR)_2$, txt(Name),
+                 make_main_task_subst(Sys,Text,Task,T,$,$)
+                ].
+        [make_main_task_subst(Sys,Text,Task,[f_task(_,recv(Doc,_,Name,time,_)) | T],Prefix)] ::=
+                [txt(Prefix), $(_1$, txt(Name), $ ? "" : " not ")$,
+                 make_main_task_subst(Sys,Text,Task,T,$,$)
+                ].
+
+
+                % Формирование группировочной части.
+        [make_main_task_group(Sys,Text,Task)] : bagof(f_task(RecvList),f_task(Task,group,RecvList),GroupList) ::=
+                [make_main_task_group(Sys,Text,Task,GroupList,$$)
+                ].
+
+        [make_main_task_group(_,_,_,[],_)] ::= [].
+        [make_main_task_group(Sys,Text,Task,[f_task([]) | T],Prefix)] ::=
+                [make_main_task_group(Sys,Text,Task,T,Prefix)].
+        [make_main_task_group(Sys,Text,Task,[f_task([recv(_,_,Name,_,_) | T1]) | T2],Prefix)] ::=
+                [txt(Prefix), txt(Name),
+                 make_main_task_group(Sys,Text,Task,[f_task(T1) | T2],$,$)
+                ].
+
+
+                % Дополнительные процедуры.
+        [make_main_advanced(Sys,Text)] ::=
+                [$afx_msg void $, txt(Sys), $_Window::About()$,
+                 tab , $// Справка "О программе"$, nl,
+                 ${CDialog$, tab, $About("$, txt(Sys), $_ABOUT",this);$, 2 * nl,
+                 tab, $About.DoModal();$, nl,
+                 $}$, 2 * nl,
+                 $afx_msg void $, txt(Sys), $_Window::OnAdmSetup()$, nl,
+                 tab, $// Настройка системы.$, nl,
+                 ${H_PARM_Cadre$, tab, $SW("Настройка",this,"SETUP");$, 2 * nl,
+                 tab, $SW.DoModal();$, nl,
+                 $}$, 2 * nl,
+                 $afx_msg void $, txt(Sys), $_Window::OnAdmDiagnostics()$, nl,
+                 tab, $// Диагностика системы.$, nl,
+                 ${$, tab, $if (::MessageBox(m_hWnd,"Подтвердите запрос на диагностику БД !","ВНИМАНИЕ !",MB_YESNO|MB_ICONQUESTION) == IDYES)$, nl,
+                 2 * tab, $MakeDiagnostics(this);$, nl,
+                 $}$, 2 * nl,
+                 $afx_msg void $, txt(Sys), $_Window::OnClose(){CloseWindows();}$, nl,
+                 tab, $// Завершение работы с окном.$, 2 * nl,
+                 $void $, txt(Sys), $_Window::Prepare()$, nl,
+                 tab, $// Подготовка органов управления окна.$, nl,
+                 ${$, tab, $Activated = false;$, nl,
+                 $}$, 2 * nl,
+                 make_main_advanced_cw(Sys,Text),
+                 make_main_advanced_bmm(Sys,Text)
+                ].
+
+
+                % Хитрое закрытие окон.
+        [make_main_advanced_cw(Sys,Text)] : bagof(doc(Doc,Name),doc(Doc,Name,oper),DocList) ::=
+                [$afx_msg void $, txt(Sys), $_Window::CloseWindows(bool Full)$, nl,
+                 tab, $// Закрыть список данных.$, nl,
+                 ${$, tab, $if (Activated)$, nl,
+                 2 * tab, ${Activated = false;$, nl,
+                 make_main_advanced_cw(Sys,Text,DocList),
+                 2 * tab, $};$, nl,
+                 $}$, 2 * nl
+                ].
+
+        [make_main_advanced_cw(_,_,[])] ::= [].
+[under(_,Doc)] ??
+        [make_main_advanced_cw(Sys,Text,[doc(Doc,Name) | T])] ::=
+                [2 * tab, $if ($, txt(Doc), $_W != NULL && ::IsWindow($, txt(Doc), $_W->m_hWnd)) $, txt(Doc), $_W->DestroyWindow();$, tab, txt(Doc), $_W = NULL;$, nl,
+                 make_main_advanced_cw(Sys,Text,T)
+                ].
+        [make_main_advanced_cw(Sys,Text,[doc(Doc,Name) | T])] ::=
+                [2 * tab, $if (Full && $, txt(Doc), $_W != NULL && ::IsWindow($, txt(Doc), $_W->m_hWnd)) $, txt(Doc), $_W->DestroyWindow();$, tab, txt(Doc), $_W = NULL;$, nl,
+                 make_main_advanced_cw(Sys,Text,T)
+                ].
+
+                % Генерация переназначений для сообщений.
+        [make_main_advanced_bmm(Sys,Text)] : [bagof(doc(Doc,Name),doc(Doc,Name,oper),DocList), bagof(task(Task,TName,TDoc,Type),task(Task,TName,TDoc,Type),TaskList)] ::=
+                [$BEGIN_MESSAGE_MAP($, txt(Sys), $_Window,MainWindow)$, nl,
+                 tab, $ON_WM_CLOSE()$, nl,
+                 make_main_advanced_bmm(Sys,Text,DocList),
+                 make_main_advanced_bmm(Sys,Text,TaskList),
+                 tab, $ON_COMMAND(ID_ABOUT,About)$, nl,
+                 tab, $ON_COMMAND(ID_CLOSE_WINDOWS,CloseWindows)$, nl,
+                 $END_MESSAGE_MAP()$, 2 * nl
+                ].
+
+        [make_main_advanced_bmm(_,_,[])] ::= [].
+[under(_,Doc)] ??
+        [make_main_advanced_bmm(Sys,Text,[doc(Doc,Name) | T])] ::=
+                [make_main_advanced_bmm(Sys,Text,T)].
+        [make_main_advanced_bmm(Sys,Text,[doc(Doc,Name) | T])] ::=
+                [tab, $ON_COMMAND(ID_$, txt(Doc), $,$, txt(Sys), $_$, txt(Doc), $)$, nl,
+                 make_main_advanced_bmm(Sys,Text,T)
+                ].
+        [make_main_advanced_bmm(Sys,Text,[task(Task,Name,Doc,Type) | T])] ::=
+                [tab, $ON_COMMAND(ID_$, txt(Task), $,$, txt(Sys), $_$, txt(Task), $)$, nl,
+                 make_main_advanced_bmm(Sys,Text,T)
+                ].
+
+
+                % Завершение работы с окнами и задачами.
+        [make_main_advanced(Sys,Text,[])] ::= [].
+        [make_main_advanced(Sys,Text,[_ | T])] ::=
+                [make_main_advanced(Sys,Text,T)].
+
+% ---------------------------------------------------------------------------- :
+%                                                                              :
+%       Правила генерации приложения системы.                                  :
+%                                                                              :
+% ---------------------------------------------------------------------------- :
+
+        [make_main_app(Sys,Text)] ::=
+                [$//$, nl, $//$, nl, $//$, tab, $Класс приложения системы.$, nl, $//$, nl, $//$, 2 * nl,
+                 $BOOL $, txt(Sys), $_Application::InitInstance()$, nl,
+                 tab, $// Инициализация приложения системы.$, nl,
+                 ${ConnectScreen$, tab, $CS;$, 2 * nl,
+                 tab, $MainApp::InitInstance();$, 2 * nl,
+                 tab, $if (m_lpCmdLine[0] != '\0')$, nl,
+                 2 * tab, ${// Обработка командной строки.$, nl,
+                 2 * tab, $};$, 2 * nl,
+                 tab, $CS.Create(NULL);$, nl,
+                 tab, $if (CS.DoModal() == IDOK)$, nl,
+                 2 * tab, ${m_pMainWnd$, tab, $= new $, txt(Sys), $_Window(NULL,"(c) 2000 А.В.Черномырдин, $, txt(Text), $V.R.=1.00 от 01.01.2000г.","$, txt(Sys), $_MENU");$, nl,
+                 2 * tab, $m_pMainWnd->ShowWindow(SW_SHOWMAXIMIZED);$, nl,
+                 2 * tab, $m_pMainWnd->UpdateWindow();$, 2 * nl,
+                 2 * tab, $(($, txt(Sys), $_Window *)m_pMainWnd)->TB = new $, txt(Sys), $_DropCtrl(m_pMainWnd,"$, txt(Sys), $_TOOLS");$, 2 * nl,
+                 2 * tab, $return$, tab, $TRUE;$, nl,
+                 2 * tab, $}$, nl,
+                 tab, $else return FALSE;$, 2 * nl,
+                 $}$, 2 * nl,
+                 txt(Sys), $_Application$, tab, $App;$, nl
+                ].
+

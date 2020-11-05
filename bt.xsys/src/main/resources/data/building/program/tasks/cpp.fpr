@@ -1,0 +1,175 @@
+% ---------------------------------------------------------------------------- :
+%                                                                              :
+%       Система автоматизированного проектирования программного обеспечения    :
+% для различных систем программирования с ЕЯИ-вводом.      (GSERV204)          :
+%                                                                              :
+%       Правила генерации программ ввода-корректировки на Clipper.             :
+%       Подсистема решения функциональных зодачь.                              :
+%                                                                              :
+%       (с) 1995г, А.В.Черномырдин, (3511-37-83-26).                           :
+%       Версия 2.00 от 01.05.95.                                               :
+%                                                                              :
+% ---------------------------------------------------------------------------- :
+
+generate.
+
+% ---------------------------------------------------------------------------- :
+%                                                                              :
+%       Правила генерации описания функциональных задач.                       :
+%                                                                              :
+% ---------------------------------------------------------------------------- :
+
+        % Правила построения функциональных задач.
+        [hdr_taskclasslist(Sys,SysName)] : bagof(task(Task,Name,Doc,Type),task(Task,Name,Doc,Type),TaskList) ::=
+                [hdr_taskclasslist(Sys,SysName,TaskList)].
+
+        % Правила позадачной генерации.
+        [hdr_taskclasslist(_,_,[])] ::= [].
+
+        [hdr_taskclasslist(Sys,SysName,[task(Task,Name,Doc,form(NSI,NSIRecv)) | T])] : [get(f_group(Doc,Group)), get(main_link(Doc,FirstDoc))] ::=
+                [$// $, 80 * txt($-$), 2 * nl,
+                 $class $, txt(Task), $ : public TaskType_2$, nl,
+                 tab, $// $, txt(Name), nl,
+                 ${public :$, nl,
+                 tab, $void$, tab, $Detailed();$, nl,
+                 tab, $void$, tab, $Printed();$, nl,
+                 $};$, 2 * nl,
+                 hdr_taskclasslist(Sys,SysName,T)
+                ].
+
+        [hdr_taskclasslist(Sys,SysName,[task(Task,Name,Doc,form) | T])] : [get(f_group(Doc,Group)), get(main_link(Doc,FirstDoc))] ::=
+                [$// $, 80 * txt($-$), 2 * nl,
+                 $class $, txt(Task), $ : public TaskType_1$, nl,
+                 tab, $// $, txt(Name), nl,
+                 ${public :$, nl,
+                 tab, $void$, tab, $Detailed();$, nl,
+                 tab, $void$, tab, $Group(short GroupNo,bool Mode);$, nl,
+                 tab, $LPSTR$, tab, $VarPart(LPSTR Template);$, nl,
+                 tab, $short$, tab, $TaskMode;$, nl,
+                 tab, $short$, tab, $PartCount;$, nl,
+                 tab, $DBField$, tab, $G,S,Acc;$, nl,
+                 $};$, 2 * nl,
+                 hdr_taskclasslist(Sys,SysName,T)
+                ].
+
+        [hdr_taskclasslist(Sys,SysName,[_ | T])] ::=
+                [hdr_taskclasslist(Sys,SysName,T)].
+
+% ---------------------------------------------------------------------------- :
+%                                                                              :
+%       Правила генерации функциональных задач.                                :
+%                                                                              :
+% ---------------------------------------------------------------------------- :
+
+        % Правила построения функциональных задач.
+        [make_task_module(Sys,SysName)] : bagof(task(Task,Name,Doc,Type),task(Task,Name,Doc,Type),TaskList) ::=
+                [make_task_module(Sys,SysName,TaskList)].
+
+        [make_task_module(_,_,[])] ::= [].
+                % Генерация задач типа 1.
+        [make_task_module(Sys,SysName,[task(Task,Name,Doc,form) | T])] ::=
+                [$//$, nl, $//$, nl, $//$, tab, txt(Name), nl, $//$, nl, $//$, 2 * nl,
+                 $void $, txt(Task), $::Detailed()$, nl,
+                 tab, $// Отработка детальных строк задачи.$, nl,
+                 ${long$, tab, $iPoz;$, 2 * nl,
+                 tab, $switch (TaskMode)$, nl,
+                 2 * tab, ${case(0)$, tab, $:$, tab, $// Обработка переменной части задачи.$, nl,
+                 3 * tab, ${PartCount++;   Acc[Acc.Expand(1)] = (LPSTR)*Server["***"];$, nl,
+                 3 * tab, $break;$, nl,
+                 3 * tab, $};$, nl,
+                 2 * tab, $case(1)$, tab, $:$, tab, $// Собственно суммирование.$, nl,
+                 3 * tab, ${PP << "ds";$, nl,
+                 summ_task_module(Sys,Task,Name,Doc),
+                 3 * tab, $break;$, nl,
+                 3 * tab, $};$, nl,
+                 2 * tab, $};$, nl,
+                 $}$, 2 * nl,
+                 $void $, txt(Task), $::Group(short GroupNo,bool _Mode)$, nl,
+                 tab, $// Отработка группировок.$, nl,
+                 ${long   iPoz;$, 2 * nl,
+                 tab, $if (TaskMode != 0)$, nl,
+                 2 * tab, $switch(GroupNo)$, nl,
+                 3 * tab, ${$, nl,
+                 group_task_module(Sys,Task,Name,Doc),
+                 3 * tab, $}$, nl,
+                 $}$, 2 * nl,
+                 $LPSTR $, txt(Task), $::VarPart(LPSTR Template)$, nl,
+                 tab, $// Обработка переменной части макета.$, nl,
+                 ${$, nl,
+                 tab, $return$, tab, $NULL;$, nl,
+                 $}$, 3 * nl,
+                 make_task_module(Sys,SysName,T)
+                ].
+
+                % Генерация задач типа 2.
+        [make_task_module(Sys,SysName,[task(Task,Name,Doc,form(NSI,Recv)) | T])] ::=
+                [$//$, nl, $//$, nl, $//$, tab, txt(Name), nl, $//$, nl, $//$, 2 * nl,
+                 $void $, txt(Task), $::Detailed()$, nl,
+                 tab, $// Отработка детальных строк задачи.$, nl,
+                 ${$, nl,
+                 summ_task_module2(Sys,Task,Name,Doc),
+                 $}$, 2 * nl,
+                 $void $, txt(Task), $::Printed()$, nl,
+                 tab, $// Отработка печати.$, nl,
+                 ${$, tab, $PP << "ds";$, nl,
+                 $}$, 2 * nl,
+                 make_task_module(Sys,SysName,T)
+                ].
+
+        % Суммирование реквизитов для задач типа 1.
+[f_task(Task,summ,_)] ??
+        [summ_task_module(Sys,Task,Name,Doc)] : bagof(Summs,f_task(Task,summ,Summs),SummList) ::=
+                [3 * tab, $for(iPoz = 0; iPoz < $, define_list_len(SummList), $; iPoz++)$, nl,
+                 4 * tab, ${// Суммирование итоговых реквизитов.$, nl,
+                 summ_task_module(Task,[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16],SummList),
+                 4 * tab, $};$, nl
+                ].
+        [summ_task_module(_,_,_,_)] ::= [].
+[list_len(List,Len)] ??  % Определение длины списка.
+        [define_list_len(List)] ::= [Len].
+
+        [summ_task_module(Task,_,[])] ::= [].
+        [summ_task_module(Task,[Num | T1],[recv(Doc,_,Name,_,_) | T2])] : get(nameword(Name,recv(Doc,_,Name,_,_),RText))::=
+                [4 * tab, $S[iPoz][$, Num, $L]$, tab, $+= (double)*Server["$, txt(Name), $"];$, tab, $// $, txt(RText), nl,
+                 summ_task_module(Task,T1,T2)
+                 ].
+
+                % Формирование групп в методе Group (задача типа 1).
+[ctr_set(10,0), ctr_set(11,1)] ??
+        [group_task_module(Sys,Task,Name,Doc)] : bagof(Groups,f_task(Task,group,Groups),GroupList) ::=
+                [group_task_module(Sys,Task,Name,Doc,GroupList)
+                ].
+
+        [group_task_module(_,_,_,_,[])] ::= [].
+[ctr_inc(10,Val1), ctr_inc(11,Val2)] ??
+        [group_task_module(Sys,Task,Name,Doc,[[recv(RDoc,_,RName,_,_) | _] | T])] : get(nameword(RName,recv(RDoc,_,RName,_,_),RText)) ::=
+                [3 * tab, $case($, Val1, $)$, tab, $:$, nl,
+                 4 * tab, ${if (_Mode)$, tab, $// Начало группы - обнуление и смена ключа ($, txt(RText), $).$, nl,
+                 5 * tab, ${G[$, Val1, $L]$, tab, $= (LPSTR)*Server["$, txt(RName), $"];$, nl,
+                 5 * tab, $S[$, Val2, $L].Fill(0.00);$, tab, $PP << "zg$, Val2, $";$, nl,
+                 5 * tab, $Group($, Val2, $,_Mode);$, nl,
+                 5 * tab, $}$, nl,
+                 4 * tab, $else$, tab, $// Конец группы - вывод итогов.$, nl,
+                 5 * tab, ${PP << "ig$, Val2, $";};$, nl,
+                 4 * tab, $break;$, nl,
+                 4 * tab, $};$, nl,
+                 group_task_module(Sys,Task,Name,Doc,T)
+                ].
+        [group_task_module(Sys,Task,Name,Doc,[X | T])] ::=
+                [$!!!ERROR!!!$, txt(X), nl,
+                 group_task_module(Sys,Task,Name,Doc,T)
+                ].
+
+        % Суммирование реквизитов для задач типа 2.
+[f_task(Task,summ,_)] ??
+        [summ_task_module2(Sys,Task,Name,Doc)] : bagof(Summs,f_task(Task,summ,Summs),SummList) ::=
+                [summ_task_module2(Task,SummList)
+                ].
+        [summ_task_module2(_,_,_,_)] ::= [].
+
+        [summ_task_module2(Task,[])] ::= [].
+        [summ_task_module2(Task,[recv(Doc,_,Name,_,_) | T])] : get(nameword(Name,recv(Doc,_,Name,_,_),RText))::=
+                [2 * tab, $*NSI["$, txt(Name), $"]$, tab, $+= (double)*Server["$, txt(Name), $"];$, tab, $// $, txt(RText), nl,
+                 summ_task_module2(Task,T)
+                ].
+

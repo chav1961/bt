@@ -1,0 +1,261 @@
+% ---------------------------------------------------------------------------- :
+%                                                                              :
+%       Система автоматизированного проектирования программного обеспечения    :
+% для различных систем программирования с ЕЯИ-вводом.      (GSERV205)          :
+%                                                                              :
+%       Правила генерации форм для системы Windows/CA Visual Objects.          :
+%                                                                              :
+%       (с) 1996г, А.В.Черномырдин, (3511-37-83-26).                           :
+%       Версия 1.00 от 01.06.96.                                               :
+%                                                                              :
+% ---------------------------------------------------------------------------- :
+
+generate.
+
+        % Правила генерации входных форм.
+[make(form_in)] : bagof(doc(Doc,Name),doc(Doc,Name,oper),DocList) ::=
+        [file($.\target\picture\$,forms,cnf), mk_in(DocList)].
+
+        % Правила подокументной генерации.
+        [mk_in([])] ::= [].
+[ctr_set(12,100), ctr_set(13,10)] ??   % Предикаты для шага формы.
+        [mk_in([doc(Doc,Text) | T])] : bagof(recv(Name,Mode,Chars,From),recv(Doc,Mode,Name,Chars,From),RecvList) ::=
+                [$[$, txt(Doc), $_Screen]$, nl,
+                 $Header=$, txt(Text), nl,
+                 $DialogResource=$, txt(Doc), $_Hand$, nl,
+                 tab_mk_in($BrowserFields=$,Doc,RecvList), nl,
+                 pic_mk_in($FormFields=$,Doc,RecvList), nl,
+                 mk_in(T)
+                ].
+
+        % Формирование списка полей для таблицы.
+        [tab_mk_in(_,_,[])] ::= [].
+        [tab_mk_in(Pref,Doc,[recv(Name,_,Chars,_) | T])] : get(word(_,recv(_,_,Name,_,_),Text)) ::=
+                [txt(Pref), txt(Name), $/$, txt(Text), $:$, chars_mk_in(Chars), tab_mk_in($,$,Doc,T)].
+
+        % Формирование списка полей для единичной записи.
+        [pic_mk_in(_,_,[])] ::= [].
+        [pic_mk_in(Pref,Doc,[recv(Name,_,Chars,From) | T])] ::=
+                [txt(Pref), txt(Name), $/$, type_mk_in(Doc,Name,Chars,From), $:$, chars_mk_in(Chars), pic_mk_in($,$,Doc,T)].
+
+        % Формирование характеристик для вывода в список полей.
+        [chars_mk_in(char(Len,Mid))] ::= [$c$, txt(Len), $/$, Mid].
+        [chars_mk_in(digit(Len,0))] ::= [$n$, txt(Len), $/$, Len].
+        [chars_mk_in(digit(Len,Dec))] ::= [$n$, txt(Len), $.$, Dec, $/$, Len].
+        [chars_mk_in(date)] ::= [$d8/8$].
+        [chars_mk_in(time)] ::= [$n5.2$].
+        [chars_mk_in(boolean)] ::= [$l1/1$].
+
+        % Формирование типов записей для единичного кадра.
+[recv(NSI,r,Text,_,_)] ??
+        [type_mk_in(Doc,Name,_,from(NSI,nsi,_))] ::= [$Combo(NSI\$, txt(NSI), $.$, txt(Text), $/$, txt(Name), $)$].
+        [type_mk_in(Doc,Name,_,from(NSI,nsi,_))] ::= [$Combo(NSI\$, txt(NSI), $.$, txt(Name), $/$, txt(Name), $)$].
+        [type_mk_in(Doc,Name,boolean,_)] ::= [$Check$].
+        [type_mk_in(Doc,Name,_,_)] ::= [$Edit$].
+
+
+% *****************************************************************************
+
+        % Правила генерации выходных форм документов.
+[make(form_out)].
+
+[make(form_out)] : [bagof(task(Task,Name,Doc,Type),task(Task,Name,Doc,Type),TaskList),
+                    bagof(doc(Doc,Name),doc(Doc,Name,form),DocList)] ::=
+        [mk_out(TaskList), mk_outdoc(DocList)].
+
+
+        % Правила обработки форм без задач.
+        [mk_outdoc([])] ::= [].
+[under_f(_,Doc)] ??
+        [mk_outdoc([doc(Doc,Name) | T])] : bagof(recv(Recv,X1,X2,X3),recv(Doc,X1,Recv,X2,X3),RecvList1) ::=
+                [file($.\target\picture\_$,Doc,pic),
+                 $>zd$, nl, nl, $    Документ $, txt(Doc), $ : $, txt(Name), nl, nl,
+                 convert_out(Doc,RecvList1,RecvList),
+                 head_table_tail_out(Doc,RecvList,HeadList,TableList,TailList),
+                 head_out(HeadList),
+                 $>zs$, nl,             shap_out(Doc,TableList), nl,
+                 $>ks$, nl,             floor_out($└$,TableList), $┘$, nl, $$, nl,
+                 $>ds$, nl,             $│$, ds_out(TableList), nl,
+                 $>kd$, nl,             floor_out($└$,TableList), $┘$, nl,
+                 tail_out(TailList),    nl,
+                 mk_outdoc(T)].
+        [mk_outdoc([_ | T])] ::= [mk_outdoc(T)].
+
+
+        % Правила позадачной генерации форм.
+        [mk_out([])] ::= [].
+        [mk_out([task(Task,Name,Doc,graphic) | T])] ::= [mk_out(T)].
+        [mk_out([task(Task,Name,Doc,Type) | T])] : bagof(recv(Recv,X1,X2,X3),recv(Doc,X1,Recv,X2,X3),RecvList1) ::=
+                [file($.\target\picture\$,Doc,pic),
+                 $>zd$, nl, nl, $    Документ $, txt(Task), $ : $, txt(Name), nl, nl,
+                 parm_out(Task),        nl,
+                 convert_out(Doc,RecvList1,RecvList),
+                 head_table_tail_out(Doc,RecvList,HeadList,TableList,TailList),
+                 head_out(HeadList),
+                 $>zs$, nl,             shap_out(Doc,TableList), nl,
+                 $>ks$, nl,             floor_out($└$,TableList), $┘$, nl, $$, nl,
+                 $>ds$, nl,             $│$, ds_out(TableList), nl,
+                 itog_out([3,2,1],TableList),
+                 group_out([3,2,1],TableList),
+                 $>kd$, nl,             floor_out($└$,TableList), $┘$, nl,
+                 tail_out(TailList),    nl,
+                 mk_out(T)].
+
+        % Правила преобразования двух списков реквизитов.
+        [convert_out(_,[],[])] ::= [].
+[recv(Src,_,Recv,_,from(Next,_,X1))] ??
+        [convert_out(Doc,[recv(Recv,_,_,from(Src,oper,_)) | T1],Ready)] ::=
+                [convert_out(Doc,[recv(Recv,_,_,from(Next,oper,_)) | T1],Ready)].
+        [convert_out(Doc,[recv(Recv,_,_,from(Src,oper,_)) | T1],[recv(Src,Recv) | T2])] ::=
+                [convert_out(Doc,T1,T2)].
+        [convert_out(Doc,[recv(Recv,_,_,_) | T1],[recv(Doc,Recv) | T2])] ::=
+                [convert_out(Doc,T1,T2)].
+
+
+        % Правила перечисления параметров задачи.
+[f_task(Task,parm,_,_)] ??
+        [parm_out(Task)] : bagof(task(Type,Recv),f_task(Task,parm,Type,Recv),TaskList) ::=
+                [$ Параметры решения задачи : $, nl, parm_out(TaskList)].
+
+        [parm_out([])] ::= [].
+        [parm_out([task(intvl,recv(Doc,_,Name,Chars,_)) | T])] : get(word(_,recv(_,_,Name,_,_),Text)) ::=
+                [$   - $, txt(Text), $ : с &_1$, txt(Name), $:$, chars_tab_in(Chars), $. по &_2$, txt(Name), $:$, chars_tab_in(Chars), $.$, nl,
+                 parm_out(T)].
+        [parm_out([task(_,recv(Doc,_,Name,Chars,_)) | T])] : get(word(_,recv(_,_,Name,_,_),Text)) ::=
+                [$   - $, txt(Text), $ : &_$, txt(Name), $:$, chars_tab_in(Chars), $.$, nl,
+                 parm_out(T)].
+
+        [parm_out(_)] ::= [].
+
+
+        % Правила разделения списка реквизитов по типам записей.
+        [head_table_tail_out(_,[],[],[],[])] ::= [].
+[part(Form,Name,head)] ??
+        [head_table_tail_out(Form,[recv(Doc,Name) | T],[recv(Doc,Name) | T1],T2,T3)] ::=
+                [head_table_tail_out(Form,T,T1,T2,T3)].
+[part(Form,Name,tail)] ??
+        [head_table_tail_out(Form,[recv(Doc,Name) | T],T1,T2,[recv(Doc,Name) | T3])] ::=
+                [head_table_tail_out(Form,T,T1,T2,T3)].
+        [head_table_tail_out(Form,[recv(Doc,Name) | T],T1,[recv(Doc,Name) | T2],T3)] ::=
+                [head_table_tail_out(Form,T,T1,T2,T3)].
+
+
+        % Правила вывода реквизитов, которые только в шапке.
+        [head_out([])]                  ::= [].
+        [head_out([recv(From,Name) | T])] : [get(recv(From,_,Name,Chars,_)), get(word(_,recv(From,_,Name,_,_),Text))] ::=
+                [txt(Text), $ : $, head_out(From,Name,Chars), head_out(T)].
+        [head_out(Doc,Name,Chars)]      ::= [$&$, txt(Doc), $->$, txt(Name), $:$, chars_tab_in(Chars), $.$, nl].
+
+        % Правила построения заголовков таблиц.
+[ctr_set(10,0)] ??
+        [shap_out(Doc,RecvList)] ::=
+                [60 * txt($ $), $Стр : &qq__Page:4.$, nl,
+                 60 * txt($ $), $&date():8.$, nl,
+                 shap1_out($┌$,RecvList),  $┐$,
+                 shap2_out(RecvList),      nl,
+                 shap3_out($╞$,RecvList),  $╡$].
+
+        % Вывод верхней линии.
+        [shap1_out(_,[])] ::= [].
+        [shap1_out(Pref,[recv(Doc,Name) | T])] : get(recv(Doc,_,Name,Chars,_)) ::=
+                [txt(Pref), shap_out_(Chars,$─$), shap1_out($┬$,T)].
+        [shap_out_(char(_,Len),Pref)] ::= [Len * txt(Pref), 2 * txt(Pref)].
+        [shap_out_(digit(Len,_),Pref)] ::= [Len * txt(Pref), 2 * txt(Pref)].
+        [shap_out_(date,Pref)] ::= [10 * txt(Pref)].
+        [shap_out_(time,Pref)] ::= [7 * txt(Pref)].
+        [shap_out_(boolean,Pref)] ::= [3 * txt(Pref)].       % Тонкость защиты от ошибок.
+
+        % Вывод заголовков.
+        [shap2_out(Recvs)] ::= [shap2_out(Recvs,Text), shap20_out(Text)].
+        [shap2_out([],[])] ::= [].
+        [shap2_out([recv(Doc,Name) | T1],[text(Text,Chars) | T2])] : [get(word(_,recv(Doc,_,Name,_,_),Text)),
+                                                                    get(recv(Doc,_,Name,Chars,_))] ::=
+                [shap2_out(T1,T2)].
+        [shap2_out([_ | T1],[text($?$,char(1,1)) | T2])] ::= [shap2_out(T1,T2)].
+
+
+[ctr_is(10,0), ctr_set(10,1)] ??
+        [shap20_out(Text)] ::= [nl, $│$, shap20_out(Text,Tail), shap20_out(Tail)].
+        [shap20_out(Text)] ::= [].
+
+        % Вывод наименований граф с переносом.
+        [shap20_out([],[])] ::= [].
+        [shap20_out([text(Text,char(_,Mid)) | T1],[text(Tail,char(_,Mid)) | Ready])] ::=
+                [shap21_out(Mid,Text,Tail), shap20_out(T1,Ready)].
+        [shap20_out([text(Text,digit(Len,_)) | T1],[text(Tail,digit(Len,_)) | Ready])] ::=
+                [shap21_out(Len,Text,Tail), shap20_out(T1,Ready)].
+        [shap20_out([text(Text,date) | T1],[text(Tail,date) | Ready])] ::=
+                [shap21_out(8,Text,Tail), shap20_out(T1,Ready)].
+        [shap20_out([text(Text,time) | T1],[text(Tail,time) | Ready])] ::=
+                [shap21_out(5,Text,Tail), shap20_out(T1,Ready)].
+        [shap20_out([text(Text,boolean) | T1],[text(Tail,boolean) | Ready])] ::=
+                [shap21_out(1,Text,Tail), shap20_out(T1,Ready)].
+
+[string_length(Text,TekLen), TekLen < Len, Rest is Len - TekLen] ??
+        [shap21_out(Len,Text,$$)] ::= [txt(Text), Rest * txt($ $), $ │$].
+[split(Text,Len,Src,Tail), ctr_set(10,0)] ??
+        [shap21_out(Len,Text,Tail)] ::= [txt(Src), $ │$].
+
+        % Вывод разделительной линии.
+        [shap3_out(_,[])] ::= [].
+        [shap3_out(Pref,[recv(Doc,Name) | T])] : get(recv(Doc,_,Name,Chars,_)) ::=
+                [txt(Pref), shap_out_(Chars,$═$), shap3_out($╪$,T)].
+
+        % Вывод подвала таблицы.
+        [floor_out(_,[])] ::= [].
+        [floor_out(Pref,[recv(Doc,Name) | T])] : get(recv(Doc,_,Name,Chars,_)) ::=
+                [txt(Pref), shap_out_(Chars,$─$), floor_out($┴$,T)].
+
+        % Вывод детальных строк.
+        [ds_out([])] ::= [].
+[expr(Doc,Name,_,Expr)] ??
+        [ds_out([recv(Doc,Name) | T])] : get(recv(Doc,_,Name,Chars,_)) ::=
+                [ds_out(Expr,Chars), ds_out(T)].
+        [ds_out([recv(Doc,Name) | T])] : get(recv(Doc,_,Name,Chars,_)) ::=
+                [ds_out(Name,Chars), ds_out(T)].
+        [ds_out(Name,char(_,Mid))] ::= [$ &$, txt(Name), $:$, Mid, $r. │$].
+        [ds_out(Name,digit(Len,_))] ::= [$ &$, txt(Name), $:$, Len, $z. │$].
+        [ds_out(Name,date)] ::= [$ &$, txt(Name), $:8. │$].
+        [ds_out(Name,time)] ::= [$ &$, txt(Name), $:5. │$].
+        [ds_out(Name,boolean)] ::= [$ &$, txt(Name), $:1. │$].
+
+        % Правила вывода итоговых строк таблицы.
+        [itog_out([],_)] ::= [].
+[ctr_set(12,1), ctr_set(13,1)] ??
+        [itog_out([Level | T],Data)] ::=
+                [$>i$, Level, nl, $│ $, itog_out1(Level,Data), nl, itog_out(T,Data)].
+
+        [itog_out1(_,[])] ::= [].
+[ctr_inc(12,Ctr)] ??
+        [itog_out1(Level,[recv(Doc,Name) | T])] : get(recv(Doc,_,Name,Chars,_)) ::=
+                [group_out2(Level,Chars,Ctr), $ │$, itog_out1(Level,T)].
+
+        % Правила вывода заголовков группы.
+        [group_out([],_)] ::= [].
+[ctr_set(12,1), ctr_set(13,1)] ??
+        [group_out([Level | T],Data)] ::=
+                [$>g$, Level, nl,
+                 floor_out($├$,Data), $┤$, nl,
+                 $│ $, group_out1(Level,Data), $ │$, nl,
+                 shap1_out($├$,Data), $┤$, nl,
+                 group_out(T,Data)].
+
+        [group_out1(_,[])] ::= [].
+[ctr_inc(12,Ctr)] ??
+        [group_out1(Level,[recv(Doc,Name) | T])] : get(recv(Doc,_,Name,Chars,_)) ::=
+                [group_out2(Level,Chars,Ctr), group_out1(Level,T)].
+
+        [group_out2(Level,char(_,Mid),Ctr)] ::= [$ &g[$, Ctr, $]:$, Mid, $r.$].
+        [group_out2(Level,digit(Len,_),Ctr)] ::= [$ &s[$, Level, $,$, Ctr, $]:$, Len, $z.$].
+        [group_out2(Level,date,Ctr)] ::= [$ &g[$, Ctr, $]:8.$].
+        [group_out2(Level,time,Ctr)] ::= [$ &g[$, Ctr, $]:5.$].
+        [group_out2(Level,boolean,Ctr)] ::= [$ &g[$, Ctr, $]:1.$].
+
+
+        % Правила вывода реквизитов, которые только в хвосте.
+        [tail_out([])]                  ::= [].
+        [tail_out([recv(From,Name) | T])] : [get(recv(From,_,Name,Chars,_)),
+                                             get(word(_,recv(From,_,Name,Text)))] ::=
+                [txt(Text), $ : &$, txt(Doc), $->$, txt(Name), $:$, chars_tab_in(Chars), $.$, nl, tail_out(T)].
+        [tail_out(Doc,[_ | T])]         ::= [tail_out(Doc,T)].
+

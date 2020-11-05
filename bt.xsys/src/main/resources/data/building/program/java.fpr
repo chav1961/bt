@@ -1,0 +1,222 @@
+% ---------------------------------------------------------------------------- :
+%                                                                              :
+%       Система автоматизированного проектирования программного обеспечения    :
+% для различных систем программирования с ЕЯИ-вводом.      (GSERV205)          :
+%                                                                              :
+%       Правила генерации программ в среде Window-2000/Java.                   :
+%       Общая часть.                                                           :
+%                                                                              :
+%                                                                              :
+%       (с) 2003г, А.В.Черномырдин, (3513-35-24-65 аб 1326).                   :
+%       Версия 1.00 от 01.04.2003.                                             :
+%                                                                              :
+% ---------------------------------------------------------------------------- :
+
+generate.
+
+% ---------------------------------------------------------------------------- :
+%                                                                              :
+%       Правила генерации программ АРМа.                                       :
+%                                                                              :
+% ---------------------------------------------------------------------------- :
+
+        % Общий порядок генерации программы.
+[make(program)] : bagof(arm(Name,Text),arm(Name,Text),ArmList) ::= [make(program,ArmList)].
+
+[make(program,[])] ::= [].
+[make_arm(_), not(make_arm(Name))] ??
+[make(program,[arm(Name,Text) | T])] ::= [make(program,T)].
+[make(program,[arm(Name,Text) | T])] ::=
+                    [make(myApplication,Name,Text),
+                     make(myFrame,Name,Text),
+                     make(menu,Name,Text),
+                     make(program,T)
+                    ].
+
+
+% *****************************************************************************
+
+        % Генерация обязательного файла приложения.
+        [make(myApplication,Name,Text)] : get(system(Sys,SysText)) ::=
+                [file($.\target\package\$,myapp,jav),
+                 $//           Система $, txt(Sys), $ - $, txt(SysText), nl,
+                 $//           АРМ $, txt(Text), nl,
+                 $// (c) 2003, А.В. Черномырдин$,  nl,
+                 $//$, 3 * nl,
+                 import_app(Name,Text),
+                 $public class MyApplication $, nl,     % Пробел после имени - важен!
+                 $  // Головной класс системы.$, nl,
+                 ${ public MyApplication()$, nl,
+                 $    {MyFrame frame = new myFrame("$, txt(Name), $.INI",".\\PICTURE\\$, txt(Name), $.txt");$, nl,
+                 $     frame.setSize(new Dimension(600,450));$, nl,
+                 $     frame.setTitle("$, txt(Text), $");$, nl,
+                 $     frame.toCenter();      frame.setVisible(true);$, nl,
+                 $    }$, nl, nl,
+                 $  public static void main(String[] args) // Головной метод системы.$, nl,
+                 $     {try {UIManager.setLookAndFeel(UIManager.getCrossPlatformLookAndFeelClassName());}$, nl,
+                 $      catch(Exception e){e.printStackTrace();}$, nl, nl,
+                 $      new MyApplication();$, nl,
+                 $     }$, nl,
+                 $}$, nl
+                ].
+
+
+        [import_app(Name,Text)] ::=
+                [$package myPackage;$, nl,
+                 $import javax.swing.UIManager;$, nl,
+                 $import java.awt.Dimension;$, nl, nl
+                ].
+
+% *****************************************************************************
+
+        [make(myFrame,Name,Text)] : get(system(Sys,SysText)) ::=
+                [file($.\target\package\$,myframe,jav),
+                 $//           Система $, txt(Sys), $ - $, txt(SysText), nl,
+                 $//           АРМ $, txt(Text), nl,
+                 $// (c) 2003, А.В. Черномырдин$,  nl,
+                 $//$, 3 * nl,
+                 import_frame(Name,Text),
+                 $public class MyFrame extends JServ101_Frame$, nl,
+                 $  // Головное окно системы.$, nl,
+                 ${ MyFrame(String forIniFile,String forMenu){super(forIniFile,forMenu);}$, nl, nl,
+                 frame_docs(Name,Text),
+                 frame_tasks(Name,Text),
+                 frame_setup(Name,Text),
+                 frame_about(Name,Text),
+                 $}$, nl
+                ].
+
+
+        [import_frame(Name,Text)] ::=
+                [$package myPackage;$, nl,
+                 $import java.awt.*;$, nl,
+                 $import java.sql.*;$, nl,
+                 $import java.text.*;$, nl,
+                 $import javax.swing.*;$, nl,
+                 $import mypackage2.*;$, nl, nl
+                ].
+
+
+        % Генерация модуля вызова документов.
+        [frame_docs(Name,Text)] : bagof(doc(Doc,Caption),doc(Doc,Caption,oper),DocList) ::=
+                [frame_docs(Name,Text,DocList)].
+
+        [frame_docs(_,_,[])] ::= [].
+[under(_,Doc)] ??
+        [frame_docs(Name,Text,[doc(Doc,_) | T])] ::=
+                [frame_docs(Name,Text,T)].
+        [frame_docs(Name,Text,[doc(Doc,Caption) | T])] ::=
+                [$  public void doc_$, txt(Doc), $()$, nl,
+                 $    // Ввод документа "$, txt(Caption), $".$, nl,
+                 $    {$, txt(Doc), $_doc d_$, txt(Doc), $ = new $, txt(Doc), $_doc(this);$, nl, nl,
+                 $     d_$, txt(Doc), $.setVisible(true);$, nl,
+                 $    }$, nl, nl,
+                 frame_docs(Name,Text,T)
+                ].
+
+
+        % Генерация модуля запуска задач.
+        [frame_tasks(Name,Text)] : bagof(task(TaskName,Caption,Form,Type),task(TaskName,Caption,Form,Type),TaskList) ::=
+                [frame_tasks(Name,Text,TaskList)].
+
+        [frame_tasks(_,_,[])] ::= [].
+        [frame_tasks(Name,Text,[task(TaskName,Caption,Form,Type) | T])] ::=
+                [$  public void task_$, txt(TaskName), $()$, nl,
+                 $    // Задача "$, txt(Caption), $"$, nl,
+                 $    {$, txt(TaskName), $_task t_$, txt(TaskName), $ = new $, txt(TaskName), $_task(statusBar,connection.getConnection(),"$, txt(Caption), $");$, nl,
+                 $     boolean    needToPanel = false;    // Надо ли запускать задачу через панель.$, nl,
+                 frame_tasks_parm(Name,Text,TaskName),  nl,
+                 frame_tasks_parm_start(Name,Text,TaskName,Shift),
+                 txt(Shift),
+                 $     if (needToPanel) toTaskPanel(t_$, txt(TaskName), $,true,false);$, nl,
+                 txt(Shift),
+                 $     else new Thread(t_$, txt(TaskName), $).start();$, nl,
+                 frame_tasks_parm_end(Name,Text,TaskName),
+                 $    }$, nl, nl,
+                 frame_tasks(Name,Text,T)
+                ].
+
+        % Организация описания параметров.
+[f_task(TaskName,parm,_,_)] ??
+        [frame_tasks_parm(Name,Text,TaskName)] : bagof(f_task(Type,Recv),f_task(TaskName,parm,Type,Recv),ParmList) ::=
+                [$     JServ_Ask  ask = new JServ_Ask(this,JS_ErrorMessages.TASK_CAPTION);$, nl,
+                 $     JServ_Ask.JS_Control items[] = $, frame_tasks_parm(Name,Text,TaskName,ParmList,${$), $};$, nl,
+                 $     Vector     forResult = null;$, nl,
+                 $     String[]   forNames = null;$,
+                 nl
+                ].
+        [frame_tasks_parm(_,_,_)] ::= [].
+
+        [frame_tasks_parm(_,_,_,[],_)] ::= [].
+        [frame_tasks_parm(Name,Text,TaskName,[f_task(single,recv(_,_,RName,_,_)) | T],Symbol)] : get(word(_,recv(_,_,RName,_,_),RCaption)) ::=
+                [txt(Symbol), $ask.new Edit("$, txt(RCaption), $","")$,
+                 frame_tasks_parm(Name,Text,TaskName,T,$,$)
+                ].
+        [frame_tasks_parm(Name,Text,TaskName,[f_task(intvl,recv(_,_,RName,_,_)) | T],Symbol)] : get(word(_,recv(_,_,RName,_,_),RCaption)) ::=
+                [txt(Symbol), $ask.new Edit("$, txt(RCaption), $ от",""),$,
+                 $ask.new Edit("$, txt(RCaption), $ до","")$,
+                 frame_tasks_parm(Name,Text,TaskName,T,$,$)
+                ].
+
+        % Организация запроса параметров.
+[f_task(TaskName,parm,_,_)] ??
+        [frame_tasks_parm_start(Name,Text,TaskName,$   $)] : bagof(f_task(Type,Recv),f_task(TaskName,parm,Type,Recv),ParmList) ::=
+                [$     if ((forResult = ask.ask(items)) != null)$, nl,
+                 $       {t_$, txt(TaskName), $.setParameters(forResult,forNames = new String[]$, frame_tasks_parm_start(ParmList,${$), $});$, nl,
+                 nl
+                ].
+        [frame_tasks_parm_start(_,_,_,$$)] ::= [].
+
+        [frame_tasks_parm_start([],_)] ::= [].
+        [frame_tasks_parm_start([f_task(single,recv(_,_,RName,_,_)) | T],Symbol)] ::=
+                [txt(Symbol), $"p_$, txt(RName), $"$, frame_tasks_parm_start(T,$,$)].
+        [frame_tasks_parm_start([f_task(intvl,recv(_,_,RName,_,_)) | T],Symbol)] ::=
+                [txt(Symbol), $"p_$, txt(RName), $_from","p_$, txt(RName), $_to"$, frame_tasks_parm_start(T,$,$)].
+
+
+        % Закрытие скобок за параметрами.
+[f_task(TaskName,parm,_,_)] ??
+        [frame_tasks_parm_end(_,_,TaskName)] : get(task(TaskName,Caption,_,_)) ::=
+                [$        saveTaskToLRU($, txt(TaskName), $_task.getClass(),"$, txt(Caption), $",needToPanel,forResult,forNames);$, nl,
+                 $       }$, nl
+                ].
+        [frame_tasks_parm_end(_,_,_)] : get(task(TaskName,Caption,_,_)) ::=
+                [$     saveTaskToLRU($, txt(TaskName), $_task.getClass(),"$, txt(Caption), $",needToPanel);$,
+                 nl
+                ].
+
+
+        % Генерация модуля настройки системы.
+        [frame_setup(Name,Text)] : [bagof(recv(RType,RName,RChars,RFrom),recv($H_PARM$,RType,RName,RChars,RFrom),RecvList), get(system(System,_))] ::=
+                [$  public void setup()$, nl,
+                 $    // Настройка программы.$, nl,
+                 $    {try { // Защищенный участок обработки.$, nl,
+                 $        connection.getConnection().prepareCall("{call $, txt(System), $_pack.prepare_H_PARM}").execute();$, nl,
+                 $        if ((new JServ_Pic(this,connection,".\\PICTURE\\H_PARM.PIC","$, frame_setup_list(Name,Text,$select $,RecvList), $ from H_PARM",false)).showDialog())$, nl,
+                 $          connection.getConnection().commit();$, nl,
+                 $        else connection.getConnection().rollback();$, nl,
+                 $       }$, nl,
+                 $     catch (SQLException exc)$, nl,
+                 $       {JOptionPane.showMessageDialog(this,MessageFormat.format(JS_ErrorMessages.ERR_SQL_WHEN_WORK,new String[]{"H_PARM",JS_ErrorMessages.whatSQL(exc)}),JS_ErrorMessages.ATTENTION,JOptionPane.ERROR_MESSAGE);$, nl,
+                 $        System.exit(0);$, nl,
+                 $       }$, nl,
+                 $    }$, nl,
+                 nl
+                ].
+
+        [frame_setup_list(_,_,_,[])] ::= [].
+        [frame_setup_list(Name,Text,Symbol,[recv(_,RName,_,_) | T])] ::=
+                [txt(Symbol), txt(RName), frame_setup_list(Name,Text,$,$,T)].
+
+
+        % Генерация справки по программе.
+        [frame_about(Name,Text)] ::=
+                [$  public void about()$, nl,
+                 $    {JOptionPane.showMessageDialog(this,"$, txt(Text), $",JS_ErrorMessages.ABOUT,JOptionPane.INFORMATION_MESSAGE);}$, nl,
+                 nl
+                ].
+
+
+% *****************************************************************************
+
+

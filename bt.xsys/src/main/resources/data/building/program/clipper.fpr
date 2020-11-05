@@ -1,0 +1,149 @@
+% ---------------------------------------------------------------------------- :
+%                                                                              :
+%       Система автоматизированного проектирования программного обеспечения    :
+% для различных систем программирования с ЕЯИ-вводом.      (GSERV205)          :
+%                                                                              :
+%       Правила генерации программ в среде MS/DOS-Clipper.                     :
+%       Общая часть.                                                           :
+%                                                                              :
+%                                                                              :
+%       (с) 1995г, А.В.Черномырдин, (3511-37-83-26).                           :
+%       Версия 2.10 от 01.05.96.                                               :
+%                                                                              :
+% ---------------------------------------------------------------------------- :
+
+generate.
+
+% ---------------------------------------------------------------------------- :
+%                                                                              :
+%       Правила генерации программ АРМа.                                       :
+%                                                                              :
+% ---------------------------------------------------------------------------- :
+
+        % Общий порядок генерации программы.
+[make(program)] : bagof(arm(Name,Text),arm(Name,Text),ArmList) ::= [make(program,ArmList)].
+
+[make(program,[])] ::= [].
+[make_arm(_), not(make_arm(Name))] ??
+[make(program,[arm(Name,Text) | T])] ::= [make(program,T)].
+[make(program,[arm(Name,Text) | T])] ::=
+                    [file($.\target\$,Name,prg),
+                     make(header,Name,Text),
+                     make(h_parm,Name,Text),
+                     make(check,Name,Text),
+                     make(ftask,Name,Text),
+                     make(modes,Name,Text),
+                     make(algo,Name,Text),
+                     make(menu,Name,Text),
+                     make(program,T)].
+
+% *****************************************************************************
+
+        % Генерация головной процедуры.
+        [make(header,Name,Text)] : get(system(SName,SysText)) ::=
+                [40 * txt($* $), nl,
+                 $*             АРМ $, txt(Text), $            *$, nl,
+                 $* $, 78 * txt($ $), $*$, nl,
+                 $* (c) 1996, А.В. Черномырдин, Е.Г. Шайхисламова$, nl,
+                 $* $, 78 * txt($ $), $*$, nl,
+                 40 * txt($* $), 2 * nl,
+                 $#include "InKey.ch"$, nl,
+                 $#include "Set.ch"$, nl,
+                 $#include "SetCurs.ch"$, nl,
+                 $#include "DBEdit.ch"$, 2 * nl,
+                 $#define   NETWORK_LIMIT 100     // Предел числа сетевых АРМов.$, 2 * nl,
+                 $external  ADM_CENT,NSI_EDIT$, 2 * nl,
+                 $#command ASSIGN <Value> to <Base>-><Var> => last_val := <Base>-><Var>;;$, nl,
+                 $                           <Base>-><Var> := <Value>;;$, nl,
+                 $                           ProcName := <"Base">+"_one";;$, nl,
+                 $                           &ProcName(last_val,upper(<"Var">))$, 2 * nl,
+                 $// Первоначальные настройки программы на работу.$, nl,
+                 $set date british           ; set exclusive off$, nl,
+                 $set softseek on            ; set century on$, nl,
+                 algo(init),
+                 $// Средства регистрации в системе для протоколов.$, nl,
+                 $private   last_alias := "", _Oper := 000, _Date_Oper := date(), _Password := space(10), _Connect := 0, _Sema := 0$, nl,
+                 $INITSYS(upper("$, txt(SysText), $"),"АРМ $, txt(Text), $","(c) 1996 А.В. Черномырдин, Е.Г. Шайхисламова","$, txt(SName), $","$, txt(SName), $","MENU_PROC")$, nl,
+                 algo(term),
+                 $quit$, 2 * nl,
+                 $procedure NET_LOGOFF()$, nl,
+                 $  return 1$, 2 * nl,
+                 40 * txt($* $), 2 * nl,
+                 40 * txt($* $), nl,
+                 $*  Программа отработки меню при различных вариантах$, nl,
+                 40 * txt($* $), 2 * nl,
+                 $function MENU_PROC(Mode,Parm)$, nl,
+                 $//       Функция отработки режимов меню.$, nl,
+                 $local    RC := 0$, 2 * nl,
+                 $do case$, nl,
+                 $  case Mode = 5         // Первый вход в процедуру.$, nl,
+                 $    if USER_DIALOG(10,10,"Регистрация","RG+/B,RG/RG,,W+/B,BG/BG","Таб. N ",@_Oper,"Пароль ",@_Password)$, nl,
+                 $      if NNETWORK()     // При наличии сети - вход в нее.$, nl,
+                 $        if (_Connect := NNETLOGIN(upper(USER_PROFILE("SYSTEM","UserName","guest")),upper(_Password)),upper(USER_PROFILE("SYSTEM","Server","none"))) = 0$, nl,
+                 $          USER_MESSAGE("Регистрация в сети неудачна")$, nl,
+                 $        elseif (_Sema := NNETSEMOPN("_SEM_",0,_Connect)) > NETWORK_LIMIT$, nl,
+                 $          USER_MESSAGE("Превышен лимит сетевых АРМов")$, nl,
+                 $        else$, nl,
+                 $          NNETMAP("H",upper(USER_PROFILE("SYSTEM","NetworkDisk","none")),.t.)$, nl,
+                 $          RC := 1$, nl,
+                 $        endif$, nl,
+                 $      else$, nl,
+                 $        USER_MESSAGE("Сеть неактивна")$, nl,
+                 $        RC := 1$, nl,
+                 $      endif$, nl,
+                 $    endif$, nl,
+                 $  case Mode = 6         // Последний вход в процедуру.$, nl,
+                 $    if NNETWORK()       // При наличии сети - выход из нее.$, nl,
+                 $      NNETSEMCLO(_Sema,_Connect)$, nl,
+                 $      NNETLOGOUT(_Connect)$, nl,
+                 $    endif$, nl,
+                 $  otherwise$, nl,
+                 $    RC := 1$, nl,
+                 $endcase$, 2 * nl,
+                 $return RC$, 2 * nl,
+                 40 * txt($* $), 2 * nl
+                ].
+
+        [make(h_parm,Name,Text)] : get(system(_,SysText)) ::=
+                [40 * txt($* $), nl,
+                 $* Программа настройки системы (H_PARM)$, nl,
+                 40 * txt($* $), 2 * nl,
+                 $function H_PARM$, nl,
+                 $// Отработка настройки системы.$, nl,
+                 $local    KeyArr := qq__SaveKeys(), last_sel := select(), last_rec := recno()$, nl,
+                 $private  Old_Alias := alias()$, 2 * nl,
+                 $if .not.USE_GROUP({{".\NSI\H_PARM","S"}})$, nl,
+                 $  return 0$, nl,
+                 $endif$, 2 * nl,
+                 $if lastrec() = 0 .and. F_LOCK()$, nl,
+                 $  append blank$, nl,
+                 $endif$, nl,
+                 $Edit("H_PARM",.f.,"","H_PARM_one","H_PARM_all","")$, 2 * nl,
+                 $FREE_GROUP({".\NSI\H_PARM"})$, nl,
+                 $qq__RestKeys(KeyArr)$, nl,
+                 $return 1$, 2 * nl,
+                 $* $, 80 * txt($-$), 2 * nl,
+                 $function H_PARM_one(OldVal,Name)$, nl,
+                 $local         last_rec := recno(), last_sel := select(), last_val, _ArrayInfo := {}, RC := 1$, 2 * nl,
+                 $// Анализ ключевых реквизитов.$, nl,
+                 $do case$, nl,
+                 $endcase$, 2 * nl,
+                 $// Восстановить состояние базы.$, nl,
+                 $select(last_sel)$, nl,
+                 $goto last_rec$, nl,
+                 $return RC$, 2 * nl,
+                 $* $, 80 * txt($-$), 2 * nl,
+                 $function H_PARM_all(Mode,Number)$, nl,
+                 $local last_sel := select(), last_rec := recno(), last_val, RC := 1$, 2 * nl,
+                 $do case$, nl,
+                 $  case Mode = 2 && Режим замены записи.$, nl,
+                 $  case Mode = 5 && Режим первого входа.$, nl,
+                 $  case Mode = 6 && Режим последнего входа.$, nl,
+                 $endcase$, 2 * nl,
+                 $// Восстановление состояния программы.$, nl,
+                 $select(last_sel)$, nl,
+                 $goto last_rec$, nl,
+                 $return RC$, 2 * nl,
+                 $* $, 80 * txt($-$), 2 * nl
+                ].
+

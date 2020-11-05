@@ -1,0 +1,446 @@
+% ---------------------------------------------------------------------------- :
+%                                                                              :
+%       Система автоматизированного проектирования программного обеспечения    :
+% для различных систем программирования с ЕЯИ-вводом.      (GSERV205)          :
+%                                                                              :
+%       Правила генерации программ в среде Window-95/Microsoft C++.            :
+%       Общая часть.                                                           :
+%                                                                              :
+%                                                                              :
+%       (с) 2000г, А.В.Черномырдин, (3513-35-24-65 аб 1326).                   :
+%       Версия 1.00 от 01.04.2000.                                             :
+%                                                                              :
+% ---------------------------------------------------------------------------- :
+
+generate.
+
+% ---------------------------------------------------------------------------- :
+%                                                                              :
+%       Правила генерации окон для описания документов.                        :
+%                                                                              :
+% ---------------------------------------------------------------------------- :
+
+                % Описания окон-таблиц и окон-кадров для каждого документа.
+[ctr_set(10,1000)] ??
+        [hdr_docclasslist(Sys,Text)] : bagof(doc(Doc,Name),doc(Doc,Name,oper),DocList) ::=
+                [hdr_docclasslist(Sys,Text,DocList)].
+
+        [hdr_docclasslist(_,_,[])] ::= [].
+[ctr_inc(10,Val)] ??
+        [hdr_docclasslist(Sys,Text,[doc(Doc,Name) | T])] ::=
+                [$// $, 80 * txt($-$), 2 * nl,
+                 $#define$, tab, txt(Doc), $_ID$, tab, Val, tab, $// Идентификатор окна : $, txt(Name), 2 * nl,
+                 $class $, txt(Doc), $_Win : public FramedBaseWindow$, nl,
+                 tab, $// $, txt(Name), $ - таблица.$, nl,
+                 ${public :$, nl,
+                 tab, $bool$, tab, $FromMarked(long RecNo,short Mode,long Cargo);$, nl,
+                 tab, $long$, tab, $Drop(pDDD Ref);$, nl,
+                 tab, $int$,  tab, $One(DBServer *Server,LPSTR Column,long RecId,DBField *NewVal,DBField *OldVal);$, nl,
+                 tab, $int$,  tab, $All(DBServer *Server,AllMode AM,long RecId);$, nl,
+                 tab, $int$,  tab, $LoadList(long ActualRow,long ActualCol,LPSTR ColName);$, nl,
+                 tab, $int$,  tab, $T_Select(long Info);$, nl,
+                 tab, $afx_msg void$, tab, $OnDestroy();$, nl,
+                 tab, txt(Sys), $_Window$, tab, $*Parent;$, nl,
+                 tab, $DECLARE_MESSAGE_MAP()$, nl,
+                 $};$, 3 * nl,
+                 $class $, txt(Doc), $_Cadre : public NoteWindow$, nl,
+                 tab, $// $, txt(Name), $ - единичные записи.$, nl,
+                 ${public :$, nl,
+                 tab, $int$, tab, $One(DBServer *Server,LPSTR Column,long RecId,DBField *NewVal,DBField *OldVal);$, nl,
+                 tab, $int$, tab, $All(DBServer *Server,AllMode AM,long RecId);$, nl,
+                 $};$, 2 * nl,
+                 hdr_docclasslist(Sys,Text,T)
+                ].
+
+                % Описания меток меню.
+        [hdr_menuitems(Sys,Text)] : [bagof(doc(Doc,Name),doc(Doc,Name,oper),DocList), bagof(task(Task,TName,TDoc,Type),task(Task,TName,TDoc,Type),TaskList)] ::=
+                [hdr_menuitems(Sys,Text,DocList),
+                 hdr_menuitems(Sys,Text,TaskList)
+                ].
+
+        [hdr_menuitems(_,_,[])] ::= [].
+[under(_,Doc)] ??       % Только для головных документов !
+        [hdr_menuitems(Sys,Text,[doc(Doc,Name) | T])] ::=
+                [hdr_menuitems(Sys,Text,T)].
+
+        [hdr_menuitems(Sys,Text,[doc(Doc,Name) | T])] ::=
+                [tab, $afx_msg void$, tab, txt(Sys), $_$, txt(Doc), $();$, tab, $// $, txt(Name), nl,
+                 hdr_menuitems(Sys,Text,T)
+                ].
+
+        [hdr_menuitems(Sys,Text,[task(Task,Name,Doc,_) | T])] ::=
+                [tab, $afx_msg void$, tab, txt(Sys), $_$, txt(Task), $();$, tab, $// $, txt(Name), nl,
+                 hdr_menuitems(Sys,Text,T)
+                ].
+
+                % Описания дружественных классов для головного окна.
+        [hdr_friendclasses(Sys,Text)] : bagof(doc(Doc,Name),doc(Doc,Name,oper),DocList) ::=
+                [hdr_friendclasses(Sys,Text,DocList)].
+
+        [hdr_friendclasses(_,_,[])] ::= [].
+        [hdr_friendclasses(Sys,Text,[doc(Doc,Name) | T])] ::=
+                [tab, $friend class $, tab, txt(Doc), $_Win;$, nl,
+                 tab, $friend class $, tab, txt(Doc), $_Cadre;$, nl,
+                 hdr_friendclasses(Sys,Text,T)
+                ].
+
+                % Описания входящих в головное окно документов.
+        [hdr_docwindows(Sys,Text)] : bagof(doc(Doc,Name),doc(Doc,Name,oper),DocList) ::=
+                [hdr_docwindows(Sys,Text,DocList)].
+
+        [hdr_docwindows(_,_,[])] ::= [].
+        [hdr_docwindows(Sys,Text,[doc(Doc,Name) | T])] ::=
+                [tab, txt(Doc), $_Win$, tab, $*$, txt(Doc), $_T;$, nl,
+                 tab, txt(Doc), $_Cadre$, tab, $*$, txt(Doc), $_C;$, nl,
+                 tab, $CClientWindow$, tab, $*$, txt(Doc), $_W;$, nl,
+                 hdr_docwindows(Sys,Text,T)
+                ].
+
+% ---------------------------------------------------------------------------- :
+%                                                                              :
+%       Правила генерации окна-панели инструментов.                            :
+%                                                                              :
+% ---------------------------------------------------------------------------- :
+
+[ctr_set(10,1000)] ??
+        [make_toolbar_module(Sys,Text)] : bagof(doc(Doc,Name),doc(Doc,Name,oper),DocList) ::=
+                [$//$, nl, $//$, nl, $//$, tab, $Класс панели инструментов головного окна$, nl, $//$, nl, $//$, 2 * nl,
+                 $long $, txt(Sys), $_DropCtrl::Drop(pDDD Ref)$, nl,
+                 tab, $// Отработка операции Drag & Drop для панели инструментов.$, nl,
+                 ${$, tab, $switch(Ref->TargetId)$, nl,
+                 2 * tab, ${case(0)$,   tab, $:$, nl,
+                 3 * tab, ${switch(Ref->SrcId)$, nl,
+                 4 * tab, ${case WIN_TBC_ID$, tab, $:$, tab, $// Сообщения от самой полосы$, nl,
+                 5 * tab, ${$, nl,
+                 5 * tab, $break;$, nl,
+                 5 * tab, $};$, nl,
+                 make_toolbar_module(Sys,Text,DocList),
+                 4 * tab, $default$, tab, $:$, tab, $// - Такая операция не поддерживается.$, nl,
+                 5 * tab, ${::MessageBox(NULL,"Такой операции в системе не предусмотрено!","ВНИМАНИЕ !",MB_OK|MB_ICONASTERISK);$, nl,
+                 5 * tab, $break;$, nl,
+                 5 * tab, $};$, nl,
+                 4 * tab, $};$, nl,
+                 3 * tab, $break;$, nl,
+                 3 * tab, $};$, nl,
+                 2 * tab, $};$, 2 * nl,
+                 tab, $return$, tab, $0;$, nl,
+                 $}$, 2 * nl,
+                 $afx_msg void $, txt(Sys), $_DropCtrl::OnInitMenuPopup(CMenu *Menu,UINT Index,BOOL bSysMenu)$, nl,
+                 tab, $// Отработка инициализации меню.$, nl,
+                 ${$, nl,
+                 tab, $CDropCtrl::OnInitMenuPopup(Menu,Index,bSysMenu);$, nl,
+                 $}$, 2 * nl,
+                 $BEGIN_MESSAGE_MAP($, txt(Sys), $_DropCtrl,CDropCtrl)$, nl,
+                 tab, $ON_WM_INITMENUPOPUP()$, nl,
+                 $END_MESSAGE_MAP()$, 3 * nl
+                ].
+
+        [make_toolbar_module(_,_,[])] ::= [].
+        [make_toolbar_module(Sys,Text,[doc(Doc,Name) | T])] ::=
+                [4 * tab, $case $, txt(Doc), $_ID$, tab, $:$, tab, $// $, txt(Name), nl,
+                 5 * tab, ${$, nl,
+                 5 * tab, $break;$, nl,
+                 5 * tab, $}$, nl,
+                 make_toolbar_module(Sys,Text,T)
+                ].
+
+% ---------------------------------------------------------------------------- :
+%                                                                              :
+%       Правила генерации окна-документа (в виде таблицы).                     :
+%                                                                              :
+% ---------------------------------------------------------------------------- :
+
+[ctr_set(10,1000)] ??
+        [make_doc_module(Sys,Text)] : bagof(doc(Doc,Name),doc(Doc,Name,oper),DocList) ::=
+                [make_doc_module(Sys,Text,DocList)].
+
+        [make_doc_module(_,_,[])] ::= [].
+        [make_doc_module(Sys,Text,[doc(Doc,Name) | T])] ::=
+                [$//$, nl, $//$, nl, $//$, tab, $Класс документа "$, txt(Name), $".$, nl, $//$, nl, $//$, 2 * nl,
+                 make_doc_module_interface(Sys,Text,doc(Doc,Name)),
+                 make_doc_module_base_one(Sys,Text,doc(Doc,Name)),
+                 make_doc_module_base_all(Sys,Text,doc(Doc,Name)),
+                 make_doc_module_advanced(Sys,Text,doc(Doc,Name)),
+                 make_doc_module_unit(Sys,Text,doc(Doc,Name)),
+                 make_doc_module(Sys,Text,T)
+                ].
+
+                        % Генерация интерфейсного набора функций.
+        [make_doc_module_interface(Sys,Text,doc(Doc,Name))] : bagof(doc(DDoc,DName),doc(DDoc,DName,oper),DocList) ::=
+                [$bool $, txt(Doc), $_Win::FromMarked(long RecNo,short Mode,long Cargo)$, nl,
+                 tab, $// Отработка программы выхода по маркированным записям.$, nl,
+                 ${$, nl,
+                 tab, $return$, tab, $false;$, nl,
+                 $}$, 2 * nl,
+                 $long $, txt(Doc), $_Win::Drop(pDDD Ref)$, nl,
+                 tab, $// Отработка программы выхода по операции Drag&Drop.$, nl,
+                 ${$, tab, $switch(Ref->SrcId)$, nl,
+                 2 * tab, ${case WIN_TBC_ID$, tab, $:$, tab, $// Сообщения от панели инструментов$, nl,
+                 3 * tab, ${$, nl,
+                 3 * tab, $break;$, nl,
+                 3 * tab, $};$, nl,
+                 make_doc_module_interface(Sys,Text,DocList),
+                 2 * tab, $default$, tab, $:$, tab, $// - Такая операция не поддерживается.$, nl,
+                 3 * tab, ${::MessageBox(NULL,"Такой операции в системе не предусмотрено!","ВНИМАНИЕ !",MB_OK|MB_ICONASTERISK);$, nl,
+                 3 * tab, $break;$, nl,
+                 3 * tab, $};$, nl,
+                 2 * tab, $};$, 2 * nl,
+                 tab, $return$, tab, $0;$, nl,
+                 $}$, 2 * nl,
+                 $int $, txt(Doc), $_Win::LoadList(long ActualRow,long ActualCol,LPSTR ColName)$, nl,
+                 tab, $// Загрузка списка.$, nl,
+                 ${$, nl,
+                 tab, $return$, tab, $0;$, nl,
+                 $}$, 2 * nl
+                ].
+
+        [make_doc_module_interface(_,_,[])] ::= [].
+        [make_doc_module_interface(Sys,Text,[doc(Doc,Name) | T])] ::=
+                [2 * tab, $case $, txt(Doc), $_ID$, tab, $:$, tab, $// $, txt(Name), nl,
+                 3 * tab, ${$, nl,
+                 3 * tab, $break;$, nl,
+                 3 * tab, $}$, nl,
+                 make_doc_module_interface(Sys,Text,T)
+                ].
+
+                        % Генерация базового набора функций.
+        [make_doc_module_base_one(Sys,Text,doc(Doc,Name))] ::=
+                [$int $, txt(Doc), $_Win::One(DBServer *Server,LPSTR Column,long RecId,DBField *NewVal,DBField *OldVal)$, nl,
+                 tab, $// Процедура обработки ситуаций по реквизитам.$, nl,
+                 ${int RC = FramedBaseWindow::One(Server,Column,RecId,NewVal,OldVal);$, nl,
+                 $LPSTR$, tab, $Temp;$, tab, $double$, tab, $TempDbl;$, tab, $long$, tab, $Last_Rec;$, 2 * nl,
+                 make_doc_module_one(Sys,Text,doc(Doc,Name)), tab, $;$, 2 * nl,
+                 tab, $return$, tab, $RC;$, nl,
+                 $}$, 2 * nl
+                ].
+        [make_doc_module_base_all(Sys,Text,doc(Doc,Name))] ::=
+                [$int $, txt(Doc), $_Win::All(DBServer *Server,AllMode AM,long RecId)$, nl,
+                 tab, $// Процедура обработки ситуации по записям.$, nl,
+                 ${int$, tab, $RC = FramedBaseWindow::All(Server,AM,RecId);$, nl,
+                 $LPSTR$, tab, $Temp;$, tab, $double$, tab, $TempDbl;$, tab, $long$, tab, $Last_Rec;$, 2 * nl,
+                 tab, $switch (AM)$, nl,
+                 2 * tab, ${case(AM_Duplicate)$, tab, $:$, tab, $// Дублирование текущей записи.$, nl,
+                 3 * tab, ${$, nl,
+                 algo(dbl,Doc),
+                 3 * tab, $break;$, nl,
+                 3 * tab, $};$, nl,
+                 2 * tab, $case(AM_Insert)$, tab, $:$, tab, $// Вставка записи.$, nl,
+                 3 * tab, ${$, nl,
+                 inp_check(Doc),
+                 algo(ins,Doc),
+                 3 * tab, $break;$, nl,
+                 3 * tab, $};$, nl,
+                 2 * tab, $case(AM_Change)$, tab, $:$, tab, $// Изменение записи.$, nl,
+                 3 * tab, ${$, nl,
+                 rep_check(Doc),
+                 algo(rep,Doc),
+                 3 * tab, $break;$, nl,
+                 3 * tab, $};$, nl,
+                 2 * tab, $case(AM_Delete)$, tab, $:$, tab, $// Удаление записи.$, nl,
+                 3 * tab, ${$, nl,
+                 del_check(Doc),
+                 algo(del,Doc),
+                 3 * tab, $break;$, nl,
+                 3 * tab, $};$, nl,
+                 2 * tab, $case(AM_Recall)$, tab, $:$, tab, $// Восстановление записи (осталось для совместимости).$, nl,
+                 3 * tab, ${$, nl,
+                 rst_check(Doc),
+                 algo(rst,Doc),
+                 3 * tab, $break;$, nl,
+                 3 * tab, $};$, nl,
+                 2 * tab, $case(AM_Init)$, tab, $:$, tab, $// Создание окна с таблицей.$, nl,
+                 3 * tab, ${$, nl,
+                 3 * tab, $break;$, nl,
+                 3 * tab, $};$, nl,
+                 2 * tab, $case(AM_Term)$, tab, $:$, tab, $// Уничтожение окна с таблицей.$, nl,
+                 3 * tab, ${$, nl,
+                 3 * tab, $break;$, nl,
+                 3 * tab, $};$, nl,
+                 2 * tab, $default$, tab, $:$, tab, $// Все остальные случаи - игнорируем.$, nl,
+                 3 * tab, ${$, nl,
+                 3 * tab, $break;$, nl,
+                 3 * tab, $};$, nl,
+                 2 * tab, $};$, 2 * nl,
+                 tab, $return$, tab, $RC;$, nl,
+                 $}$, 2 * nl
+                ].
+
+                        % Генерация базового набора функций для кадра единичной записи.
+        [make_doc_module_unit(Sys,Text,doc(Doc,Name))] ::=
+                [$int $, txt(Doc), $_Cadre::One(DBServer *Server,LPSTR Column,long RecId,DBField *NewVal,DBField *OldVal)$, nl,
+                 tab, $// Процедура обработки ситуаций по реквизитам.$, nl,
+                 ${int RC = NoteWindow::One(Server,Column,RecId,NewVal,OldVal);$, nl,
+                 $LPSTR$, tab, $Temp;$, tab, $double$, tab, $TempDbl;$, tab, $long$, tab, $Last_Rec;$, 2 * nl,
+                 make_doc_module_one(Sys,Text,doc(Doc,Name)), tab, $;$, 2 * nl,
+                 tab, $return$, tab, $RC;$, nl,
+                 $}$, 2 * nl,
+                 $int $, txt(Doc), $_Cadre::All(DBServer *Server,AllMode AM,long RecId)$, nl,
+                 tab, $// Процедура обработки ситуации по записям.$, nl,
+                 ${int    RC = NoteWindow::All(Server,AM,RecId);$, 2 * nl,
+                 tab, $switch (AM)$, nl,
+                 2 * tab, ${case(AM_Duplicate)$, tab, $:$, tab, $// Дублирование текущей записи.$, nl,
+                 3 * tab, ${$, nl,
+                 3 * tab, $break;$, nl,
+                 3 * tab, $};$, nl,
+                 2 * tab, $case(AM_Insert)$, tab, $:$, tab, $// Вставка записи.$, nl,
+                 3 * tab, ${$, nl,
+                 3 * tab, $break;$, nl,
+                 3 * tab, $};$, nl,
+                 2 * tab, $case(AM_Change)$, tab, $:$, tab, $// Изменение записи.$, nl,
+                 3 * tab, ${$, nl,
+                 3 * tab, $break;$, nl,
+                 3 * tab, $};$, nl,
+                 2 * tab, $case(AM_Delete)$, tab, $:$, tab, $// Удаление записи.$, nl,
+                 3 * tab, ${$, nl,
+                 3 * tab, $break;$, nl,
+                 3 * tab, $};$, nl,
+                 2 * tab, $case(AM_Recall)$, tab, $:$, tab, $// Восстановление записи (осталось для совместимости).$, nl,
+                 3 * tab, ${$, nl,
+                 3 * tab, $break;$, nl,
+                 3 * tab, $};$, nl,
+                 2 * tab, $case(AM_Init)$, tab, $:$, tab, $// Создание окна с таблицей.$, nl,
+                 3 * tab, ${$, nl,
+                 3 * tab, $break;$, nl,
+                 3 * tab, $};$, nl,
+                 2 * tab, $case(AM_Term)$, tab, $:$, tab, $// Уничтожение окна с таблицей.$, nl,
+                 3 * tab, ${$, nl,
+                 3 * tab, $break;$, nl,
+                 3 * tab, $};$, nl,
+                 2 * tab, $default$, tab, $:$, tab, $// Все остальные случаи - игнорируем.$, nl,
+                 3 * tab, ${$, nl,
+                 3 * tab, $break;$, nl,
+                 3 * tab, $};$, nl,
+                 2 * tab, $};$, 2 * nl,
+                 tab, $return$, tab, $RC;$, nl,
+                 $}$, 2 * nl
+                ].
+
+                        % Генерация расширенного набора функций.
+        [make_doc_module_advanced(Sys,Text,doc(Doc,Name))] ::=
+               [make_doc_module_advanced1(Sys,Text,doc(Doc,Name)),
+                make_doc_module_advanced2(Sys,Text,doc(Doc,Name))
+               ].
+
+[under(Doc,_)] ??       % Отработка метода T_Select.
+        [make_doc_module_advanced1(Sys,Text,doc(Doc,Name))] : bagof(under(List),under(Doc,List),DocList) ::=
+                [$int $, txt(Doc), $_Win::T_Select(long Info)$, nl,
+                 tab, $// Окно отработки изменения текущей записи.$, nl,
+                 ${LPSTR Bound;$, 2 * nl,
+                 make_doc_module_advanced1a(Sys,DocList),
+                 tab, $return$, tab, $0;$, nl,
+                 $}$, 2 * nl
+                ].
+        [make_doc_module_advanced1(Sys,Text,doc(Doc,Name))] ::=
+                [$int $, txt(Doc), $_Win::T_Select(long Info)$, nl,
+                 tab, $// Окно отработки изменения текущей записи.$, nl,
+                 ${$, nl,
+                 tab, $return$, tab, $0;$, nl,
+                 $}$, 2 * nl
+                ].
+        [make_doc_module_advanced1a(_,[])] ::= [].
+        [make_doc_module_advanced1a(Sys,[under(Doc) | T])] ::=
+                [tab, $Bound = RT_PadL((LPSTR)*(*DBS1)["***"],0);$, nl,
+                 tab, $MK_SETBOUND($, txt(Doc), $_Win,Parent->$, txt(Doc), $_T,Bound);  free(Bound);$, nl,
+                 make_doc_module_advanced1a(Sys,T)
+                ].
+
+[under(_,Doc)] ??       % Отработка метода OnDestroy.
+        [make_doc_module_advanced2(Sys,Text,doc(Doc,Name))] ::=
+                [$afx_msg void $, txt(Doc), $_Win::OnDestroy()$, nl,
+                 tab, $// Отработка закрытия окон.$, nl,
+                 ${$, tab, $FramedBaseWindow::OnDestroy();$, nl,
+                 $}$, 2 * nl,
+                 $BEGIN_MESSAGE_MAP($, txt(Doc), $_Win,FramedBaseWindow)$, nl,
+                 $END_MESSAGE_MAP()$, 2 * nl
+                ].
+        [make_doc_module_advanced2(Sys,Text,doc(Doc,Name))] ::=
+                [$afx_msg void $, txt(Doc), $_Win::OnDestroy()$, nl,
+                 tab, $// Отработка закрытия окон.$, nl,
+                 ${$, tab, $Parent->CloseWindows(false);$, nl,
+                 tab, $FramedBaseWindow::OnDestroy();$, nl,
+                 $}$, 2 * nl,
+                 $BEGIN_MESSAGE_MAP($, txt(Doc), $_Win,FramedBaseWindow)$, nl,
+                 $ON_WM_DESTROY()$, nl,
+                 $END_MESSAGE_MAP()$, 2 * nl
+                ].
+
+                        % Построение программ контроля по реквизитам.
+        [make_doc_module_one(Sys,Text,doc(Doc,DocName))] : bagof(recv(Type,Name,Chars,From),recv(Doc,Type,Name,Chars,From),RecvList) ::=
+                [make_doc_module_one(Sys,Text,doc(Doc,DocName),RecvList,$$)].
+
+        [make_doc_module_one(_,_,_,[],_)] ::= [].
+        [make_doc_module_one(Sys,Text,doc(Doc,DocName),[recv(Type,Name,Chars,From) | T],Prefix)] ::=
+                [tab, txt(Prefix), $if (!strcmpi(Column,"$, txt(Name), $"))$, nl,
+                 2 * tab, ${$, nl,
+                 check_doc_module_one(Sys,Text,doc(Doc,DocName),recv(Type,Name,Chars,From)),
+                 2 * tab, $}$, nl,
+                 make_doc_module_one(Sys,Text,doc(Doc,DocName),T,$else $)
+                ].
+
+% ---------------------------------------------------------------------------- :
+%                                                                              :
+%       Правила реализации различного контроля реквизитов.                     :
+%                                                                              :
+% ---------------------------------------------------------------------------- :
+
+        [inp_check(Doc)] :  bagof(recv(Doc,Type,Name,Chars,From),recv(Doc,Type,Name,Chars,From),RecvList) ::=
+                [move_inp_check(RecvList,Doc)].
+
+        % Правила переписи одинаковых реквизитов в новую запись.
+[under(_,Doc), doc(Doc,_,oper)] ??
+        [move_inp_check(Recv,Doc)] : bagof(From,under(From,Doc),FromList) ::=
+                [3 * tab, $//  Перепись наследуемых из старших баз данных реквизитов.$, nl,
+                 move_inp_check(Recv,Doc,FromList)
+                ].
+        [move_inp_check(_,_)] ::= [].
+
+        [move_inp_check(_,_,[])] ::= [].
+        [move_inp_check(Recv,Doc,[From | T])] ::=
+                [move_inp1_check(Doc,From,Recv),
+                 move_inp_check(Recv,Doc,T)
+                ].
+
+        [move_inp1_check(_,_,[])] ::= [].
+        [move_inp1_check(Doc,From,[recv(Doc,_,Name,_,from(From,_,FromName)) | T])] ::=
+                [3 * tab, $(*this)["$, txt(Name), $"]$, tab, $= (LPSTR)(*(Parent->$, txt(From), $_T))["$, txt(Name), $"];$, nl,
+                 move_inp1_check(Doc,From,T)
+                ].
+        [move_inp1_check(Doc,From,[_ | T])] ::=
+                [move_inp1_check(Doc,From,T)].
+
+
+        [rep_check(Doc)] ::= [].
+        [del_check(Doc)] ::= [].
+        [rst_check(Doc)] ::= [].
+
+
+                        % Реализация различных видов контроля.
+        [check_doc_module_one(Sys,Text,doc(Doc,DocName),recv(Type,Name,Chars,From))] ::= [].
+
+% ---------------------------------------------------------------------------- :
+%                                                                              :
+%       Правила генерации окна настройки системы.                              :
+%                                                                              :
+% ---------------------------------------------------------------------------- :
+
+        [make_setup_module(Sys,Text)] ::=
+                [$//$, nl, $//$, nl, $//$, tab, $Класс настройки системы.$, nl, $//$, nl, $//$, 2 * nl,
+                 $// $, 80 * txt($-$), 2 * nl,
+                 make_doc_module_unit(Sys,Text,doc($H_PARM$,$Параметры и настройки$))
+                ].
+
+% ---------------------------------------------------------------------------- :
+%                                                                              :
+%       Правила генерации процедуры диагностики системы.                       :
+%                                                                              :
+% ---------------------------------------------------------------------------- :
+
+        [make_diagnostics_module(Sys,Text)] ::=
+                [$//$, nl, $//$, nl, $//$, tab, $Процедура диагностики баз данных.$, nl, $//$, nl, $//$, 2 * nl,
+                 $// $, 80 * txt($-$), 2 * nl,
+                 $void MakeDiagnostics($, txt(Sys), $_Window *Parent)$, nl,
+                 tab, $// Пересчет всех необходимых остатков по БД.$, nl,
+                 ${$, 2 * nl,
+                 $}$, 2 * nl
+                ].
+

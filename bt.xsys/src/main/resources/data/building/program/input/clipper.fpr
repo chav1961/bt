@@ -1,0 +1,677 @@
+% ---------------------------------------------------------------------------- :
+%                                                                              :
+%       Система автоматизированного проектирования программного обеспечения    :
+% для различных систем программирования с ЕЯИ-вводом.      (GSERV205)          :
+%                                                                              :
+%       Правила генерации программ ввода-корректировки на Clipper.             :
+%       Подсистема ввода-кооректировки документов.                             :
+%                                                                              :
+%       (с) 1996г, А.В.Черномырдин, (3511-37-83-26).                           :
+%       Версия 2.10 от 01.05.96.                                               :
+%                                                                              :
+% ---------------------------------------------------------------------------- :
+
+generate.
+
+        % Генерация подокументных программ контроля-преобразования.
+        [make(check,Arm,_)] : bagof(doc(Doc,Name),doc(Doc,Name,oper),DocList) ::=
+                [ccheck(Arm,DocList)].
+
+        [ccheck(_,[])] ::= [].
+[access(Arm,Doc,AccessMode)] ??
+        [ccheck(Arm,[doc(Doc,Name) | T])] ::=
+                [40 * txt($* $), nl,
+                 $*  Программа контроля/преобразования документа $, txt(Doc), $ : $, txt(Name), nl,
+                 40 * txt($* $), 2 * nl,
+                 $function $, txt(Doc), nl,
+                 $local    KeyArr := qq__SaveKeys(), last_sel := select(), last_rec := recno()$, nl,
+                 $private  Old_Alias := alias()$, nl,
+                 ccheck_1(Arm,Doc,Name,AccessMode),
+                 $* $, 80 * txt($-$), nl, nl,
+                 one_ccheck(Arm,Doc),
+                 all_ccheck1(Arm,Doc),
+                 all_ccheck2(Arm,Doc),
+                 pf_ccheck(Arm,Doc),
+                 rq_ccheck(Arm,Doc),
+                 ccheck(Arm,T)].
+        [ccheck(Arm,[doc(Doc,Name) | T])] ::= [ccheck(Arm,T)].
+
+
+    [one_ccheck(Arm,Doc)] ::=
+                [40 * txt($* $), nl,
+                 $*  Программа выхода по реквизитам документа $, txt(Doc), nl,
+                 40 * txt($* $), nl, nl,
+                 $function $, txt(Doc), $_one(OldVal,Name)$, nl,
+                 $local         last_rec := recno(), last_sel := select(), last_val, _ArrayInfo := {}, RC := 1$, 2 * nl,
+                 $// Анализ ключевых реквизитов.$, nl,
+                 $do case$, nl,
+                 recv1_check(Doc),
+                 $endcase$, 2 * nl,
+                 $// Вычисления по формулам.$, nl,
+                 $do case$, nl,
+                 recv2_check(Doc),
+                 $endcase$, 2 * nl,
+                 $// Выборка по НСИ и оперативным документам.$, nl,
+                 $do case$, nl,
+                 recv3_check(Doc),
+                 $endcase$, 2 * nl,
+                 $// Отработка алгоритмов.$, nl,
+                 $do case$, nl,
+                 recv4_check(Doc),
+                 $endcase$, 2 * nl,
+                 $// Восстановить состояние базы.$, nl,
+                 $select(last_sel)$, nl,
+                 $goto last_rec$, nl,
+                 $return RC$, 2 * nl,
+                 $* $, 80 * txt($-$), 2 * nl
+                ].
+
+    [all_ccheck1(Arm,Doc)] ::=
+                [40 * txt($* $), nl,
+                 $*  Программа выхода по записям документа $, txt(Doc), nl,
+                 40 * txt($* $), nl, nl,
+                 $function $, txt(Doc), $_all(Mode,Number)$, nl,
+                 $local last_sel := select(), last_rec := recno(), last_val, RC := 1$, 2 * nl,
+                 $do case$, nl,
+                 $  case Mode = 0 && Режим дублирования записи.$, nl,
+                 dbl_check(Doc),
+                 algo(dbl,Doc),
+                 $    RC := 2$, nl,
+                 $  case Mode = 1 && Режим вставки записи.$, nl,
+                 inp_check(Doc),
+                 algo(ins,Doc),
+                 $    RC := 2$, nl,
+                 $  case Mode = 2 && Режим замены записи.$, nl,
+                 rep_check(Doc),
+                 algo(rep,Doc),
+                 $  case Mode = 3 && Режим удаления записи.$, nl,
+                 del_check(Doc),
+                 algo(del,Doc),
+                 $  case Mode = 4 && Режим восстановления записи.$, nl,
+                 rst_check(Doc),
+                 algo(rst,Doc)
+                ].
+
+    [all_ccheck2(Arm,Doc)] ::=
+                [$  case Mode = 5 && Режим первого входа.$, nl,
+                 hier_check(Doc,Keys,Docs),         fhier_check(Doc),
+                 h_check($    MicroHelp({$, [$Enter$, $Ins/^Ins$, $Del$, $F2/ShF2$ | Keys]),
+                 h_check($},{$, [$Корр$, $Нов/Дубл$, $Удал/Восст$, $Пск/Прдлж$ | Docs]), $})$, nl,
+                 algo(start,Doc),
+                 $  case Mode = 6 && Режим последнего входа.$, nl,
+                 algo(end,Doc),
+                 $  case Mode = 7 && Режим входа в новую запись.$, nl,
+                 algo(in,Doc),
+                 $  case Mode = 8 && Режим выхода из текущей записи.$, nl,
+                 algo(out,Doc),
+                 $endcase$, nl,
+                 $// Восстановление состояния программы.$, nl,
+                 $select(last_sel)$, nl,
+                 $goto last_rec$, nl,
+                 $return RC$, 2 * nl,
+                 $* $, 80 * txt($-$), 2 * nl
+                ].
+
+
+% *****************************************************************************
+
+        % Обработка подчиненного иерархического документа в группе.
+[under(_,Doc), maxlevel(Doc,_)] ??
+        [ccheck_1(Arm,Doc,Name,AccessMode)] : get(maxlevel(Doc,[MaxLevel | _])) ::=
+                [$parameters _Level,_Bound$, 2 * nl,
+                 algo(define,Doc),
+                 $// Предварительные настройки.$, nl,
+                 $_Level := iif(_Level = nil,"0",_Level)$, nl,
+                 $_Bound := iif(_Bound = nil,"",_Bound)$, nl,
+                 $if _Level < "$, MaxLevel, $" // Глубина вложенности ограничена.$, nl,
+                 $  select $, txt(Doc), nl,
+                 $  private _Expr := indexkey()$, nl,
+                 ccheck_edit($  Edit("$,Arm,Doc,AccessMode,level),
+                 $  select(last_sel)$, nl,
+                 $  goto last_rec$, nl,
+                 $endif$, nl,
+                 $qq__RestKeys(KeyArr)$, nl,
+                 $return 1$, 2 * nl
+                ].
+        % Обработка подчиненного неиерархического документа в группе.
+[under(_,Doc)] ??
+        [ccheck_1(Arm,Doc,Name,AccessMode)] ::=
+                [algo(define,Doc),
+                 $// Предварительные настройки.$, nl,
+                 ccheck_edit($Edit("$,Arm,Doc,AccessMode,under),
+                 $select(last_sel)$, nl,
+                 $goto last_rec$, nl,
+                 $qq__RestKeys(KeyArr)$, nl,
+                 $return 1$, 2 * nl
+                ].
+        % Обработка головного иерархического документа в группе.
+[recv(Doc,l(_),_,_,_), maxLevel(Doc,[MaxLevel | _])] ??
+        [ccheck_1(Arm,Doc,Name,AccessMode)] : get(group(Doc,FullList)) ::=
+                [$private _Expr$, nl,
+                 $parameters _Level,_Bound$, 2 * nl,
+                 algo(define,Doc),
+                 $// Предварительные настройки.$, nl,
+                 $if _Level = nil   // Настройки баз данных.$, nl,
+                 use_check($  if .not.USE_GROUP({{"$,FullList,[]),
+                 $  select $, txt(Doc), nl,
+                 $  _Level := "0"$, nl,
+                 $  _Expr  := IndexKey()$, nl,
+                 ccheck_edit($  Edit("$,Arm,Doc,AccessMode,level0),
+                 free_check($  FREE_GROUP({"$,FullList,[]),
+                 $elseif _Level < "$, MaxLevel, $" // Глубина вложенности ограничена.$, nl,
+                 $  _Expr  := IndexKey()$, nl,
+                 ccheck_edit($  Edit("$,Arm,Doc,AccessMode,level),
+                 $  select(last_sel)$, nl,
+                 $  goto last_rec$, nl,
+                 $endif$, nl,
+                 $qq__RestKeys(KeyArr)$, nl,
+                 $return 1$, 2 * nl
+                ].
+        % Обработка головного неиерархического документа в группе.
+        [ccheck_1(Arm,Doc,Name,AccessMode)] : get(group(Doc,FullList)) ::=
+                [algo(define,Doc),
+                 $// Предварительные настройки.$, nl,
+                 use_check($if .not.USE_GROUP({{"$,FullList,[]),
+                 ccheck_edit($Edit("$,Arm,Doc,AccessMode,single),
+                 free_check($FREE_GROUP({"$,FullList,[]),
+                 $qq__RestKeys(KeyArr)$, nl,
+                 $return 1$, 2 * nl
+                ].
+
+
+% *****************************************************************************
+
+        % Генерация USE_GROUP.
+        [use_check(_,[],_)] ::= [$}})$, nl, $  return 0$, nl, $endif$, nl].
+[in_list(Name,List)] ??         % Защита от повторных объявлений.
+        [use_check(Pref,[Name | T],List)] ::= [use_check(Pref,T,List)].
+[index(Name,IndexList,_)] ??
+        [use_check(Pref,[Name | T],List)] ::=
+                [txt(Pref), txt(Name), $","S"$, index_use_check(Name,IndexList), use_check($},{"$,T,[Name | List])].
+        [use_check(Pref,[Name | T],List)] ::=
+                [txt(Pref), txt(Name), $","S"$, use_check($},{"$,T,[Name | List])].
+
+        [index_use_check(_,[])] ::= [].
+        [index_use_check(Name,[_ | T])] ::= [$,"$, txt(Name), $"$].
+
+
+        % Генерация FREE_GROUP.
+        [free_check(_,[],_)] ::= [$"})$, nl].
+[in_list(Name,List)] ??         % Защита от повторных объявлений.
+        [free_check(Pref,[Name | T],List)] ::= [free_check(Pref,T,List)].
+        [free_check(Pref,[Name | Tail],List)] ::=
+                [txt(Pref), txt(Name), free_check($","$,Tail,[Name | List])].
+
+
+% *****************************************************************************
+
+        % Способ ограничения данных.
+        [ccheck_edit(Pref,Arm,Doc,Acc,single)] ::=
+                [$select $, txt(Doc), nl,
+                 Pref, txt(Doc), $",.f.,"$, access_edit([$it$,$d$,$c$],Acc), $","$, txt(Doc), $_one","$, txt(Doc), $_all","")$, nl
+                ].
+        [ccheck_edit(Pref,Arm,Doc,Acc,level0)] ::=
+                [Pref, txt(Doc), $",.f.,"$, access_edit([$it$,$d$,$c$],Acc), $","$, txt(Doc), $_one","$, txt(Doc), $_all",{"0","0"})$, nl].
+        [ccheck_edit(Pref,Arm,Doc,Acc,under)] ::=
+                [$private _Expr := &old_alias->(indexkey())$, nl,
+                 $_Expr := &_Expr$, nl,
+                 $select $, txt(Doc), nl,
+                 Pref, txt(Doc), $",.f.,"$, access_edit([$it$,$d$,$c$],Acc), $","$, txt(Doc), $_one","$, txt(Doc), $_all",{_Expr,_Expr})$, nl
+                ].
+        [ccheck_edit(Pref,Arm,Doc,Acc,level)] ::=
+                [Pref, txt(Doc), $",.f.,"$, access_edit([$it$,$d$,$c$],Acc), $","$, txt(Doc), $_one","$, txt(Doc), $_all",{_Level+_Bound,_Level+_Bound})$, nl].
+
+        % Формирование символов запрета доступа.
+        [access_edit([],[])] ::= [].
+        [access_edit([Pref | T],[])] ::= [txt(Pref), access_edit(T,[])].
+        [access_edit([X1,X2,X3],[ins | T])] ::= [access_edit([$$,X2,X3],T)].
+        [access_edit([X1,X2,X3],[del | T])] ::= [access_edit([X1,$$,X3],T)].
+        [access_edit([X1,X2,X3],[rep | T])] ::= [access_edit([X1,X2,$$],T)].
+        [access_edit([X1,X2,X3],[_ | T])] ::= [access_edit([X1,X2,X3],T)].
+
+
+% *****************************************************************************
+
+        % Генерация программ контроля ключевых реквизитов на уникальность.
+        [recv1_check(Doc)] : [bagof(recv(Doc,k,Name1,Chars1,From1),recv(Doc,k,Name1,Chars1,From1),KeyList),
+                              bagof(recv(Doc,l(Level),Name2,Chars2,From2),recv(Doc,l(Level),Name2,Chars2,From2),LevelList)] ::=
+                [recv1_check(Doc,KeyList), recv1_check(Doc,LevelList)].
+        [recv2_check(_)] ::= [].
+        [recv1_check(_,[])] ::= [].
+        [recv1_check(Doc,[recv(Doc,_,Name,_,none) | T])] ::=
+                [$  case Name == "$, txt(Name), $"$, nl,
+                 $    RC := qq__ChkKey(,"$, txt(Name), $")$, nl,
+                 recv1_check(Doc,T)
+                ].
+        [recv1_check(Doc,[recv(Doc,_,Name,_,_) | T])] ::= [recv1_check(Doc,T)].
+
+
+        % Вычисление зависимых полей по формулам.
+        [recv2_check(Doc)] : [bagof(recv(Doc,Type,Name,Chars,From),recv(Doc,Type,Name,Chars,From),RecvList),
+                              bagof(expr(Doc,Recv,List,Expr),expr(Doc,Recv,List,Expr),ExprList)] ::=
+                [recv2_check(Doc,RecvList,ExprList)].
+        [recv2_check(_)] ::= [].
+        [recv2_check(_,[],_)] ::= [].
+[ctr_set(10,0)] ??
+        [recv2_check(Doc,[recv(Doc,_,Name,_,_) | T]),ExprList] ::=
+                [recv2_check1(Doc,Name,ExprList), recv2_check(Doc,T,ExprList)].
+
+        % Пересчет сразу несколько полей.
+        [recv2_check1(_,_,[])] ::= [].
+[in_list(Name,List)] ??
+        [recv2_check1(Doc,Name,[expr(Doc,Recv,List,Expr) | T])] ::=
+                [rcase_check(Name),
+                 $    last_val := $, txt(Doc), $->$, txt(Recv), nl,
+                 $    $, txt(Doc), $->$, txt(Recv), $ := $, Expr, nl,
+                 $    RC := $, txt(Doc), $_one(last_val,upper("$, txt(Recv), $")$, nl,
+                 recv2_check1(Doc,Name,T)
+                ].
+
+
+        % Выборка данных по НСИ.
+        [recv3_check(Doc)] : bagof(recv(Doc,k,Name,Chars,from(X1,nsi,X2)),recv(Doc,k,Name,Chars,from(X1,nsi,X2)),RecvList) ::=
+                [recv3_check1(RecvList,[],NSIList), recv3_check(Doc,NSIList)].
+        [recv3_check(Doc)] ::= [].
+
+        % Построение списка обрабатываемых НСИ.
+        [recv3_check1([],List,List)] ::= [].
+    [in_list(Name,List)] ??
+        [recv3_check1([recv(_,_,_,_,from(Name,nsi,_)) | T],List,Ready)] ::= [recv3_check1(T,List,Ready)].
+        [recv3_check1([recv(_,_,_,_,from(Name,nsi,_)) | T],List,Ready)] ::= [recv3_check1(T,[Name | List],Ready)].
+
+        % Выполнение по-НСИ-шного контроля.
+        [recv3_check(Doc,[])] ::= [].
+        [recv3_check(Doc,[NSI | T])] : [bagof(recv(Doc1,Type1,Name1,Chars1,from(NSI,nsi,X1)),recv(Doc1,Type1,Name1,Chars1,from(NSI,nsi,X1)),RecvList),
+                                        bagof(recv(Doc2,k,Name2,Chars2,from(NSI,nsi,X2)),recv(Doc2,k,Name2,Chars2,from(NSI,nsi,X2)),KeyList)] ::=
+                [recv3_check2($  case Name == "$,KeyList), recv3_check3(Doc,NSI,KeyList,RecvList)].
+
+        % Построение выражения "CASE".
+        [recv3_check2(_,[])] ::= [$"$, nl].
+        [recv3_check2(Pref,[recv(_,_,Name,_,_) | T])] ::=
+                [txt(Pref), txt(Name), recv3_check2($" .or. Name == "$,T)].
+
+        % Выборка по различным типам НСИ.
+[maxlevel(Src,[Level | _]), Actual is Level - 1] ??
+        [recv3_check3(Doc,NSI,KeyList,RecvList)] : get(doc(Src,Text,nsi)) ::=
+                [$//  Выбор из иерархического НСИ "$, txt(Text), $"$, nl,
+                 $    if USE_BD(".\nsi\$, txt(Src),$","S",".\nsi\$, txt(Src), $")$, nl,
+                 $      if USER_H_CASE("",{"0","$, Actual, $"},"$, txt(Text), $",{$, rlist_check(Src,Doc,KeyList), $},{$, nlist_check(Src,Doc,KeyList), $},"")$, nl,
+                 ass_nsi_check(Doc,NSI,RecvList),
+                 $        RC := 2$, nl,
+                 $      endif$, nl,
+                 $      FREE_BD(".\nsi\$, txt(Src), $")$, nl,
+                 $    endif$, nl,
+                 $    select(last_sel)$, nl
+                ].
+        [recv3_check3(Doc,NSI,KeyList,RecvList)] : get(doc(Src,Text,nsi)) ::=
+                [$//  Выбор из обычного НСИ "$, txt(Text), $"$, nl,
+                 $    if USE_BD(".\nsi\$, txt(Src),$","S",".\nsi\$, txt(Src), $")$, nl,
+                 $      if USER_CASE("","$, txt(Text), rlist_check($",{$,Src,Doc,KeyList), nlist_check($},{$,Src,Doc,KeyList), $},"")$, nl,
+                 ass_nsi_check(Doc,NSI,RecvList),
+                 $        RC := 2$, nl,
+                 $      endif$, nl,
+                 $      FREE_BD(".\nsi\$, txt(Src), $")$, nl,
+                 $    endif$, nl,
+                 $    select(last_sel)$, nl
+                ].
+
+
+        % На прочие случаи жизни.
+        [recv4_check(Doc)] : bagof(recv(Doc,Type,Name,Chars,From),recv(Doc,Type,Name,Chars,From),RecvList) ::=
+                [recv4_check(Doc,RecvList)].
+        [recv4_check(_)] ::= [].
+
+        [recv4_check(_,[])] ::= [].
+[ctr_set(10,0)] ??
+        [recv4_check(Doc,[recv(_,_,Name,_,_) | T])] ::= [algo(one,Doc,Name), recv4_check(Doc,T)].
+
+
+        % Специальные предикаты пореквизитного контроля.
+[ctr_is(10,0), ctr_set(10,1)] ??        % Вывод слова CASE.
+        [rcase_check(Name)] ::= [$  case Name == "$, txt(Name), $"$, nl].
+        [rcase_check(_)] ::= [].
+
+        % Построение списка имен и названий реквизитов.
+        [rlist_check(_,_,_,[])] ::= [].
+        [rlist_check(Pref,Src,Doc,[recv(_,_,Name,_,_) | T])] ::=
+                [txt(Pref), $"$, txt(Name), $"$, rlist_check($,$,Src,Doc,T)].
+
+        [nlist_check(_,_,_,[])] ::= [].
+        [nlist_check(Pref,Src,Doc,[recv(DocName,_,Name,_,_) | T])] : get(word(_,recv(_,_,Name,_,_),Text)) ::=
+                [txt(Pref), $"$, txt(Text), $"$, nlist_check($,$,Src,Doc,T)].
+
+        % Построение списка переписываемых реквизитов.
+        [ass_nsi_check(_,_,[])] ::= [].
+        [ass_nsi_check(Doc,Src,[recv(_,r,Name,char(_,_),from(_,_,From)) | T])] ::=
+                [$        $, txt(Doc), $->$, txt(Name), $ := $, txt(Src), $->$, txt(Name), nl,
+                 ass_nsi_check(Doc,Src,T)
+                ].
+        [ass_nsi_check(Doc,Src,[recv(_,r,Name,_,from(_,_,From)) | T])] ::=
+                [$        assign $, txt(Src), $->$, txt(Name), $ to $, txt(Doc), $->$, txt(Name), nl,
+                 ass_nsi_check(Doc,Src,T)
+                ].
+        [ass_nsi_check(Doc,Src,[recv(_,_,Name,_,from(_,_,From)) | T])] ::=
+                [$        $, txt(Doc), $->$, txt(Name), $ := $, txt(Src), $->$, txt(Name), nl,
+                 ass_nsi_check(Doc,Src,T)
+                ].
+
+
+% *****************************************************************************
+
+        [dbl_check(Doc)] ::= [].
+
+        % Правила дополнения полей новой записи наследуемыми реквизитами.
+[group(_,List), in_list(Doc,List)] ??
+        [inp_check(Doc)] :  bagof(recv(Doc,Type,Name,Chars,From),recv(Doc,Type,Name,Chars,From),RecvList) ::=
+                [move_inp_check(RecvList,Doc),
+                 make_inp_check(Doc,RecvList,RecvList,[])
+                ].
+        [inp_check(Doc)] ::= [].
+
+
+        [rep_check(Doc)] ::= [].
+
+
+        [del_check(Doc)] ::= [del_h_check(Doc)].
+
+
+        [rst_check(Doc)] ::= [del_h_check(Doc)].
+
+
+        % Правила переписи одинаковых реквизитов в новую запись.
+[under(_,Doc), doc(Doc,_,oper)] ??
+        [move_inp_check(Recv,Doc)] : bagof(From,under(From,Doc),FromList) ::=
+                [$//  Перепись наследуемых из старших баз данных реквизитов.$, nl,
+                 move_inp_check(Recv,Doc,FromList)
+                ].
+        [move_inp_check(_,_)] ::= [].
+
+        [move_inp_check(Recv,Doc,[From])] ::= [move_inp1_check($    $,Doc,From,Recv)].
+        [move_inp_check(Recv,Doc,FromList)] ::=
+                [$    do case       // Заполнение полей в зависимости от текущего подчинения.$, nl,
+                 move_inp2_check(Doc,FromList,Recv),
+                 $    endcase$, nl
+                ].
+
+        [move_inp1_check(_,_,_,[])] ::= [].
+        [move_inp1_check(Pref,Doc,From,[recv(Doc,_,Name,_,from(From,_,FromName)) | T])] ::=
+                [txt(Pref), txt(Doc), $->$, txt(Name), $ := $, txt(From), $->$, txt(FromName), nl,
+                 move_inp1_check(Pref,Doc,From,T)
+                ].
+        [move_inp1_check(Pref,Doc,From,[R | T])] ::= [move_inp1_check(Pref,Doc,From,T)].
+
+        [move_inp2_check(_,[],_)] ::= [].
+        [move_inp2_check(Doc,[From | T],RList)] ::=
+                [$    case old_alias == "$, txt(From), $"$, nl,
+                 move_inp1_check($      $,Doc,From,RList),
+                 move_inp2_check(Doc,T,RList)
+                ].
+
+
+        % Правила построения списка оперативных документов.
+        [make_inp_check(_,[],_,[])] ::= [].
+        [make_inp_check(Doc,[],RList,[From | T])] ::=
+                [$//  Извлечение информации из других оперативных документов.$, nl,
+                 oper_inp_check(From,Doc,RList),
+                 make_inp_check(Doc,[],RList,T)
+                ].
+[not(in_list(Src,T2)), not(under(Src,Doc))] ??
+        [make_inp_check(Doc,[recv(_,_,_,_,from(Src,oper,_)) | T1],T2,Ready)] ::= [make_inp_check(Doc,T1,[Src | T2],Ready)].
+        [make_inp_check(Doc,[_ | T1],T2,Ready)] ::= [make_inp_check(Doc,T1,T2,Ready)].
+
+
+        % Правила извлечения данных из других оперативных документов.
+[group(_,List), in_list(Src,List), in_list(Doc,List)] ??
+        [oper_inp_check(Src,Doc,RecvList)] ::= [].
+        [oper_inp_check(Src,Doc,RecvList)] : get(doc(Src,TextSrc,oper)) ::=
+                [$* Работа с документом $, txt(Src), $ : "$, txt(TextSrc), $".$, nl,
+                 $    last_sel = select()$, nl,
+                 $    if USE_BD("$, txt(Src),$","S","$, txt(Src), $")$, nl,
+                 $      if USER_CASE("","$, txt(TextSrc), rlist_check($",{$,Src,Doc,RecvList), nlist_check($},{$,Src,Doc,RecvList), $},"")$, nl,
+                 ass_nsi_check(Src,Doc,RecvList),
+                 $      FREE_BD("$, txt(Src), $")$, nl, $    endif$, nl,
+                 $    endif$, nl,
+                 $    select(last_sel)$, nl
+                ].
+
+
+        % Правила удаления-восстановления иерархических документов.
+[under(Doc,_)] ??
+        [del_h_check(Doc)] : bagof(NextDoc,under(Doc,NextDoc),NextList) ::=
+                [del_h_check($    RC := qq__HDel({"$,Doc,NextList),
+                 del_h_check1(${"$,Doc,NextList)].
+        [del_h_check(Doc)] ::= [].
+
+        [del_h_check1(_,_,[])] ::= [$"}) // Операция для подчиненных документов.$, nl].
+        [del_h_check1(Pref,Doc,[Name | T])] ::=
+                [txt(Pref), txt(Name), $_all$, del_h_check1($","$,Doc,T)].
+
+        [del_h_check(_,_,[])] ::= [$"},indexkey(),$].
+        [del_h_check(Pref,Doc,[Name | T])] ::=
+                [txt(Pref), txt(Name), del_h_check($","$,Doc,T)].
+
+% *****************************************************************************
+
+        % Генерация команд вызова подчиненных документов.
+[under(Doc,_), recv(Doc,l(_),_,_,_)] ??
+        [hier_check(Doc,Keys,Names)] : bagof(Hier,under(Doc,Hier),HierList) ::=
+                [$//  Установка клавиш вызова подчиненных документов.$, nl,
+                 hier_check([Doc | HierList],[$_CTRL_RET$,$F10$,$F9$,$F8$,$F7$,$F6$,$F5$,$F4$],Keys,Names)].
+[under(Doc,_)] ??
+        [hier_check(Doc,Keys,Names)] : bagof(Hier,under(Doc,Hier),HierList) ::=
+                [$//  Установка клавиш вызова подчиненных документов.$, nl,
+                 hier_check(HierList,[$F10$,$F9$,$F8$,$F7$,$F6$,$F5$,$F4$],Keys,Names)].
+        [hier_check(_,_,_)] ::= [].
+
+        [hier_check([],[],[],[])] ::= [].
+        [hier_check([],[F | T],[],[])] ::= [hier_check([],T,[],[])].
+        [hier_check([Doc | T1],[$_CTRL_RET$ | T2],[F | T3],[Doc | T4])] ::=
+                [$    SetKey(K_CTRL_RET,{||$, txt(Doc), $(alltrim(str(val(left(&_Expr,1))+1)),substr(&_Expr,2))})$, nl,
+                 hier_check(T1,T2,T3,T4)
+                ].
+        [hier_check([Doc | T1],[F | T2],[F | T3],[Doc | T4])] ::=
+                [$    SetKey(K_$, txt(F), $,{||$, txt(Doc), $()})$, nl,
+                 hier_check(T1,T2,T3,T4)
+                ].
+
+        % Генерация команд печати.
+[under_f(Doc,_)] ??
+        [fhier_check(Doc)] ::=
+                [$//  Установка/восстановление клавиш печати.$, nl,
+                 $    SetKey(K_F3,{||$, txt(Doc), $_prn()})$, nl
+                ].
+        [fhier_check(_)] ::= [].
+
+
+        % Формирование маленькой справки.
+        [h_check(_,[])]                 ::= [].
+        [h_check(Pref,[First | T])]     ::=
+                [txt(Pref), $"$, txt(First), $"$, h_check($,$,T)].
+
+% *****************************************************************************
+
+        % Генерация процедур печати документов из программ ввода.
+[under_f(Doc,_), ctr_set(10,1)] ??
+        [pf_ccheck(Arm,Doc)] : [get(doc(Doc,Name,_)), bagof(Form,under_f(Doc,Form),FormList)] ::=
+                [40 * txt($* $), nl,
+                 $*  Программы печати форм из документа $, txt(Doc), $ : $, txt(Name), nl,
+                 40 * txt($* $), 2 * nl,
+                 $function $, txt(Doc), $_prn$, nl,
+                 $local    last_sel :=  select(), last_rec := recno(), last_val$, nl,
+                 $local    iAlt := USER_MESSAGE("Какой документ печатать",{$, pf1_ccheck($$,Doc,FormList), $})$, nl,
+                 $private  last_key := indexkey()$, 2 * nl,
+                 $// Подготовка файла печати.$, nl,
+                 $set device to print$, nl,
+                 $set printer to .\forms\tempfile.out$, nl,
+                 $do case$, nl,
+                 pf2_ccheck(Doc,FormList),
+                 $endcase$, 2 * nl,
+                 $// Выдача документа на экран и завершение работы программы.$, nl,
+                 $set printer to$, nl,
+                 $set device to screen$, nl,
+                 $USER_EXIT(_Ext,_Copies)$, nl,
+                 $select(last_sel)$, nl,
+                 $goto last_rec$, nl,
+                 $return 1$, 2 * nl,
+                 $* $, 80 * txt($-$), 2 * nl
+                ].
+        [pf_ccheck(_,_)] ::= [].
+
+
+        % Генерация списка печатных документов.
+        [pf1_ccheck(_,_,[])] ::= [].
+        [pf1_ccheck(Pref,Doc,[Form | T])] : get(doc(Form,Name,form)) ::=
+                [txt(Pref), $"$, txt(Name), $"$, pf1_ccheck($,$,Doc,T)].
+
+
+        % Генерация кусков печати документов.
+        [pf2_ccheck(Doc,[])] ::= [].
+[ctr_inc(10,Counter)] ??
+        [pf2_ccheck(Doc,[Form | T])] : [get(doc(Form,Name,form)), get(f_group(Form,Bases)), get(main_link(Form,MainDoc))] ::=
+                [$  case iAlt = $, Counter, $   // Документ "$, txt(Name), $".$, nl,
+                 pf2_ccheck(Doc,Form,Bases,MainDoc),
+                 pf2_ccheck(Doc,T)
+                ].
+
+        % Выбор способа генерации документа.
+        [pf2_ccheck(Doc,Form,[_],Doc)] ::=
+                [$    QUICK_PRINT("_$, txt(Form), $",65,{">ks",">zs"},{">zd",">kd"})$, nl].
+        [pf2_ccheck(Doc,Form,Bases,MainDoc)] ::=
+                [$    PRINTPART("_$, txt(Form), $",65,{">ks",">zs"})$, nl,
+                 $    select $, txt(MainDoc), nl,
+                 rel_pf2_ccheck(Doc,MainDoc,Bases),
+                 $    seek last_val := &last_key$, nl,
+                 $    PRINTPART(">zd")$, nl,
+                 $    do while .not.eof() .and. last_val = &last_key$, nl,
+                 $      PRINTPART(">ds")$, nl,
+                 $      skip$, nl,
+                 $      enddo$, nl,
+                 $    PRINTPART(">kd")$, nl
+                ].
+
+
+        % Правила установки отношений по базам.
+        [rel_pf2_ccheck(Doc,MainDoc,[])] ::= [].
+        [rel_pf2_ccheck(Doc,MainDoc,[MainDoc | T])] ::= [rel_pf2_ccheck(Doc,MainDoc,T)].
+        [rel_pf2_ccheck(Doc,MainDoc,[Base | T])] : [get(link(Doc,MainDoc,Base,RecvList)), get(inv(RecvList,NewRecv))] ::=
+                [set1_rel($set relation to $,NewRecv), $ into $, txt(Base), $ additive$, nl,
+                 rel_pf2_ccheck(Doc,MainDoc,T)
+                ].
+
+        [set1_rel(_,[])] ::= [].
+        [set1_rel(Pref,[recv(_,_,Name,Chars,_) | T])] ::=
+                [txt(Pref), chars_set1_rel(Name,Chars), set1_rel($+$,T)].
+
+        [chars_set1_rel(Name,char(_,_))] ::= [txt(Name)].
+        [chars_set1_rel(Name,digit(_,_))] ::= [$str($, txt(Name), $)$].
+        [chars_set1_rel(Name,date)] ::= [$dtos($, txt(Name), $)$].
+        [chars_set1_rel(Name,time)] ::= [$str($, txt(Name), $)$].
+        [chars_set1_rel(Name,boolean)] ::= [$iif($, txt(Name), $,"T","F")$].
+
+
+% *****************************************************************************
+
+
+        % Генерация программы запросов к базам данных.
+[doc(Rq,RqName,request,Doc), group(_,FullList), in_list(Doc,FullList)] ??
+        [rq_ccheck(Arm,Doc)] ::=
+                [40 * txt($* $), nl,
+                 $*     Запрос по документу $, txt(Doc), $ : $, txt(RqName), nl,
+                 40 * txt($* $), nl, nl,
+                 $function $, txt(Rq), nl,
+                 $local      last_sel := select(), last_rec := recno(), lEndLoop := .t., BaseRec$, nl,
+                 $local      KeyArr := qq__SaveKeys()$, nl,
+                 $parameters cAlias,cBounds$, nl,
+                 $private    cMacro, cKey$, 2 * nl,
+                 $// Просмотр отобранной по базе информации.$, nl,
+                 $if pcount() <> 0$, nl,
+                 $  do case$, nl,
+                 rq_group(Doc,FullList),
+                 $  endcase$, nl,
+                 $else$, nl,
+                 $// Открытие файлов БД и построение запроса.$, nl,
+                 use_check($  if .not.USE_GROUP({{"$,FullList,[]),
+                 rq_keys(Rq,FullList,[$F10$,$F9$,$F8$,$F7$,$F6$,$F5$,$F4$,$F3$]),
+                 $  select $, txt(Doc), nl,
+                 $  cKey := indexkey()$, nl,
+                 $  copy structure to .\temp\tempfile$, nl,
+                 $  use .\temp\tempfile new exclusive$, nl,
+                 $// Собственно цикл запросов.$, nl,
+                 $  do while .not.empty(cMacro := RQ_CLIPPER("$, txt(Doc), $",.t.))$, nl,
+                 $    zap$, nl,
+                 $    cMacro := &("{||"+cMacro+"}")$, nl,
+                 $    select $, txt(Doc), nl,
+                 $    USER_BAR(1,lastrec(),"Поиск информации в БД")$, nl,
+                 $    goto top$, nl,
+                 $    do while .not.eof()       && Поиск информации и перепись.$, nl,
+                 $      if eval(cMacro)$, nl,
+                 $        BaseRec := recno()$, nl,
+                 $        select tempfile$, nl,
+                 $        append from $, txt(Doc), $ record(BaseRec)$, nl,
+                 $        select $, txt(Doc), nl,
+                 $      endif$, nl,
+                 $      USER_BAR(2,1)$, nl,
+                 $      skip$, nl,
+                 $      enddo$, nl,
+                 $    USER_BAR(3)$, nl,
+                 $    select tempfile$, nl,
+                 rq_check($    MicroHelp({$,[$F10$,$F9$,$F8$,$F7$,$F6$,$F5$,$F4$,$F3$],FullList),
+                 rq_check($},{$,FullList,FullList), $})$, nl,
+                 $    Edit("$, txt(Doc), $",.f.,"idct")$, nl,
+                 $    USER_REST()$, nl,
+                 $    enddo$, nl,
+                 $  USER_REST()$, nl,
+                 $// Завершение работы запроса.$, nl,
+                 $  use$, nl,
+                 free_check($  FREE_GROUP({"$,FullList,[]),
+                 $endif$, 2 * nl,
+                 $// Восстановление среды.$, nl,
+                 $qq__RestKeys(KeyArr)$, nl,
+                 $if pcount <> 0$, nl,
+                 $  select(iLastSel)$, nl,
+                 $  goto iLastRec$, nl,
+                 $endif$, nl,
+                 $return 1$, 2 * nl,
+                 $* $, 80 * txt($-$), 2 * nl
+                ].
+        [rq_ccheck(Arm,Doc)] ::= [].
+
+
+        % Установка ключей вызова документов.
+        [rq_keys(_,[],_)] ::= [].
+        [rq_keys(Doc,[Name | T1],[Key | T2])] ::=
+                [$  SetKey(K_$, txt(Key), $,{||$, txt(Doc), $("$, txt(Name), $",cKey)})$, nl, rq_keys(Doc,T1,T2)].
+
+        % Обработка различных баз.
+        [rq_group(_,[])] ::= [].
+        [rq_group(Doc,[Name | T])] ::=
+                [$    case cAlias == "$, txt(Name), $"$, nl,
+                 $      select $, txt(Name), nl,
+                 $      Edit("$, txt(Name), $",.f.,"idct",,,{&cBounds,&cBounds})$, nl,
+                 rq_group(Doc,T)
+                ].
+
+        % Выдача текстов подсказок.
+        [rq_check(_,_,[])] ::= [].
+        [rq_check(Pref,[Key | T1],[_ | T2])] ::= [txt(Pref), $"$, Key, $"$, rq_check($,$,T1,T2)].
+
+
+% *****************************************************************************
+
+        % Генерация подокументных программ контроля-преобразования.
+        [make(modes,Name,Text)] ::=
+                [40 * txt($* $), nl,
+                 $*  Специальные функции для АРМа $, txt(Name), $ : $, txt(Text), nl,
+                 40 * txt($* $), 2 * nl,
+                 $function COPY_BD$, nl,
+                 $  ADM_CENT("COPY")$, 2 * nl,
+                 $function REST_BD$, nl,
+                 $  ADM_CENT("RESTORE")$, 2 * nl,
+                 $function PACK_BD$, nl,
+                 $  ADM_CENT("PACK")$, 2 * nl,
+                 $function INDEX_BD$, nl,
+                 $  ADM_CENT("INDEX")$, 2 * nl,
+                 $function CREATE_BD$, nl,
+                 $  ADM_CENT("CREATE")$, 2 * nl
+                ].
+

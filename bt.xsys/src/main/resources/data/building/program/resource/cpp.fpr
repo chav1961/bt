@@ -1,0 +1,378 @@
+% ---------------------------------------------------------------------------- :
+%                                                                              :
+%       Система автоматизированного проектирования программного обеспечения    :
+% для различных систем программирования с ЕЯИ-вводом.      (GSERV205)          :
+%                                                                              :
+%       Правила генерации программ в среде Window-95/Microsoft C++.            :
+%       Общая часть.                                                           :
+%                                                                              :
+%                                                                              :
+%       (с) 2000г, А.В.Черномырдин, (3513-35-24-65 аб 1326).                   :
+%       Версия 1.00 от 01.04.2000.                                             :
+%                                                                              :
+% ---------------------------------------------------------------------------- :
+
+generate.
+
+% ---------------------------------------------------------------------------- :
+%                                                                              :
+%       Правила генерации заголовка файла ресурсов.                            :
+%                                                                              :
+% ---------------------------------------------------------------------------- :
+
+        % Генерация файла объявлений.
+        [make(resource_h,Name,Text)] : get(system(Sys,SysText)) ::=
+                [file($.\target\$,resource,h),
+                 $//{{NO_DEPENDENCIES}}$, nl,
+                 $// GSERV205 for Microsoft Developer Studio generated include file.$, nl,
+                 $// Used by Script.rc$, nl,
+                 $//$, nl,
+                 $//$, nl,
+                 $//           Система $, txt(Sys), $ - $, txt(SysText), nl,
+                 $//           АРМ $, txt(Text), nl,
+                 $// (c) 2000, А.В. Черномырдин$,  nl,
+                 $//$, 3 * nl,
+                 $#define IDS_EMPTY_STRING$, tab, 1, nl,
+                 resource_control_ids(2000,64),
+                 menu_control_ids(30000), nl,
+                 $// Next default values for new objects$, nl,
+                 $// $, nl,
+                 $#ifdef APSTUDIO_INVOKED$, nl,
+                 $#ifndef APSTUDIO_READONLY_SYMBOLS$, nl,
+                 $#define _APS_NEXT_RESOURCE_VALUE$, tab, 1, nl,
+                 $#define _APS_NEXT_COMMAND_VALUE$, tab, 31000, nl,
+                 $#define _APS_NEXT_CONTROL_VALUE$, tab, 2100, nl,
+                 $#define _APS_NEXT_SYMED_VALUE$, tab, 100, nl,
+                 $#endif$, nl,
+                 $#endif$, 2 * nl
+                ].
+
+        [resource_control_ids(Val1,0)] ::= [].
+[Val3 is Val1 + 1, Val4 is Val2 - 1] ??
+        [resource_control_ids(Val1,Val2)] ::=
+                [$#define IDC_EDIT$, Val2, tab, Val1, nl,
+                 resource_control_ids(Val3,Val4)
+                ].
+
+[ctr_set(10,Val), Val1 is Val - 1, Val2 is Val - 2] ??
+        [menu_control_ids(Val)] : [bagof(doc(Doc,Name),doc(Doc,Name,oper),DocList), bagof(task(Task,TName,TDoc,Type),task(Task,TName,TDoc,Type),TaskList)] ::=
+                [menu_control_ids(DocList),
+                 menu_control_ids(TaskList),
+                 $#define ID_ABOUT$, tab, Val1, nl,
+                 $#define ID_CLOSE_WINDOWS$, tab, Val2, nl
+                ].
+
+        [menu_control_ids([])] ::= [].
+[under(_,Doc)] ??
+        [menu_control_ids([doc(Doc,Name) | T])] ::=
+                [menu_control_ids(T)].
+[ctr_inc(10,Val)] ??
+        [menu_control_ids([doc(Doc,Name) | T])] ::=
+                [$#define ID_$, txt(Doc), tab, Val, nl,
+                 menu_control_ids(T)
+                ].
+[ctr_inc(10,Val)] ??
+        [menu_control_ids([task(Task,Name,Doc,Type) | T])] ::=
+                [$#define ID_$, txt(Task), tab, Val, nl,
+                 menu_control_ids(T)
+                ].
+
+% ---------------------------------------------------------------------------- :
+%                                                                              :
+%       Правила генерации заготовки файла ресурсов.                            :
+%                                                                              :
+% ---------------------------------------------------------------------------- :
+
+        % Генерация файла объявлений.
+        [make(script_rc,Name,Text)] : get(system(Sys,SysText)) ::=
+                [file($.\target\$,Sys,rc),
+                 $// GSERV205 for Microsoft Developer Studio generated resource script.$, nl,
+                 $//$, nl,
+                 $#include "resource.h"$, nl,
+                 script_include1(Sys,SysText),
+                 script_include2(Sys,SysText),
+                 $//$, nl,
+                 $// Menu$, nl,
+                 $//$, nl,
+                 script_main_menu(Sys,SysText),
+                 script_doc_menu(Sys,SysText),
+                 $//$, nl,
+                 $// Dialog$, nl,
+                 $//$, nl,
+                 script_about_dlg(Sys,SysText),
+                 script_setup_dlg(Sys,SysText),
+                 script_doc_dlg(Sys,SysText),
+                 $#endif    // Russian resources$, nl,
+                 nl
+                ].
+
+                % Первая вставка.
+        [script_include1(Sys,Text)] ::=
+                [$// Generated Help ID header file$, nl,
+                 $#define APSTUDIO_READONLY_SYMBOLS$, nl,
+                 $//$, nl,
+                 $//$, tab, $Generated from the TEXTINCLUDE 2 resource.$, nl,
+                 $//$, nl,
+                 $#include "afxres.h"$, nl,
+                 $#undef APSTUDIO_READONLY_SYMBOLS$, nl,
+                 $// Russian resources$, nl,
+                 $#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_RUS)$, nl,
+                 $#ifdef _WIN32$, nl,
+                 $LANGUAGE LANG_RUSSIAN, SUBLANG_DEFAULT$, nl,
+                 $#pragma code_page(1251)$, nl,
+                 $#endif //_WIN32$, nl
+                ].
+
+
+                % Вторая вставка.
+        [script_include2(Sys,Text)] ::=
+                [$#ifdef APSTUDIO_INVOKED$, nl,
+                 $//$, nl,
+                 $// TEXTINCLUDE$, nl,
+                 $//$, nl,
+                 $1 TEXTINCLUDE DISCARDABLE$, nl,
+                 $BEGIN$, nl,
+                 $"resource.h\0"$, nl,
+                 $END$, nl,
+                 $2 TEXTINCLUDE DISCARDABLE$, nl,
+                 $BEGIN$, nl,
+                 $"#include ""afxres.h""\r\n"$, nl,
+                 $"\0"$, nl,
+                 $END$, nl,
+                 $3 TEXTINCLUDE DISCARDABLE$, nl,
+                 $BEGIN$, nl,
+                 $"\r\n"$, nl,
+                 $"\0"$, nl,
+                 $END$, nl,
+                 $#endif    // APSTUDIO_INVOKED$, nl
+                ].
+
+                % Генерация головного меню.
+        [script_main_menu(Sys,Text)] ::=
+                [txt(Sys), $_MENU MENU DISCARDABLE$, nl,
+                 $BEGIN$, nl,
+                 $POPUP "Документы"$, nl,
+                 $BEGIN$, nl,
+                 script_main_menu_doc(Sys,Text),
+                 $MENUITEM "Закрыть окна",ID_CLOSE_WINDOWS$, nl,
+                 $MENUITEM SEPARATOR$, nl,
+                 $END$, nl,
+                 $POPUP "Задачи"$, nl,
+                 $BEGIN$, nl,
+                 script_main_menu_task(Sys,Text),
+                 $END$, nl,
+                 $POPUP "Помощь"$, nl,
+                 $BEGIN$, nl,
+                 $MENUITEM "О программе [ORD7_MARKS.3,0,*]",ID_ABOUT,HELP,MENUBREAK$, nl,
+                 $END$, nl,
+                 $END$, nl
+                ].
+
+        [script_main_menu_doc(Sys,Text)] : bagof(doc(Doc,Name),doc(Doc,Name,oper),DocList) ::=
+                [script_main_menu_doc(Sys,Text,DocList)
+                ].
+
+        [script_main_menu_doc(_,_,[])] ::= [].
+[under(_,Doc)] ??
+        [script_main_menu_doc(Sys,Text,[doc(Doc,Name) | T])] ::=
+                [script_main_menu_doc(Sys,Text,T)].
+        [script_main_menu_doc(Sys,Text,[doc(Doc,Name) | T])] ::=
+                [$MENUITEM "$, txt(Name), $ [MENU_MARKS.0,0,*]", ID_$, txt(Doc), nl,
+                 script_main_menu_doc(Sys,Text,T)
+                ].
+
+        [script_main_menu_task(Sys,Text)] : bagof(task(Task,Name,Doc,Type),task(Task,Name,Doc,Type),TaskList) ::=
+                [script_main_menu_task(Sys,Text,TaskList)
+                ].
+
+        [script_main_menu_task(_,_,[])] ::= [].
+        [script_main_menu_task(Sys,Text,[task(Task,Name,Doc,Type) | T])] ::=
+                [$MENUITEM "$, txt(Name), $ [MENU_MARKS.0,0,*]",ID_$, txt(Task), nl,
+                 script_main_menu_task(Sys,Text,T)
+                ].
+
+
+                % Генерация меню документов.
+        [script_doc_menu(Sys,Text)] : bagof(doc(Doc,Name),doc(Doc,Name,oper),DocList) ::=
+                [script_doc_menu(Sys,Text,DocList)
+                ].
+
+        [script_doc_menu(_,_,[])] ::= [].
+[under(_,Doc)] ??
+        [script_doc_menu(Sys,Text,[doc(Doc,Name) | T])] ::=
+                [txt(Sys), $_$, txt(Doc), $ MENU DISCARDABLE$, nl,
+                 $BEGIN$, nl,
+                 $POPUP "Помощь"$, nl,
+                 $BEGIN$, nl,
+                 $MENUITEM "О программе [ORD7_MARKS.0,0,*]",ID_ABOUT,HELP,MENUBREAK$, nl,
+                 $END$, nl,
+                 $END$, nl,
+                 script_doc_menu(Sys,Text,T)
+                ].
+        [script_doc_menu(Sys,Text,[doc(Doc,Name) | T])] ::=
+                [txt(Sys), $_$, txt(Doc), $ MENU DISCARDABLE$, nl,
+                 $BEGIN$, nl,
+                 $MENUITEM "Закрыть окна",ID_CLOSE_WINDOWS$, nl,
+                 $POPUP "Помощь"$, nl,
+                 $BEGIN$, nl,
+                 $MENUITEM "О программе [ORD7_MARKS.0,0,*]",ID_ABOUT,HELP,MENUBREAK$, nl,
+                 $END$, nl,
+                 $END$, nl,
+                 script_doc_menu(Sys,Text,T)
+                ].
+
+
+                % Генерация диалога "О программе".
+        [script_about_dlg(Sys,SysText)] ::=
+                [txt(Sys), $_ABOUT DIALOG DISCARDABLE  0, 0, 253, 190$, nl,
+                 $STYLE DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU$, nl,
+                 $CAPTION "О программе..."$, nl,
+                 $FONT 8, "MS Sans Serif"$, nl,
+                 $BEGIN$, nl,
+                 $DEFPUSHBUTTON   "OK",IDOK,187,169,50,14$, nl,
+                 $CTEXT "(c) 2000 А.В.Черномырдин, $, txt(Text), $ V.R.=1.00",IDC_STATIC,175,62,67,43$, nl,
+                 $END$, 2 * nl
+                ].
+
+                % Генерация диалога настройки системы.
+        [script_setup_dlg(Sys,Text)] : bagof(recv(Key,Name,Type,From),recv($H_PARM$,Key,Name,Type,From),RecvList) ::=
+                [script_setup_dlg(Sys,Text,RecvList)
+                ].
+
+[list_len(RecvList,Len), Height is Len * 20, ctr_set(10,1)] ??
+        [script_setup_dlg(Sys,Text,RecvList)] ::=
+                [$SETUP DIALOG DISCARDABLE  0, 0, 300, $, Height, nl,
+                 $STYLE DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU$, nl,
+                 $CAPTION "Настройка системы"$, nl,
+                 $FONT 8, "MS Sans Serif"$, nl,
+                 $BEGIN$, nl,
+                 script_doc_dlg(Sys,Text,$H_PARM$,RecvList),
+                 $END$, 2 * nl
+                ].
+
+                % Генерация диалога по каждому документу.
+        [script_doc_dlg(Sys,Text)] : bagof(doc(Doc,Name),doc(Doc,Name,oper),DocList) ::=
+                [script_doc_dlg(Sys,Text,DocList)
+                ].
+
+        [script_doc_dlg(_,_,[])] ::= [].
+        [script_doc_dlg(Sys,Text,[doc(Doc,Name) | T])] : bagof(recv(Key,RName,Type,From),recv(Doc,Key,RName,Type,From),RecvList) ::=
+                [script_doc_dlg(Sys,Text,Doc,Name,RecvList),
+                 script_doc_dlg(Sys,Text,T)
+                ].
+
+[list_len(RecvList,Len), Height is Len * 20, ctr_set(10,1)] ??
+        [script_doc_dlg(Sys,Text,Doc,Name,RecvList)] ::=
+                [txt(Doc), $ DIALOG DISCARDABLE  0, 0, 300, $, Height, nl,
+                 $STYLE DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU$, nl,
+                 $CAPTION "$, txt(Name), $"$, nl,
+                 $FONT 8, "MS Sans Serif"$, nl,
+                 $BEGIN$, nl,
+                 script_doc_dlg(Sys,Text,Doc,RecvList),
+                 $END$, 2 * nl
+                ].
+
+        [script_doc_dlg(_,_,_,[])] ::= [].
+[ctr_inc(10,Val), Y is 20 * Val - 18] ??
+        [script_doc_dlg(Sys,Text,Doc,[recv(Key,RName,Type,From) | T])] : get(nameword(RName,_,RText)) ::=
+                [$LTEXT "$, txt(RText), $",IDC_STATIC,2,$, Y, $,150,16$, nl,
+                 $EDITTEXT IDC_EDIT$, Val, $,155,$, Y, $,140,16,ES_AUTOHSCROLL$, nl,
+                 script_doc_dlg(Sys,Text,Doc,T)
+                ].
+
+% ---------------------------------------------------------------------------- :
+%                                                                              :
+%       Правила генерации заготовки файла инициализации.                       :
+%                                                                              :
+% ---------------------------------------------------------------------------- :
+
+                % Генерация файла инициализации.
+        [make(ini,Name,Text)] : get(system(Sys,SysText)) ::=
+                [file($.\target\$,Sys,ini),
+                 ini_setup(Sys,SysText),
+                 ini_table(Sys,SysText),
+                 ini_cadre(Sys,SysText),
+                 ini_advanced(Sys,SysText),
+                 nl
+                ].
+
+                % Генерация секции настройки.
+        [ini_setup(Sys,Text)] : bagof(recv(Key,Name,Type,From),recv($H_PARM$,Key,Name,Type,From),RecvList) ::=
+                [ini_setup_cadre(Sys,Text,$SETUP$,$H_PARM$,RecvList)
+                ].
+
+
+                % Генерация кадра настройки.
+[ctr_set(10,1)] ??
+        [ini_setup_cadre(Sys,Text,Section,Doc,RecvList)] ::=
+                [$[$, txt(Section), $]$, nl,
+                 $[$, txt(Section), $.1]$, nl,
+                 $Resource=$, txt(Section), nl,
+                 ini_setup_cadre(Sys,Text,Doc,RecvList),
+                 2 * nl
+                ].
+
+
+                % Генерация кадров по единичным записям.
+        [ini_cadre(Sys,Text)] : bagof(doc(Doc,Name),doc(Doc,Name,oper),DocList) ::=
+                [ini_cadre(Sys,Text,DocList)
+                ].
+
+        [ini_cadre(_,_,[])] ::= [].
+[ctr_set(10,1)] ??
+        [ini_cadre(Sys,Text,[doc(Doc,Name) | T])] : bagof(recv(Key,RName,Type,From),recv(Doc,Key,RName,Type,From),RecvList) ::=
+                [$[$, txt(Doc), $]$, nl,
+                 $[$, txt(Doc), $.1]$, nl,
+                 $Resource=$, txt(Doc), nl,
+                 ini_setup_cadre(Sys,Text,Doc,RecvList),
+                 2 * nl,
+                 ini_cadre(Sys,Text,T)
+                ].
+
+
+                % Собственно генерация списка для кадра единичной записи.
+        [ini_setup_cadre(_,_,_,[])] ::= [].
+[ctr_inc(10,Val)] ??
+        [ini_setup_cadre(Sys,Text,Doc,[recv(Key,RName,Type,From) | T])] ::=
+                [$Field$, Val, $=IDC_EDIT$, Val, $,$, txt(Doc), $->$, txt(RName), $,$, nl,
+                 ini_setup_cadre(Sys,Text,Doc,T)
+                ].
+
+
+                % Генерация кадров по таблице.
+        [ini_table(Sys,Text)] : bagof(doc(Doc,Name),doc(Doc,Name,oper),DocList) ::=
+                [ini_table(Sys,Text,DocList)
+                ].
+
+        [ini_table(_,_,[])] ::= [].
+[ctr_set(10,1)] ??
+        [ini_table(Sys,Text,[doc(Doc,Name) | T])] : bagof(recv(Key,RName,Type,From),recv(Doc,Key,RName,Type,From),RecvList) ::=
+                [$[$, txt(Doc), $.TABLE]$, nl,
+                 $State=STATE_CONDS_$, txt(Doc), nl,
+                 ini_table(Sys,Text,Doc,RecvList),
+                 2 * nl,
+                 ini_table(Sys,Text,T)
+                ].
+
+
+                % Собственно генерация списка для таблицы.
+        [ini_table(_,_,_,[])] ::= [].
+[ctr_inc(10,Val)] ??
+        [ini_table(Sys,Text,Doc,[recv(Key,RName,Type,From) | T])] : get(nameword(RName,_,RText)) ::=
+                [$Field$, Val, $=$, txt(Doc), $->$, txt(RName), $,$, txt(RText), $,100,Y$, nl,
+                 ini_table(Sys,Text,Doc,T)
+                ].
+
+
+                % Генерация расширенных данных.
+        [ini_advanced(Sys,SysText)] ::=
+                [$[$, txt(Sys), $_TOOLS]$, nl,
+                 $Resource=$, txt(Sys), $_TOOLS$, nl,
+                 $Item1=IDS_NSI_EDITOR, ,Работа с НСИ$, nl,
+                 $Item2=ID_CLOSE_WINDOWS, ,Закрыть окна$, nl,
+                 $Item3=0,s,0$, nl,
+                 $Item4=IDS_SETUP, ,Настройка системы$, nl,
+                 $Item5=0,s,0$, nl,
+                 $Item6=ID_ABOUT, ,О программе$, nl
+                ].
+
