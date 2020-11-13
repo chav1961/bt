@@ -1,5 +1,6 @@
 module chav1961.bt.xsys {
 	requires chav1961.purelib;
+	requires chav1961.funnypro;
 	requires java.desktop;
 	requires java.scripting;
 	requires java.xml;
