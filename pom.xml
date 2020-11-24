@@ -10,5 +10,7 @@
   	<module>bt.nanoserviceservlet</module>
   	<module>bt.monitoring</module>
   	<module>bt.xsys</module>
+  	<module>bt.speech</module>
+  	<module>bt.jsapi</module>
   </modules>
 </project>
