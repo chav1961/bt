@@ -1,5 +1,7 @@
 package chav1961.bt.speech.synthesizer;
 
+import java.io.File;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.URI;
@@ -13,7 +15,8 @@ import javax.speech.EngineStateException;
 import chav1961.purelib.concurrent.LightWeightListenerList;
 
 public class InnerAudioManager implements AudioManager {
-	private static final int	AVAILABLE_AUDIO_MASK = AudioEvent.AUDIO_STARTED | AudioEvent.AUDIO_STOPPED | AudioEvent.AUDIO_CHANGED;
+	private static final int		AVAILABLE_AUDIO_MASK = AudioEvent.AUDIO_STARTED | AudioEvent.AUDIO_STOPPED | AudioEvent.AUDIO_CHANGED;
+	private static final String[]	EMPTY_LIST = new String[0];
 
 	private enum ExecutorRequest {
 		START,
@@ -80,13 +83,12 @@ public class InnerAudioManager implements AudioManager {
 	}
 
 	@Override
-	public void setMediaLocator(String locator) throws AudioException, IllegalStateException, IllegalArgumentException, SecurityException {
+	public void setMediaLocator(final String locator) throws AudioException, IllegalStateException, IllegalArgumentException, SecurityException {
 		// TODO Auto-generated method stub
-		
 	}
 
 	@Override
-	public void setMediaLocator(String locator, InputStream stream) throws AudioException, IllegalStateException, IllegalArgumentException, SecurityException {
+	public void setMediaLocator(final String locator, final InputStream stream) throws AudioException, IllegalStateException, IllegalArgumentException, SecurityException {
 		// TODO Auto-generated method stub
 		
 	}
@@ -104,9 +106,23 @@ public class InnerAudioManager implements AudioManager {
 	}
 
 	@Override
-	public String[] getSupportedMediaLocators(String mediaLocator) throws IllegalArgumentException {
+	public String[] getSupportedMediaLocators(final String mediaLocator) throws IllegalArgumentException {
 		// TODO Auto-generated method stub
-		return null;
+		if (mediaLocator == null || mediaLocator.isEmpty()) {
+			throw new IllegalArgumentException("Media locator can't be null or empty");
+		}
+		else {
+			final URI	uri = URI.create(mediaLocator);
+			
+			switch (uri.getScheme().toLowerCase()) {
+				case "capture" 	:
+				case "playback" :
+				case "stream" 	:
+				case "file" 	:
+				case "fsys" 	:
+				default : return EMPTY_LIST;
+			}
+		}
 	}
 
 	@Override

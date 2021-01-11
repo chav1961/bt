@@ -7,14 +7,6 @@
   </parent>
   <artifactId>bt.grants</artifactId>
 
-  <dependencies>
-	<dependency>
-	    <groupId>com.github.chav1961</groupId>
-	    <artifactId>purelib</artifactId>
-	    <version>0.0.4</version>
-	</dependency>  
-  </dependencies>
-
      <build>
        <finalName>bt.grants-0.0.1</finalName>
        <plugins>

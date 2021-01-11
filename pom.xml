@@ -4,6 +4,21 @@
   <artifactId>bt</artifactId>
   <version>0.0.1-SNAPSHOT</version>
   <packaging>pom</packaging>
+  
+	<dependencies>
+        <dependency>
+            <groupId>com.github.chav1961</groupId>
+            <artifactId>purelib</artifactId>
+            <version>0.0.5</version>
+        </dependency>
+		<dependency>
+			<groupId>junit</groupId>
+			<artifactId>junit</artifactId>
+			<version>4.13.1</version>
+			<scope>test</scope>
+		</dependency>
+	</dependencies>
+  
   <modules>
   	<module>bt.grants</module>
   	<module>bt.starter</module>
@@ -12,5 +27,7 @@
   	<module>bt.xsys</module>
   	<module>bt.speech</module>
   	<module>bt.jsapi</module>
+  	<module>bt.nlp</module>
+  	<module>bt.winsl</module>
   </modules>
 </project>
