@@ -29,5 +29,6 @@
   	<module>bt.jsapi</module>
   	<module>bt.nlp</module>
   	<module>bt.winsl</module>
+  	<module>bt.lightrepo</module>
   </modules>
 </project>
