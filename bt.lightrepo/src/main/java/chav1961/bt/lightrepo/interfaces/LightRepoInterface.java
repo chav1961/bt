@@ -4,6 +4,7 @@ import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Date;
+import java.util.Hashtable;
 import java.util.UUID;
 
 import chav1961.purelib.basic.exceptions.SyntaxException;
@@ -32,7 +33,30 @@ import chav1961.purelib.fsys.interfaces.FileSystemInterface;
  * <p>You can use {@linkplain #queryForCommit(String)} method to query data from commit history and {@linkplain #queryForPath(String)} method to
  * query data from file history. In both cases, parameter of the method contains a string query. This string has the following syntax:</p>
  * <p>
+ * <query>::= <orQuery> ['or' <orQuery> ...]
+<orQuery>::= <andQuery> ['and' <andQuery> ...]
+<andQuery>::=['not']<comparison>
+<comparison>::={<expression> {'~'|'='|'<>'|'>'|'>='|'<'|'<='|} <expression> | <expression> 'in' '['<range>[,...]']' | <booleanFunc>}
+<range>::=<expression>['..'<expression>]
+<expression>::=<term> [{'+' | '-'} <term> ...]
+<term>::={<constant>|<nonBooleanFunc>|<variable>|'('<query>')'}
+<booleanFunc>::={'exists''('<query>')' | 'contains''('<variable>','<expression>')' | 'appears''('<variable>','<expression>')'  | 'disappears''('<variable>','<expression>')'}
+<nonBooleanFunc>::='now'['('')']
+<constant>::={<number>|'"'<string>'"'|'''<string>'''}
+<variable>::={<commit>|<file>}
+<commit>::='commit'[<commitSuffix>]
+<file>::='file'[<fileSuffix>]
+<commitSuffix>::= { '.'{'author'[<caseSuffix>]|'description'[<caseSuffix>]|'timestamp'<prevNext>|'id'|'content'<fileSuffix> | <prevNextCommit>}]
+<fileSuffix>::= [<relative>]{ '.'{'path'[<caseSuffix>]|'change'|'timestamp'|'version'|'content'[<caseSuffix>]|'parseable' | <prevNextFile>}]
+<relative>::='('<expression>')'
+<prevNextCommit>::={'prev'['('<number>')']|'next'['('<number>')']}[<commitSuffix>]
+<prevNextFile>::={'prev'['('<number>')']|'next'['('<number>')']}[<fileSuffix>]
+<number>::={'0'|'1'|'2'|'3'|'4'|'5'|'6'|'7'|'8'|'9'|}[<number>]
+<string>::={<char>|<escape>}[<string>]
  * </p>
+ * <p>You can also make preliminary translation of the query string and store the translation into the repository by calling {@linkplain #translateQuery(String, Hashtable)}
+ * method. This method returns translated query ID. You can use this id to call {@linkplain #queryForPath(UUID)} and {@linkplain #queryForCommit(UUID)}} methods. To 
+ * manipulate with translated queries use the {@linkplain #getQueriesTranslated()} method.</p> 
  */
 public interface LightRepoInterface {
 	String COMMIT_ID_VAR = "commitId";
@@ -177,6 +201,29 @@ public interface LightRepoInterface {
 		 */
 		ChangeType getChangeType();
 	}
+
+	/**
+	 * <p>This interface describes translated query in the repository</p>
+	 */
+	public interface TransalatedQuery {
+		/**
+		 * <p>Get translated query id</p>
+		 * @return query id. Can't be null
+		 */
+		UUID getId();
+		
+		/**
+		 * <p>Get query string</p>
+		 * @return query string. Can't be null or empty
+		 */
+		String getQueryString();
+		
+		/**
+		 * <p>Get attributes associated with the query string</p>
+		 * @return attributes associated. Can be empty but not null. When new attributes put in the returned table, association list must be modified 
+		 */
+		Hashtable<String, Object> getAttributes();
+	}
 	
 	/**
 	 * <p>This interface describes potential commit in the repository.</p> 
@@ -203,22 +250,60 @@ public interface LightRepoInterface {
 	}
 	
 	/**
-	 * <p>Get descriptors for paths</p>
+	 * <p>Get descriptors for paths queried</p>
 	 * @param query query. Can't be null or empty. See syntax in the {@linkplain LightRepoInterface} description</p>
 	 * @return list of content found. Can't be null
 	 * @throws SyntaxException on syntax errors in the query
 	 * @throws IOException on any I/O errors
 	 */
 	Iterable<RepoItemDescriptor> queryForPath(String query) throws SyntaxException, IOException;
-	
+
 	/**
-	 * <p>Get descriptors for commits</p>
+	 * <p>Get descriptors for commits queried</p>
 	 * @param query query. Can't be null or empty. See syntax in the {@linkplain LightRepoInterface} description</p>
 	 * @return list of content found. Can't be null
 	 * @throws SyntaxException on syntax errors in the query
 	 * @throws IOException on any I/O errors
 	 */
 	Iterable<CommitDescriptor> queryForCommit(String query) throws SyntaxException, IOException;
+
+	/**
+	 * <p>Translate query string to internal form</p>
+	 * @param query query to translate. Can't be null or empty. Subsequent call with the same query string must returns the same query UUID
+	 * @param attributes attributes associated with query string. Can be null 
+	 * @return UUID for string translated. Can't be null
+	 * @throws SyntaxException on syntax errors in the query
+	 * @see #queryForPath(UUID)
+	 * @see #queryForCommit(UUID)
+	 */
+	UUID translateQuery(String query, Hashtable<String,Object> attributes) throws SyntaxException;
+
+	/**
+	 * <p>Get queries translated in the repository</p>
+	 * @return list of queries translated. Can be empty but not null
+	 * @throws IOException
+	 */
+	Iterable<TransalatedQuery> getQueriesTranslated() throws IOException;
+	
+	/**
+	 * <p>Get descriptors for paths queried</p>
+	 * @param query. Can't be null
+	 * @return list of content found. Can't be null
+	 * @throws SyntaxException on syntax errors in the query
+	 * @throws IOException on any I/O errors
+	 * @see #translateQuery(String, Hashtable)
+	 */
+	Iterable<RepoItemDescriptor> queryForPath(UUID query) throws SyntaxException, IOException;
+	
+	/**
+	 * <p>Get descriptors for commits queried</p>
+	 * @param query. Can't be null
+	 * @return list of content found. Can't be null
+	 * @throws SyntaxException on syntax errors in the query
+	 * @throws IOException on any I/O errors
+	 * @see #translateQuery(String, Hashtable)
+	 */
+	Iterable<CommitDescriptor> queryForCommit(UUID query) throws SyntaxException, IOException;
 	
 	/**
 	 * <p>Calclulate changes between the given versions of the content </p> 
