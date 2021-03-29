@@ -1,5 +1,7 @@
 package chav1961.bt.model.interfaces;
 
-public interface UIModelMapper extends ModelMapper {
+import chav1961.purelib.ui.swing.interfaces.JComponentMonitor;
+
+public interface UIModelMapper extends ModelMapper, JComponentMonitor {
 
 }
