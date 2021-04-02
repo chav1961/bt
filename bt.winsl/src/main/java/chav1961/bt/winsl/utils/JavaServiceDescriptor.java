@@ -62,13 +62,13 @@ public class JavaServiceDescriptor {
 
 	public String	lpServiceName;
 	public String	lpDisplayName;
-	public int		dwDesiredAccess;
-	public int		dwServiceType;
-	public int		dwStartType;
-	public int		dwErrorControl;
+	public long		dwDesiredAccess;
+	public long		dwServiceType;
+	public long		dwStartType;
+	public long		dwErrorControl;
 	public String	lpBinaryPathName;
 	public String	lpLoadOrderGroup;
-	public int		lpdwTagId;
+	public long		lpdwTagId;
 	public String	lpDependencies;
 	public String	lpServiceStartName;
 	public String	lpPassword;
