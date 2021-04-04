@@ -10,18 +10,98 @@ extern "C" {
 /*
  * Class:     chav1961_bt_winsl_utils_JavaServiceLibrary
  * Method:    installService
- * Signature: (Ljava/lang/String;Ljava/lang/String;)I
+ * Signature: (Lchav1961/bt/winsl/utils/JavaServiceDescriptor;)I
  */
 JNIEXPORT jint JNICALL Java_chav1961_bt_winsl_utils_JavaServiceLibrary_installService
-  (JNIEnv *, jclass, jstring, jstring);
+  (JNIEnv *, jclass, jobject);
+
+/*
+ * Class:     chav1961_bt_winsl_utils_JavaServiceLibrary
+ * Method:    updateService
+ * Signature: (Lchav1961/bt/winsl/utils/JavaServiceDescriptor;)I
+ */
+JNIEXPORT jint JNICALL Java_chav1961_bt_winsl_utils_JavaServiceLibrary_updateService
+  (JNIEnv *, jclass, jobject);
+
+/*
+ * Class:     chav1961_bt_winsl_utils_JavaServiceLibrary
+ * Method:    enumServices
+ * Signature: (II)[Lchav1961/bt/winsl/utils/ServiceEnumDescriptor;
+ */
+JNIEXPORT jobjectArray JNICALL Java_chav1961_bt_winsl_utils_JavaServiceLibrary_enumServices
+  (JNIEnv *, jclass, jint, jint);
+
+/*
+ * Class:     chav1961_bt_winsl_utils_JavaServiceLibrary
+ * Method:    queryService
+ * Signature: (Ljava/lang/String;)Lchav1961/bt/winsl/utils/JavaServiceDescriptor;
+ */
+JNIEXPORT jobject JNICALL Java_chav1961_bt_winsl_utils_JavaServiceLibrary_queryService
+  (JNIEnv *, jclass, jstring);
 
 /*
  * Class:     chav1961_bt_winsl_utils_JavaServiceLibrary
  * Method:    removeService
- * Signature: (Ljava/lang/String;Ljava/lang/String;)I
+ * Signature: (Ljava/lang/String;)I
  */
 JNIEXPORT jint JNICALL Java_chav1961_bt_winsl_utils_JavaServiceLibrary_removeService
-  (JNIEnv *, jclass, jstring, jstring);
+  (JNIEnv *, jclass, jstring);
+
+/*
+ * Class:     chav1961_bt_winsl_utils_JavaServiceLibrary
+ * Method:    prepareService
+ * Signature: ()I
+ */
+JNIEXPORT jint JNICALL Java_chav1961_bt_winsl_utils_JavaServiceLibrary_prepareService
+  (JNIEnv *, jclass);
+
+/*
+ * Class:     chav1961_bt_winsl_utils_JavaServiceLibrary
+ * Method:    getServiceRequest
+ * Signature: ()Lchav1961/bt/winsl/utils/ServiceRequestDescriptor;
+ */
+JNIEXPORT jobject JNICALL Java_chav1961_bt_winsl_utils_JavaServiceLibrary_getServiceRequest
+  (JNIEnv *, jclass);
+
+/*
+ * Class:     chav1961_bt_winsl_utils_JavaServiceLibrary
+ * Method:    startService
+ * Signature: (Ljava/lang/String;)I
+ */
+JNIEXPORT jint JNICALL Java_chav1961_bt_winsl_utils_JavaServiceLibrary_startService
+  (JNIEnv *, jclass, jstring);
+
+/*
+ * Class:     chav1961_bt_winsl_utils_JavaServiceLibrary
+ * Method:    pauseService
+ * Signature: (Ljava/lang/String;)I
+ */
+JNIEXPORT jint JNICALL Java_chav1961_bt_winsl_utils_JavaServiceLibrary_pauseService
+  (JNIEnv *, jclass, jstring);
+
+/*
+ * Class:     chav1961_bt_winsl_utils_JavaServiceLibrary
+ * Method:    resumeService
+ * Signature: (Ljava/lang/String;)I
+ */
+JNIEXPORT jint JNICALL Java_chav1961_bt_winsl_utils_JavaServiceLibrary_resumeService
+  (JNIEnv *, jclass, jstring);
+
+/*
+ * Class:     chav1961_bt_winsl_utils_JavaServiceLibrary
+ * Method:    stopService
+ * Signature: (Ljava/lang/String;)I
+ */
+JNIEXPORT jint JNICALL Java_chav1961_bt_winsl_utils_JavaServiceLibrary_stopService
+  (JNIEnv *, jclass, jstring);
+
+/*
+ * Class:     chav1961_bt_winsl_utils_JavaServiceLibrary
+ * Method:    unprepareService
+ * Signature: ()I
+ */
+JNIEXPORT jint JNICALL Java_chav1961_bt_winsl_utils_JavaServiceLibrary_unprepareService
+  (JNIEnv *, jclass);
 
 #ifdef __cplusplus
 }
