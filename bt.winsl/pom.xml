@@ -58,7 +58,7 @@
 	</distributionManagement>
   
      <build>
-       <finalName>starter-0.0.1</finalName>
+       <finalName>winsl-0.0.1</finalName>
         <resources>
             <resource>
                 <directory>src/main/java</directory>

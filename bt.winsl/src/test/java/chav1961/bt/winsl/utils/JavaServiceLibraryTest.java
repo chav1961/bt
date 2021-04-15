@@ -33,32 +33,4 @@ public class JavaServiceLibraryTest {
 			Assert.assertEquals(0,JavaServiceLibrary.removeService("test"));
 		}
 	}
-	
-	public void serviceManipulationTest() throws EnvironmentException, InterruptedException, ContentException {
-		Assert.assertEquals(0, JavaServiceLibrary.prepareService());
-
-		final Thread	t = new Thread(()->{
-							try{
-								for (;;) {
-									try{final ServiceRequestDescriptor	srd = JavaServiceLibrary.getServiceRequest();
-										Assert.assertEquals(val, srd.request);
-									} catch (EnvironmentException e) {
-										e.printStackTrace();
-										break;
-									} catch (AssertionError err) {
-										System.err.println("ERR! "+err.getLocalizedMessage().getBytes());
-									}
-								}
-							} finally {
-								
-							}
-						});
-		t.setDaemon(true);
-		t.start();
-		
-		Assert.assertEquals(1, JavaServiceLibrary.startService("test"));
-		Thread.sleep(1000);
-		
-		Assert.assertEquals(0, JavaServiceLibrary.unprepareService());
-	}
 }

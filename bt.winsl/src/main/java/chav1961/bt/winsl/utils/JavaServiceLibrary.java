@@ -71,10 +71,10 @@ public class JavaServiceLibrary {
 
 	/**
 	 * <p>Get callback service request from the Windows</p>
-	 * @return callback service request. Can't be null 
+	 * @return service control code 
 	 * @throws EnvironmentException on any errors
 	 */
-	public static native ServiceRequestDescriptor getServiceRequest() throws EnvironmentException;
+	public static native int getServiceRequest() throws EnvironmentException;
 
 	/**
 	 * <p>Start service. Must be the second call when starting service</p>

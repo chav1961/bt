@@ -31,62 +31,63 @@ public class Application {
 	public static final String	USER_INI = "user";
 	public static final String	PASSWORD_INI = "password";
 
-	private static final String	INSTALL_MANDATORIES[] = {SERVICENAME_INI, DISPLAYNAME_INI, STARTTYPE_INI, PATH_INI}; 
+	private static final Object	INSTALL_MANDATORIES[] = {SERVICENAME_INI, DISPLAYNAME_INI, STARTTYPE_INI, PATH_INI}; 
+	private static final Object	UPDATE_MANDATORIES[] = {SERVICENAME_INI}; 
+	private static final Object	REMOVE_MANDATORIES[] = {SERVICENAME_INI}; 
 	
 	public enum ApplicationMode {
-		install, remove, update, manage, start
+		install, remove, update, reinstall
 	}
 
 	public static void main(String[] args) {
-		// TODO Auto-generated method stub
 		final ArgParser		parser = new ApplicationArgParser();
 
 		try{final ArgParser	ap = parser.parse(false, false, args);
 		
-			switch (ap.getValue(MODE_KEY, ApplicationMode.class)) {
-				case manage		:
-					if (ap.isTyped(CONF_KEY)) {
-						try(final InputStream	is = ap.getValue(CONF_KEY, URI.class).toURL().openStream()) {
-							manageService(getConfiguration(is));
+			if (!System.getProperty("os.name","unknown").toUpperCase().contains("WINDOWS")) {
+				throw new CommandLineParametersException("This application can be used in the Windows-based systems only");
+			}
+		
+			try(final InputStream	is = ap.getValue(CONF_KEY, URI.class).toURL().openStream()) {
+				final String		serviceName = ap.getValue(SERVICE_NAME_KEY, String.class);
+				final SubstitutableProperties	sp = getConfiguration(is); 
+				
+				switch (ap.getValue(MODE_KEY, ApplicationMode.class)) {
+					case install	:
+						installService(serviceName, sp);
+						break;
+					case remove		:
+						removeService(serviceName,  sp);
+						break;
+					case update		:
+						updateService(serviceName, sp);
+						break;
+					case reinstall		:
+						try{removeService(serviceName,  sp);
+						} catch (ContentException exc) {
 						}
-					}
-					else {
-						try(final InputStream	is = new InputStream() {@Override public int read() throws IOException {return -1;}}) {
-							manageService(getConfiguration(is));
-						}
-					}
-					break;
-				case install	:
-					try(final InputStream	is = ap.getValue(CONF_KEY, URI.class).toURL().openStream()) {
-						installService(getConfiguration(is));
-					}
-					break;
-				case remove		:
-					removeService(ap.getValue(SERVICE_NAME_KEY, String.class));
-					break;
-				case update		:
-					try(final InputStream	is = ap.getValue(CONF_KEY, URI.class).toURL().openStream()) {
-						updateService(ap.getValue(SERVICE_NAME_KEY, String.class), getConfiguration(is));
-					}
-					break;
-				default	:
-					throw new UnsupportedOperationException("Application mode ["+ap.getValue(MODE_KEY, ApplicationMode.class)+"] is not supported yet");
+						installService(serviceName, sp);
+						break;
+					default	:
+						throw new UnsupportedOperationException("Application mode ["+ap.getValue(MODE_KEY, ApplicationMode.class)+"] is not supported yet");
+				}
 			}
 		} catch (CommandLineParametersException e) {
-			System.err.println("Command line parameter error: "+e.getLocalizedMessage());
-			System.err.println(parser.getUsage("winsl"));
-			System.exit(128);
+			printError(128,"Command line parameter error: "+e.getLocalizedMessage(),parser.getUsage("winsl"));
 		} catch (ContentException e) {
-			System.err.println("Action error: "+e.getLocalizedMessage());
-			System.err.println(parser.getUsage("winsl"));
-			System.exit(128);
+			e.printStackTrace();
+			printError(128,"Action error: "+e.getLocalizedMessage(),parser.getUsage("winsl"));
 		} catch (IOException | EnvironmentException e) {
-			System.err.println("I/O error processing config URI: "+e.getLocalizedMessage());
-			System.err.println(parser.getUsage("winsl"));
-			System.exit(129);
+			printError(129,"I/O error processing config URI: "+e.getClass().getSimpleName()+" - "+e.getLocalizedMessage(),parser.getUsage("winsl"));
 		}
 	}
 
+	private static void printError(final int rc, final String error, final String usage) {
+		System.err.println(error);
+		System.err.println(usage);
+		System.exit(rc);
+	}
+	
 	private static SubstitutableProperties getConfiguration(final InputStream is) throws IOException {
 		final SubstitutableProperties	props = new SubstitutableProperties();
 		
@@ -94,42 +95,76 @@ public class Application {
 		return props;
 	}
 	
-	private static void installService(final SubstitutableProperties conf) throws ContentException, EnvironmentException {
-		if (conf.containsKey(SERVICENAME_INI) && conf.containsKey(DISPLAYNAME_INI) && conf.containsKey(STARTTYPE_INI) && conf.containsKey(PATH_INI)) {
-			final JavaServiceDescriptor	desc = new JavaServiceDescriptor();
-			
-			desc.lpServiceName = conf.getProperty(SERVICENAME_INI, String.class);
-			desc.lpDisplayName = conf.getProperty(DISPLAYNAME_INI, String.class);
-			desc.dwStartType = conf.getProperty(STARTTYPE_INI, StartType.class).getStartType();
-			desc.lpBinaryPathName = conf.getProperty(PATH_INI, String.class);
-			
-			desc.dwDesiredAccess = JavaServiceDescriptor.GENERIC_ALL;
-			desc.dwServiceType = JavaServiceDescriptor.SERVICE_WIN32_OWN_PROCESS;
-			desc.dwErrorControl = conf.getProperty(ERRORCONTROL_INI, ErrorControl.class, "normal").getErrorControl();
-			desc.lpLoadOrderGroup = conf.getProperty(ORDERGROUP_INI, String.class);
-			desc.lpDependencies = conf.getProperty(DEPENDENCIES_INI, String.class);
-			desc.lpServiceStartName = conf.getProperty(USER_INI, String.class);
-			desc.lpPassword = conf.getProperty(PASSWORD_INI, String.class);
-
-			JavaServiceLibrary.installService(desc);
+	private static void installService(final String name, final SubstitutableProperties conf) throws ContentException, EnvironmentException {
+		if (conf.containsAllKeys(INSTALL_MANDATORIES)) {
+			if (JavaServiceLibrary.queryService(name) == null) {
+				final JavaServiceDescriptor	desc = new JavaServiceDescriptor();
+				
+				desc.lpServiceName = conf.getProperty(SERVICENAME_INI, String.class);
+				desc.lpDisplayName = conf.getProperty(DISPLAYNAME_INI, String.class);
+				desc.dwStartType = conf.getProperty(STARTTYPE_INI, StartType.class).getStartType();
+				desc.lpBinaryPathName = conf.getProperty(PATH_INI, String.class);
+				
+				desc.dwDesiredAccess = JavaServiceDescriptor.SERVICE_ALL_ACCESS;
+				desc.dwServiceType = JavaServiceDescriptor.SERVICE_WIN32_OWN_PROCESS;
+				desc.dwErrorControl = conf.getProperty(ERRORCONTROL_INI, ErrorControl.class, "normal").getErrorControl();
+				desc.lpLoadOrderGroup = conf.getProperty(ORDERGROUP_INI, String.class);
+				desc.lpDependencies = conf.getProperty(DEPENDENCIES_INI, String.class);
+				desc.lpServiceStartName = conf.getProperty(USER_INI, String.class);
+				desc.lpPassword = conf.getProperty(PASSWORD_INI, String.class);
+	
+				JavaServiceLibrary.installService(desc);
+			}
+			else {
+				throw new ContentException("Service to install ["+name+"] already exists on your computer");
+			}
 		}
 		else {
 			throw new ContentException("Configuration error: some mandatory parameters are missing in the config file. At least "+Arrays.toString(INSTALL_MANDATORIES)+" must be typed");
 		}
 	}
 
-	private static void updateService(final String name, final SubstitutableProperties conf) {
-		// TODO Auto-generated method stub
-		
+	private static void updateService(final String name, final SubstitutableProperties conf) throws ContentException, EnvironmentException {
+		if (conf.containsAllKeys(UPDATE_MANDATORIES)) {
+			final JavaServiceDescriptor	desc = JavaServiceLibrary.queryService(name);
+			
+			if (desc != null) {
+				desc.lpServiceName = conf.getProperty(SERVICENAME_INI, String.class);
+				desc.lpDisplayName = conf.getProperty(DISPLAYNAME_INI, String.class);
+				desc.dwStartType = conf.getProperty(STARTTYPE_INI, StartType.class).getStartType();
+				desc.lpBinaryPathName = conf.getProperty(PATH_INI, String.class);
+				
+				desc.dwDesiredAccess = JavaServiceDescriptor.GENERIC_ALL;
+				desc.dwServiceType = JavaServiceDescriptor.SERVICE_WIN32_OWN_PROCESS;
+				desc.dwErrorControl = conf.getProperty(ERRORCONTROL_INI, ErrorControl.class, "normal").getErrorControl();
+				desc.lpLoadOrderGroup = conf.getProperty(ORDERGROUP_INI, String.class);
+				desc.lpDependencies = conf.getProperty(DEPENDENCIES_INI, String.class);
+				desc.lpServiceStartName = conf.getProperty(USER_INI, String.class);
+				desc.lpPassword = conf.getProperty(PASSWORD_INI, String.class);
+
+				JavaServiceLibrary.updateService(desc);
+			}
+			else {
+				throw new ContentException("Service to update ["+name+"] is not installed on your computer");
+			}
+		}
+		else {
+			throw new ContentException("Configuration error: some mandatory parameters are missing in the config file. At least "+Arrays.toString(UPDATE_MANDATORIES)+" must be typed");
+		}
 	}
 	
-	private static void removeService(final String serviceName) throws EnvironmentException, ContentException {
-		JavaServiceLibrary.removeService(serviceName);
-	}
-
-	private static void manageService(final SubstitutableProperties conf) {
-		// TODO Auto-generated method stub
-		
+	private static void removeService(final String name, final SubstitutableProperties conf) throws EnvironmentException, ContentException {
+		if (conf.containsAllKeys(REMOVE_MANDATORIES)) {
+			if (JavaServiceLibrary.queryService(name) != null) {
+				JavaServiceLibrary.removeService(name);
+			}
+			else {
+				throw new ContentException("Service to remove ["+name+"] is not installed on your computer");
+			}
+		}
+		else {
+			throw new ContentException("Configuration error: some mandatory parameters are missing in the config file. At least "+Arrays.toString(UPDATE_MANDATORIES)+" must be typed");
+		}
 	}
 
 	static class ApplicationArgParser extends ArgParser {
