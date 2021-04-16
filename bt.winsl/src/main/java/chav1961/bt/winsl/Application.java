@@ -31,7 +31,12 @@ public class Application {
 	public static final String	USER_INI = "user";
 	public static final String	PASSWORD_INI = "password";
 
-	private static final Object	INSTALL_MANDATORIES[] = {SERVICENAME_INI, DISPLAYNAME_INI, STARTTYPE_INI, PATH_INI}; 
+	public static final String	START_INI = "start";
+	public static final String	PAUSE_INI = "pause";
+	public static final String	RESUME_INI = "resume";
+	public static final String	STOP_INI = "stop";
+	
+	private static final Object	INSTALL_MANDATORIES[] = {SERVICENAME_INI, DISPLAYNAME_INI, STARTTYPE_INI, PATH_INI, START_INI}; 
 	private static final Object	UPDATE_MANDATORIES[] = {SERVICENAME_INI}; 
 	private static final Object	REMOVE_MANDATORIES[] = {SERVICENAME_INI}; 
 	
@@ -48,34 +53,31 @@ public class Application {
 				throw new CommandLineParametersException("This application can be used in the Windows-based systems only");
 			}
 		
-			try(final InputStream	is = ap.getValue(CONF_KEY, URI.class).toURL().openStream()) {
-				final String		serviceName = ap.getValue(SERVICE_NAME_KEY, String.class);
-				final SubstitutableProperties	sp = getConfiguration(is); 
-				
-				switch (ap.getValue(MODE_KEY, ApplicationMode.class)) {
-					case install	:
-						installService(serviceName, sp);
-						break;
-					case remove		:
-						removeService(serviceName,  sp);
-						break;
-					case update		:
-						updateService(serviceName, sp);
-						break;
-					case reinstall		:
-						try{removeService(serviceName,  sp);
-						} catch (ContentException exc) {
-						}
-						installService(serviceName, sp);
-						break;
-					default	:
-						throw new UnsupportedOperationException("Application mode ["+ap.getValue(MODE_KEY, ApplicationMode.class)+"] is not supported yet");
-				}
+			final SubstitutableProperties	sp = getConfiguration(ap.getValue(CONF_KEY, URI.class)); 
+			final String					serviceName = sp.getProperty(SERVICE_NAME_KEY, String.class);
+			
+			switch (ap.getValue(MODE_KEY, ApplicationMode.class)) {
+				case install	:
+					installService(serviceName, sp);
+					break;
+				case remove		:
+					removeService(serviceName,  sp);
+					break;
+				case update		:
+					updateService(serviceName, sp);
+					break;
+				case reinstall		:
+					try{removeService(serviceName,  sp);
+					} catch (ContentException exc) {
+					}
+					installService(serviceName, sp);
+					break;
+				default	:
+					throw new UnsupportedOperationException("Application mode ["+ap.getValue(MODE_KEY, ApplicationMode.class)+"] is not supported yet");
 			}
 		} catch (CommandLineParametersException e) {
 			printError(128,"Command line parameter error: "+e.getLocalizedMessage(),parser.getUsage("winsl"));
 		} catch (ContentException e) {
-			e.printStackTrace();
 			printError(128,"Action error: "+e.getLocalizedMessage(),parser.getUsage("winsl"));
 		} catch (IOException | EnvironmentException e) {
 			printError(129,"I/O error processing config URI: "+e.getClass().getSimpleName()+" - "+e.getLocalizedMessage(),parser.getUsage("winsl"));
@@ -88,11 +90,13 @@ public class Application {
 		System.exit(rc);
 	}
 	
-	private static SubstitutableProperties getConfiguration(final InputStream is) throws IOException {
-		final SubstitutableProperties	props = new SubstitutableProperties();
-		
-		props.load(is);
-		return props;
+	static SubstitutableProperties getConfiguration(final URI source) throws IOException {
+		try(final InputStream	is = source.toURL().openStream()) {
+			final SubstitutableProperties	props = new SubstitutableProperties();
+			
+			props.load(is);
+			return props;
+		}
 	}
 	
 	private static void installService(final String name, final SubstitutableProperties conf) throws ContentException, EnvironmentException {

@@ -9,6 +9,27 @@ import chav1961.purelib.basic.exceptions.EnvironmentException;
  *
  */
 public class JavaServiceLibrary {
+	/**
+	 * <p>Request to start application</p>
+	 */
+	public static final int RC_START = 0;
+	/**
+	 * <p>Request to pause application</p>
+	 */
+	public static final int RC_PAUSE = 1;
+	/**
+	 * <p>Request to resume application</p>
+	 */
+	public static final int RC_RESUME = 2;
+	/**
+	 * <p>Request to stop application</p>
+	 */
+	public static final int RC_STOP = 3;
+	/**
+	 * <p>Unclassified request</p>
+	 */
+	public static final int RC_UNKNOWN = 4;
+	
 	static {
 		try {
 			System.loadLibrary("JavaServiceLibrary");
@@ -71,7 +92,7 @@ public class JavaServiceLibrary {
 
 	/**
 	 * <p>Get callback service request from the Windows</p>
-	 * @return service control code 
+	 * @return service control code (see {@link #RC_START}, {@link #RC_STOP}, {@link #RC_PAUSE}, {@link #RC_RESUME})
 	 * @throws EnvironmentException on any errors
 	 */
 	public static native int getServiceRequest() throws EnvironmentException;
@@ -113,9 +134,17 @@ public class JavaServiceLibrary {
 	public static native int stopService(final String serviceName) throws EnvironmentException, ContentException;
 
 	/**
-	 * <p>Destroy inter-thread communicatuions. Mist be the same last call when starting service
+	 * <p>Destroy inter-thread communications. Mist be the same last call when starting service
 	 * @return 0 when successful, otherwise Windows error code.
 	 * @throws EnvironmentException on any errors
 	 */
 	public static native int unprepareService() throws EnvironmentException;
+	
+	/**
+	 * <p>Print message to service log</p>
+	 * @param service service name to print message for
+	 * @param message message to print
+	 * @throws EnvironmentException on any errors
+	 */
+	public static native void print2ServiceLog(String service, String message) throws EnvironmentException;
 }
