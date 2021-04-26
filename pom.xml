@@ -31,5 +31,8 @@
   	<module>bt.lightrepo</module>
   	<module>bt.modelbricks</module>
   	<module>bt.model</module>
+  	<module>bt.opc</module>
+  	<module>bt.mnemoed</module>
+  	<module>bt.mnemort</module>
   </modules>
 </project>
