@@ -1,6 +1,7 @@
 package chav1961.bt.mnemoed.controls;
 
 import java.awt.CardLayout;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 
@@ -17,11 +18,10 @@ public class CardWindow extends JPanel {
 	}
 
 	public InputStream getInputStream() {
-		return null;
+		return new InputStream() {@Override public int read() throws IOException {return -1;}};
 	}
 
 	public OutputStream getOutputStream() {
-		return null;
+		return new OutputStream() {@Override public void write(int b) throws IOException {}};
 	}
-	
 }

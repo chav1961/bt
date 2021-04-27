@@ -10,4 +10,6 @@ module chav1961.bt.mnemoed {
 	requires jdk.httpserver;
 	requires java.compiler;
 	requires jdk.javadoc;
+	
+	opens chav1961.bt.mnemoed to chav1961.purelib;
 }

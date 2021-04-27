@@ -1,6 +1,7 @@
 package chav1961.bt.mnemoed;
 
 import java.awt.BorderLayout;
+import java.awt.event.ActionListener;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -9,16 +10,22 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.ServerSocket;
 import java.net.URI;
+import java.util.Hashtable;
 import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.CountDownLatch;
 
 import javax.swing.JFrame;
+import javax.swing.JLabel;
+import javax.swing.JMenu;
 import javax.swing.JMenuBar;
+import javax.swing.JMenuItem;
+import javax.swing.JScrollPane;
 import javax.swing.JSplitPane;
+import javax.swing.SwingUtilities;
+import javax.swing.border.EtchedBorder;
 
 import chav1961.bt.mnemoed.controls.CardWindow;
-import chav1961.bt.mnemoed.controls.EditorPane;
 import chav1961.purelib.basic.ArgParser;
 import chav1961.purelib.basic.SubstitutableProperties;
 import chav1961.purelib.basic.SystemErrLoggerFacade;
@@ -35,14 +42,18 @@ import chav1961.purelib.fsys.interfaces.FileSystemInterface;
 import chav1961.purelib.i18n.LocalizerFactory;
 import chav1961.purelib.i18n.PureLibLocalizer;
 import chav1961.purelib.i18n.interfaces.Localizer;
+import chav1961.purelib.i18n.interfaces.SupportedLanguages;
 import chav1961.purelib.i18n.interfaces.Localizer.LocaleChangeListener;
 import chav1961.purelib.model.ContentModelFactory;
 import chav1961.purelib.model.interfaces.ContentMetadataInterface;
 import chav1961.purelib.nanoservice.NanoServiceFactory;
+import chav1961.purelib.ui.swing.SimpleNavigatorTree;
 import chav1961.purelib.ui.swing.SwingUtils;
+import chav1961.purelib.ui.swing.interfaces.OnAction;
 import chav1961.purelib.ui.swing.useful.JFileContentManipulator;
-import chav1961.purelib.ui.swing.useful.JStateString;
+import chav1961.purelib.ui.swing.useful.JFileContentManipulator.FileContentChangedEvent;
 import chav1961.purelib.ui.swing.useful.JFileContentManipulator.LRUPersistence;
+import chav1961.purelib.ui.swing.useful.JStateString;
 
 public class Application extends JFrame implements LocaleChangeListener, AutoCloseable {
 	private static final long serialVersionUID = -7543002777932405693L;
@@ -55,10 +66,12 @@ public class Application extends JFrame implements LocaleChangeListener, AutoClo
 	private final Localizer					localizer;
 	private final int 						localHelpPort;
 	private final CountDownLatch			latch;
+	private final SimpleNavigatorTree		leftMenu;
 	private final FileSystemInterface		fsi;
 	private final SubstitutableProperties	props = new SubstitutableProperties();
 	private final JMenuBar					menu;
 	private final JFileContentManipulator	manipulator;
+	private final ActionListener			lruListener = (e)->openLRU(e.getActionCommand());
 	private final CardWindow				cardWindow;
 	private final JStateString				state;
 	
@@ -78,9 +91,12 @@ public class Application extends JFrame implements LocaleChangeListener, AutoClo
 			this.localHelpPort = localHelpPort;
 			this.latch = latch;
 			this.menu = SwingUtils.toJComponent(app.byUIPath(URI.create("ui:/model/navigation.top.mainmenu")), JMenuBar.class);
+			this.leftMenu = new SimpleNavigatorTree(localizer,app.byUIPath(URI.create("ui:/model/navigation.top.navigator")));
 			this.cardWindow = new CardWindow(localizer);
 			this.fsi = FileSystemFactory.createFileSystem(URI.create("fsys:file://./"));
 			this.state = new JStateString(localizer);
+
+			parent.push(localizer);
 			
 			if (f.exists() && f.isFile()) {
 				try(final InputStream	is = new FileInputStream(f)) {
@@ -108,10 +124,16 @@ public class Application extends JFrame implements LocaleChangeListener, AutoClo
 					}
 				}
 			});
+			this.manipulator.addFileContentChangeListener((e)->SwingUtilities.invokeLater(()->changeState(e)));
 			
-			final JSplitPane	left = new JSplitPane();
-			final JSplitPane	total = new JSplitPane(JSplitPane.VERTICAL_SPLIT, left, cardWindow);
+			leftMenu.addActionListener((e)->{callNavigator(e.getActionCommand());});
 			
+			final JSplitPane	left = new JSplitPane(JSplitPane.VERTICAL_SPLIT, new JScrollPane(leftMenu), new JLabel("?????"));
+			final JSplitPane	total = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, left, cardWindow);
+
+			state.setBorder(new EtchedBorder());
+			
+			getContentPane().add(menu, BorderLayout.NORTH);
 			getContentPane().add(total, BorderLayout.CENTER);
 			getContentPane().add(state, BorderLayout.SOUTH);
 			SwingUtils.assignActionListeners(menu,this);
@@ -119,14 +141,17 @@ public class Application extends JFrame implements LocaleChangeListener, AutoClo
 			SwingUtils.assignExitMethod4MainWindow(this,()->{exitApplication();});
 			localizer.addLocaleChangeListener(this);
 			
-			fillLocalizedStrings();
+			fillLocalizedStrings(localizer.currentLocale().getLocale(),localizer.currentLocale().getLocale());
 			pack();
+			state.message(Severity.info, "Ready");
 		}
 	}
 
 	@Override
 	public void localeChanged(final Locale oldLocale, final Locale newLocale) throws LocalizationException {
-		fillLocalizedStrings();
+		fillLocalizedStrings(oldLocale,newLocale);
+		SwingUtils.refreshLocale(menu,oldLocale, newLocale);
+		SwingUtils.refreshLocale(leftMenu,oldLocale, newLocale);
 	}
 
 	@Override
@@ -143,6 +168,41 @@ public class Application extends JFrame implements LocaleChangeListener, AutoClo
 		dispose();
 	}
 
+	@OnAction("action:/newFile")
+	private void newFile() throws IOException {
+		manipulator.newFile();
+		manipulator.setModificationFlag();
+		refreshMenu();
+	}
+
+	@OnAction("action:/openFile")
+	private void openFile() throws IOException {
+		try{manipulator.openFile();
+			refreshMenu();
+		} catch (IOException e) {
+			state.message(Severity.error,"Error opening project: "+e.getLocalizedMessage());
+		}
+	}
+	
+	@OnAction("action:/saveFile")
+	private void saveFile() throws IOException {
+		try{manipulator.saveFile();
+			refreshMenu();
+		} catch (IOException e) {
+			state.message(Severity.error,"Error saving project: "+e.getLocalizedMessage());
+		}
+	}
+	
+	@OnAction("action:/saveFileAs")
+	private void saveFileAs() throws IOException {
+		try{manipulator.saveFileAs();
+			refreshMenu();
+		} catch (IOException e) {
+			state.message(Severity.error,"Error opening keystore: "+e.getLocalizedMessage());
+		}
+	}
+	
+	@OnAction("action:/exit")
 	private void exitApplication() throws IOException {
 		try{manipulator.close();
 			latch.countDown();
@@ -150,9 +210,97 @@ public class Application extends JFrame implements LocaleChangeListener, AutoClo
 		}
 	}
 
-	private void fillLocalizedStrings() {
+	@OnAction(value="action:/play",async=true)
+	private void play() throws IOException {
+	}
+	
+	@OnAction(value="action:/simulator",async=true)
+	private void simulator() throws IOException {
+	}
+
+	@OnAction("action:/builtin.languages")
+	private void selectLang(final Hashtable<String,String[]> langs) throws LocalizationException {
+		localizer.getParent().setCurrentLocale(SupportedLanguages.valueOf(langs.get("lang")[0]).getLocale());
+	}
+	
+	@OnAction("action:/helpContent")
+	private void helpContent() throws IOException {
+	}
+	
+	@OnAction("action:/helpAbout")
+	private void helpAbout() throws IOException {
+	}
+
+	private void callNavigator(final String actionCommand) {
 		// TODO Auto-generated method stub
 		
+	}
+
+	private void changeState(final FileContentChangedEvent event) {
+		final JMenuItem		save = (JMenuItem)SwingUtils.findComponentByName(menu, "menu.file.save");
+		final JMenuItem		saveAs = (JMenuItem)SwingUtils.findComponentByName(menu, "menu.file.saveAs");
+		
+		switch (event.getChangeType()) {
+			case FILE_LOADED		:
+				save.setEnabled(false);
+				saveAs.setEnabled(true);
+			case FILE_STORED_AS		:
+				fillLRUSubmenu();
+				break;
+			case MODIFICATION_FLAG_CLEAR	:
+				save.setEnabled(false);
+				break;
+			case MODIFICATION_FLAG_SET		:
+				save.setEnabled(true);
+				break;
+			case NEW_FILE_CREATED	:
+				saveAs.setEnabled(true);
+				break;
+			case FILE_STORED		:
+				break;
+			case LRU_LIST_REFRESHED	:
+				fillLRUSubmenu();
+				break;
+			default:
+				throw new UnsupportedOperationException("Change event type ["+event.getChangeType()+"] is not supported yet");
+		}
+	}
+	
+	private void fillLRUSubmenu() {
+		final JMenu	lru = (JMenu)SwingUtils.findComponentByName(menu, "menu.file.lru");
+		boolean		added = false;
+
+		for (int index = 0; index < lru.getMenuComponentCount(); index++) {
+			((JMenuItem)lru.getMenuComponent(index)).removeActionListener(lruListener);
+		}
+		lru.removeAll();
+		for (String item : manipulator.getLastUsed()) {
+			final String	f = new File(item).getAbsolutePath().replace(File.separatorChar,'/');
+			final JMenuItem	mi = new JMenuItem(f);
+			final String	name = item; 
+			
+			mi.addActionListener(lruListener);
+			mi.setActionCommand(name);
+			lru.add(mi);
+			added = true;
+		}
+		lru.setEnabled(added);
+	}
+
+	private void openLRU(final String name) {
+		try{manipulator.openLRUFile(name);
+			refreshMenu();
+		} catch (IOException e) {
+			state.message(Severity.error,"Error opening file ["+name+"] : "+e.getLocalizedMessage());
+		}
+	}
+	
+	private void refreshMenu() {
+
+	}
+	
+	private void fillLocalizedStrings(Locale oldLocale, Locale newLocale) throws LocalizationException {
+		// TODO Auto-generated method stub
 	}
 	
 	public static void main(String[] args) {
@@ -160,7 +308,7 @@ public class Application extends JFrame implements LocaleChangeListener, AutoClo
 			final int							helpPort = !parser.isTyped(ARG_HELP_PORT) ? getFreePort() : parser.getValue(ARG_HELP_PORT, int.class);
 			final SubstitutableProperties		props = new SubstitutableProperties(Utils.mkProps(
 													 NanoServiceFactory.NANOSERVICE_PORT, ""+helpPort
-													,NanoServiceFactory.NANOSERVICE_ROOT, "fsys:xmlReadOnly:root://chav1961.bt.mnemoed/chav1961/bt/mnemoed/helptree.xml"
+													,NanoServiceFactory.NANOSERVICE_ROOT, "fsys:xmlReadOnly:root://chav1961.bt.mnemoed.Application/chav1961/bt/mnemoed/helptree.xml"
 													,NanoServiceFactory.NANOSERVICE_CREOLE_PROLOGUE_URI, Application.class.getResource("prolog.cre").toString() 
 													,NanoServiceFactory.NANOSERVICE_CREOLE_EPILOGUE_URI, Application.class.getResource("epilog.cre").toString() 
 												));

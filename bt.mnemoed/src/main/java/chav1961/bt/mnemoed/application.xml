@@ -7,7 +7,7 @@
 			<app:item name="menu.file.open" caption="menu.file.open" tooltip="menu.file.open.tt" action="openFile"/>
 			<app:separator/>
 			<app:item name="menu.file.save" caption="menu.file.save" tooltip="menu.file.save.tt" action="saveFile"/>
-			<app:item name="menu.file.saveas" caption="menu.file.saveAs" tooltip="menu.file.saveAs.tt" action="saveFileAs"/>
+			<app:item name="menu.file.saveAs" caption="menu.file.saveAs" tooltip="menu.file.saveAs.tt" action="saveFileAs"/>
 			<app:separator/>
 			<app:submenu name="menu.file.lru" caption="menu.file.lru" tooltip="menu.file.lru.tt">	
 				<app:separator/>
@@ -34,8 +34,8 @@
 		<app:key code="P" ctrl="true" action="play"/>
 	</app:keyset>
 	<app:menu id="navigator">
-		<app:submenu name="navigator.tree" caption="navigator.tree" tooltip="navigator.tree.tt">
-			<app:separator/>
+		<app:submenu name="nav.project" caption="nav.project" tooltip="nav.project.tt">  
+			<app:placeholder/>
 		</app:submenu>
 	</app:menu>
 </app:root>

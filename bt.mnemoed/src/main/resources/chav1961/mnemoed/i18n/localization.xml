@@ -1,11 +1,75 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <localization xmlns="http://www.i18n.purelib.chav1961.ru/">
 	<lang name="en">
-<!-- Test set and common definitions  -->
-		<key name="testSet1">test set 1</key> 
+<!-- Main menu  -->
+		<key name="menu.file">File</key>
+		<key name="menu.file.tt">Project file manipulations</key>		
+		<key name="menu.file.new">New</key>
+		<key name="menu.file.new.tt">Create new project file</key>
+		<key name="menu.file.open">Open</key>
+		<key name="menu.file.open.tt">Open existing project</key>
+		<key name="menu.file.save">Save</key>
+		<key name="menu.file.save.tt">Save project file</key>
+		<key name="menu.file.saveAs">Save As...</key>
+		<key name="menu.file.saveAs.tt">Save project file as</key>
+		<key name="menu.file.lru">Last projects</key>
+		<key name="menu.file.lru.tt">Open recently last projects</key>
+		<key name="menu.file.exit">Exit</key>
+		<key name="menu.file.exit.tt">Close application</key>
+		<key name="menu.tools">Tools</key>
+		<key name="menu.tools.tt">Use application tools</key>
+		<key name="menu.tools.play">Play</key>
+		<key name="menu.tools.play.tt">Play project file</key>
+		<key name="menu.tools.simulator">Simulator</key>
+		<key name="menu.tools.simulator.tt">Start and configure simulator</key>
+		<key name="menu.tools.languages">Languages</key>
+		<key name="menu.tools.languages.tt">Select language</key>
+		<key name="menu.help">Help</key>
+		<key name="menu.help.tt">Help</key>
+		<key name="menu.help.content">Content</key>
+		<key name="menu.help.content.tt">Help content</key>
+		<key name="menu.help.about">About</key>
+		<key name="menu.help.about.tt">About application</key>
+		
+<!-- Navigator menu  -->
+		<key name="nav.project">Project</key>
+		<key name="nav.project.tt">Current project</key>
+		 
 	</lang>
 	<lang name="ru">
-<!-- Тестовый набор  -->
-		<key name="testSet1">test set 1</key>
+<!-- Головное меню  -->
+		<key name="menu.file">Файл</key>
+		<key name="menu.file.tt">Манипуляции файлаим проектов</key>		
+		<key name="menu.file.new">Новый</key>
+		<key name="menu.file.new.tt">Создать новый проект</key>
+		<key name="menu.file.open">Открыть</key>
+		<key name="menu.file.open.tt">Открыть существующий проект</key>
+		<key name="menu.file.save">Сохранить</key>
+		<key name="menu.file.save.tt">Сохранить проект</key>
+		<key name="menu.file.saveAs">Сохранить как...</key>
+		<key name="menu.file.saveAs.tt">Сохранить проект под новым именем</key>
+		<key name="menu.file.lru">Последние...</key>
+		<key name="menu.file.lru.tt">Открыть последние проекты</key>
+		<key name="menu.file.exit">Выход</key>
+		<key name="menu.file.exit.tt">Завершение работы приложени</key>
+		<key name="menu.tools">Инструменты</key>
+		<key name="menu.tools.tt">Инструменты приложения</key>
+		<key name="menu.tools.play">Проиграть</key>
+		<key name="menu.tools.play.tt">Выполнить файл проекта</key>
+		<key name="menu.tools.simulator">Симулятор</key>
+		<key name="menu.tools.simulator.tt">Запуск и настройка симулятора</key>
+		<key name="menu.tools.languages">Языки</key>
+		<key name="menu.tools.languages.tt">Выбрать язык проиложения</key>
+		<key name="menu.help">Справка</key>
+		<key name="menu.help.tt">Справка</key>
+		<key name="menu.help.content">Содержимое</key>
+		<key name="menu.help.content.tt">Содержимое справки</key>
+		<key name="menu.help.about">О программе</key>
+		<key name="menu.help.about.tt">Справка о программе</key>
+
+<!-- Navigator menu  -->
+		<key name="nav.project">Проект</key>
+		<key name="nav.project.tt">Текущий проект</key>
+		
 	</lang>
 </localization>
