@@ -15,11 +15,13 @@
 			<app:item name="menu.file.exit" caption="menu.file.exit" tooltip="menu.file.exit.tt" action="exit"/>
 		</app:submenu>
 		<app:submenu name="menu.tools" caption="menu.tools" tooltip="menu.tools.tt">
-			<app:item name="menu.tools.preview" caption="menu.tools.preview" tooltip="menu.tools.preview.tt" action="preview"/>
+			<app:item name="menu.tools.play" caption="menu.tools.play" tooltip="menu.tools.play.tt" action="play"/>
+			<app:item name="menu.tools.simulator" caption="menu.tools.simulator" tooltip="menu.tools.simulator.tt" action="simulator"/>
+			<app:separator/>
 			<app:builtinSubmenu name="builtin.languages" caption="menu.tools.languages" tooltip="menu.tools.languages.tt"/>
 		</app:submenu>
 		<app:submenu name="menu.help" caption="menu.help" tooltip="menu.help.tt">
-			<app:item name="menu.help.startBrowser" caption="menu.help.startBrowser" tooltip="menu.help.startBrowser.tt" action="startBrowser"/>
+			<app:item name="menu.help.content" caption="menu.help.content" tooltip="menu.help.content.tt" action="helpContent"/>
 			<app:separator/>
 			<app:item name="menu.help.about" caption="menu.help.about" tooltip="menu.help.about.tt" action="helpAbout"/>
 		</app:submenu>
@@ -29,5 +31,11 @@
 		<app:key code="O" ctrl="true" action="openFile"/>
 		<app:key code="S" ctrl="true" action="saveFile"/>
 		<app:key code="Q" ctrl="true" action="exit"/>
+		<app:key code="P" ctrl="true" action="play"/>
 	</app:keyset>
+	<app:menu id="navigator">
+		<app:submenu name="navigator.tree" caption="navigator.tree" tooltip="navigator.tree.tt">
+			<app:separator/>
+		</app:submenu>
+	</app:menu>
 </app:root>
