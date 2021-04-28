@@ -53,19 +53,19 @@ public class PrimitiveConstantValueSource extends PrimitiveValueSource {
 	}
 	
 	public byte getByteValue() {
-		return (byte)type;
+		return (byte)primitiveValue;
 	}
 
 	public short getShortValue() {
-		return (short)type;
+		return (short)primitiveValue;
 	}
 
 	public int getIntValue() {
-		return (int)type;
+		return (int)primitiveValue;
 	}
 
 	public long getLongValue() {
-		return type;
+		return primitiveValue;
 	}
 
 	public float getFloatValue() {
@@ -105,7 +105,7 @@ public class PrimitiveConstantValueSource extends PrimitiveValueSource {
 	private String asString() {
 		switch (getType()) {
 			case CompilerUtils.CLASSTYPE_BYTE : case CompilerUtils.CLASSTYPE_SHORT : case CompilerUtils.CLASSTYPE_INT : case CompilerUtils.CLASSTYPE_LONG :
-				return String.valueOf(type);
+				return String.valueOf(primitiveValue);
 			case CompilerUtils.CLASSTYPE_FLOAT : case CompilerUtils.CLASSTYPE_DOUBLE :
 				return String.valueOf(Double.longBitsToDouble(primitiveValue));
 			case CompilerUtils.CLASSTYPE_CHAR :

@@ -17,6 +17,10 @@ public class CardWindow extends JPanel {
 		setLayout(cardLayout);
 	}
 
+	public void select(final String item) {
+		cardLayout.show(this, item);
+	}
+	
 	public InputStream getInputStream() {
 		return new InputStream() {@Override public int read() throws IOException {return -1;}};
 	}

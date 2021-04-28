@@ -7,7 +7,7 @@ import chav1961.purelib.basic.subscribable.Subscribable;
 public class ButtonEntityComponent extends BasicEntityComponent {
 	private static final BasicEntityComponentChecker	checker = new BasicEntityComponentChecker(
 			new Class[] {FontProp.class, TextProp.class, BorderProp.class, BackgroundProp.class, URIProp.class}, 
-			new Class[] {FontProp.class, TextProp.class, BorderProp.class, BackgroundProp.class, URIProp.class}, 
+			new Class[] {BorderProp.class, BackgroundProp.class, URIProp.class}, 
 			true); 
 
 	protected ButtonEntityComponent(Map<String, Subscribable<?>> vars) {

@@ -7,7 +7,7 @@ import chav1961.purelib.basic.subscribable.Subscribable;
 public class TextEntityComponent extends BasicEntityComponent {
 	private static final BasicEntityComponentChecker	checker = new BasicEntityComponentChecker(
 									new Class[] {FontProp.class, TextProp.class, BackgroundProp.class}, 
-									new Class[] {FontProp.class, TextProp.class, BackgroundProp.class}, 
+									new Class[] {FontProp.class, TextProp.class}, 
 									true); 
 
 	protected TextEntityComponent(final Map<String, Subscribable<?>> vars) {
@@ -26,7 +26,7 @@ public class TextEntityComponent extends BasicEntityComponent {
 		return getProp(FontProp.class);
 	}
 
-	public void getFont(final FontProp prop) {
+	public void setFont(final FontProp prop) {
 		setProp(prop);
 	}
 

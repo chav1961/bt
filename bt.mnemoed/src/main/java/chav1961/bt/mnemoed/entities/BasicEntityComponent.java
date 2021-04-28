@@ -129,7 +129,7 @@ public abstract class BasicEntityComponent {
 				} catch (IllegalArgumentException exc) {
 					message.append(exc.getLocalizedMessage());
 				}
-				if (!message.isEmpty()) {
+				if (message.length() > 0) {
 					throw new IllegalArgumentException("Errors in the properties list:\n"+message);
 				}
 			}
@@ -172,7 +172,7 @@ loop1:		for (EntityProp current : props) {
 					message.append("Class [").append(clazz.getCanonicalName()).append("] is not available\n");
 				}
 			}
-			if (!message.isEmpty()) {
+			if (message.length() > 0) {
 				throw new IllegalArgumentException(message.toString());
 			}
 		}
@@ -188,7 +188,7 @@ loop2:		for (Class<? extends EntityProp> item : mandatory) {
 				}
 				message.append("Mandatory class [").append(item.getCanonicalName()).append("] is missing\n");
 			}
-			if (!message.isEmpty()) {
+			if (message.length() > 0) {
 				throw new IllegalArgumentException(message.toString());
 			}
 		}

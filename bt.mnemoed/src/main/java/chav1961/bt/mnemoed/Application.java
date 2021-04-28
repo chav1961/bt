@@ -26,6 +26,7 @@ import javax.swing.SwingUtilities;
 import javax.swing.border.EtchedBorder;
 
 import chav1961.bt.mnemoed.controls.CardWindow;
+import chav1961.bt.mnemoed.controls.Plane;
 import chav1961.purelib.basic.ArgParser;
 import chav1961.purelib.basic.SubstitutableProperties;
 import chav1961.purelib.basic.SystemErrLoggerFacade;
@@ -129,7 +130,7 @@ public class Application extends JFrame implements LocaleChangeListener, AutoClo
 			leftMenu.addActionListener((e)->{callNavigator(e.getActionCommand());});
 			
 			final JSplitPane	left = new JSplitPane(JSplitPane.VERTICAL_SPLIT, new JScrollPane(leftMenu), new JLabel("?????"));
-			final JSplitPane	total = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, left, cardWindow);
+			final JSplitPane	total = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, left, new Plane(localizer));//cardWindow);
 
 			state.setBorder(new EtchedBorder());
 			
