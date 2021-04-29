@@ -187,7 +187,7 @@ public abstract class BasicEntityComponent {
 				sb.append("Mandatory property ["+item.getCanonicalName()+"] is missing\n");
 			}
 		}
-		if (!sb.isEmpty()) {
+		if (sb.length() > 0) {
 			throw new IllegalArgumentException("Check erros for ["+this.getClass().getCanonicalName()+"] was detected:\n"+sb);
 		}
 	}

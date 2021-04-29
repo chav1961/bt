@@ -1,6 +1,8 @@
 package chav1961.bt.mnemoed;
 
-import java.awt.BorderLayout; 
+import java.awt.BorderLayout;
+import java.awt.Desktop;
+import java.awt.Dimension;
 import java.awt.event.ActionListener;
 import java.io.File;
 import java.io.FileInputStream;
@@ -8,26 +10,35 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.Reader;
 import java.net.ServerSocket;
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.Hashtable;
 import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.CountDownLatch;
 
+import javax.swing.Icon;
+import javax.swing.ImageIcon;
+import javax.swing.JEditorPane;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
+import javax.swing.JOptionPane;
 import javax.swing.JScrollPane;
 import javax.swing.JSplitPane;
 import javax.swing.SwingUtilities;
 import javax.swing.border.EtchedBorder;
+import javax.swing.event.HyperlinkEvent;
+import javax.swing.event.HyperlinkListener;
 
 import chav1961.bt.mnemoed.controls.CardWindow;
-import chav1961.bt.mnemoed.controls.Plane;
+import chav1961.bt.mnemoed.controls.EditorPane;
 import chav1961.purelib.basic.ArgParser;
+import chav1961.purelib.basic.MimeType;
 import chav1961.purelib.basic.SubstitutableProperties;
 import chav1961.purelib.basic.SystemErrLoggerFacade;
 import chav1961.purelib.basic.Utils;
@@ -36,6 +47,7 @@ import chav1961.purelib.basic.exceptions.ConsoleCommandException;
 import chav1961.purelib.basic.exceptions.ContentException;
 import chav1961.purelib.basic.exceptions.EnvironmentException;
 import chav1961.purelib.basic.exceptions.LocalizationException;
+import chav1961.purelib.basic.exceptions.MimeParseException;
 import chav1961.purelib.basic.interfaces.LoggerFacade;
 import chav1961.purelib.basic.interfaces.LoggerFacade.Severity;
 import chav1961.purelib.fsys.FileSystemFactory;
@@ -61,6 +73,10 @@ public class Application extends JFrame implements LocaleChangeListener, AutoClo
 	public static final String				ARG_HELP_PORT = "helpport";
 	public static final String				PROP_FILE = ".mnemoed";
 	public static final String				PROP_LRU_PREFIX = "lru.";
+	
+	public static final String				I18N_APPLICATION_TITLE = "application.title";
+	public static final String				I18N_ABOUT_TITLE = "application.about.title";
+	public static final String				I18N_ABOUT_CONTENT = "application.about.content";
 	
 	private final File						f = new File("./"+PROP_FILE);
 	private final ContentMetadataInterface 	app;
@@ -130,7 +146,7 @@ public class Application extends JFrame implements LocaleChangeListener, AutoClo
 			leftMenu.addActionListener((e)->{callNavigator(e.getActionCommand());});
 			
 			final JSplitPane	left = new JSplitPane(JSplitPane.VERTICAL_SPLIT, new JScrollPane(leftMenu), new JLabel("?????"));
-			final JSplitPane	total = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, left, new Plane(localizer));//cardWindow);
+			final JSplitPane	total = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, left, cardWindow);
 
 			state.setBorder(new EtchedBorder());
 			
@@ -143,16 +159,21 @@ public class Application extends JFrame implements LocaleChangeListener, AutoClo
 			localizer.addLocaleChangeListener(this);
 			
 			fillLocalizedStrings(localizer.currentLocale().getLocale(),localizer.currentLocale().getLocale());
+			
+			cardWindow.add(new EditorPane(app,localizer), "mzinana");
+			cardWindow.select("mzinana");
 			pack();
+			
 			state.message(Severity.info, "Ready");
 		}
 	}
 
 	@Override
 	public void localeChanged(final Locale oldLocale, final Locale newLocale) throws LocalizationException {
-		fillLocalizedStrings(oldLocale,newLocale);
-		SwingUtils.refreshLocale(menu,oldLocale, newLocale);
-		SwingUtils.refreshLocale(leftMenu,oldLocale, newLocale);
+		fillLocalizedStrings(oldLocale, newLocale);
+		SwingUtils.refreshLocale(menu, oldLocale, newLocale);
+		SwingUtils.refreshLocale(leftMenu, oldLocale, newLocale);
+		SwingUtils.refreshLocale(state, oldLocale, newLocale);
 	}
 
 	@Override
@@ -230,6 +251,31 @@ public class Application extends JFrame implements LocaleChangeListener, AutoClo
 	
 	@OnAction("action:/helpAbout")
 	private void helpAbout() throws IOException {
+		try{final JEditorPane 	pane = new JEditorPane("text/html",null);
+			final Icon			icon = new ImageIcon(this.getClass().getResource("avatar.jpg"));
+			
+			try(final Reader	rdr = localizer.getContent(I18N_ABOUT_CONTENT,new MimeType("text","x-wiki.creole"),new MimeType("text","html"))) {
+				pane.read(rdr,null);
+			}
+			pane.setEditable(false);
+			pane.setBorder(new EtchedBorder(EtchedBorder.LOWERED));
+			pane.setPreferredSize(new Dimension(300,300));
+			pane.addHyperlinkListener(new HyperlinkListener() {
+								@Override
+								public void hyperlinkUpdate(final HyperlinkEvent e) {
+									if (e.getEventType() == HyperlinkEvent.EventType.ACTIVATED) {
+										try{Desktop.getDesktop().browse(e.getURL().toURI());
+										} catch (URISyntaxException | IOException exc) {
+											exc.printStackTrace();
+										}
+									}
+								}
+			});
+			
+			JOptionPane.showMessageDialog(this,pane,localizer.getValue(I18N_ABOUT_TITLE),JOptionPane.PLAIN_MESSAGE,icon);
+		} catch (LocalizationException | MimeParseException | IOException e) {
+			state.message(Severity.error,e.getLocalizedMessage());
+		}
 	}
 
 	private void callNavigator(final String actionCommand) {
@@ -300,8 +346,8 @@ public class Application extends JFrame implements LocaleChangeListener, AutoClo
 
 	}
 	
-	private void fillLocalizedStrings(Locale oldLocale, Locale newLocale) throws LocalizationException {
-		// TODO Auto-generated method stub
+	private void fillLocalizedStrings(final Locale oldLocale, final Locale newLocale) throws LocalizationException {
+		setTitle(localizer.getValue(I18N_APPLICATION_TITLE));
 	}
 	
 	public static void main(String[] args) {

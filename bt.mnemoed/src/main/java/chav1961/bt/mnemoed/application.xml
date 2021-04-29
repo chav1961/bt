@@ -38,4 +38,16 @@
 			<app:placeholder/>
 		</app:submenu>
 	</app:menu>
+	<app:menu id="leftToolbar">
+		<app:item name="editor.toolbar.left.button1" caption="editor.toolbar.left.button1" tooltip="editor.toolbar.left.button1.tt" action="button1"/>
+		<app:item name="editor.toolbar.left.button2" caption="editor.toolbar.left.button2" tooltip="editor.toolbar.left.button2.tt" action="button2"/>
+	</app:menu>
+	<app:menu id="topToolbar">
+		<app:item name="editor.toolbar.top.button1" caption="editor.toolbar.top.button1" tooltip="editor.toolbar.top.button1.tt" action="button1"/>
+		<app:item name="editor.toolbar.top.button2" caption="editor.toolbar.top.button2" tooltip="editor.toolbar.top.button2.tt" action="button2"/>
+	</app:menu>
+	<app:menu id="rightToolbar">
+		<app:item name="editor.toolbar.right.button1" caption="editor.toolbar.right.button1" tooltip="editor.toolbar.right.button1.tt" action="button1"/>
+		<app:item name="editor.toolbar.right.button2" caption="editor.toolbar.right.button2" tooltip="editor.toolbar.right.button2.tt" action="button2"/>
+	</app:menu>
 </app:root>

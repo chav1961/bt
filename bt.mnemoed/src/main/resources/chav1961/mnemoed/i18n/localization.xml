@@ -1,6 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <localization xmlns="http://www.i18n.purelib.chav1961.ru/">
 	<lang name="en">
+<!-- Application -->
+		<key name="application.title">(c) 2021, ????</key>
+		<key name="application.about.title">About...</key>
+		<key name="application.about.content">uri(about.cre)</key>
+
 <!-- Main menu  -->
 		<key name="menu.file">File</key>
 		<key name="menu.file.tt">Project file manipulations</key>		
@@ -35,8 +40,30 @@
 		<key name="nav.project">Project</key>
 		<key name="nav.project.tt">Current project</key>
 		 
+		 
+		<key name="editor.toolbar.left.button1">LB1</key>
+		<key name="editor.toolbar.left.button1.tt">LB1</key>
+		<key name="editor.toolbar.left.button2">LB2</key>
+		<key name="editor.toolbar.left.button2.tt">LB2</key>
+		<key name="editor.toolbar.top.button1">TB1</key>
+		<key name="editor.toolbar.top.button1.tt">TB1</key>
+		<key name="editor.toolbar.top.button2">TB2</key>
+		<key name="editor.toolbar.top.button2.tt">TB2</key>
+		<key name="editor.toolbar.right.button1">RB1</key>
+		<key name="editor.toolbar.right.button1.tt">RB1</key>
+		<key name="editor.toolbar.right.button2">RB2</key>
+		<key name="editor.toolbar.right.button2.tt">RB2</key>
+		 
+		 
+		 
 	</lang>
 	<lang name="ru">
+<!-- Проиложение -->
+		<key name="application.title">(c) 2021, ????</key>
+		<key name="application.about.title">О программе...</key>
+		<key name="application.about.content">uri(about.cre)</key>
+	
+	
 <!-- Головное меню  -->
 		<key name="menu.file">Файл</key>
 		<key name="menu.file.tt">Манипуляции файлаим проектов</key>		
@@ -70,6 +97,20 @@
 <!-- Navigator menu  -->
 		<key name="nav.project">Проект</key>
 		<key name="nav.project.tt">Текущий проект</key>
+		
+		
+		<key name="editor.toolbar.left.button1">LB1</key>
+		<key name="editor.toolbar.left.button1.tt">LB1</key>
+		<key name="editor.toolbar.left.button2">LB2</key>
+		<key name="editor.toolbar.left.button2.tt">LB2</key>
+		<key name="editor.toolbar.top.button1">TB1</key>
+		<key name="editor.toolbar.top.button1.tt">TB1</key>
+		<key name="editor.toolbar.top.button2">TB2</key>
+		<key name="editor.toolbar.top.button2.tt">TB2</key>
+		<key name="editor.toolbar.right.button1">RB1</key>
+		<key name="editor.toolbar.right.button1.tt">RB1</key>
+		<key name="editor.toolbar.right.button2">RB2</key>
+		<key name="editor.toolbar.right.button2.tt">RB2</key>
 		
 	</lang>
 </localization>
