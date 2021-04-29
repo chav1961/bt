@@ -19,7 +19,7 @@ public class ButtonEntityComponent extends BasicEntityComponent {
 	}
 	
 	public void setText(final TextProp prop) {
-		setProp(prop);
+		setProp(TextProp.class,prop);
 	}
 	
 	public FontProp getFont() {
@@ -27,7 +27,7 @@ public class ButtonEntityComponent extends BasicEntityComponent {
 	}
 
 	public void getFont(final FontProp prop) {
-		setProp(prop);
+		setProp(FontProp.class,prop);
 	}
 
 	public BackgroundProp getBackground() {
@@ -35,7 +35,7 @@ public class ButtonEntityComponent extends BasicEntityComponent {
 	}
 	
 	public void setBackground(final BackgroundProp prop) {
-		setProp(prop);
+		setProp(BackgroundProp.class,prop);
 	}
 
 	public URIProp getUri() {
@@ -43,7 +43,7 @@ public class ButtonEntityComponent extends BasicEntityComponent {
 	}
 	
 	public void setUri(final URIProp prop) {
-		setProp(prop);
+		setProp(URIProp.class,prop);
 	}
 
 	public BorderProp getBorder() {
@@ -51,15 +51,9 @@ public class ButtonEntityComponent extends BasicEntityComponent {
 	}
 	
 	public void setBorder(final BorderProp prop) {
-		setProp(prop);
+		setProp(BorderProp.class,prop);
 	}
 	
-	@Override
-	protected void checkProperties(final EntityProp[] props) {
-		super.checkProperties(props);
-		checker.totalCheck(props);
-	}
-
 	@Override
 	protected boolean isPropertyClassAvailable(final Class<? extends EntityProp> clazz) {
 		return checker.isPropClassAvailable(clazz) || super.isPropertyClassAvailable(clazz);

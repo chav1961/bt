@@ -96,7 +96,26 @@ public class PrimitiveConstantValueSource extends PrimitiveValueSource {
 		
 	}
 	
-	
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + (int) (primitiveValue ^ (primitiveValue >>> 32));
+		result = prime * result + type;
+		return result;
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj) return true;
+		if (obj == null) return false;
+		if (getClass() != obj.getClass()) return false;
+		PrimitiveConstantValueSource other = (PrimitiveConstantValueSource) obj;
+		if (primitiveValue != other.primitiveValue) return false;
+		if (type != other.type) return false;
+		return true;
+	}
+
 	@Override
 	public String toString() {
 		return "PrimitiveConstantValueSource [type=" + type + ", primitiveValue=" + asString() + ", getSourceType()=" + getSourceType() + "]";

@@ -19,13 +19,7 @@ public class HyperlinkComponent extends TextEntityComponent {
 	}
 	
 	public void setUri(final URIProp prop) {
-		setProp(prop);
-	}
-
-	@Override
-	protected void checkProperties(final EntityProp[] props) {
-		super.checkProperties(props);
-		checker.totalCheck(props);
+		setProp(URIProp.class,prop);
 	}
 
 	@Override
