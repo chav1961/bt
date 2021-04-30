@@ -1,14 +1,17 @@
 package chav1961.bt.mnemoed.entities;
 
+import java.io.IOException;
+
 import chav1961.purelib.basic.exceptions.PrintingException;
 import chav1961.purelib.basic.exceptions.SyntaxException;
 import chav1961.purelib.cdb.CompilerUtils;
 import chav1961.purelib.streams.JsonStaxParser;
 import chav1961.purelib.streams.JsonStaxPrinter;
+import chav1961.purelib.streams.interfaces.JsonStaxParserLexType;
 
-public class PrimitiveConstantValueSource extends PrimitiveValueSource {
-	private final int		type;
-	private final long		primitiveValue;
+public final class PrimitiveConstantValueSource extends PrimitiveValueSource {
+	private int		type;
+	private long	primitiveValue;
 
 	public PrimitiveConstantValueSource(final byte primitiveValue) {
 		this(CompilerUtils.CLASSTYPE_BYTE,primitiveValue);
@@ -85,15 +88,64 @@ public class PrimitiveConstantValueSource extends PrimitiveValueSource {
 	}
 
 	@Override
-	public void upload(final JsonStaxPrinter printer) throws PrintingException {
-		// TODO Auto-generated method stub
-		
+	public void upload(final JsonStaxPrinter printer) throws PrintingException, IOException {
+		if (printer == null) {
+			throw new NullPointerException("Stax printer can't be null");
+		}
+		else {
+			printer.startObject().name("valType").value(type).name("value").value(primitiveValue).endObject();
+		}
 	}
 
 	@Override
-	public void download(final JsonStaxParser parser) throws SyntaxException {
-		// TODO Auto-generated method stub
-		
+	public void download(final JsonStaxParser parser) throws SyntaxException, IOException {
+		if (parser == null) {
+			throw new NullPointerException("Stax printer can't be null");
+		}
+		else {
+			if (parser.current() == JsonStaxParserLexType.START_OBJECT) {
+				JsonStaxParserLexType	lexType;
+				
+				do {lexType = parser.next();
+					if (lexType == JsonStaxParserLexType.NAME) {
+						switch (parser.name()) {
+							case "valType" :
+								if (parser.next() == JsonStaxParserLexType.NAME_SPLITTER && parser.next() == JsonStaxParserLexType.INTEGER_VALUE) {
+									type = (int)parser.intValue();
+									lexType = parser.next();
+								}
+								else {
+									throw new SyntaxException(parser.row(), parser.col(), "Structure corruption (integer awaited)");
+								}
+								break;
+							case "value" :
+								if (parser.next() == JsonStaxParserLexType.NAME_SPLITTER && parser.next() == JsonStaxParserLexType.INTEGER_VALUE) {
+									primitiveValue = parser.intValue();
+									lexType = parser.next();
+								}
+								else {
+									throw new SyntaxException(parser.row(), parser.col(), "Structure corruption (integer awaited)");
+								}
+								break;
+							default :
+								throw new SyntaxException(parser.row(), parser.col(), "Unsupported name. Only 'valType' and 'value' are valid here");
+						}
+					}
+					else {
+						throw new SyntaxException(parser.row(), parser.col(), "field name is missing");
+					}
+				} while (lexType == JsonStaxParserLexType.LIST_SPLITTER);
+				if (lexType == JsonStaxParserLexType.END_OBJECT) {
+					parser.next();
+				}
+				else {
+					throw new SyntaxException(parser.row(), parser.col(), "'}' is missing");
+				}
+			}
+			else {
+				throw new SyntaxException(parser.row(), parser.col(), "'{' is missing");
+			}
+		}
 	}
 	
 	@Override

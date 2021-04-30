@@ -1,5 +1,7 @@
 package chav1961.bt.mnemoed.entities;
 
+import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -9,11 +11,17 @@ import java.util.Set;
 
 import javax.print.attribute.standard.NumberUp;
 
+import chav1961.bt.mnemoed.interfaces.JsonSerialzable;
 import chav1961.purelib.basic.Utils;
+import chav1961.purelib.basic.exceptions.PrintingException;
+import chav1961.purelib.basic.exceptions.SyntaxException;
 import chav1961.purelib.basic.subscribable.Subscribable;
+import chav1961.purelib.streams.JsonStaxParser;
+import chav1961.purelib.streams.JsonStaxPrinter;
+import chav1961.purelib.streams.interfaces.JsonStaxParserLexType;
 
 
-public abstract class BasicEntityComponent {
+public abstract class BasicEntityComponent implements JsonSerialzable {
 	private static final BasicEntityComponentChecker	checker = new BasicEntityComponentChecker(
 					new Class[] {TooltipProp.class, ColorProp.class, LocationProp.class, VisibilityProp.class}, 
 					new Class[] {LocationProp.class},
@@ -73,6 +81,66 @@ public abstract class BasicEntityComponent {
 		}
 		else {
 			return props.containsKey(awaited); 
+		}
+	}
+	
+	@Override
+	public void upload(final JsonStaxPrinter printer) throws IOException, PrintingException {
+		if (printer == null) {
+			throw new NullPointerException("Stax printer can't be null");
+		}
+		else {
+			printer.startObject().name("properties").startArray();
+			for (Entry<Class<? extends EntityProp>, EntityProp> item : props.entrySet()) {
+				printer.startObject().name("class").value(item.getKey().getCanonicalName()).name("value");
+				item.getValue().upload(printer);
+				printer.endObject();
+			}
+			printer.endArray().endObject();
+		}
+	}
+	
+	@Override
+	public void download(final JsonStaxParser parser) throws IOException, SyntaxException {
+		if (parser == null) {
+			throw new NullPointerException("Stax parser can't be null");
+		}
+		else {
+			if (parser.current() == JsonStaxParserLexType.START_OBJECT) {
+				if (parser.next() == JsonStaxParserLexType.NAME && "properties".equals(parser.name())) {
+					if (parser.next() == JsonStaxParserLexType.NAME_SPLITTER && parser.next() == JsonStaxParserLexType.START_ARRAY) {
+						do {
+							if (parser.next() == JsonStaxParserLexType.START_OBJECT && parser.next() == JsonStaxParserLexType.NAME && "class".equals(parser.name()) &&
+								parser.next() == JsonStaxParserLexType.START_OBJECT && parser.next() == JsonStaxParserLexType.STRING_VALUE) {
+								
+								try{final Class<EntityProp>	clazz = (Class<EntityProp>) Class.forName(parser.stringValue());
+								
+									if (parser.next() == JsonStaxParserLexType.NAME_SPLITTER && parser.next() == JsonStaxParserLexType.START_OBJECT) {
+										final EntityProp	prop = clazz.getConstructor(Map.class).newInstance(new HashMap<>());
+										
+										prop.download(parser);
+										setProp(clazz, prop);
+									}
+								} catch (ClassNotFoundException | InstantiationException | InvocationTargetException | NoSuchMethodException | IllegalAccessException  e) {
+									throw new SyntaxException(parser.row(), parser.col(), "Unknown class name ["+parser.stringValue()+"]"); 
+								}
+							}
+							else {
+								throw new SyntaxException(parser.row(), parser.col(), "'{ \"class\"' is missing");
+							}
+						} while (parser.current() == JsonStaxParserLexType.LIST_SPLITTER);
+					}
+					else {
+						throw new SyntaxException(parser.row(), parser.col(), "': {' is missing");
+					}
+				}
+				else {
+					throw new SyntaxException(parser.row(), parser.col(), "'properties' name is missing");
+				}
+			}
+			else {
+				throw new SyntaxException(parser.row(), parser.col(), "'{' is missing");
+			}
 		}
 	}
 	
