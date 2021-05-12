@@ -31,11 +31,11 @@ public class LocationProp extends AffineEntityProp {
 		return AffineTransform.getTranslateInstance(0, 0);
 	}
 
-	public PrimitiveValueSource getxLocation() {
+	public PrimitiveValueSource getXLocation() {
 		return xLocation;
 	}
 
-	public void setxLocation(final PrimitiveValueSource xLocation) throws NullPointerException {
+	public void setXLocation(final PrimitiveValueSource xLocation) throws NullPointerException {
 		if (xLocation == null) {
 			throw new NullPointerException("X location to set can't be null");
 		}
@@ -44,11 +44,11 @@ public class LocationProp extends AffineEntityProp {
 		}
 	}
 
-	public PrimitiveValueSource getyLocation() {
+	public PrimitiveValueSource getYLocation() {
 		return yLocation;
 	}
 
-	public void setyLocation(final PrimitiveValueSource yLocation) throws NullPointerException {
+	public void setYLocation(final PrimitiveValueSource yLocation) throws NullPointerException {
 		if (xLocation == null) {
 			throw new NullPointerException("X location to set can't be null");
 		}
@@ -78,10 +78,10 @@ public class LocationProp extends AffineEntityProp {
 	public void download(final JsonStaxParser parser) throws SyntaxException, IOException {
 		if (parser.current() == JsonStaxParserLexType.START_ARRAY) {
 			parser.next();
-			setxLocation(parsePrimitiveValueSource(parser));
+			setXLocation(parsePrimitiveValueSource(parser));
 			if (parser.current() == JsonStaxParserLexType.LIST_SPLITTER) {
 				parser.next();
-				setyLocation(parsePrimitiveValueSource(parser));
+				setYLocation(parsePrimitiveValueSource(parser));
 			}
 			else {
 				throw new SyntaxException(parser.row(), parser.col(), "',' is missing");

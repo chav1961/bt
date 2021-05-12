@@ -21,6 +21,7 @@ import chav1961.purelib.i18n.interfaces.Localizer;
 import chav1961.purelib.i18n.interfaces.Localizer.LocaleChangeListener;
 import chav1961.purelib.model.interfaces.ContentMetadataInterface;
 import chav1961.purelib.ui.swing.SwingUtils;
+import chav1961.purelib.ui.swing.interfaces.OnAction;
 import chav1961.purelib.ui.swing.useful.JStateString;
 
 public class EditorPane extends JPanel implements LocaleChangeListener {
@@ -48,8 +49,10 @@ public class EditorPane extends JPanel implements LocaleChangeListener {
 			setLayout(new BorderLayout());
 			
 			this.leftToolbar = SwingUtils.toJComponent(mdi.byUIPath(URI.create("ui:/model/navigation.top.leftToolbar")),JToolBar.class); 
+			SwingUtils.assignActionListeners(this.leftToolbar, this);
 			this.topToolbar = SwingUtils.toJComponent(mdi.byUIPath(URI.create("ui:/model/navigation.top.topToolbar")),JToolBar.class); 
-			this.rightToolbar = SwingUtils.toJComponent(mdi.byUIPath(URI.create("ui:/model/navigation.top.rightToolbar")),JToolBar.class); 
+			this.rightToolbar = SwingUtils.toJComponent(mdi.byUIPath(URI.create("ui:/model/navigation.top.rightToolbar")),JToolBar.class);
+			
 			this.state = new JStateString(localizer, true);
 			this.plane = new Plane(localizer);
 			
@@ -82,5 +85,15 @@ public class EditorPane extends JPanel implements LocaleChangeListener {
 			((LocaleChangeListener)rightToolbar).localeChanged(oldLocale, newLocale);
 		}
 		state.localeChanged(oldLocale, newLocale);
+	}
+
+	@OnAction("action:/newComponent")
+	private void newComponent() {
+		state.message(Severity.info, "component");
+	}
+
+	@OnAction("action:/newContainer")
+	private void newContainer() {
+		state.message(Severity.info, "container");
 	}
 }

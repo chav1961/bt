@@ -28,12 +28,14 @@ import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
+import javax.swing.JPopupMenu;
 import javax.swing.JScrollPane;
 import javax.swing.JSplitPane;
 import javax.swing.SwingUtilities;
 import javax.swing.border.EtchedBorder;
 import javax.swing.event.HyperlinkEvent;
 import javax.swing.event.HyperlinkListener;
+import javax.swing.tree.TreePath;
 
 import chav1961.bt.mnemoed.controls.CardWindow;
 import chav1961.bt.mnemoed.controls.EditorPane;
@@ -59,11 +61,13 @@ import chav1961.purelib.i18n.interfaces.SupportedLanguages;
 import chav1961.purelib.i18n.interfaces.Localizer.LocaleChangeListener;
 import chav1961.purelib.model.ContentModelFactory;
 import chav1961.purelib.model.interfaces.ContentMetadataInterface;
+import chav1961.purelib.model.interfaces.ContentMetadataInterface.ContentNodeMetadata;
 import chav1961.purelib.nanoservice.NanoServiceFactory;
 import chav1961.purelib.ui.swing.SimpleNavigatorTree;
 import chav1961.purelib.ui.swing.SwingUtils;
 import chav1961.purelib.ui.swing.interfaces.OnAction;
 import chav1961.purelib.ui.swing.useful.JFileContentManipulator;
+import chav1961.purelib.ui.swing.useful.JFileContentManipulator.FileContentChangeType;
 import chav1961.purelib.ui.swing.useful.JFileContentManipulator.FileContentChangedEvent;
 import chav1961.purelib.ui.swing.useful.JFileContentManipulator.LRUPersistence;
 import chav1961.purelib.ui.swing.useful.JStateString;
@@ -77,6 +81,8 @@ public class Application extends JFrame implements LocaleChangeListener, AutoClo
 	public static final String				I18N_APPLICATION_TITLE = "application.title";
 	public static final String				I18N_ABOUT_TITLE = "application.about.title";
 	public static final String				I18N_ABOUT_CONTENT = "application.about.content";
+
+	private static final String				EDITOR_WINDOW = "editorWindow";
 	
 	private final File						f = new File("./"+PROP_FILE);
 	private final ContentMetadataInterface 	app;
@@ -108,7 +114,12 @@ public class Application extends JFrame implements LocaleChangeListener, AutoClo
 			this.localHelpPort = localHelpPort;
 			this.latch = latch;
 			this.menu = SwingUtils.toJComponent(app.byUIPath(URI.create("ui:/model/navigation.top.mainmenu")), JMenuBar.class);
-			this.leftMenu = new SimpleNavigatorTree(localizer,app.byUIPath(URI.create("ui:/model/navigation.top.navigator")));
+			this.leftMenu = new SimpleNavigatorTree(localizer,app.byUIPath(URI.create("ui:/model/navigation.top.navigator"))) {
+								@Override
+								protected JPopupMenu getPopupMenu(final TreePath path, final ContentNodeMetadata meta) {
+									return internalGetPopupMenu(path, meta, app);
+								}
+							};
 			this.cardWindow = new CardWindow(localizer);
 			this.fsi = FileSystemFactory.createFileSystem(URI.create("fsys:file://./"));
 			this.state = new JStateString(localizer);
@@ -142,6 +153,17 @@ public class Application extends JFrame implements LocaleChangeListener, AutoClo
 				}
 			});
 			this.manipulator.addFileContentChangeListener((e)->SwingUtilities.invokeLater(()->changeState(e)));
+			changeState(new FileContentChangedEvent() {
+				@Override
+				public FileContentChangeType getChangeType() {
+					return FileContentChangeType.LRU_LIST_REFRESHED;
+				}
+
+				@Override
+				public JFileContentManipulator getOwner() {
+					return manipulator;
+				}
+			});
 			
 			leftMenu.addActionListener((e)->{callNavigator(e.getActionCommand());});
 			
@@ -160,8 +182,8 @@ public class Application extends JFrame implements LocaleChangeListener, AutoClo
 			
 			fillLocalizedStrings(localizer.currentLocale().getLocale(),localizer.currentLocale().getLocale());
 			
-			cardWindow.add(new EditorPane(app,localizer), "mzinana");
-			cardWindow.select("mzinana");
+			cardWindow.add(new EditorPane(app,localizer), EDITOR_WINDOW);
+			cardWindow.select(EDITOR_WINDOW);
 			pack();
 			
 			state.message(Severity.info, "Ready");
@@ -278,11 +300,6 @@ public class Application extends JFrame implements LocaleChangeListener, AutoClo
 		}
 	}
 
-	private void callNavigator(final String actionCommand) {
-		// TODO Auto-generated method stub
-		
-	}
-
 	private void changeState(final FileContentChangedEvent event) {
 		final JMenuItem		save = (JMenuItem)SwingUtils.findComponentByName(menu, "menu.file.save");
 		final JMenuItem		saveAs = (JMenuItem)SwingUtils.findComponentByName(menu, "menu.file.saveAs");
@@ -292,7 +309,7 @@ public class Application extends JFrame implements LocaleChangeListener, AutoClo
 				save.setEnabled(false);
 				saveAs.setEnabled(true);
 			case FILE_STORED_AS		:
-				fillLRUSubmenu();
+				fillLRUSubmenu(manipulator);
 				break;
 			case MODIFICATION_FLAG_CLEAR	:
 				save.setEnabled(false);
@@ -306,14 +323,14 @@ public class Application extends JFrame implements LocaleChangeListener, AutoClo
 			case FILE_STORED		:
 				break;
 			case LRU_LIST_REFRESHED	:
-				fillLRUSubmenu();
+				fillLRUSubmenu(manipulator);
 				break;
 			default:
 				throw new UnsupportedOperationException("Change event type ["+event.getChangeType()+"] is not supported yet");
 		}
 	}
 	
-	private void fillLRUSubmenu() {
+	private void fillLRUSubmenu(final JFileContentManipulator manipulator) {
 		final JMenu	lru = (JMenu)SwingUtils.findComponentByName(menu, "menu.file.lru");
 		boolean		added = false;
 
@@ -344,6 +361,26 @@ public class Application extends JFrame implements LocaleChangeListener, AutoClo
 	
 	private void refreshMenu() {
 
+	}
+
+	private void callNavigator(final String actionCommand) {
+		// TODO Auto-generated method stub
+		System.err.println("Command="+actionCommand);
+	}
+
+	private JPopupMenu internalGetPopupMenu(final TreePath path, final ContentNodeMetadata meta, final ContentMetadataInterface app) {
+		// TODO Auto-generated method stub
+		final ContentNodeMetadata	menuMeta = app.byUIPath(URI.create("ui:/model/navigation.top.navigator."+meta.getName())); 
+		
+		if (menuMeta != null) {
+			final JPopupMenu	popup = SwingUtils.toJComponent(menuMeta, JPopupMenu.class);
+			
+			SwingUtils.assignActionListeners(popup, this);
+			return popup;
+		}
+		else {
+			return null;
+		}
 	}
 	
 	private void fillLocalizedStrings(final Locale oldLocale, final Locale newLocale) throws LocalizationException {

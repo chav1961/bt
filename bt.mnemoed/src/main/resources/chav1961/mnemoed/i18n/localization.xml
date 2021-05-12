@@ -39,12 +39,77 @@
 <!-- Navigator menu  -->
 		<key name="nav.project">Project</key>
 		<key name="nav.project.tt">Current project</key>
+		<key name="nav.project.sources">Sources</key>
+		<key name="nav.project.sources.tt">OPC DA sources</key>
+		<key name="nav.project.checkers">Checkers</key>
+		<key name="nav.project.checkers.tt">Checkers for input data</key>
+		<key name="nav.project.checkers.templates">Templates</key>
+		<key name="nav.project.checkers.templates.tt">Checker templates</key>
+		<key name="nav.project.checkers.tree">Checkers tree</key>
+		<key name="nav.project.checkers.tree.tt">Tree of checkers</key>
+		<key name="nav.project.navigators">Navigators</key>
+		<key name="nav.project.navigators.tt">Navigators for the project</key>
+		<key name="nav.project.navigators.templates">Templates</key>
+		<key name="nav.project.navigators.templates.tt">Navigator templates</key>
+		<key name="nav.project.navigators.roots">Navigator roots</key>
+		<key name="nav.project.navigators.roots.tt">Set of navigator roots</key>
+		<key name="nav.project.screens">Screens</key>
+		<key name="nav.project.screens.tt">Project screens</key>
+		<key name="nav.project.screens.monitoring">Monitoring</key>
+		<key name="nav.project.screens.monitoring.tt">Monitoring screens</key>
+		<key name="nav.project.screens.logs">Logs</key>
+		<key name="nav.project.screens.logs.tt">Log's screens</key>
+		<key name="nav.project.screens.history">History</key>
+		<key name="nav.project.screens.history.tt">History screens</key>
+		<key name="nav.project.admin">Administration</key>
+		<key name="nav.project.admin.tt">Admin settings</key>
+		<key name="nav.project.admin.systemSettings">System</key>
+		<key name="nav.project.admin.systemSettings.tt">System settings for the project</key>
+		<key name="nav.project.admin.securitySettings">Security</key>
+		<key name="nav.project.admin.securitySettings.tt">Security settinfs for the project</key>
+		<key name="nav.project.admin.roleTree">Role tree</key>
+		<key name="nav.project.admin.roleTree.tt">Tree of project roles</key>
+		<key name="nav.project.admin.userGroups">User groups</key>
+		<key name="nav.project.admin.userGroups.tt">Groups of users</key>
+		<key name="nav.project.admin.userTree">User tree</key>
+		<key name="nav.project.admin.userTree.tt">All users</key>
+		<key name="nav.project.admin.policiesTree">Policies</key>
+		<key name="nav.project.admin.policiesTree.tt">Policies tree</key>
+		<key name="nav.project.admin.stationsTree">Stations</key>
+		<key name="nav.project.admin.stationsTree.tt">Stations tree</key>
+		<key name="nav.project.admin.calendarsTree">Calendars</key>
+		<key name="nav.project.admin.calendarsTree.tt">Calendars tree</key>
+		<key name="nav.project.admin.similatorSettings">Simulator settings</key>
+		<key name="nav.project.admin.similatorSettings.tt">Simulator settings</key>
+		<key name="nav.project.admin.lifeCycle">Life cycle</key>
+		<key name="nav.project.admin.lifeCycle.tt">Project life cycle</key>
+		<key name="nav.project.admin.lifeCycle.applicationBuild">Build</key>
+		<key name="nav.project.admin.lifeCycle.applicationBuild.tt">Build project</key>
+		<key name="nav.project.admin.lifeCycle.applicationDeployment">Deploy</key>
+		<key name="nav.project.admin.lifeCycle.applicationDeployment.tt">Project deployment</key>
+		<key name="nav.project.admin.lifeCycle.repositoryManagement">Repository</key>
+		<key name="nav.project.admin.lifeCycle.repositoryManagement.tt">Repository management</key>
+		<key name="nav.project.admin.lifeCycle.updateSoftware">Update</key>
+		<key name="nav.project.admin.lifeCycle.updateSoftware.tt">Update software</key>
+		<key name="nav.project.admin.references">References</key>
+		<key name="nav.project.admin.references.tt">Textual references</key>
+		<key name="nav.project.admin.references.documentation">Documentation</key>
+		<key name="nav.project.admin.references.documentation.tt">Project documentation</key>
+		<key name="nav.project.admin.references.help">Helps</key>
+		<key name="nav.project.admin.references.help.tt">Project helps</key>
+		<key name="nav.project.admin.references.about">About</key>
+		<key name="nav.project.admin.references.about.tt">Project splash settings</key>
 		 
-		 
-		<key name="editor.toolbar.left.button1">LB1</key>
-		<key name="editor.toolbar.left.button1.tt">LB1</key>
-		<key name="editor.toolbar.left.button2">LB2</key>
-		<key name="editor.toolbar.left.button2.tt">LB2</key>
+<!-- Editor: left panel menu  -->
+		<key name="editor.toolbar.left.newComponent">New component</key>
+		<key name="editor.toolbar.left.newComponent.tt">Insert new component</key>
+		<key name="editor.toolbar.left.newContainer">New container</key>
+		<key name="editor.toolbar.left.newContainer.tt">Insert new container</key>
+		
+		
+		
+		
+		
 		<key name="editor.toolbar.top.button1">TB1</key>
 		<key name="editor.toolbar.top.button1.tt">TB1</key>
 		<key name="editor.toolbar.top.button2">TB2</key>
@@ -94,15 +159,76 @@
 		<key name="menu.help.about">О программе</key>
 		<key name="menu.help.about.tt">Справка о программе</key>
 
-<!-- Navigator menu  -->
+<!-- Меню навигатора  -->
 		<key name="nav.project">Проект</key>
-		<key name="nav.project.tt">Текущий проект</key>
+		<key name="nav.project.tt">Текущей проект</key>
+		<key name="nav.project.sources">Источники данных</key>
+		<key name="nav.project.sources.tt">OPC DA серверы</key>
+		<key name="nav.project.checkers">Средства контроля</key>
+		<key name="nav.project.checkers.tt">Средства контроля входных данных</key>
+		<key name="nav.project.checkers.templates">Заготовки</key>
+		<key name="nav.project.checkers.templates.tt">Закотовки средств контроля</key>
+		<key name="nav.project.checkers.tree">Дерево средств контроля</key>
+		<key name="nav.project.checkers.tree.tt">Дерево средств контроля</key>
+		<key name="nav.project.navigators">Навигация</key>
+		<key name="nav.project.navigators.tt">Навигация по проекту</key>
+		<key name="nav.project.navigators.templates">Заготовки</key>
+		<key name="nav.project.navigators.templates.tt">Заготовки деервьев навигации</key>
+		<key name="nav.project.navigators.roots">Корни навигаторов</key>
+		<key name="nav.project.navigators.roots.tt">Корни деервьев навигации</key>
+		<key name="nav.project.screens">Экраны</key>
+		<key name="nav.project.screens.tt">Экраны проекта</key>
+		<key name="nav.project.screens.monitoring">Мнемосхемы</key>
+		<key name="nav.project.screens.monitoring.tt">Мнемосхемы проекта</key>
+		<key name="nav.project.screens.logs">Журналы</key>
+		<key name="nav.project.screens.logs.tt">Журналы проекта</key>
+		<key name="nav.project.screens.history">Исторические данные</key>
+		<key name="nav.project.screens.history.tt">Исторические данные проекта</key>
+		<key name="nav.project.admin">Администрирование</key>
+		<key name="nav.project.admin.tt">Администрирование проекта</key>
+		<key name="nav.project.admin.systemSettings">Система</key>
+		<key name="nav.project.admin.systemSettings.tt">Системные настройка проекта</key>
+		<key name="nav.project.admin.securitySettings">Безопасность</key>
+		<key name="nav.project.admin.securitySettings.tt">Настройки безопасности проекта</key>
+		<key name="nav.project.admin.roleTree">Дерево ролей</key>
+		<key name="nav.project.admin.roleTree.tt">Дерево ролей проекта</key>
+		<key name="nav.project.admin.userGroups">Группы пользователей</key>
+		<key name="nav.project.admin.userGroups.tt">Группы пользователей проекта</key>
+		<key name="nav.project.admin.userTree">Дерево пользователей</key>
+		<key name="nav.project.admin.userTree.tt">Дерево пользователей проекта</key>
+		<key name="nav.project.admin.policiesTree">Политики</key>
+		<key name="nav.project.admin.policiesTree.tt">Дерево политик проекта</key>
+		<key name="nav.project.admin.stationsTree">Станции</key>
+		<key name="nav.project.admin.stationsTree.tt">Дерево станций проекта</key>
+		<key name="nav.project.admin.calendarsTree">Календари</key>
+		<key name="nav.project.admin.calendarsTree.tt">Календари проекта</key>
+		<key name="nav.project.admin.similatorSettings">Симулятор</key>
+		<key name="nav.project.admin.similatorSettings.tt">НАтсройки симулятора</key>
+		<key name="nav.project.admin.lifeCycle">Жизненный цикл</key>
+		<key name="nav.project.admin.lifeCycle.tt">Жизненный цикл проекта</key>
+		<key name="nav.project.admin.lifeCycle.applicationBuild">Сборка</key>
+		<key name="nav.project.admin.lifeCycle.applicationBuild.tt">Сборка проекта</key>
+		<key name="nav.project.admin.lifeCycle.applicationDeployment">Размещение</key>
+		<key name="nav.project.admin.lifeCycle.applicationDeployment.tt">Размещение проекта</key>
+		<key name="nav.project.admin.lifeCycle.repositoryManagement">Репозиторий</key>
+		<key name="nav.project.admin.lifeCycle.repositoryManagement.tt">Управление репозиторием</key>
+		<key name="nav.project.admin.lifeCycle.updateSoftware">Обновление</key>
+		<key name="nav.project.admin.lifeCycle.updateSoftware.tt">Обновление ПО</key>
+		<key name="nav.project.admin.references">Ссылки</key>
+		<key name="nav.project.admin.references.tt">Текстовые ссылки</key>
+		<key name="nav.project.admin.references.documentation">Документация</key>
+		<key name="nav.project.admin.references.documentation.tt">Документация проекта</key>
+		<key name="nav.project.admin.references.help">Справки</key>
+		<key name="nav.project.admin.references.help.tt">Справочна система проекта</key>
+		<key name="nav.project.admin.references.about">О проекте</key>
+		<key name="nav.project.admin.references.about.tt">Настройки описания проекта</key>
 		
+<!-- Редактор: меню левой панели:  -->
+		<key name="editor.toolbar.left.newComponent">Новый компонент</key>
+		<key name="editor.toolbar.left.newComponent.tt">Добавить новый компонент</key>
+		<key name="editor.toolbar.left.newContainer">Новый контейнер</key>
+		<key name="editor.toolbar.left.newContainer.tt">Добавить новый контейнер</key>
 		
-		<key name="editor.toolbar.left.button1">LB1</key>
-		<key name="editor.toolbar.left.button1.tt">LB1</key>
-		<key name="editor.toolbar.left.button2">LB2</key>
-		<key name="editor.toolbar.left.button2.tt">LB2</key>
 		<key name="editor.toolbar.top.button1">TB1</key>
 		<key name="editor.toolbar.top.button1.tt">TB1</key>
 		<key name="editor.toolbar.top.button2">TB2</key>

@@ -18,7 +18,7 @@ public class SwingCanvas implements EntitiesView<Graphics> {
 		
 		g2d.setTransform(calculateTransform(g2d, width, height, windowWidth, windowHeight));
 		fillBackground(g2d, 0, 0, width, height);
-		for (EntityInterface item : entities) {
+		for (EntityInterface<?> item : entities) {
 			try{item.walkDown((mode,node)->process(g2d,mode,node));
 			} catch (ContentException e) {
 			}
@@ -36,7 +36,7 @@ public class SwingCanvas implements EntitiesView<Graphics> {
 		
 	}
 	
-	private ContinueMode process(Graphics2D canvas, NodeEnterMode mode, EntityInterface item) {
+	private ContinueMode process(final Graphics2D canvas, final NodeEnterMode mode, final EntityInterface<?> item) {
 		switch (mode) {
 			case ENTER	:
 				return ContinueMode.CONTINUE;

@@ -105,8 +105,8 @@ public class Plane extends JBackgroundComponent {
 									fontSize
 								);
 		final String			text = ((ObjectConstantValueSource<String>)lc.getText().getText()).getObjectValue();
-		final int				x = ((PrimitiveConstantValueSource)lc.getLocation().getxLocation()).getIntValue(); 
-		final int				y = ((PrimitiveConstantValueSource)lc.getLocation().getyLocation()).getIntValue(); 
+		final int				x = ((PrimitiveConstantValueSource)lc.getLocation().getXLocation()).getIntValue(); 
+		final int				y = ((PrimitiveConstantValueSource)lc.getLocation().getYLocation()).getIntValue(); 
 		
 		g2d.setFont(newFont);
 
@@ -136,8 +136,8 @@ public class Plane extends JBackgroundComponent {
 									fontSize
 								).deriveFont(UNDERLINE_FONT);
 		final String			text = ((ObjectConstantValueSource<String>)lc.getText().getText()).getObjectValue();
-		final int				x = ((PrimitiveConstantValueSource)lc.getLocation().getxLocation()).getIntValue(); 
-		final int				y = ((PrimitiveConstantValueSource)lc.getLocation().getyLocation()).getIntValue(); 
+		final int				x = ((PrimitiveConstantValueSource)lc.getLocation().getXLocation()).getIntValue(); 
+		final int				y = ((PrimitiveConstantValueSource)lc.getLocation().getYLocation()).getIntValue(); 
 		
 		g2d.setFont(newFont);
 

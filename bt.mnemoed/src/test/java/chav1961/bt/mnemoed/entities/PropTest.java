@@ -85,13 +85,13 @@ public class PropTest {
 	public void locationAndScalePropTest() {
 		final LocationProp	locationProp = new LocationProp(new PrimitiveConstantValueSource(10), new PrimitiveConstantValueSource(20));
 		
-		Assert.assertEquals(new PrimitiveConstantValueSource(10), locationProp.getxLocation());
-		locationProp.setxLocation(new PrimitiveConstantValueSource(15));
-		Assert.assertEquals(new PrimitiveConstantValueSource(15), locationProp.getxLocation());
+		Assert.assertEquals(new PrimitiveConstantValueSource(10), locationProp.getXLocation());
+		locationProp.setXLocation(new PrimitiveConstantValueSource(15));
+		Assert.assertEquals(new PrimitiveConstantValueSource(15), locationProp.getXLocation());
 
-		Assert.assertEquals(new PrimitiveConstantValueSource(20), locationProp.getyLocation());
-		locationProp.setyLocation(new PrimitiveConstantValueSource(25));
-		Assert.assertEquals(new PrimitiveConstantValueSource(25), locationProp.getyLocation());
+		Assert.assertEquals(new PrimitiveConstantValueSource(20), locationProp.getYLocation());
+		locationProp.setYLocation(new PrimitiveConstantValueSource(25));
+		Assert.assertEquals(new PrimitiveConstantValueSource(25), locationProp.getYLocation());
 
 		Assert.assertEquals(new LocationProp(new PrimitiveConstantValueSource(15), new PrimitiveConstantValueSource(25)).toString(), locationProp.toString());
 
