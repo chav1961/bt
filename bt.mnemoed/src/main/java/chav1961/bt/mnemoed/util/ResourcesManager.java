@@ -1,6 +1,8 @@
 package chav1961.bt.mnemoed.util;
 
 import java.awt.BorderLayout;
+import java.awt.Color;
+import java.awt.Component;
 import java.awt.FlowLayout;
 import java.io.IOException;
 import java.io.InputStream;
@@ -15,7 +17,9 @@ import javax.swing.JScrollPane;
 import javax.swing.JSplitPane;
 import javax.swing.JTextArea;
 import javax.swing.JTree;
+import javax.swing.border.LineBorder;
 import javax.swing.tree.DefaultMutableTreeNode;
+import javax.swing.tree.DefaultTreeCellRenderer;
 import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.TreeNode;
 
@@ -31,6 +35,7 @@ import chav1961.purelib.i18n.interfaces.Localizer.LocaleChangeListener;
 import chav1961.purelib.json.JsonNode;
 import chav1961.purelib.json.JsonUtils;
 import chav1961.purelib.json.interfaces.JsonNodeType;
+import chav1961.purelib.model.interfaces.ContentMetadataInterface.ContentNodeMetadata;
 import chav1961.purelib.streams.JsonStaxParser;
 import chav1961.purelib.ui.swing.useful.LabelledLayout;
 
@@ -49,7 +54,7 @@ public class ResourcesManager extends JPanel implements LocaleChangeListener {
 	private final FileSystemInterface	fsi;
 	private final JsonNode				root;
 	private final JButton				closeButton = new JButton("close");
-	private final JTree					leftTree = new JTree();
+	private final JTree					leftTree;
 	private final JLabel				resourceTypeLabel = new JLabel();
 	private final JComboBox				resourceType = new JComboBox();  
 	private final JLabel				resourceDescriptorLabel = new JLabel();
@@ -76,13 +81,17 @@ public class ResourcesManager extends JPanel implements LocaleChangeListener {
 			final JPanel		closePanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
 			final JPanel		rightTopPanel = new JPanel();
 			final JPanel		rightPanel = new JPanel();
-			final JSplitPane	pane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT,new JScrollPane(leftTree), rightPanel);
 			
-			rightTopPanel.setLayout(new LabelledLayout());
+			rightTopPanel.setLayout(new LabelledLayout(10,3));
 			rightTopPanel.add(resourceTypeLabel,LabelledLayout.LABEL_AREA);
 			rightTopPanel.add(resourceType,LabelledLayout.CONTENT_AREA);
 			rightTopPanel.add(resourceDescriptorLabel,LabelledLayout.LABEL_AREA);
-			rightTopPanel.add(resourceDescriptor,LabelledLayout.CONTENT_AREA);
+			rightTopPanel.add(new JScrollPane(resourceDescriptor),LabelledLayout.CONTENT_AREA);
+			
+			
+			resourceDescriptor.setColumns(50);
+			resourceDescriptor.setRows(10);
+			
 			
 			rightPanel.setLayout(new BorderLayout());
 			rightPanel.add(rightTopPanel,BorderLayout.NORTH);
@@ -94,12 +103,7 @@ public class ResourcesManager extends JPanel implements LocaleChangeListener {
 					logger.message(Severity.error, "Error closing resource manager ("+exc.getLocalizedMessage()+")",exc);
 				}
 			});
-			
-			setLayout(new BorderLayout());
-			add(pane,BorderLayout.CENTER);
-			add(closePanel,BorderLayout.NORTH);
-			fillLocalizedStrings();
-			
+
 			try{if (fsi.open("/content.json").exists()) {
 					try(final Reader 			rdr = fsi.charRead("UTF-8");
 						final JsonStaxParser	parser = new JsonStaxParser(rdr)) {
@@ -109,11 +113,38 @@ public class ResourcesManager extends JPanel implements LocaleChangeListener {
 				}
 				else {
 					this.root = new JsonNode(JsonNodeType.JsonObject);
+					this.root.addChild(new JsonNode("root").setName("name"));
 				}
-				leftTree.setModel(new DefaultTreeModel(reflect2Tree(this.root)));
+				this.leftTree = new JTree(new DefaultTreeModel(reflect2Tree(this.root)));
 			} catch (IOException exc) {
 				throw new ContentException(exc);
 			}
+			leftTree.setCellRenderer(new DefaultTreeCellRenderer() {
+				private static final long serialVersionUID = 2925193734243439537L;
+
+				@Override
+				public Component getTreeCellRendererComponent(JTree tree, Object value, boolean sel, boolean expanded, boolean leaf, int row, boolean hasFocus) {
+					final JLabel	label = (JLabel)super.getTreeCellRendererComponent(tree, value, sel, expanded, leaf, row, hasFocus);
+					final JsonNode	node = (JsonNode)((DefaultMutableTreeNode)value).getUserObject();
+	
+					if (node.hasName("name")) {
+						label.setText(node.getChild("name").getStringValue());
+					}
+					else {
+						label.setText("--- unknown ---");
+					}
+					return label;
+				}
+			});
+			
+			final JSplitPane	pane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT,new JScrollPane(leftTree), rightPanel);
+			
+			setLayout(new BorderLayout());
+			add(pane,BorderLayout.CENTER);
+			add(closePanel,BorderLayout.NORTH);
+			
+			fillLocalizedStrings();
+			
 		}
 	}
 	

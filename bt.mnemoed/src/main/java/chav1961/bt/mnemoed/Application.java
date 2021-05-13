@@ -42,6 +42,7 @@ import javax.swing.tree.TreePath;
 
 import chav1961.bt.mnemoed.controls.CardWindow;
 import chav1961.bt.mnemoed.controls.EditorPane;
+import chav1961.bt.mnemoed.util.ResourcesManager;
 import chav1961.purelib.basic.ArgParser;
 import chav1961.purelib.basic.MimeType;
 import chav1961.purelib.basic.SubstitutableProperties;
@@ -102,7 +103,7 @@ public class Application extends JFrame implements LocaleChangeListener, AutoClo
 	private final CardWindow				cardWindow;
 	private final JStateString				state;
 	
-	public Application(final ContentMetadataInterface app, final Localizer parent, final int localHelpPort, final CountDownLatch latch) throws NullPointerException, LocalizationException, IllegalArgumentException, IOException {
+	public Application(final ContentMetadataInterface app, final Localizer parent, final int localHelpPort, final CountDownLatch latch) throws NullPointerException, LocalizationException, IllegalArgumentException, IOException, ContentException {
 		if (app == null) {
 			throw new NullPointerException("Metadata interface can't be null");
 		}
@@ -187,7 +188,10 @@ public class Application extends JFrame implements LocaleChangeListener, AutoClo
 			
 			fillLocalizedStrings(localizer.currentLocale().getLocale(),localizer.currentLocale().getLocale());
 			
-			cardWindow.add(new EditorPane(app,localizer), EDITOR_WINDOW);
+			cardWindow.add(new EditorPane(app,localizer), "S");
+			cardWindow.add(new ResourcesManager(localizer,state,FileSystemFactory.createFileSystem(URI.create("fsys:file:./"))
+					,()->{System.err.println("Close");})
+					, EDITOR_WINDOW);
 			cardWindow.select(EDITOR_WINDOW);
 			pack();
 			
