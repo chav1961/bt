@@ -3,12 +3,15 @@ package chav1961.bt.mnemoed.util;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Component;
+import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.Reader;
 import java.util.Locale;
 
+import javax.swing.Icon;
+import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JLabel;
@@ -47,14 +50,16 @@ import chav1961.purelib.ui.swing.useful.LabelledLayout;
  * reference 
  */
 public class ResourcesManager extends JPanel implements LocaleChangeListener {
-	private static final long serialVersionUID = -8665431845309620560L;
+	private static final long 	serialVersionUID = -8665431845309620560L;
+	private static final Icon	DELETE_ICON = new ImageIcon(ResourcesManager.class.getResource("delete.png"));
 
 	private final Localizer				localizer;
 	private final LoggerFacade			logger;
 	private final FileSystemInterface	fsi;
 	private final JsonNode				root;
-	private final JButton				closeButton = new JButton("close");
+	private final JButton				closeButton = new JButton(DELETE_ICON);
 	private final JTree					leftTree;
+	private final JLabel				resourceTitle = new JLabel("", JLabel.CENTER);
 	private final JLabel				resourceTypeLabel = new JLabel();
 	private final JComboBox				resourceType = new JComboBox();  
 	private final JLabel				resourceDescriptorLabel = new JLabel();
@@ -78,7 +83,7 @@ public class ResourcesManager extends JPanel implements LocaleChangeListener {
 			this.logger = logger;
 			this.fsi = fsi;
 			
-			final JPanel		closePanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+			final JPanel		closePanel = new JPanel(new BorderLayout());
 			final JPanel		rightTopPanel = new JPanel();
 			final JPanel		rightPanel = new JPanel();
 			
@@ -96,7 +101,10 @@ public class ResourcesManager extends JPanel implements LocaleChangeListener {
 			rightPanel.setLayout(new BorderLayout());
 			rightPanel.add(rightTopPanel,BorderLayout.NORTH);
 			
-			closePanel.add(closeButton);
+			closePanel.add(resourceTitle,BorderLayout.CENTER);
+			closePanel.add(closeButton,BorderLayout.EAST);
+			closeButton.setPreferredSize(new Dimension(DELETE_ICON.getIconWidth(),DELETE_ICON.getIconHeight()));
+			closeButton.setBorder(null);
 			closeButton.addActionListener((e)->{
 				try{closeCallback.onClose();
 				} catch (ContentException exc) {
@@ -142,6 +150,7 @@ public class ResourcesManager extends JPanel implements LocaleChangeListener {
 			setLayout(new BorderLayout());
 			add(pane,BorderLayout.CENTER);
 			add(closePanel,BorderLayout.NORTH);
+			pane.setDividerLocation(200);
 			
 			fillLocalizedStrings();
 			
@@ -172,6 +181,7 @@ public class ResourcesManager extends JPanel implements LocaleChangeListener {
 
 	
 	private void fillLocalizedStrings() {
+		resourceTitle.setText("--- TITLE ---");
 		resourceTypeLabel.setText("type:");
 		resourceType.setToolTipText("combo...");
 		resourceDescriptorLabel.setText("descriptor :");
