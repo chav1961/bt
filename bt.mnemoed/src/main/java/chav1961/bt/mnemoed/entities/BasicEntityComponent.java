@@ -11,7 +11,7 @@ import java.util.Set;
 
 import javax.print.attribute.standard.NumberUp;
 
-import chav1961.bt.mnemoed.interfaces.JsonSerialzable;
+import chav1961.bt.mnemoed.interfaces.JsonSerializable;
 import chav1961.purelib.basic.Utils;
 import chav1961.purelib.basic.exceptions.PrintingException;
 import chav1961.purelib.basic.exceptions.SyntaxException;
@@ -21,7 +21,7 @@ import chav1961.purelib.streams.JsonStaxPrinter;
 import chav1961.purelib.streams.interfaces.JsonStaxParserLexType;
 
 
-public abstract class BasicEntityComponent implements JsonSerialzable {
+public abstract class BasicEntityComponent implements JsonSerializable {
 	private static final BasicEntityComponentChecker	checker = new BasicEntityComponentChecker(
 					new Class[] {TooltipProp.class, ColorProp.class, LocationProp.class, VisibilityProp.class}, 
 					new Class[] {LocationProp.class},

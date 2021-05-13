@@ -3,6 +3,7 @@ package chav1961.bt.mnemoed;
 import java.awt.BorderLayout;
 import java.awt.Desktop;
 import java.awt.Dimension;
+import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
 import java.io.FileInputStream;
@@ -17,6 +18,7 @@ import java.net.URISyntaxException;
 import java.util.Hashtable;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 
 import javax.swing.Icon;
@@ -35,6 +37,7 @@ import javax.swing.SwingUtilities;
 import javax.swing.border.EtchedBorder;
 import javax.swing.event.HyperlinkEvent;
 import javax.swing.event.HyperlinkListener;
+import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.TreePath;
 
 import chav1961.bt.mnemoed.controls.CardWindow;
@@ -95,6 +98,7 @@ public class Application extends JFrame implements LocaleChangeListener, AutoClo
 	private final JMenuBar					menu;
 	private final JFileContentManipulator	manipulator;
 	private final ActionListener			lruListener = (e)->openLRU(e.getActionCommand());
+	private final ActionListener			navigatorListener;
 	private final CardWindow				cardWindow;
 	private final JStateString				state;
 	
@@ -120,6 +124,7 @@ public class Application extends JFrame implements LocaleChangeListener, AutoClo
 									return internalGetPopupMenu(path, meta, app);
 								}
 							};
+			this.navigatorListener = SwingUtils.buildAnnotatedActionListener(this);
 			this.cardWindow = new CardWindow(localizer);
 			this.fsi = FileSystemFactory.createFileSystem(URI.create("fsys:file://./"));
 			this.state = new JStateString(localizer);
@@ -165,7 +170,7 @@ public class Application extends JFrame implements LocaleChangeListener, AutoClo
 				}
 			});
 			
-			leftMenu.addActionListener((e)->{callNavigator(e.getActionCommand());});
+			leftMenu.addActionListener((e)->{internalCallNavigator(e.getActionCommand());});
 			
 			final JSplitPane	left = new JSplitPane(JSplitPane.VERTICAL_SPLIT, new JScrollPane(leftMenu), new JLabel("?????"));
 			final JSplitPane	total = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, left, cardWindow);
@@ -300,6 +305,256 @@ public class Application extends JFrame implements LocaleChangeListener, AutoClo
 		}
 	}
 
+	@OnAction("action:/project.sources.newGroup")
+	private void projectSourcesNewGroup(final Map<String,String[]> parameters) throws IOException {
+		System.err.println("new source group: "+parameters);
+	}
+
+	@OnAction("action:/project.sources.newItem")
+	private void projectSourcesNewItem(final Map<String,String[]> parameters) throws IOException {
+		System.err.println("new source item: "+parameters);
+	}
+
+	@OnAction("action:/project.sources.removeAll")
+	private void projectSourcesRemoveAll(final Map<String,String[]> parameters) throws IOException {
+		System.err.println("remove all sources : "+parameters);
+	}
+	
+	@OnAction("action:/project.checkers.templates.newGroup")
+	private void projectCheckersTemplatesNewGroup(final Map<String,String[]> parameters) throws IOException {
+		System.err.println("new checker template group: "+parameters);
+	}
+
+	@OnAction("action:/project.checkers.templates.newItem")
+	private void projectCheckersTemplatesNewItem(final Map<String,String[]> parameters) throws IOException {
+		System.err.println("new checker template item: "+parameters);
+	}
+	
+	@OnAction("action:/project.checkers.templates.removeAll")
+	private void projectCheckersTemplatesRemoveAll(final Map<String,String[]> parameters) throws IOException {
+		System.err.println("remove all checker templates: "+parameters);
+	}
+	
+	@OnAction("action:/project.checkers.tree.newGroup")
+	private void projectCheckersTreeNewGroup(final Map<String,String[]> parameters) throws IOException {
+		System.err.println("new checker group: "+parameters);
+	}
+	
+	@OnAction("action:/project.checkers.tree.newItem")
+	private void projectCheckersTreeNewItem(final Map<String,String[]> parameters) throws IOException {
+		System.err.println("new checker item: "+parameters);
+	}
+	
+	@OnAction("action:/project.checkers.tree.removeAll")
+	private void projectCheckersTreeRemoveAll(final Map<String,String[]> parameters) throws IOException {
+		System.err.println("remove all checkers: "+parameters);
+	}
+	
+	@OnAction("action:/project.navigators.templates.newGroup")
+	private void projectNavigatorsTemplatesNewGroup(final Map<String,String[]> parameters) throws IOException {
+		System.err.println("new navigator template group: "+parameters);
+	}
+	
+	@OnAction("action:/project.navigators.templates.newItem")
+	private void projectNavigatorsTemplatesNewItem(final Map<String,String[]> parameters) throws IOException {
+		System.err.println("new navigator template item: "+parameters);
+	}
+			
+	@OnAction("action:/project.navigators.templates.removeAll")
+	private void projectNavigatorsTemplatesRemoveAll(final Map<String,String[]> parameters) throws IOException {
+		System.err.println("remove all navigator templates: "+parameters);
+	}
+	
+	@OnAction("action:/project.navigators.roots.newGroup")
+	private void projectNavigatorsRootsNewGroup(final Map<String,String[]> parameters) throws IOException {
+		System.err.println("new navigator group: "+parameters);
+	}
+	
+	@OnAction("action:/project.navigators.roots.newItem")
+	private void projectNavigatorsRootsNewItem(final Map<String,String[]> parameters) throws IOException {
+		System.err.println("new navigator item: "+parameters);
+	}
+	
+	@OnAction("action:/project.navigators.roots.removeAll")
+	private void projectNavigatorsRootsRemoveAll(final Map<String,String[]> parameters) throws IOException {
+		System.err.println("remove all navigator group: "+parameters);
+	}
+	
+	@OnAction("action:/project.screen.monitoring.newGroup")
+	private void projectScreenMonitoringNewGroup(final Map<String,String[]> parameters) throws IOException {
+		System.err.println("new screen monitoring group: "+parameters);
+	}
+	
+	@OnAction("action:/project.screen.monitoring.newItem")
+	private void projectScreenMonitoringNewItem(final Map<String,String[]> parameters) throws IOException {
+		System.err.println("new screen monitoring item: "+parameters);
+	}
+	
+	@OnAction("action:/project.screen.monitoring.removeAll")
+	private void projectScreenMonitoringRemoveAll(final Map<String,String[]> parameters) throws IOException {
+		System.err.println("remove all monitoring: "+parameters);
+	}
+
+	@OnAction("action:/project.screen.logs.newGroup")
+	private void projectScreenLogsNewGroup(final Map<String,String[]> parameters) throws IOException {
+		System.err.println("new screen logs group: "+parameters);
+	}
+	
+	@OnAction("action:/project.screen.logs.newItem")
+	private void projectScreenLogsNewItem(final Map<String,String[]> parameters) throws IOException {
+		System.err.println("new screen log: "+parameters);
+	}
+	
+	@OnAction("action:/project.screen.logs.removeAll")
+	private void projectScreenLogsRemoveAll(final Map<String,String[]> parameters) throws IOException {
+		System.err.println("remove all logs: "+parameters);
+	}
+	
+	@OnAction("action:/project.screen.history.newGroup")
+	private void projectScreenHistoryNewGroup(final Map<String,String[]> parameters) throws IOException {
+		System.err.println("new history group: "+parameters);
+	}
+	
+	@OnAction("action:/project.screen.history.newItem")
+	private void projectScreenHistoryNewItem(final Map<String,String[]> parameters) throws IOException {
+		System.err.println("new history log: "+parameters);
+	}
+	
+	@OnAction("action:/project.screen.history.removeAll")
+	private void projectScreenHistoryRemoveAll(final Map<String,String[]> parameters) throws IOException {
+		System.err.println("remove all histories: "+parameters);
+	}
+	
+	@OnAction("action:/project.admin.systemSettings")
+	private void projectSystemSettings() throws IOException {
+		System.err.println("systemSettings");
+	}
+	
+	@OnAction("action:/project.admin.securitySettings")
+	private void projectSecuritySettings() throws IOException {
+		System.err.println("securitySettings");
+	}
+	
+	@OnAction("action:/project.admin.roleTree.newGroup")
+	private void projectAdminRoleTreeNewGroup(final Map<String,String[]> parameters) throws IOException {
+		System.err.println("new role group: "+parameters);
+	}
+	
+	@OnAction("action:/project.admin.roleTree.newItem")
+	private void projectAdminRoleTreeNewItem(final Map<String,String[]> parameters) throws IOException {
+		System.err.println("new role: "+parameters);
+	}
+	
+	@OnAction("action:/project.admin.roleTree.removeAll")
+	private void projectAdminRoleTreeRemoveAll(final Map<String,String[]> parameters) throws IOException {
+		System.err.println("remove all roles: "+parameters);
+	}
+
+	@OnAction("action:/project.admin.userGroups.newGroup")
+	private void projectAdminUserGroupsNewGroup(final Map<String,String[]> parameters) throws IOException {
+		System.err.println("new user group: "+parameters);
+	}
+	
+	@OnAction("action:/project.admin.userGroups.newItem")
+	private void projectAdminUserGroupsNewItem(final Map<String,String[]> parameters) throws IOException {
+		System.err.println("new user: "+parameters);
+	}
+	
+	@OnAction("action:/project.admin.userGroups.removeAll")
+	private void projectAdminUserGroupsRemoveAll(final Map<String,String[]> parameters) throws IOException {
+		System.err.println("remove all users: "+parameters);
+	}
+	
+	@OnAction("action:/project.admin.policiesTree.newGroup")
+	private void projectAdminPoliciesTreeNewGroup(final Map<String,String[]> parameters) throws IOException {
+		System.err.println("new policy group: "+parameters);
+	}
+	
+	@OnAction("action:/project.admin.policiesTree.newItem")
+	private void projectAdminPoliciesTreeNewItem(final Map<String,String[]> parameters) throws IOException {
+		System.err.println("new policy: "+parameters);
+	}
+	
+	@OnAction("action:/project.admin.policiesTree.removeAll")
+	private void projectAdminPoliciesTreeRemoveAll(final Map<String,String[]> parameters) throws IOException {
+		System.err.println("remove all policies: "+parameters);
+	}
+	
+	@OnAction("action:/project.admin.stationsTree.newGroup")
+	private void projectAdminStationsTreeNewGroup(final Map<String,String[]> parameters) throws IOException {
+		System.err.println("new station group: "+parameters);
+	}
+	
+	@OnAction("action:/project.admin.stationsTree.newItem")
+	private void projectAdminStationsTreeNewItem(final Map<String,String[]> parameters) throws IOException {
+		System.err.println("new station: "+parameters);
+	}
+	
+	@OnAction("action:/project.admin.stationsTree.removeAll")
+	private void projectAdminStationsTreeRemoveAll(final Map<String,String[]> parameters) throws IOException {
+		System.err.println("remove all stations: "+parameters);
+	}
+
+	@OnAction("action:/project.admin.calendarsTree.newGroup")
+	private void projectAdminCalendarsTreeNewGroup(final Map<String,String[]> parameters) throws IOException {
+		System.err.println("new calendar group: "+parameters);
+	}
+	
+	@OnAction("action:/project.admin.calendarsTree.newItem")
+	private void projectAdminCalendarsTreeNewItem(final Map<String,String[]> parameters) throws IOException {
+		System.err.println("new calendar: "+parameters);
+	}
+	
+	@OnAction("action:/project.admin.calendarsTree.removeAll")
+	private void projectAdminCalendarsTreeRemoveAll(final Map<String,String[]> parameters) throws IOException {
+		System.err.println("remove all calendars: "+parameters);
+	}
+
+	@OnAction("action:/project.admin.simulatorSettings")
+	private void projectSimulatorSettings() throws IOException {
+		System.err.println("simulatorSettings");
+	}
+	
+	@OnAction("action:/project.admin.lifeCycle.applicationBuild")
+	private void projectLifeCycleBuild() throws IOException {
+		System.err.println("applicationBuild");
+	}
+
+	@OnAction("action:/project.admin.lifeCycle.applicationDeployment")
+	private void projectLifeCycleDeploy() throws IOException {
+		System.err.println("applicationDeployment");
+	}
+
+	@OnAction("action:/project.admin.lifeCycle.repositoryManagement")
+	private void projectLifeCycleRepo() throws IOException {
+		System.err.println("repositoryManagement");
+	}
+
+	@OnAction("action:/project.admin.lifeCycle.updateSoftware")
+	private void projectLifeCycleUpdateSoftware() throws IOException {
+		System.err.println("updateSoftware");
+	}
+
+	@OnAction("action:/project.admin.references.documentation")
+	private void projectRefDocumentation() throws IOException {
+		System.err.println("documentation");
+	}
+	
+	@OnAction("action:/project.admin.references.resources")
+	private void projectRefResources() throws IOException {
+		System.err.println("Resources");
+	}
+
+	@OnAction("action:/project.admin.references.help")
+	private void projectRefHelp() throws IOException {
+		System.err.println("help");
+	}
+
+	@OnAction("action:/project.admin.references.about")
+	private void projectRefAbout() throws IOException {
+		System.err.println("about");
+	}
+	
 	private void changeState(final FileContentChangedEvent event) {
 		final JMenuItem		save = (JMenuItem)SwingUtils.findComponentByName(menu, "menu.file.save");
 		final JMenuItem		saveAs = (JMenuItem)SwingUtils.findComponentByName(menu, "menu.file.saveAs");
@@ -363,19 +618,28 @@ public class Application extends JFrame implements LocaleChangeListener, AutoClo
 
 	}
 
-	private void callNavigator(final String actionCommand) {
-		// TODO Auto-generated method stub
-		System.err.println("Command="+actionCommand);
+	private void internalCallNavigator(final String actionCommand) {
+		if (actionCommand != null && !actionCommand.isEmpty()) {
+			navigatorListener.actionPerformed(new ActionEvent(this,0,actionCommand));
+		}
 	}
 
 	private JPopupMenu internalGetPopupMenu(final TreePath path, final ContentNodeMetadata meta, final ContentMetadataInterface app) {
-		// TODO Auto-generated method stub
 		final ContentNodeMetadata	menuMeta = app.byUIPath(URI.create("ui:/model/navigation.top.navigator."+meta.getName())); 
 		
 		if (menuMeta != null) {
 			final JPopupMenu	popup = SwingUtils.toJComponent(menuMeta, JPopupMenu.class);
 			
-			SwingUtils.assignActionListeners(popup, this);
+			SwingUtils.assignActionListeners(popup, this, (as,obj,metaData,cargo)->{
+				final ContentNodeMetadata	md = (ContentNodeMetadata)((DefaultMutableTreeNode)path.getLastPathComponent()).getUserObject(); 
+				
+				if (md != null) {
+					return as+"?name="+md.getName()+(md.getApplicationPath() != null ? "&appUri="+md.getApplicationPath() : "");
+				}
+				else {
+					return as;
+				}
+			});
 			return popup;
 		}
 		else {

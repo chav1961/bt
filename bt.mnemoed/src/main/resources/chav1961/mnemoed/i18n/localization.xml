@@ -71,8 +71,6 @@
 		<key name="nav.project.admin.roleTree.tt">Tree of project roles</key>
 		<key name="nav.project.admin.userGroups">User groups</key>
 		<key name="nav.project.admin.userGroups.tt">Groups of users</key>
-		<key name="nav.project.admin.userTree">User tree</key>
-		<key name="nav.project.admin.userTree.tt">All users</key>
 		<key name="nav.project.admin.policiesTree">Policies</key>
 		<key name="nav.project.admin.policiesTree.tt">Policies tree</key>
 		<key name="nav.project.admin.stationsTree">Stations</key>
@@ -97,16 +95,108 @@
 		<key name="nav.project.admin.references.documentation.tt">Project documentation</key>
 		<key name="nav.project.admin.references.help">Helps</key>
 		<key name="nav.project.admin.references.help.tt">Project helps</key>
+		<key name="nav.project.admin.references.resources">Resources</key>
+		<key name="nav.project.admin.references.resources.tt">Project resources management</key>
 		<key name="nav.project.admin.references.about">About</key>
 		<key name="nav.project.admin.references.about.tt">Project splash settings</key>
+		 
+<!-- Navigator menu popups (nav.project.sources): -->
+		<key name="nav.project.sources.newGroup">New group</key>
+		<key name="nav.project.sources.newGroup.tt">Create new source group</key>
+		<key name="nav.project.sources.newItem">New item</key>
+		<key name="nav.project.sources.newItem.tt">Create new source item</key>
+		<key name="nav.project.sources.removeAll">Remove all</key>
+		<key name="nav.project.sources.removeAll.tt">Remove all content for this node</key>
+
+		<key name="nav.project.checkers.templates.newGroup">New group</key>
+		<key name="nav.project.checkers.templates.newGroup.tt">Create new checker template group</key>
+		<key name="nav.project.checkers.templates.newItem">New item</key>
+		<key name="nav.project.checkers.templates.newItem.tt">Create new checker template item</key>
+		<key name="nav.project.checkers.templates.removeAll">Remove all</key>
+		<key name="nav.project.checkers.templates.removeAll.tt">Remove all content for this node</key>
+
+		<key name="nav.project.checkers.tree.newGroup">New group</key>
+		<key name="nav.project.checkers.tree.newGroup.tt">Create new checker group</key>
+		<key name="nav.project.checkers.tree.newItem">New item</key>
+		<key name="nav.project.checkers.tree.newItem.tt">Create new checker item</key>
+		<key name="nav.project.checkers.tree.removeAll">Remove all</key>
+		<key name="nav.project.checkers.tree.removeAll.tt">Remove all content for this node</key>
+
+		<key name="nav.project.navigators.templates.newGroup">New group</key>
+		<key name="nav.project.navigators.templates.newGroup.tt">Create new navigator template group</key>
+		<key name="nav.project.navigators.templates.newItem">New item</key>
+		<key name="nav.project.navigators.templates.newItem.tt">Create new navigator template item</key>
+		<key name="nav.project.navigators.templates.removeAll">Remove all</key>
+		<key name="nav.project.navigators.templates.removeAll.tt">Remove all content for this node</key>
+
+		<key name="nav.project.navigators.roots.newGroup">New subtree</key>
+		<key name="nav.project.navigators.roots.newGroup.tt">Create new navigator subtree</key>
+		<key name="nav.project.navigators.roots.newItem">New terminal</key>
+		<key name="nav.project.navigators.roots.newItem.tt">Create new navigator terminal</key>
+		<key name="nav.project.navigators.roots.removeAll">Remove all</key>
+		<key name="nav.project.navigators.roots.removeAll.tt">Remove all content for this node</key>
+		
+		<key name="nav.project.screens.monitoring.newGroup">New folder</key>
+		<key name="nav.project.screens.monitoring.newGroup.tt">Create new screen monitoring folder</key>
+		<key name="nav.project.screens.monitoring.newItem">New screen</key>
+		<key name="nav.project.screens.monitoring.newItem.tt">Create new monitoring screen</key>
+		<key name="nav.project.screens.monitoring.removeAll">Remove all</key>
+		<key name="nav.project.screens.monitoring.removeAll.tt">Remove all content for this node</key>
+		
+		<key name="nav.project.screens.logs.newGroup">New folder</key>
+		<key name="nav.project.screens.logs.newGroup.tt">Create new logs folder</key>
+		<key name="nav.project.screens.logs.newItem">New log</key>
+		<key name="nav.project.screens.logs.newItem.tt">Create new log</key>
+		<key name="nav.project.screens.logs.removeAll">Remove all</key>
+		<key name="nav.project.screens.logs.removeAll.tt">Remove all logs for this node</key>
+
+		<key name="nav.project.screens.history.newGroup">New folder</key>
+		<key name="nav.project.screens.history.newGroup.tt">Create new history folder</key>
+		<key name="nav.project.screens.history.newItem">New history</key>
+		<key name="nav.project.screens.history.newItem.tt">Create new history</key>
+		<key name="nav.project.screens.history.removeAll">Remove all</key>
+		<key name="nav.project.screens.history.removeAll.tt">Remove all histories for this node</key>
+
+		<key name="nav.project.admin.roleTree.newGroup">New role group</key>
+		<key name="nav.project.admin.roleTree.newGroup.tt">Create new role group</key>
+		<key name="nav.project.admin.roleTree.newItem">New role</key>
+		<key name="nav.project.admin.roleTree.newItem.tt">Create new role</key>
+		<key name="nav.project.admin.roleTree.removeAll">Remove all</key>
+		<key name="nav.project.admin.roleTree.removeAll.tt">Remove all roles for this node</key>
+
+		<key name="nav.project.admin.userGroups.newGroup">New user group</key>
+		<key name="nav.project.admin.userGroups.newGroup.tt">Create new user group</key>
+		<key name="nav.project.admin.userGroups.newItem">New user</key>
+		<key name="nav.project.admin.userGroups.newItem.tt">Create new user</key>
+		<key name="nav.project.admin.userGroups.removeAll">Remove all</key>
+		<key name="nav.project.admin.userGroups.removeAll.tt">Remove all users for this node</key>
+
+		<key name="nav.project.admin.policiesTree.newGroup">New policies group</key>
+		<key name="nav.project.admin.policiesTree.newGroup.tt">Create new policies group</key>
+		<key name="nav.project.admin.policiesTree.newItem">New policy</key>
+		<key name="nav.project.admin.policiesTree.newItem.tt">Create new policy</key>
+		<key name="nav.project.admin.policiesTree.removeAll">Remove all</key>
+		<key name="nav.project.admin.policiesTree.removeAll.tt">Remove all policies for this node</key>
+		
+		<key name="nav.project.admin.stationsTree.newGroup">New stations group</key>
+		<key name="nav.project.admin.stationsTree.newGroup.tt">Create new stations group</key>
+		<key name="nav.project.admin.stationsTree.newItem">New station</key>
+		<key name="nav.project.admin.stationsTree.newItem.tt">Create new station</key>
+		<key name="nav.project.admin.stationsTree.removeAll">Remove all</key>
+		<key name="nav.project.admin.stationsTree.removeAll.tt">Remove all stations for this node</key>
+
+		<key name="nav.project.admin.calendarsTree.newGroup">New calendars group</key>
+		<key name="nav.project.admin.calendarsTree.newGroup.tt">Create new calendars group</key>
+		<key name="nav.project.admin.calendarsTree.newItem">New calendar</key>
+		<key name="nav.project.admin.calendarsTree.newItem.tt">Create new calendar</key>
+		<key name="nav.project.admin.calendarsTree.removeAll">Remove all</key>
+		<key name="nav.project.admin.calendarsTree.removeAll.tt">Remove all calendars for this node</key>
 		 
 <!-- Editor: left panel menu  -->
 		<key name="editor.toolbar.left.newComponent">New component</key>
 		<key name="editor.toolbar.left.newComponent.tt">Insert new component</key>
 		<key name="editor.toolbar.left.newContainer">New container</key>
 		<key name="editor.toolbar.left.newContainer.tt">Insert new container</key>
-		
-		
 		
 		
 		
@@ -194,8 +284,6 @@
 		<key name="nav.project.admin.roleTree.tt">Дерево ролей проекта</key>
 		<key name="nav.project.admin.userGroups">Группы пользователей</key>
 		<key name="nav.project.admin.userGroups.tt">Группы пользователей проекта</key>
-		<key name="nav.project.admin.userTree">Дерево пользователей</key>
-		<key name="nav.project.admin.userTree.tt">Дерево пользователей проекта</key>
 		<key name="nav.project.admin.policiesTree">Политики</key>
 		<key name="nav.project.admin.policiesTree.tt">Дерево политик проекта</key>
 		<key name="nav.project.admin.stationsTree">Станции</key>
@@ -220,9 +308,103 @@
 		<key name="nav.project.admin.references.documentation.tt">Документация проекта</key>
 		<key name="nav.project.admin.references.help">Справки</key>
 		<key name="nav.project.admin.references.help.tt">Справочна система проекта</key>
+		<key name="nav.project.admin.references.resources">Ресурсы</key>
+		<key name="nav.project.admin.references.resources.tt">Управление ресурсами проекта</key>
 		<key name="nav.project.admin.references.about">О проекте</key>
 		<key name="nav.project.admin.references.about.tt">Настройки описания проекта</key>
 		
+<!-- Всплывающие меню навигатора (nav.project.sources): -->
+		<key name="nav.project.sources.newGroup">Создать группу</key>
+		<key name="nav.project.sources.newGroup.tt">Создать новую группу источников данных</key>
+		<key name="nav.project.sources.newItem">Создать источник</key>
+		<key name="nav.project.sources.newItem.tt">Создать новый источник данных</key>
+		<key name="nav.project.sources.removeAll">Удалить все</key>
+		<key name="nav.project.sources.removeAll.tt">Удалить все источники</key>
+		
+		<key name="nav.project.checkers.templates.newGroup">Создать группу</key>
+		<key name="nav.project.checkers.templates.newGroup.tt">Создать новую группу заготовок контроля данных</key>
+		<key name="nav.project.checkers.templates.newItem">Создать заготовку</key>
+		<key name="nav.project.checkers.templates.newItem.tt">Создать новую заготовку контроля данных</key>
+		<key name="nav.project.checkers.templates.removeAll">Удалить все</key>
+		<key name="nav.project.checkers.templates.removeAll.tt">Удалить все заготовки контроля данных</key>
+		
+		<key name="nav.project.checkers.tree.newGroup">Создать группу</key>
+		<key name="nav.project.checkers.tree.newGroup.tt">Создать новую группу контроля данных</key>
+		<key name="nav.project.checkers.tree.newItem">Создать контроль</key>
+		<key name="nav.project.checkers.tree.newItem.tt">Создать новый контроль данных</key>
+		<key name="nav.project.checkers.tree.removeAll">Удалить все</key>
+		<key name="nav.project.checkers.tree.removeAll.tt">Удалить все контроли данных</key>
+		
+		<key name="nav.project.navigators.templates.newGroup">Создать группу</key>
+		<key name="nav.project.navigators.templates.newGroup.tt">Создать новую группу заготовки навигации</key>
+		<key name="nav.project.navigators.templates.newItem">Создать заготовку</key>
+		<key name="nav.project.navigators.templates.newItem.tt">Создать новую заготовку навигации</key>
+		<key name="nav.project.navigators.templates.removeAll">Удалить все</key>
+		<key name="nav.project.navigators.templates.removeAll.tt">Удалить все заготовки навигации</key>
+
+		<key name="nav.project.navigators.roots.newGroup">Создать поддерево</key>
+		<key name="nav.project.navigators.roots.newGroup.tt">Создать новое поддерево навигации</key>
+		<key name="nav.project.navigators.roots.newItem">Создать метку</key>
+		<key name="nav.project.navigators.roots.newItem.tt">Создать новую метку навигации</key>
+		<key name="nav.project.navigators.roots.removeAll">Удалить все</key>
+		<key name="nav.project.navigators.roots.removeAll.tt">Удалить все деревья навигации</key>
+
+		<key name="nav.project.screens.monitoring.newGroup">Создать папку</key>
+		<key name="nav.project.screens.monitoring.newGroup.tt">Создать новую папку мнемосхем</key>
+		<key name="nav.project.screens.monitoring.newItem">Создать мнемосхему</key>
+		<key name="nav.project.screens.monitoring.newItem.tt">Создать новую мнемосхему</key>
+		<key name="nav.project.screens.monitoring.removeAll">Удалить все</key>
+		<key name="nav.project.screens.monitoring.removeAll.tt">Удалить все мнемосхемы</key>
+
+		<key name="nav.project.screens.logs.newGroup">Создать папку</key>
+		<key name="nav.project.screens.logs.newGroup.tt">Создать новую папку журналов</key>
+		<key name="nav.project.screens.logs.newItem">Создать журнал</key>
+		<key name="nav.project.screens.logs.newItem.tt">Создать новый журнал</key>
+		<key name="nav.project.screens.logs.removeAll">Удалить все</key>
+		<key name="nav.project.screens.logs.removeAll.tt">Удалить все журналы</key>
+
+		<key name="nav.project.screens.history.newGroup">Создать папку</key>
+		<key name="nav.project.screens.history.newGroup.tt">Создать новую папку историй</key>
+		<key name="nav.project.screens.history.newItem">Создать историю</key>
+		<key name="nav.project.screens.history.newItem.tt">Создать новую историю</key>
+		<key name="nav.project.screens.history.removeAll">Удалить все</key>
+		<key name="nav.project.screens.history.removeAll.tt">Удалить все истории</key>
+
+		<key name="nav.project.admin.roleTree.newGroup">Создать группу ролей</key>
+		<key name="nav.project.admin.roleTree.newGroup.tt">Создать новую группу ролей</key>
+		<key name="nav.project.admin.roleTree.newItem">Создать роль</key>
+		<key name="nav.project.admin.roleTree.newItem.tt">Создать новую роль</key>
+		<key name="nav.project.admin.roleTree.removeAll">Удалить все</key>
+		<key name="nav.project.admin.roleTree.removeAll.tt">Удалить все роли</key>
+
+		<key name="nav.project.admin.userGroups.newGroup">Создать группу пользователей</key>
+		<key name="nav.project.admin.userGroups.newGroup.tt">Создать новую группу пользователей</key>
+		<key name="nav.project.admin.userGroups.newItem">Создать пользователя</key>
+		<key name="nav.project.admin.userGroups.newItem.tt">Создать нового пользователя</key>
+		<key name="nav.project.admin.userGroups.removeAll">Удалить все</key>
+		<key name="nav.project.admin.userGroups.removeAll.tt">Удалить всех пользователей</key>
+
+		<key name="nav.project.admin.policiesTree.newGroup">Создать группу политик</key>
+		<key name="nav.project.admin.policiesTree.newGroup.tt">Создать новую группу политик</key>
+		<key name="nav.project.admin.policiesTree.newItem">Создать политику</key>
+		<key name="nav.project.admin.policiesTree.newItem.tt">Создать новую политику</key>
+		<key name="nav.project.admin.policiesTree.removeAll">Удалить все</key>
+		<key name="nav.project.admin.policiesTree.removeAll.tt">Удалить все политики</key>
+
+		<key name="nav.project.admin.stationsTree.newGroup">Создать группу станций</key>
+		<key name="nav.project.admin.stationsTree.newGroup.tt">Создать новую группу станций</key>
+		<key name="nav.project.admin.stationsTree.newItem">Создать станцию</key>
+		<key name="nav.project.admin.stationsTree.newItem.tt">Создать новую станцию</key>
+		<key name="nav.project.admin.stationsTree.removeAll">Удалить все</key>
+		<key name="nav.project.admin.stationsTree.removeAll.tt">Удалить все станции</key>
+
+		<key name="nav.project.admin.calendarsTree.newGroup">Создать группу календарей</key>
+		<key name="nav.project.admin.calendarsTree.newGroup.tt">Создать новую группу календарей</key>
+		<key name="nav.project.admin.calendarsTree.newItem">Создать календарь</key>
+		<key name="nav.project.admin.calendarsTree.newItem.tt">Создать новый календарь</key>
+		<key name="nav.project.admin.calendarsTree.removeAll">Удалить все</key>
+		<key name="nav.project.admin.calendarsTree.removeAll.tt">Удалить все календари</key>
+
 <!-- Редактор: меню левой панели:  -->
 		<key name="editor.toolbar.left.newComponent">Новый компонент</key>
 		<key name="editor.toolbar.left.newComponent.tt">Добавить новый компонент</key>

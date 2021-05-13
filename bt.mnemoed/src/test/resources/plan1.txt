@@ -57,3 +57,9 @@ Repository is connected via SPI (by FileSystemInterface interface)
 Database for DA is connected via SPI. There is a dedicated plugin to support database for DA
 Database for HA is connected via SPI. There is a dedicated plugin to support database for HA
 Navigator tree is implemented by FileSystemInterface interface. File system is based on DB connection. Every node is a String path. Content of all the nodes is a serializable item. 
+
+About screen:
+- splash background URI
+- default interface used (WEB or Swing)
+- navigator style (left menu, top menu with submenus, MDI icons)
+- copyright and license

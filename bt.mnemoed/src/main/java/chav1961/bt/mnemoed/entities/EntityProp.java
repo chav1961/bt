@@ -4,13 +4,13 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
-import chav1961.bt.mnemoed.interfaces.JsonSerialzable;
+import chav1961.bt.mnemoed.interfaces.JsonSerializable;
 import chav1961.purelib.basic.exceptions.SyntaxException;
 import chav1961.purelib.cdb.CompilerUtils;
 import chav1961.purelib.streams.JsonStaxParser;
 import chav1961.purelib.streams.interfaces.JsonStaxParserLexType;
 
-public abstract class EntityProp implements JsonSerialzable {
+public abstract class EntityProp implements JsonSerializable {
 	private static final Map<Class<? extends ValueSource>, ArgType>	ARG_TYPES = new HashMap<>();
 	private static final String	PLACE_HOLDER = "placeHolder";
 	
