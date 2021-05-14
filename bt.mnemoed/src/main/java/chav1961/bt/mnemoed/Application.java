@@ -93,7 +93,7 @@ public class Application extends JFrame implements LocaleChangeListener, AutoClo
 	private final Localizer					localizer;
 	private final int 						localHelpPort;
 	private final CountDownLatch			latch;
-	private final SimpleNavigatorTree		leftMenu;
+	private final SimpleNavigatorTree<ContentNodeMetadata>	leftMenu;
 	private final FileSystemInterface		fsi;
 	private final SubstitutableProperties	props = new SubstitutableProperties();
 	private final JMenuBar					menu;
@@ -119,7 +119,9 @@ public class Application extends JFrame implements LocaleChangeListener, AutoClo
 			this.localHelpPort = localHelpPort;
 			this.latch = latch;
 			this.menu = SwingUtils.toJComponent(app.byUIPath(URI.create("ui:/model/navigation.top.mainmenu")), JMenuBar.class);
-			this.leftMenu = new SimpleNavigatorTree(localizer,app.byUIPath(URI.create("ui:/model/navigation.top.navigator"))) {
+			this.leftMenu = new SimpleNavigatorTree<ContentNodeMetadata>(localizer,app.byUIPath(URI.create("ui:/model/navigation.top.navigator"))) {
+								private static final long serialVersionUID = 1L;
+
 								@Override
 								protected JPopupMenu getPopupMenu(final TreePath path, final ContentNodeMetadata meta) {
 									return internalGetPopupMenu(path, meta, app);
@@ -189,7 +191,7 @@ public class Application extends JFrame implements LocaleChangeListener, AutoClo
 			fillLocalizedStrings(localizer.currentLocale().getLocale(),localizer.currentLocale().getLocale());
 			
 			cardWindow.add(new EditorPane(app,localizer), "S");
-			cardWindow.add(new ResourcesManager(localizer,state,FileSystemFactory.createFileSystem(URI.create("fsys:file:./"))
+			cardWindow.add(new ResourcesManager(app,localizer,state,FileSystemFactory.createFileSystem(URI.create("fsys:file:./"))
 					,()->{System.err.println("Close");})
 					, EDITOR_WINDOW);
 			cardWindow.select(EDITOR_WINDOW);

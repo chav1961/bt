@@ -209,6 +209,19 @@
 		<key name="editor.toolbar.right.button2">RB2</key>
 		<key name="editor.toolbar.right.button2.tt">RB2</key>
 		 
+<!-- Resource manager: -->
+		<key name="resourceManager.title">Resource manager</key>
+		<key name="resourceManager.typeLabel">Resource type</key>
+		<key name="resourceManager.typeLabel.tt">Type of the resource selected</key>
+		<key name="resourceManager.descriptorLabel">Resource description</key>
+		<key name="resourceManager.descriptorLabel.tt">Description of the resource selected. Creole syntax is supported here</key>
+
+		<key name="resourcemanager.popup.newGroup">Create folder</key>
+		<key name="resourcemanager.popup.newGroup.tt">Create new folder for resources</key>
+		<key name="resourcemanager.popup.newItem">Create resource</key>
+		<key name="resourcemanager.popup.newItem.tt">Create new resource inside the folder</key>
+		<key name="resourcemanager.popup.removeAll">Remove all</key>
+		<key name="resourcemanager.popup.removeAll.tt">Remove all resources</key>
 		 
 		 
 	</lang>
@@ -419,6 +432,21 @@
 		<key name="editor.toolbar.right.button1.tt">RB1</key>
 		<key name="editor.toolbar.right.button2">RB2</key>
 		<key name="editor.toolbar.right.button2.tt">RB2</key>
+		
+<!-- Менеджер ресурсов: -->
+		<key name="resourceManager.title">Менеджер ресурсов</key>
+		<key name="resourceManager.typeLabel">Тип ресурса</key>
+		<key name="resourceManager.typeLabel.tt">Тип выбранного ресурса</key>
+		<key name="resourceManager.descriptorLabel">Описание ресурса</key>
+		<key name="resourceManager.descriptorLabel.tt">Описание выбранного ресурса. Можно использовать синтаксис Creole</key>
+		
+		<key name="resourcemanager.popup.newGroup">Создать папку</key>
+		<key name="resourcemanager.popup.newGroup.tt">Создать папку для ресурсов</key>
+		<key name="resourcemanager.popup.newItem">Создать ресурс</key>
+		<key name="resourcemanager.popup.newItem.tt">Создать ресурс внутри папки</key>
+		<key name="resourcemanager.popup.removeAll">Удалить ресурсы</key>
+		<key name="resourcemanager.popup.removeAll.tt">Удалить все ресурсы</key>
+		
 		
 	</lang>
 </localization>
