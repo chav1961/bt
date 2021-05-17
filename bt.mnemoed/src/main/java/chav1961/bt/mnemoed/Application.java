@@ -15,6 +15,7 @@ import java.io.Reader;
 import java.net.ServerSocket;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.net.URL;
 import java.util.Hashtable;
 import java.util.List;
 import java.util.Locale;
@@ -42,9 +43,11 @@ import javax.swing.tree.TreePath;
 
 import chav1961.bt.mnemoed.controls.CardWindow;
 import chav1961.bt.mnemoed.controls.EditorPane;
+import chav1961.bt.mnemoed.controls.settings.AboutProjectSettings;
 import chav1961.bt.mnemoed.util.ResourcesManager;
 import chav1961.purelib.basic.ArgParser;
 import chav1961.purelib.basic.MimeType;
+import chav1961.purelib.basic.SimpleURLClassLoader;
 import chav1961.purelib.basic.SubstitutableProperties;
 import chav1961.purelib.basic.SystemErrLoggerFacade;
 import chav1961.purelib.basic.Utils;
@@ -60,6 +63,7 @@ import chav1961.purelib.fsys.FileSystemFactory;
 import chav1961.purelib.fsys.interfaces.FileSystemInterface;
 import chav1961.purelib.i18n.LocalizerFactory;
 import chav1961.purelib.i18n.PureLibLocalizer;
+import chav1961.purelib.i18n.interfaces.LocaleResource;
 import chav1961.purelib.i18n.interfaces.Localizer;
 import chav1961.purelib.i18n.interfaces.SupportedLanguages;
 import chav1961.purelib.i18n.interfaces.Localizer.LocaleChangeListener;
@@ -67,9 +71,11 @@ import chav1961.purelib.model.ContentModelFactory;
 import chav1961.purelib.model.interfaces.ContentMetadataInterface;
 import chav1961.purelib.model.interfaces.ContentMetadataInterface.ContentNodeMetadata;
 import chav1961.purelib.nanoservice.NanoServiceFactory;
+import chav1961.purelib.ui.swing.AutoBuiltForm;
 import chav1961.purelib.ui.swing.SimpleNavigatorTree;
 import chav1961.purelib.ui.swing.SwingUtils;
 import chav1961.purelib.ui.swing.interfaces.OnAction;
+import chav1961.purelib.ui.swing.useful.JDialogContainer;
 import chav1961.purelib.ui.swing.useful.JFileContentManipulator;
 import chav1961.purelib.ui.swing.useful.JFileContentManipulator.FileContentChangeType;
 import chav1961.purelib.ui.swing.useful.JFileContentManipulator.FileContentChangedEvent;
@@ -87,6 +93,7 @@ public class Application extends JFrame implements LocaleChangeListener, AutoClo
 	public static final String				I18N_ABOUT_CONTENT = "application.about.content";
 
 	private static final String				EDITOR_WINDOW = "editorWindow";
+	private static final URL[]				EMPTY_URLS = new URL[0];
 	
 	private final File						f = new File("./"+PROP_FILE);
 	private final ContentMetadataInterface 	app;
@@ -102,6 +109,8 @@ public class Application extends JFrame implements LocaleChangeListener, AutoClo
 	private final ActionListener			navigatorListener;
 	private final CardWindow				cardWindow;
 	private final JStateString				state;
+	
+	private ResourcesManager				rm = null;
 	
 	public Application(final ContentMetadataInterface app, final Localizer parent, final int localHelpPort, final CountDownLatch latch) throws NullPointerException, LocalizationException, IllegalArgumentException, IOException, ContentException {
 		if (app == null) {
@@ -191,8 +200,11 @@ public class Application extends JFrame implements LocaleChangeListener, AutoClo
 			fillLocalizedStrings(localizer.currentLocale().getLocale(),localizer.currentLocale().getLocale());
 			
 			cardWindow.add(new EditorPane(app,localizer), "S");
-			cardWindow.add(new ResourcesManager(app,localizer,state,FileSystemFactory.createFileSystem(URI.create("fsys:file:./"))
-					,()->{System.err.println("Close");})
+			cardWindow.add(this.rm = new ResourcesManager(app,localizer,state,FileSystemFactory.createFileSystem(URI.create("fsys:file:./"))
+					,()->{
+						cardWindow.remove(rm);
+						System.err.println("Close");
+						})
 					, EDITOR_WINDOW);
 			cardWindow.select(EDITOR_WINDOW);
 			pack();
@@ -558,7 +570,20 @@ public class Application extends JFrame implements LocaleChangeListener, AutoClo
 
 	@OnAction("action:/project.admin.references.about")
 	private void projectRefAbout() throws IOException {
-		System.err.println("about");
+		try(final SimpleURLClassLoader		loader = new SimpleURLClassLoader(EMPTY_URLS, this.getClass().getClassLoader())) {
+			final AboutProjectSettings		aps = new AboutProjectSettings(state);
+			final ContentMetadataInterface	mdi = ContentModelFactory.forAnnotatedClass(aps.getClass());
+			final AutoBuiltForm<AboutProjectSettings>	form = new AutoBuiltForm<AboutProjectSettings>(mdi, localizer, loader, aps, aps);
+			
+			aps.allowUnnamedModuleAccess(loader.getUnnamedModule());
+			form.setPreferredSize(new Dimension(300,230));
+			if (new JDialogContainer<>(localizer, this, extractCaptionFromAnnotation(aps.getClass()), form).showDialog()) {
+				
+			}
+		} catch (LocalizationException | ContentException e) {
+			e.printStackTrace();
+			state.message(Severity.error, e.getLocalizedMessage(), e);
+		}
 	}
 	
 	private void changeState(final FileContentChangedEvent event) {
@@ -650,6 +675,15 @@ public class Application extends JFrame implements LocaleChangeListener, AutoClo
 		}
 		else {
 			return null;
+		}
+	}
+	
+	private String extractCaptionFromAnnotation(final Class<?> clazz) {
+		if (clazz.isAnnotationPresent(LocaleResource.class)) {
+			return clazz.getAnnotation(LocaleResource.class).value();
+		}
+		else {
+			throw new IllegalArgumentException("Class ["+clazz.getCanonicalName()+"] is not annotated with ["+LocaleResource.class.getCanonicalName()+"]");
 		}
 	}
 	

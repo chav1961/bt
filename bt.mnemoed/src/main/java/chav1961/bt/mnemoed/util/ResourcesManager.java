@@ -75,7 +75,6 @@ public class ResourcesManager extends JPanel implements LocaleChangeListener {
 	private final JsonNode						root;
 	private final JCloseButton					closeButton;
 	private final SimpleNavigatorTree<JsonNode>	leftTree;
-	private final ActionListener				listener = SwingUtils.buildAnnotatedActionListener(this);
 	private final JLabel		resourceTitle = new JLabel("", JLabel.CENTER);
 	private final JLabel		resourceTypeLabel = new JLabel();
 	private final JComboBox		resourceType = new JComboBox();  
@@ -148,7 +147,7 @@ public class ResourcesManager extends JPanel implements LocaleChangeListener {
 										if (path != null) {
 											final JPopupMenu	popup = SwingUtils.toJComponent(mdi.byUIPath(URI.create("ui:/model/navigation.top.resourcemanager.popup")), JPopupMenu.class);
 											
-											SwingUtils.assignActionListeners(popup, listener, (actionCommand, item, metaData, cargo) -> {
+											SwingUtils.assignActionListeners(popup, ResourcesManager.this, (actionCommand, item, metaData, cargo) -> {
 												return actionCommand+"?item="+concatPathNames(path);
 											});
 											return popup;
@@ -158,6 +157,7 @@ public class ResourcesManager extends JPanel implements LocaleChangeListener {
 										}
 									}
 								};
+				this.leftTree.setRootVisible(true);
 			} catch (IOException exc) {
 				throw new ContentException(exc);
 			}
@@ -179,17 +179,17 @@ public class ResourcesManager extends JPanel implements LocaleChangeListener {
 	}
 
 
-	@OnAction("resourcemanager.popup.newGroup")
+	@OnAction("action:/resourcemanager.popup.newGroup")
 	private void newForder(final Map<String,String[]> parameters) {
 		System.err.println("New folder: "+parameters);
 	}
 	
-	@OnAction("resourcemanager.popup.newItem")
+	@OnAction("action:/resourcemanager.popup.newItem")
 	private void newResource(final Map<String,String[]> parameters) {
 		System.err.println("New resource: "+parameters);
 	}
 	
-	@OnAction("resourcemanager.popup.removeAll")
+	@OnAction("action:/resourcemanager.popup.removeAll")
 	private void removeAllResources(final Map<String,String[]> parameters) {
 		System.err.println("Remove all resources: "+parameters);
 	}
@@ -208,6 +208,6 @@ public class ResourcesManager extends JPanel implements LocaleChangeListener {
 		resourceTypeLabel.setText(localizer.getValue(RES_TYPE_LABEL));
 		resourceType.setToolTipText(localizer.getValue(RES_TYPE_CONTENT_TT));
 		resourceDescriptorLabel.setText(localizer.getValue(RES_DESCRIPTOR_LABEL));
-		resourceDescriptor.setText(localizer.getValue(RES_DESCRIPTOR_CONTENT_TT));
+		resourceDescriptor.setToolTipText(localizer.getValue(RES_DESCRIPTOR_CONTENT_TT));
 	}
 }

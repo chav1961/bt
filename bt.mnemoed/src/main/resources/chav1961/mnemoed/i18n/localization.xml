@@ -223,6 +223,19 @@
 		<key name="resourcemanager.popup.removeAll">Remove all</key>
 		<key name="resourcemanager.popup.removeAll.tt">Remove all resources</key>
 		 
+<!-- About project settings: -->
+		<key name="chav1961.bt.mnemoed.controls.settings.AboutProjectSettings">'About project' settings</key>
+		<key name="chav1961.bt.mnemoed.controls.settings.AboutProjectSettings.tt">General settings about project</key>
+		<key name="chav1961.bt.mnemoed.controls.settings.AboutProjectSettings.splashBackground">Splash background URI</key>
+		<key name="chav1961.bt.mnemoed.controls.settings.AboutProjectSettings.splashBackground.tt">Splash background URI</key>
+		<key name="chav1961.bt.mnemoed.controls.settings.AboutProjectSettings.uiType">UI type</key>
+		<key name="chav1961.bt.mnemoed.controls.settings.AboutProjectSettings.uiType.tt">Type of user interface for project</key>
+		<key name="chav1961.bt.mnemoed.controls.settings.AboutProjectSettings.navStyle">Navigation style</key>
+		<key name="chav1961.bt.mnemoed.controls.settings.AboutProjectSettings.navStyle.tt">Navigation style for project</key>
+		<key name="chav1961.bt.mnemoed.controls.settings.AboutProjectSettings.copyright">Copyright </key>
+		<key name="chav1961.bt.mnemoed.controls.settings.AboutProjectSettings.copyright.tt">Copyright string for the project</key>
+		<key name="chav1961.bt.mnemoed.controls.settings.AboutProjectSettings.license">License</key>
+		<key name="chav1961.bt.mnemoed.controls.settings.AboutProjectSettings.license.tt">License text for project</key>
 		 
 	</lang>
 	<lang name="ru">
@@ -447,6 +460,19 @@
 		<key name="resourcemanager.popup.removeAll">Удалить ресурсы</key>
 		<key name="resourcemanager.popup.removeAll.tt">Удалить все ресурсы</key>
 		
+<!-- Настройки 'О проекте': -->
+		<key name="chav1961.bt.mnemoed.controls.settings.AboutProjectSettings">Настройки 'О проекте'</key>
+		<key name="chav1961.bt.mnemoed.controls.settings.AboutProjectSettings.tt">Общие настройки проекта</key>
+		<key name="chav1961.bt.mnemoed.controls.settings.AboutProjectSettings.splashBackground">Фон стартового окна</key>
+		<key name="chav1961.bt.mnemoed.controls.settings.AboutProjectSettings.splashBackground.tt">Фон стартового окна при запуске проекта</key>
+		<key name="chav1961.bt.mnemoed.controls.settings.AboutProjectSettings.uiType">Тип интерфейса</key>
+		<key name="chav1961.bt.mnemoed.controls.settings.AboutProjectSettings.uiType.tt">Тип графического интерфейса для проекта</key>
+		<key name="chav1961.bt.mnemoed.controls.settings.AboutProjectSettings.navStyle">Стиль навигации</key>
+		<key name="chav1961.bt.mnemoed.controls.settings.AboutProjectSettings.navStyle.tt">Стиль навигации для проекта</key>
+		<key name="chav1961.bt.mnemoed.controls.settings.AboutProjectSettings.copyright">Право копирайта</key>
+		<key name="chav1961.bt.mnemoed.controls.settings.AboutProjectSettings.copyright.tt">Строка копирайта для проекта</key>
+		<key name="chav1961.bt.mnemoed.controls.settings.AboutProjectSettings.license">Лицензия</key>
+		<key name="chav1961.bt.mnemoed.controls.settings.AboutProjectSettings.license.tt">Текст лицензии проекта</key>
 		
 	</lang>
 </localization>

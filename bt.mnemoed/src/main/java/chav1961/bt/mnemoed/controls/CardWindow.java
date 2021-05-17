@@ -15,15 +15,26 @@ import chav1961.purelib.i18n.interfaces.Localizer.LocaleChangeListener;
 import chav1961.purelib.ui.swing.SwingUtils;
 
 public class CardWindow extends JPanel implements LocaleChangeListener {
-	private static final long serialVersionUID = 2047364089229365985L;
-	private final CardLayout	cardLayout = new CardLayout(); 
+	private static final long 	serialVersionUID = 2047364089229365985L;
+	
+	private final CardLayout	cardLayout = new CardLayout();
+	private String				lastSelected = "";
 	
 	public CardWindow(final Localizer localizer) {
 		setLayout(cardLayout);
 	}
 
-	public void select(final String item) {
-		cardLayout.show(this, item);
+	public void select(final String item) throws NullPointerException {
+		if (item == null || item.isEmpty()) {
+			throw new NullPointerException("Item to swelect can't be null"); 
+		}
+		else {
+			cardLayout.show(this, lastSelected = item);
+		}
+	}
+	
+	public String selected() {
+		return lastSelected;
 	}
 	
 	public InputStream getInputStream() {
