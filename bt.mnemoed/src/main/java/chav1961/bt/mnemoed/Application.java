@@ -93,6 +93,7 @@ public class Application extends JFrame implements LocaleChangeListener, AutoClo
 	public static final String				I18N_ABOUT_CONTENT = "application.about.content";
 
 	private static final String				EDITOR_WINDOW = "editorWindow";
+	private static final String				POPUP_WINDOW = "popupWindow";
 	private static final URL[]				EMPTY_URLS = new URL[0];
 	
 	private final File						f = new File("./"+PROP_FILE);
@@ -199,13 +200,7 @@ public class Application extends JFrame implements LocaleChangeListener, AutoClo
 			
 			fillLocalizedStrings(localizer.currentLocale().getLocale(),localizer.currentLocale().getLocale());
 			
-			cardWindow.add(new EditorPane(app,localizer), "S");
-			cardWindow.add(this.rm = new ResourcesManager(app,localizer,state,FileSystemFactory.createFileSystem(URI.create("fsys:file:./"))
-					,()->{
-						cardWindow.remove(rm);
-						System.err.println("Close");
-						})
-					, EDITOR_WINDOW);
+			cardWindow.add(new EditorPane(app,localizer), EDITOR_WINDOW);
 			cardWindow.select(EDITOR_WINDOW);
 			pack();
 			
@@ -559,8 +554,32 @@ public class Application extends JFrame implements LocaleChangeListener, AutoClo
 	}
 	
 	@OnAction("action:/project.admin.references.resources")
-	private void projectRefResources() throws IOException {
-		System.err.println("Resources");
+	private void projectRefResources() {
+		if (rm != null) {
+			cardWindow.select(POPUP_WINDOW);
+		}
+		else {
+			try{final FileSystemInterface	fsi = FileSystemFactory.createFileSystem(URI.create("fsys:file:./"));
+				final String				lastWindow = cardWindow.selected();
+				
+				rm = new ResourcesManager(app,localizer,state,fsi,()->
+										{	if (lastWindow != null && lastWindow.isEmpty()) {
+												cardWindow.select(lastWindow);
+											}
+											rm.setVisible(false);
+											cardWindow.remove(rm);
+											rm = null;
+											try{fsi.close();
+											} catch (IOException e) {
+											}
+										}
+									);
+				cardWindow.add(rm, POPUP_WINDOW);
+				cardWindow.select(POPUP_WINDOW);
+			} catch (LocalizationException | ContentException | IOException e) {
+				state.message(Severity.error, "Error opening resource manager : "+e.getLocalizedMessage(), e);
+			}
+		}
 	}
 
 	@OnAction("action:/project.admin.references.help")
