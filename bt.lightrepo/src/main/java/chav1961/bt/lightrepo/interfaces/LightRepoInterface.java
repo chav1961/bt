@@ -306,7 +306,7 @@ public interface LightRepoInterface {
 	Iterable<CommitDescriptor> queryForCommit(UUID query) throws SyntaxException, IOException;
 	
 	/**
-	 * <p>Calclulate changes between the given versions of the content </p> 
+	 * <p>Calculate changes between the given versions of the content </p> 
 	 * @param path path to calculate changes for
 	 * @param firstVersion first version of the path
 	 * @param secondVersion second version of the path
