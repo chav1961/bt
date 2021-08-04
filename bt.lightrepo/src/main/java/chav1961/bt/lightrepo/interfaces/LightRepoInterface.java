@@ -59,21 +59,130 @@ import chav1961.purelib.fsys.interfaces.FileSystemInterface;
  * manipulate with translated queries use the {@linkplain #getQueriesTranslated()} method.</p> 
  */
 public interface LightRepoInterface {
-	String COMMIT_ID_VAR = "commitId";
-	String TIMESTAMP_VAR = "timestamp";
-	String PATH_VAR = "path";
-	String VERSION_VAR = "version";
-	String AUTHOR_VAR = "author";
-	String COMMENT_VAR = "comment";
-	String CONTENT_VAR = "content";
+	/**
+	 * <p>Predefined variable means any file.</p> 
+	 */
+	String FILE_VAR = "file";
 	
+	/**
+	 * <p>Predefined variable means anym commit</p>
+	 */
+	String COMMIT_VAR = "commit";
+	
+	
+	/**
+	 * <p>Predefined field means commit id</p>
+	 */
+	String COMMIT_ID_F = "commitId";
+	
+	/**
+	 * <p>Predefined variable means commit or file time stamp</p>
+	 */
+	String TIMESTAMP_F = "timestamp";
+	
+	/**
+	 * <p>Predefine variable means file path</p>
+	 */
+	String PATH_F = "path";
+	
+	/**
+	 * <p>Predefined variable means file version</p>
+	 */
+	String VERSION_F = "version";
+	
+	/**
+	 * <p>Predefined variable means commit author</p>
+	 */
+	String AUTHOR_F = "author";
+	
+	/**
+	 * <p>Predefined variable means commit comment</p>
+	 */
+	String COMMENT_F = "comment";
+	
+	/**
+	 * <p>Predefined variable means commit or file content</p>
+	 */
+	String CONTENT_F = "content";
+	
+	/**
+	 * <p>Predefined variable means file changes with another version</p>
+	 */
+	String CHANGE_F = "change";
+	
+	/**
+	 * <p>Predefined variable means this file is parseable for changes</p>
+	 */
+	String PARSEABLE_F = "parseable";
+	
+	
+	/**
+	 * <p>Predefined function checks existentcy of file or commit</p>
+	 */
+	String EXISTS_FUNC = "exists";
+	
+	/**
+	 * <p>Predefined function checks appearance of file or it's content between versions</p>
+	 */
 	String APPEARS_FUNC = "appeared";
+	
+	/**
+	 * <p>Predefined function checks disappearance of file or it's content between versions</p>
+	 */
 	String DISAPPEARS_FUNC = "disappeared";
+	
+	/**
+	 * <p>Predefined function checks file was created in the commit</p>
+	 */
 	String CREATED_FUNC = "created";
+	
+	/**
+	 * <p>Predefined function checks file was changed in the commit</p>
+	 */
 	String CHANGED_FUNC = "changed";
+	
+	/**
+	 * <p>Predefined function checks file was renamed in the commit</p>
+	 */
 	String RENAMED_FUNC = "renamed";
+	
+	/**
+	 * <p>Predefined function checks file was removed in the commit</p>
+	 */
 	String REMOVED_FUNC = "removed";
+	
+	/**
+	 * <p>Predefined function checks regular expression inside content</p>
+	 */
+	String CONTAINS_FUNC = "contains";
+	
+	/**
+	 * <p>Predefined function returns current timestamp</p>
+	 */
+	String NOW_FUNC = "now";
 
+	
+	/**
+	 * <p>Query modifier means previous file version or commit</p>
+	 */
+	String PREV_MOD = "prev";
+	
+	/**
+	 * <p>Query modifier means next file version or commit</p>
+	 */
+	String NEXT_MOD = "next";
+	
+	/**
+	 * <p>Query modifier converts content to upper case</p>
+	 */
+	String UPPERCASE_MOD = "uppercase";
+	
+	/**
+	 * <p>Query modifier converts content to lower case</p>
+	 */
+	String LOWERCASE_MOD = "lowercase";
+	
+	
 	/**
 	 * <p>This interface describes repository item in the commit list</p>
 	 */
@@ -120,6 +229,13 @@ public interface LightRepoInterface {
 		 * @throws IOException on any I/O errors.
 		 */
 		InputStream getContent() throws IOException;
+		
+		/**
+		 * <p>Get changes in the content.</p>
+		 * @return changes of the content. Can't be null or zero-legth
+		 * @throws IOException on any I/O errors.
+		 */
+		ChangesDescriptor[] getChanges() throws IOException;
 	}
 
 	/**
@@ -217,6 +333,12 @@ public interface LightRepoInterface {
 		 * @return query string. Can't be null or empty
 		 */
 		String getQueryString();
+		
+		/**
+		 * <p>Get query interface associated with the query</p> 
+		 * @return query interface. Can't be null
+		 */
+		LightRepoQueryInterface getQuery();
 		
 		/**
 		 * <p>Get attributes associated with the query string</p>

@@ -14,6 +14,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import chav1961.bt.lightrepo.interfaces.LightRepoInterface;
 import chav1961.bt.lightrepo.interfaces.LightRepoInterface.ChangesDescriptor.ChangeType;
+import chav1961.bt.lightrepo.interfaces.LightRepoQueryInterface;
 import chav1961.purelib.basic.AndOrTree;
 import chav1961.purelib.basic.CharUtils;
 import chav1961.purelib.basic.CharUtils.Prescription;
@@ -26,9 +27,9 @@ import chav1961.purelib.cdb.SyntaxNode;
 import chav1961.purelib.fsys.interfaces.FileSystemInterface;
 
 public class AbstractLightRepo implements LightRepoInterface, Closeable {
-	public static final String							COMMITS_PATH = "commits";
-	public static final String							CONTENT_PATH = "content";
 	public static final String							CURRENT_PATH = "current";
+	public static final String							DELTAS_PATH = "deltas";
+	public static final String							COMMITS_PATH = "commits";
 	
 	private static final Hashtable<String, Object>		NULL_ANTTRIBUTES = new Hashtable<>();
 	private static final SyntaxTreeInterface<LexType>	PREDEFINED_NAMES = new AndOrTree<>();
@@ -36,26 +37,34 @@ public class AbstractLightRepo implements LightRepoInterface, Closeable {
 	
 	static {
 		PREDEFINED_NAMES.placeName("in", LexType.IN);
-		PREDEFINED_NAMES.placeName("exists", LexType.EXISTS);
-		PREDEFINED_NAMES.placeName("contains", LexType.CONTAINS);
-		PREDEFINED_NAMES.placeName("appears", LexType.APPEARS);
-		PREDEFINED_NAMES.placeName("disappears", LexType.DISAPPEARS);
-		PREDEFINED_NAMES.placeName("now", LexType.NOW);
-		PREDEFINED_NAMES.placeName("prev", LexType.PREV);
-		PREDEFINED_NAMES.placeName("next", LexType.NEXT);
-		PREDEFINED_NAMES.placeName("file", LexType.FILE);
-		PREDEFINED_NAMES.placeName("commit", LexType.COMMIT);
-		PREDEFINED_NAMES.placeName("author", LexType.AUTHOR);
-		PREDEFINED_NAMES.placeName("description", LexType.DESCRIPTION);
-		PREDEFINED_NAMES.placeName("id", LexType.ID);
-		PREDEFINED_NAMES.placeName("path", LexType.PATH);
-		PREDEFINED_NAMES.placeName("change", LexType.CHANGE);
-		PREDEFINED_NAMES.placeName("tempstamp", LexType.TIMESTAMP);
-		PREDEFINED_NAMES.placeName("parseable", LexType.PARSEABLE);
-		PREDEFINED_NAMES.placeName("version", LexType.VERSION);
-		PREDEFINED_NAMES.placeName("content", LexType.CONTENT);
-		PREDEFINED_NAMES.placeName("uppercase", LexType.UPPERCASE);
-		PREDEFINED_NAMES.placeName("lowercase", LexType.LOWERCASE);
+		
+		PREDEFINED_NAMES.placeName(LightRepoInterface.EXISTS_FUNC, LexType.EXISTS);
+		PREDEFINED_NAMES.placeName(LightRepoInterface.CONTAINS_FUNC, LexType.CONTAINS);
+		PREDEFINED_NAMES.placeName(LightRepoInterface.APPEARS_FUNC, LexType.APPEARS);
+		PREDEFINED_NAMES.placeName(LightRepoInterface.DISAPPEARS_FUNC, LexType.DISAPPEARS);
+		PREDEFINED_NAMES.placeName(LightRepoInterface.NOW_FUNC, LexType.NOW);
+		PREDEFINED_NAMES.placeName(LightRepoInterface.CREATED_FUNC, LexType.CREATED);
+		PREDEFINED_NAMES.placeName(LightRepoInterface.CHANGED_FUNC, LexType.CHANGED);
+		PREDEFINED_NAMES.placeName(LightRepoInterface.RENAMED_FUNC, LexType.RENAMED);
+		PREDEFINED_NAMES.placeName(LightRepoInterface.REMOVED_FUNC, LexType.REMOVED);
+		
+		PREDEFINED_NAMES.placeName(LightRepoInterface.PREV_MOD, LexType.PREV);
+		PREDEFINED_NAMES.placeName(LightRepoInterface.NEXT_MOD, LexType.NEXT);
+		PREDEFINED_NAMES.placeName(LightRepoInterface.UPPERCASE_MOD, LexType.UPPERCASE);
+		PREDEFINED_NAMES.placeName(LightRepoInterface.LOWERCASE_MOD, LexType.LOWERCASE);
+		
+		PREDEFINED_NAMES.placeName(LightRepoInterface.FILE_VAR, LexType.FILE);
+		PREDEFINED_NAMES.placeName(LightRepoInterface.COMMIT_VAR, LexType.COMMIT);
+		
+		PREDEFINED_NAMES.placeName(LightRepoInterface.AUTHOR_F, LexType.AUTHOR);
+		PREDEFINED_NAMES.placeName(LightRepoInterface.COMMENT_F, LexType.COMMENT);
+		PREDEFINED_NAMES.placeName(LightRepoInterface.COMMIT_ID_F, LexType.ID);
+		PREDEFINED_NAMES.placeName(LightRepoInterface.PATH_F, LexType.PATH);
+		PREDEFINED_NAMES.placeName(LightRepoInterface.CHANGE_F, LexType.CHANGE);
+		PREDEFINED_NAMES.placeName(LightRepoInterface.TIMESTAMP_F, LexType.TIMESTAMP);
+		PREDEFINED_NAMES.placeName(LightRepoInterface.PARSEABLE_F, LexType.PARSEABLE);
+		PREDEFINED_NAMES.placeName(LightRepoInterface.VERSION_F, LexType.VERSION);
+		PREDEFINED_NAMES.placeName(LightRepoInterface.CONTENT_F, LexType.CONTENT);
 	}
 
 	private static enum LexGroup {
@@ -78,7 +87,7 @@ public class AbstractLightRepo implements LightRepoInterface, Closeable {
 		UNKNOWN;
 	}
 	
-	private static enum LexType {
+	static enum LexType {
 		OR(LexGroup.OR_GROUP),
 		AND(LexGroup.AND_GROUP),
 		NOT(LexGroup.NOT_GROUP),
@@ -95,21 +104,27 @@ public class AbstractLightRepo implements LightRepoInterface, Closeable {
 		SUB(LexGroup.ADD_GROUP),
 		NUMBER(LexGroup.TERM_GROUP),
 		STRING(LexGroup.TERM_GROUP),
+		
 		EXISTS(LexGroup.TERM_GROUP,1,1),
 		CONTAINS(LexGroup.TERM_GROUP,2,2),
 		APPEARS(LexGroup.TERM_GROUP,2,2),
 		DISAPPEARS(LexGroup.TERM_GROUP,2,2),
 		NOW(LexGroup.TERM_GROUP,0,0),
+		CREATED(LexGroup.TERM_GROUP,1,1),
+		CHANGED(LexGroup.TERM_GROUP,1,1),
+		RENAMED(LexGroup.TERM_GROUP,1,2),
+		REMOVED(LexGroup.TERM_GROUP,1,1),
+		
 		PREV(LexGroup.SUBTERM_GROUP,0,1),
 		NEXT(LexGroup.SUBTERM_GROUP,0,1),
 		FILE(LexGroup.TERM_GROUP,TermType.PREDEFINED_NAME),
 		COMMIT(LexGroup.SUBTERM_GROUP,TermType.PREDEFINED_NAME),
 		AUTHOR(LexGroup.SUBTERM_GROUP,TermType.COMMIT_SUFFIX),
-		DESCRIPTION(LexGroup.SUBTERM_GROUP,TermType.COMMIT_SUFFIX),
+		COMMENT(LexGroup.SUBTERM_GROUP,TermType.COMMIT_SUFFIX),
 		ID(LexGroup.SUBTERM_GROUP,TermType.COMMIT_SUFFIX),
 		PATH(LexGroup.SUBTERM_GROUP,TermType.FILE_SUFFIX),
-		CHANGE(LexGroup.SUBTERM_GROUP,TermType.FILE_SUFFIX),
 		TIMESTAMP(LexGroup.SUBTERM_GROUP,TermType.FILE_SUFFIX),
+		CHANGE(LexGroup.SUBTERM_GROUP,TermType.FILE_SUFFIX),
 		PARSEABLE(LexGroup.SUBTERM_GROUP,TermType.FILE_SUFFIX),
 		VERSION(LexGroup.SUBTERM_GROUP,TermType.ANY_SUFFIX),
 		CONTENT(LexGroup.SUBTERM_GROUP,TermType.ANY_SUFFIX),
@@ -162,7 +177,7 @@ public class AbstractLightRepo implements LightRepoInterface, Closeable {
 		}
 	}
 	
-	private static enum NodeType {
+	static enum NodeType {
 		OR, AND, NOT,
 		LIST, RANGE,
 		COMPARISON,
@@ -615,17 +630,21 @@ loop:	while (content[from] != END_OF_QUERY) {
 loop:	do {final SyntaxNode<NodeType, SyntaxNode> 		item = (SyntaxNode<NodeType, SyntaxNode>) node.clone();
 			
 			switch (content[++pos].type) {
-				case AUTHOR : case DESCRIPTION : case ID :
+				case AUTHOR : case COMMENT :
 					item.type = NodeType.VAR;
 					item.cargo = content[pos].type;
 					path.add(item);
 					prevEnded = true;
 					break;
+				case ID :
+					item.type = NodeType.VAR;
+					item.cargo = content[pos].type;
+					path.add(item);
+					break loop;
 				case UPPERCASE : case LOWERCASE :
 					item.type = NodeType.VAR;
 					item.cargo = content[pos].type;
 					path.add(item);
-					prevEnded = true;
 					break loop;
 				case PREV : case NEXT :
 					if (prevEnded) {
@@ -668,17 +687,21 @@ loop:	do {final SyntaxNode<NodeType, SyntaxNode> 		item = (SyntaxNode<NodeType, 
 loop:	do {final SyntaxNode<NodeType, SyntaxNode> 		item = (SyntaxNode<NodeType, SyntaxNode>) node.clone();
 			
 			switch (content[++pos].type) {
-				case PATH : case CHANGE : case TIMESTAMP : case PARSEABLE : case VERSION : case CONTENT :
+				case PATH : case CONTENT :
 					item.type = NodeType.VAR;
 					item.cargo = content[pos].type;
 					path.add(item);
 					prevEnded = true;
 					break;
+				case CHANGE : case TIMESTAMP : case PARSEABLE : case VERSION :
+					item.type = NodeType.VAR;
+					item.cargo = content[pos].type;
+					path.add(item);
+					break loop;
 				case UPPERCASE : case LOWERCASE :
 					item.type = NodeType.VAR;
 					item.cargo = content[pos].type;
 					path.add(item);
-					prevEnded = true;
 					break loop;
 				case PREV : case NEXT :
 					if (prevEnded) {
@@ -771,7 +794,15 @@ loop:	do {final SyntaxNode<NodeType, SyntaxNode> 		item = (SyntaxNode<NodeType, 
 			return attributes;
 		}
 		
+		@Override
+		public LightRepoQueryInterface getQuery() {
+			// TODO Auto-generated method stub
+			return null;
+		}
+		
+		
 		public SyntaxNode<NodeType, SyntaxNode> getRoot() {
+			// TODO Auto-generated method stub
 			return root;
 		}
 

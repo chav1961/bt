@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xfs:root xmlns:xfs="http://www.fsys.purelib.chav1961.ru/">
+	<xfs:dir name="root">
+		<xfs:dir name="current"/>
+		<xfs:dir name="deltas"/>
+		<xfs:dir name="commits"/>
+	</xfs:dir>
+</xfs:root>
