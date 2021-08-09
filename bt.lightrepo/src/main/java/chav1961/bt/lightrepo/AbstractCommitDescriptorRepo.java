@@ -201,8 +201,9 @@ public class AbstractCommitDescriptorRepo {
 	
 	static CommitDescriptor loadCommitDescriptor(final Reader rdr) throws IOException, SyntaxException {
 		try(final JsonStaxParser	parser = new JsonStaxParser(rdr)) {
-			final JsonNode			root = JsonUtils.loadJsonTree(parser);
+			parser.next();
 			
+			final JsonNode			root = JsonUtils.loadJsonTree(parser);
 			return toCommitDescriptor(root);
 		}
 	}
@@ -214,7 +215,11 @@ public class AbstractCommitDescriptorRepo {
 		if (!JsonUtils.checkJsonMandatories(root, sb, F_ID, F_TIMESTAMP, F_AUTHOR, F_COMMENT, F_CONTENT)) {
 			throw new SyntaxException(0, 0, "Mandatory fields ["+sb+"] are missing in the commit descriptor");
 		}
-		else if (!JsonUtils.checkJsonMandatories(root, sb, F_ID+"/"+JsonUtils.JSON_TYPE_STR, F_TIMESTAMP+"/"+JsonUtils.JSON_TYPE_INTEGER, F_AUTHOR+"/"+JsonUtils.JSON_TYPE_STR, F_COMMENT+"/"+JsonUtils.JSON_TYPE_STR, F_CONTENT+"/"+JsonUtils.JSON_TYPE_ARR)) {
+		else if (!JsonUtils.checkJsonFieldTypes(root, sb, F_ID+"/"+JsonUtils.JSON_TYPE_STR+JsonUtils.JSON_TYPE_NOT_NULL, 
+				F_TIMESTAMP+"/"+JsonUtils.JSON_TYPE_INTEGER+JsonUtils.JSON_TYPE_NOT_NULL, 
+				F_AUTHOR+"/"+JsonUtils.JSON_TYPE_STR+JsonUtils.JSON_TYPE_NOT_NULL, 
+				F_COMMENT+"/"+JsonUtils.JSON_TYPE_STR+JsonUtils.JSON_TYPE_NOT_NULL, 
+				F_CONTENT+"/"+JsonUtils.JSON_TYPE_ARR+JsonUtils.JSON_TYPE_NOT_NULL)) {
 			throw new SyntaxException(0, 0, "Fields ["+sb+"] contains illegal values of illegal data type");
 		}
 		else {
@@ -228,7 +233,10 @@ public class AbstractCommitDescriptorRepo {
 				if (!JsonUtils.checkJsonMandatories(item, sb, F_PATH, F_VERSION, F_CONTENT, F_CHANGES)) {
 					throw new SyntaxException(0, 0, "Mandatory fields ["+sb+"] are missing in the commit descriptor field ["+F_CONTENT+"]");
 				}
-				else if (!JsonUtils.checkJsonMandatories(item, sb, F_PATH+"/"+JsonUtils.JSON_TYPE_STR, F_VERSION+"/"+JsonUtils.JSON_TYPE_INTEGER, F_CONTENT+"/"+JsonUtils.JSON_TYPE_STR, F_CHANGES+"/"+JsonUtils.JSON_TYPE_ARR)) {
+				else if (!JsonUtils.checkJsonFieldTypes(item, sb, F_PATH+"/"+JsonUtils.JSON_TYPE_STR+JsonUtils.JSON_TYPE_NOT_NULL, 
+						F_VERSION+"/"+JsonUtils.JSON_TYPE_INTEGER+JsonUtils.JSON_TYPE_NOT_NULL, 
+						F_CONTENT+"/"+JsonUtils.JSON_TYPE_STR+JsonUtils.JSON_TYPE_NOT_NULL, 
+						F_CHANGES+"/"+JsonUtils.JSON_TYPE_ARR+JsonUtils.JSON_TYPE_NOT_NULL)) {
 					throw new SyntaxException(0, 0, "Fields ["+sb+"] contains illegal values of illegal data type in the commit descriptor field ["+F_CONTENT+"]");
 				}
 				else {
@@ -252,17 +260,17 @@ public class AbstractCommitDescriptorRepo {
 	static void storeCommitDescriptor(final Writer wr, final CommitDescriptor desc) throws IOException {
 		try(final JsonStaxPrinter	printer = new JsonStaxPrinter(wr)) {
 			printer.startObject();
-			printer.name(F_ID).value(desc.getCommitId().toString());
-			printer.name(F_TIMESTAMP).value(desc.getTimestamp().getTime());
-			printer.name(F_AUTHOR).value(desc.getAuthor());
-			printer.name(F_COMMENT).value(desc.getComment());
+			printer.name(F_ID).value(desc.getCommitId().toString()).splitter();
+			printer.name(F_TIMESTAMP).value(desc.getTimestamp().getTime()).splitter();
+			printer.name(F_AUTHOR).value(desc.getAuthor()).splitter();
+			printer.name(F_COMMENT).value(desc.getComment()).splitter();
 			printer.name(F_CONTENT).startArray();
 			
 			for (RepoItemDescriptor item : desc.getCommitContent()) {
 				printer.startObject();
-				printer.name(F_PATH).value(item.getPath());
-				printer.name(F_VERSION).value(item.getVersion());
-				printer.name(F_CONTENT).value(item.getPath());
+				printer.name(F_PATH).value(item.getPath()).splitter();
+				printer.name(F_VERSION).value(item.getVersion()).splitter();
+				printer.name(F_CONTENT).value(item.getPath()).splitter();
 				printer.name(F_CHANGES).startArray();
 				for (ChangesDescriptor change : item.getChanges()) {
 					printer.value(change.getChangeType().toString()).value(change.getFirstLine()).value(change.getFirstLineContent()).value(change.getSecondLine()).value(change.getSecondLineContent());
