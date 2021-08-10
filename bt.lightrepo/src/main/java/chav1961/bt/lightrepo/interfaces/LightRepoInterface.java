@@ -73,7 +73,7 @@ public interface LightRepoInterface {
 	/**
 	 * <p>Predefined field means commit id</p>
 	 */
-	String COMMIT_ID_F = "commitId";
+	String COMMIT_ID_F = "id";
 	
 	/**
 	 * <p>Predefined variable means commit or file time stamp</p>
@@ -124,12 +124,12 @@ public interface LightRepoInterface {
 	/**
 	 * <p>Predefined function checks appearance of file or it's content between versions</p>
 	 */
-	String APPEARS_FUNC = "appeared";
+	String APPEARS_FUNC = "appears";
 	
 	/**
 	 * <p>Predefined function checks disappearance of file or it's content between versions</p>
 	 */
-	String DISAPPEARS_FUNC = "disappeared";
+	String DISAPPEARS_FUNC = "disappears";
 	
 	/**
 	 * <p>Predefined function checks file was created in the commit</p>

@@ -2,7 +2,6 @@ package chav1961.bt.lightrepo;
 
 import chav1961.bt.lightrepo.interfaces.LightRepoInterface.CommitDescriptor;
 import chav1961.bt.lightrepo.interfaces.LightRepoInterface.RepoItemDescriptor;
-import chav1961.bt.lightrepo.interfaces.LightRepoInterface.TransalatedQuery;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -11,8 +10,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.regex.Pattern;
 
-import chav1961.bt.lightrepo.AbstractLightRepo.LexType;
-import chav1961.bt.lightrepo.AbstractLightRepo.NodeType;
 import chav1961.bt.lightrepo.interfaces.LightRepoInterface;
 import chav1961.bt.lightrepo.interfaces.LightRepoQueryInterface;
 import chav1961.purelib.basic.AndOrTree;
@@ -21,11 +18,15 @@ import chav1961.purelib.basic.exceptions.SyntaxException;
 import chav1961.purelib.basic.growablearrays.GrowableCharArray;
 import chav1961.purelib.basic.interfaces.SyntaxTreeInterface;
 import chav1961.purelib.cdb.SyntaxNode;
+import chav1961.purelib.cdb.SyntaxNodeUtils;
+import chav1961.purelib.enumerations.ContinueMode;
+import chav1961.purelib.enumerations.NodeEnterMode;
 
 public class SimpleLightRepoQuery implements LightRepoQueryInterface {
-	private static final Hashtable<String, Object>		NULL_ANTTRIBUTES = new Hashtable<>();
-	private static final SyntaxTreeInterface<LexType>	PREDEFINED_NAMES = new AndOrTree<>();
+	public static final Hashtable<String, Object>		NULL_ATTRIBUTES = new Hashtable<>();
+	
 	static final char									END_OF_QUERY = '\uFFFF';
+	private static final SyntaxTreeInterface<LexType>	PREDEFINED_NAMES = new AndOrTree<>();
 	
 	static {
 		PREDEFINED_NAMES.placeName("or", LexType.OR);
@@ -191,48 +192,48 @@ public class SimpleLightRepoQuery implements LightRepoQueryInterface {
 	private final boolean	hasExplicitCommits, hasExplicitRepoItems;
 	private final String	commitsPattern, repoItemsPattern;
 	
-	public SimpleLightRepoQuery(final String query, final Hashtable<String, Object> attributes, final SyntaxNode<NodeType, SyntaxNode> root) {
-		if (root == null) {
-			throw new NullPointerException("Root node can't be null");
-		}
-		else {
-			final List<List<SyntaxNode<NodeType, SyntaxNode>>>	dnf = new ArrayList<>();
-			boolean	wasPath = false, wasCommit = false; 
-			int		pathAmount = 0, commitAmount = 0; 
+	private SimpleLightRepoQuery(final String query, final Hashtable<String, Object> attributes, final SyntaxNode<NodeType, SyntaxNode> root) {
+		final List<SyntaxNode<NodeType, SyntaxNode>>	dnf = new ArrayList<>();
+		boolean	wasPath = false, wasCommit = false; 
+		int		pathAmount = 0, commitAmount = 0; 
+		
+		SyntaxNodeUtils.buildDNF((SyntaxNode)root, NodeType.OR, NodeType.AND, NodeType.NOT, (mode, node) ->{
+			if (mode == NodeEnterMode.ENTER) {
+				dnf.add((SyntaxNode<NodeType, SyntaxNode>) node);
+			}
+			return ContinueMode.CONTINUE;
+		});
+		
+		for (SyntaxNode<NodeType, SyntaxNode> item : dnf) {
+			boolean	wasPathHere = false, wasCommitHere = false;
 			
-			walkDNF(root, false, dnf);
-			
-			for (List<SyntaxNode<NodeType, SyntaxNode>> item : dnf) {
-				boolean	wasPathHere = false, wasCommitHere = false;
-				
-				for (SyntaxNode<NodeType, SyntaxNode> op : item) {
-					if (canApplyPatternFor(op)) {
-						if (isPureFieldUsed(op.children[0], LexType.COMMIT, LexType.ID)) {
-							wasCommit = true;
-							wasCommitHere = true;
-						}
-						else if (isPureFieldUsed(op.children[0], LexType.FILE, LexType.PATH)) {
-							wasPath = true;
-							wasPathHere = true;
-						}
+			for (SyntaxNode<NodeType, SyntaxNode> op : item.children) {
+				if (canApplyPatternFor(op)) {
+					if (isPureFieldUsed(op.children[0], LexType.COMMIT, LexType.ID)) {
+						wasCommit = true;
+						wasCommitHere = true;
+					}
+					else if (isPureFieldUsed(op.children[0], LexType.FILE, LexType.PATH)) {
+						wasPath = true;
+						wasPathHere = true;
 					}
 				}
-				if (wasPathHere) {
-					pathAmount++;
-				}
-				if (wasCommitHere) {
-					commitAmount++;
-				}
 			}
-			
-			this.root = root;
-			this.hasCommits = wasCommit;
-			this.hasRepoItems = wasPath;
-			this.hasExplicitCommits = commitAmount == dnf.size();
-			this.hasExplicitRepoItems = pathAmount == dnf.size();
-			this.commitsPattern = hasExplicitCommits ? collectExplicitPattern(dnf, LexType.COMMIT, LexType.ID) : ".*";
-			this.repoItemsPattern = hasExplicitRepoItems ? collectExplicitPattern(dnf, LexType.FILE, LexType.PATH) : ".*";
+			if (wasPathHere) {
+				pathAmount++;
+			}
+			if (wasCommitHere) {
+				commitAmount++;
+			}
 		}
+		
+		this.root = root;
+		this.hasCommits = wasCommit;
+		this.hasRepoItems = wasPath;
+		this.hasExplicitCommits = commitAmount == dnf.size();
+		this.hasExplicitRepoItems = pathAmount == dnf.size();
+		this.commitsPattern = hasExplicitCommits ? collectExplicitPattern(dnf, LexType.COMMIT, LexType.ID) : ".*";
+		this.repoItemsPattern = hasExplicitRepoItems ? collectExplicitPattern(dnf, LexType.FILE, LexType.PATH) : ".*";
 	}
 	
 	@Override
@@ -388,7 +389,7 @@ loop:	while (content[from] != END_OF_QUERY) {
 						final long		nameId = PREDEFINED_NAMES.seekName(content, start, from);
 						
 						if (nameId  < 0) {
-							throw new SyntaxException(SyntaxException.toRow(content, from), SyntaxException.toCol(content, from), "Unknonw predefined name");
+							throw new SyntaxException(SyntaxException.toRow(content, from), SyntaxException.toCol(content, from), "Unknonw predefined name ["+new String(content, start, from - start)+"]");
 						}
 						else {
 							result.add(new Lexema(from, PREDEFINED_NAMES.getCargo(nameId)));
@@ -695,7 +696,7 @@ loop:	do {final SyntaxNode<NodeType, SyntaxNode> 		item = (SyntaxNode<NodeType, 
 						if (content[pos+1].type == LexType.OPENB) {
 							final SyntaxNode<NodeType, SyntaxNode> 		parm = (SyntaxNode<NodeType, SyntaxNode>) node.clone();
 							
-							pos = translateQuery(Priority.ADD, content, from + 1, NULL_ANTTRIBUTES, parm);
+							pos = translateQuery(Priority.ADD, content, from + 1, NULL_ATTRIBUTES, parm);
 							if (content[pos].type == LexType.CLOSEB) {
 								pos++;
 							}
@@ -756,7 +757,7 @@ loop:	do {final SyntaxNode<NodeType, SyntaxNode> 		item = (SyntaxNode<NodeType, 
 						if (content[pos+1].type == LexType.OPENB) {
 							final SyntaxNode<NodeType, SyntaxNode> 		parm = (SyntaxNode<NodeType, SyntaxNode>) node.clone();
 							
-							pos = translateQuery(Priority.ADD, content, from + 1, NULL_ANTTRIBUTES, parm);
+							pos = translateQuery(Priority.ADD, content, from + 1, NULL_ATTRIBUTES, parm);
 							if (content[pos].type == LexType.CLOSEB) {
 								pos++;
 							}
@@ -813,86 +814,9 @@ loop:	do {final SyntaxNode<NodeType, SyntaxNode> 		item = (SyntaxNode<NodeType, 
 			return Arrays.asList(desc);
 		}
 	}
-	
-	static void walkDNF(final SyntaxNode<NodeType, SyntaxNode> node, final boolean notNodeDetected, final List<List<SyntaxNode<NodeType, SyntaxNode>>> dnfCollection) {
-		switch (node.getType()) {
-			case OR		:
-				if (notNodeDetected) {
-					walkAndDNF(node, notNodeDetected, dnfCollection);
-				}
-				else {
-					walkOrDNF(node, notNodeDetected, dnfCollection);
-				}
-				break;
-			case AND	:
-				if (notNodeDetected) {
-					walkOrDNF(node, notNodeDetected, dnfCollection);
-				}
-				else {
-					walkAndDNF(node, notNodeDetected, dnfCollection);
-				}
-				break;
-			case NOT 	: 
-				walkDNF(node, !notNodeDetected, dnfCollection);
-				break;
-			case COMPARISON : 
-				for (List<SyntaxNode<NodeType, SyntaxNode>> item : dnfCollection) {
-					if (notNodeDetected) {
-						final SyntaxNode<NodeType, SyntaxNode>	temp =  (SyntaxNode<NodeType, SyntaxNode>) node.clone();
-						
-						switch ((LexType)node.cargo) {
-							case EQ		:
-								temp.cargo = LexType.NE;
-								break;
-							case GE		:
-								temp.cargo = LexType.LT;
-								break;
-							case GT		:
-								temp.cargo = LexType.LE;
-								break;
-							case LE		:
-								temp.cargo = LexType.GT;
-								break;
-							case LT		:
-								temp.cargo = LexType.GE;
-								break;
-							case NE		:
-								temp.cargo = LexType.EQ;
-								break;
-							default:
-								temp.type = NodeType.NOT;
-								temp.cargo = node;
-								break;
-						}
-						item.add(temp);
-					}
-					else {
-						item.add(node);
-					}
-				}
-				break;
-			case FUNCION : 
-				for (List<SyntaxNode<NodeType, SyntaxNode>> item : dnfCollection) {
-					if (notNodeDetected) {
-						final SyntaxNode<NodeType, SyntaxNode>	notItem =  (SyntaxNode<NodeType, SyntaxNode>) node.clone();
-						
-						notItem.type = NodeType.NOT;
-						notItem.cargo = node;
-						item.add(notItem);
-					}
-					else {
-						item.add(node);
-					}
-				}
-				break;
-			case LIST : case NUM_CONST : case RANGE : case STR_CONST : case VAR : case ADD :
-				throw new IllegalArgumentException();
-			default :
-				throw new UnsupportedOperationException("Node type ["+node.getType()+"] is not supported yet");
-		}
-	}
 
-	static String collectExplicitPattern(final List<List<SyntaxNode<NodeType, SyntaxNode>>> content, final LexType var, final LexType field) {
+	
+	static String collectExplicitPattern(final List<SyntaxNode<NodeType, SyntaxNode>> content, final LexType var, final LexType field) {
 		if (content.size() == 1) {
 			return collectExplicitPatternInternal(content.get(0), var, field);
 		}
@@ -900,7 +824,7 @@ loop:	do {final SyntaxNode<NodeType, SyntaxNode> 		item = (SyntaxNode<NodeType, 
 			final StringBuilder	sb = new StringBuilder();
 			String				prefix = "(";
 			
-			for (List<SyntaxNode<NodeType, SyntaxNode>> item : content) {
+			for (SyntaxNode<NodeType, SyntaxNode> item : content) {
 				sb.append(prefix).append(collectExplicitPatternInternal(item, var, field));
 				prefix = ",";
 			}
@@ -908,11 +832,11 @@ loop:	do {final SyntaxNode<NodeType, SyntaxNode> 		item = (SyntaxNode<NodeType, 
 		}
 	}
 	
-	private static String collectExplicitPatternInternal(final List<SyntaxNode<NodeType, SyntaxNode>> list, final LexType var, final LexType field) {
+	private static String collectExplicitPatternInternal(final SyntaxNode<NodeType, SyntaxNode> list, final LexType var, final LexType field) {
 		final StringBuilder	sb = new StringBuilder();
 		String		prefix = "(";
 
-		for (SyntaxNode<NodeType, SyntaxNode> item : list) {
+		for (SyntaxNode<NodeType, SyntaxNode> item : list.children) {
 			if (canApplyPatternFor(item) && isPureFieldUsed(item.children[0], var, field)) {
 				sb.append(prefix).append(extractPattern(item));
 				prefix = ",";
@@ -921,30 +845,10 @@ loop:	do {final SyntaxNode<NodeType, SyntaxNode> 		item = (SyntaxNode<NodeType, 
 		return sb.append(")").toString();
 	}
 
-	private static void walkAndDNF(final SyntaxNode<NodeType, SyntaxNode> node, final boolean notDetected, final List<List<SyntaxNode<NodeType, SyntaxNode>>> dnfCollection) {
-		for (SyntaxNode item : node.children) {
-			walkDNF(item, notDetected, dnfCollection);
-		}
-	}	
-
-	private static void walkOrDNF(final SyntaxNode<NodeType, SyntaxNode> node, final boolean notDetected, final List<List<SyntaxNode<NodeType, SyntaxNode>>> dnfCollection) {
-		final List<SyntaxNode>[]	content = dnfCollection.toArray(new List[dnfCollection.size()]);
-		final List<List<SyntaxNode<NodeType, SyntaxNode>>>	result = new ArrayList<>();
-
-		for(int index = 0; index < node.children.length; index++) {
-			final List<List<SyntaxNode<NodeType, SyntaxNode>>> temp = new ArrayList(Arrays.asList(content));
-			
-			walkDNF(node.children[index], notDetected, temp);
-			result.addAll(temp);
-		}
-		dnfCollection.clear();
-		dnfCollection.addAll(result);
-	}
-	
 	private static boolean canApplyPatternFor(final SyntaxNode<NodeType, SyntaxNode> node) {
 		if (node.getType() == NodeType.COMPARISON) {
 			switch (((LexType)node.cargo)) {
-				case EQ	: case IN : case NE : return true;
+				case EQ	: case IN : case NE : case LIKE : return true;
 				default : return false;
 			}
 		}
@@ -955,7 +859,7 @@ loop:	do {final SyntaxNode<NodeType, SyntaxNode> 		item = (SyntaxNode<NodeType, 
 	
 	private static boolean isPureFieldUsed(final SyntaxNode<NodeType, SyntaxNode> node, final LexType var, final LexType field) {
 		if (node.getType() == NodeType.VAR) {
-			if (node.cargo == var && node.children != null && node.children.length > 1) {
+			if (node.cargo == var && node.children != null && node.children.length >= 1) {
 				return node.children[node.children.length - 1].cargo == field;
 			}
 			else {

@@ -11,7 +11,6 @@ import java.util.List;
 import java.util.UUID;
 import java.util.regex.Pattern;
 
-import chav1961.bt.lightrepo.AbstractLightRepo.NodeType;
 import chav1961.bt.lightrepo.interfaces.LightRepoQueryInterface;
 import chav1961.bt.lightrepo.interfaces.LightRepoInterface.ChangesDescriptor;
 import chav1961.bt.lightrepo.interfaces.LightRepoInterface.CommitDescriptor;

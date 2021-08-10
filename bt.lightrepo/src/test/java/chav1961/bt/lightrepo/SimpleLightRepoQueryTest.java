@@ -1,6 +1,7 @@
 package chav1961.bt.lightrepo;
 
 import java.util.Hashtable;
+import java.util.UUID;
 
 import org.junit.Assert;
 import org.junit.jupiter.api.Test;
@@ -10,6 +11,7 @@ import chav1961.bt.lightrepo.SimpleLightRepoQuery.Lexema;
 import chav1961.bt.lightrepo.SimpleLightRepoQuery.NodeType;
 import chav1961.bt.lightrepo.SimpleLightRepoQuery.Priority;
 import chav1961.bt.lightrepo.interfaces.LightRepoInterface;
+import chav1961.bt.lightrepo.interfaces.LightRepoQueryInterface;
 import chav1961.purelib.basic.exceptions.SyntaxException;
 import chav1961.purelib.cdb.SyntaxNode;
 
@@ -355,7 +357,7 @@ public class SimpleLightRepoQueryTest {
 			Assert.assertEquals(LexType.NOW, root.cargo);
 			Assert.assertEquals(0, root.children.length);
 
-			root = buildNode("appeared(file,\"test\")", Priority.TERM, 6);
+			root = buildNode("appears(file,\"test\")", Priority.TERM, 6);
 			
 			Assert.assertEquals(NodeType.FUNCION, root.getType());
 			Assert.assertEquals(LexType.APPEARS, root.cargo);
@@ -369,6 +371,20 @@ public class SimpleLightRepoQueryTest {
 			Assert.fail(e.getLocalizedMessage());
 		}
 	}
+	
+	@Test
+	public void instanceTest() {
+		try{final LightRepoQueryInterface	lrqi = SimpleLightRepoQuery.translateQuery("commit.id == \""+UUID.randomUUID()+"\" and file.path ~ \"/test*\"", SimpleLightRepoQuery.NULL_ATTRIBUTES);
+		
+			Assert.assertTrue(lrqi.hasCommits());
+			Assert.assertTrue(lrqi.hasExplicitCommits());
+			Assert.assertTrue(lrqi.hasRepoItems());
+			Assert.assertTrue(lrqi.hasExplicitRepoItems());
+		} catch (SyntaxException e) {
+			Assert.fail(e.getLocalizedMessage());
+		}
+	}
+	
 	
 	private static SyntaxNode<NodeType, SyntaxNode> buildNode(final String content, final Priority prty, final int awaitedLex) throws SyntaxException {
 		final Lexema[]	lex = SimpleLightRepoQuery.parseQuery((content+SimpleLightRepoQuery.END_OF_QUERY).toCharArray(), 0);
