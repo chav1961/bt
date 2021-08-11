@@ -194,6 +194,12 @@ public interface LightRepoInterface {
 		UUID getCommitId();
 		
 		/**
+		 * <p>Get commit  descriptor.</p>
+		 * @return commit descriptor. Can't be null
+		 */
+		CommitDescriptor getCommit();
+		
+		/**
 		 * <p>Get timestamp of the commit</p>
 		 * @return timestamp of the commit. Can't be null
 		 */
@@ -236,6 +242,20 @@ public interface LightRepoInterface {
 		 * @throws IOException on any I/O errors.
 		 */
 		ChangesDescriptor[] getChanges() throws IOException;
+		
+		/**
+		 * <p>Get previous descriptor for the given item</p>
+		 * @return previous description or null, if previous is missing 
+		 * @throws IOException on any I/O errors.
+		 */
+		RepoItemDescriptor getPrevious() throws IOException;
+
+		/**
+		 * <p>Get next descriptor for the given item</p>
+		 * @return next description or null, if next is missing
+		 * @throws IOException on any I/O errors.
+		 */
+		RepoItemDescriptor getNext() throws IOException;
 	}
 
 	/**
@@ -272,6 +292,20 @@ public interface LightRepoInterface {
 		 * @return commit content descriptors. Can't be neither null nor empty array</p>
 		 */
 		RepoItemDescriptor[] getCommitContent();
+		
+		/**
+		 * <p>Get description of previous commit</p>
+		 * @return previous commit descriptor or null is previous commit is missing
+		 * @throws IOException on any I/O errors
+		 */
+		CommitDescriptor getPrevious() throws IOException; 
+
+		/**
+		 * <p>Get description of next commit</p>
+		 * @return next commit descriptor or null is next commit is missing
+		 * @throws IOException on any I/O errors
+		 */
+		CommitDescriptor getNext() throws IOException; 
 	}
 	
 	/**

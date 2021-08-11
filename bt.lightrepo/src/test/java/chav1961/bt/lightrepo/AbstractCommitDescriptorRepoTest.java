@@ -47,6 +47,9 @@ public class AbstractCommitDescriptorRepoTest {
 											@Override public String getComment() {return comment;}
 											@Override public InputStream getContent() throws IOException {return new ByteArrayInputStream(content.getBytes());}
 											@Override public ChangesDescriptor[] getChanges() throws IOException {return new ChangesDescriptor[0];}
+											@Override public CommitDescriptor getCommit() {return null;}	// sad...
+											@Override public RepoItemDescriptor getPrevious() throws IOException {return null;}
+											@Override public RepoItemDescriptor getNext() throws IOException {return null;}
 										};  
 			final CommitDescriptor		desc = new CommitDescriptor() {
 											@Override public Date getTimestamp() {return date;}
@@ -54,6 +57,8 @@ public class AbstractCommitDescriptorRepoTest {
 											@Override public RepoItemDescriptor[] getCommitContent() {return new RepoItemDescriptor[] {rid};}
 											@Override public String getComment() {return comment;}
 											@Override public String getAuthor() {return author;}
+											@Override public CommitDescriptor getPrevious() throws IOException {return null;}
+											@Override public CommitDescriptor getNext() throws IOException {return null;}
 										};
 			
 			acdr.storeCommitDescriptor(commitId, desc);

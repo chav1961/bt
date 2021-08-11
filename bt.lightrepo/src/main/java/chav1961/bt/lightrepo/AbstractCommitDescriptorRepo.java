@@ -389,6 +389,24 @@ public class AbstractCommitDescriptorRepo {
 		public String toString() {
 			return "RepoItemDescriptorImpl [commitId=" + commitId + ", timestamp=" + timestamp + ", path=" + path + ", version=" + version + ", author=" + author + ", comment=" + comment + ", changes=" + Arrays.toString(changes) + "]";
 		}
+
+		@Override
+		public CommitDescriptor getCommit() {
+			// TODO Auto-generated method stub
+			return null;
+		}
+
+		@Override
+		public RepoItemDescriptor getPrevious() throws IOException {
+			// TODO Auto-generated method stub
+			return null;
+		}
+
+		@Override
+		public RepoItemDescriptor getNext() throws IOException {
+			// TODO Auto-generated method stub
+			return null;
+		}
 	}
 	
 	private static class CommitDescriptorImpl implements CommitDescriptor {
@@ -434,6 +452,18 @@ public class AbstractCommitDescriptorRepo {
 		@Override
 		public String toString() {
 			return "CommitDescriptorImpl [commitId=" + commitId + ", timestamp=" + timestamp + ", author=" + author + ", comment=" + comment + ", desc=" + Arrays.toString(desc) + "]";
+		}
+
+		@Override
+		public CommitDescriptor getPrevious() throws IOException {
+			// TODO Auto-generated method stub
+			return null;
+		}
+
+		@Override
+		public CommitDescriptor getNext() throws IOException {
+			// TODO Auto-generated method stub
+			return null;
 		}
 	}
 }

@@ -1,17 +1,26 @@
 package chav1961.bt.lightrepo;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.Date;
 import java.util.Hashtable;
 import java.util.UUID;
 
 import org.junit.Assert;
 import org.junit.jupiter.api.Test;
 
+import chav1961.bt.lightrepo.SimpleLightRepoQuery.ExpressionResult;
+import chav1961.bt.lightrepo.SimpleLightRepoQuery.ExpressionResult.ValueType;
 import chav1961.bt.lightrepo.SimpleLightRepoQuery.LexType;
 import chav1961.bt.lightrepo.SimpleLightRepoQuery.Lexema;
 import chav1961.bt.lightrepo.SimpleLightRepoQuery.NodeType;
 import chav1961.bt.lightrepo.SimpleLightRepoQuery.Priority;
 import chav1961.bt.lightrepo.interfaces.LightRepoInterface;
 import chav1961.bt.lightrepo.interfaces.LightRepoQueryInterface;
+import chav1961.bt.lightrepo.interfaces.LightRepoInterface.ChangesDescriptor;
+import chav1961.bt.lightrepo.interfaces.LightRepoInterface.CommitDescriptor;
+import chav1961.bt.lightrepo.interfaces.LightRepoInterface.RepoItemDescriptor;
+import chav1961.purelib.basic.exceptions.ContentException;
 import chav1961.purelib.basic.exceptions.SyntaxException;
 import chav1961.purelib.cdb.SyntaxNode;
 
@@ -374,24 +383,206 @@ public class SimpleLightRepoQueryTest {
 	
 	@Test
 	public void instanceTest() {
-		try{final LightRepoQueryInterface	lrqi = SimpleLightRepoQuery.translateQuery("commit.id == \""+UUID.randomUUID()+"\" and file.path ~ \"/test*\"", SimpleLightRepoQuery.NULL_ATTRIBUTES);
+		final UUID	id1 = UUID.randomUUID(), id2 = UUID.randomUUID();
+		
+		try{final LightRepoQueryInterface	lrqi = SimpleLightRepoQuery.translateQuery("commit.id in \""+id1+"\",\""+id2+"\" and file.path ~ \"/test*\"", SimpleLightRepoQuery.NULL_ATTRIBUTES);
 		
 			Assert.assertTrue(lrqi.hasCommits());
 			Assert.assertTrue(lrqi.hasExplicitCommits());
 			Assert.assertTrue(lrqi.hasRepoItems());
 			Assert.assertTrue(lrqi.hasExplicitRepoItems());
+			Assert.assertEquals(id1+"|"+id2, lrqi.getCommitsAwaited());
+			Assert.assertEquals("/test*", lrqi.getRepoItemsAwaited());
 		} catch (SyntaxException e) {
 			Assert.fail(e.getLocalizedMessage());
 		}
 	}
 	
+	@Test
+	public void expressionResultTest() throws ContentException, NullPointerException {
+		final ExpressionResult	er1 = new ExpressionResult(100), er2 = new ExpressionResult(100), er3 = new ExpressionResult(200), er4 = new ExpressionResult("test"), er5 = new ExpressionResult(true);
+		
+		Assert.assertEquals(ValueType.INT, er1.type);
+		Assert.assertEquals(100, er1.intValue);
+		Assert.assertEquals(ValueType.STR, er4.type);
+		Assert.assertEquals("test", er4.strValue);
+		Assert.assertEquals(ValueType.BOOL, er5.type);
+		Assert.assertTrue(er5.boolValue);
+		
+		Assert.assertEquals(er1, er2);
+		Assert.assertEquals(er1.hashCode(), er2.hashCode());
+		Assert.assertEquals(er1.toString(), er2.toString());
+		
+		Assert.assertTrue(er4.compareTo(new ExpressionResult("test1")) < 0);
+		Assert.assertTrue(er1.compareTo(er2) == 0);
+		Assert.assertTrue(er1.compareTo(er3) < 0);
+		Assert.assertTrue(er5.compareTo(new ExpressionResult(false)) > 0);
+		
+		Assert.assertEquals(ValueType.BOOL, ExpressionResult.convertTo(new ExpressionResult("true"), ValueType.BOOL).type);
+		Assert.assertEquals(ValueType.INT, ExpressionResult.convertTo(new ExpressionResult("100"), ValueType.INT).type);
+		Assert.assertEquals(ValueType.STR, ExpressionResult.convertTo(new ExpressionResult(100), ValueType.STR).type);
+		
+		try{ExpressionResult.convertTo(null, ValueType.BOOL);
+			Assert.fail("Mandatory exception was not detected (null 1-st argument)");
+		} catch (NullPointerException exc) {
+		}
+		try{ExpressionResult.convertTo(new ExpressionResult("true"), null);
+			Assert.fail("Mandatory exception was not detected (null 2-nd argument)");
+		} catch (NullPointerException exc) {
+		}
+	}
+
+	@Test
+	public void varExtractionTest() throws ContentException, NullPointerException, IOException {
+		final UUID					commitId1 = UUID.randomUUID(), commitId2 = UUID.randomUUID(); 
+		final long					timestamp1 = 100, timestamp2 = 200;
+		final String				comment1 = "comment 1", comment2 = "comment 2";
+		final String				author1 = "author 1", author2 = "author 2";
+		final CommitDescriptor[]	ref = new CommitDescriptor[1];
+		final String				path = "/test/test.txt";
+		final long					version = 2;
+		final RepoItemDescriptor	item= new RepoItemDescriptor() {
+										@Override public UUID getCommitId() {return ref[0].getCommitId();}
+										@Override public CommitDescriptor getCommit() {return ref[0];}
+										@Override public Date getTimestamp() {return new Date(timestamp2);}
+										@Override public String getPath() {return path;}
+										@Override public long getVersion() {return version;}
+										@Override public String getAuthor() {return ref[0].getAuthor();}
+										@Override public String getComment() {return ref[0].getComment();}
+										@Override public InputStream getContent() throws IOException {return null;}
+										@Override public ChangesDescriptor[] getChanges() throws IOException {return null;}
+										@Override public RepoItemDescriptor getPrevious() throws IOException {return null;}
+										@Override public RepoItemDescriptor getNext() throws IOException {return null;}
+									}; 
+		final CommitDescriptor	descPrev = new CommitDescriptor() {
+										@Override public Date getTimestamp() {return new Date(timestamp1);}
+										@Override public CommitDescriptor getPrevious() throws IOException {return null;}
+										@Override public CommitDescriptor getNext() throws IOException {return null;}
+										@Override public UUID getCommitId() {return commitId1;}
+										@Override public RepoItemDescriptor[] getCommitContent() {return null;}
+										@Override public String getComment() {return comment1;}
+										@Override public String getAuthor() {return author1;}
+								};
+		final CommitDescriptor	desc = new CommitDescriptor() {
+									@Override public Date getTimestamp() {return new Date(timestamp2);}
+									@Override public CommitDescriptor getPrevious() throws IOException {return descPrev;}
+									@Override public CommitDescriptor getNext() throws IOException {return null;}
+									@Override public UUID getCommitId() {return commitId2;}
+									@Override public RepoItemDescriptor[] getCommitContent() {return new RepoItemDescriptor[] {item};}
+									@Override public String getComment() {return comment2;}
+									@Override public String getAuthor() {return author2;}
+							};
+		ref[0] = desc;
+		
+		ExpressionResult	result = SimpleLightRepoQuery.extractVarValue(desc, buildNode("commit.author", Priority.TERM, -1));
+		
+		Assert.assertEquals(ValueType.STR, result.type);
+		Assert.assertEquals(author2,result.strValue);
+
+		result = SimpleLightRepoQuery.extractVarValue(desc, buildNode("commit.id", Priority.TERM, -1));
+		
+		Assert.assertEquals(ValueType.STR, result.type);
+		Assert.assertEquals(commitId2.toString(),result.strValue);
+
+		result = SimpleLightRepoQuery.extractVarValue(desc, buildNode("commit.comment", Priority.TERM, -1));
+		
+		Assert.assertEquals(ValueType.STR, result.type);
+		Assert.assertEquals(comment2,result.strValue);
+
+		result = SimpleLightRepoQuery.extractVarValue(desc, buildNode("commit.timestamp", Priority.TERM, -1));
+		
+		Assert.assertEquals(ValueType.INT, result.type);
+		Assert.assertEquals(timestamp2,result.intValue);
+	}
+
+	
+	@Test
+	public void commitCalculationTest() throws ContentException, NullPointerException, IOException {
+		final UUID				commitId1 = UUID.randomUUID(), commitId2 = UUID.randomUUID(); 
+		final long				timestamp1 = 100, timestamp2 = 200;
+		final String			comment1 = "comment 1", comment2 = "comment 2";
+		final String			author1 = "author 1", author2 = "author 2";
+		final CommitDescriptor	descPrev = new CommitDescriptor() {
+										@Override public Date getTimestamp() {return new Date(timestamp1);}
+										@Override public CommitDescriptor getPrevious() throws IOException {return null;}
+										@Override public CommitDescriptor getNext() throws IOException {return null;}
+										@Override public UUID getCommitId() {return commitId1;}
+										@Override public RepoItemDescriptor[] getCommitContent() {return null;}
+										@Override public String getComment() {return comment1;}
+										@Override public String getAuthor() {return author1;}
+								};
+		final CommitDescriptor	desc = new CommitDescriptor() {
+									@Override public Date getTimestamp() {return new Date(timestamp2);}
+									@Override public CommitDescriptor getPrevious() throws IOException {return descPrev;}
+									@Override public CommitDescriptor getNext() throws IOException {return null;}
+									@Override public UUID getCommitId() {return commitId2;}
+									@Override public RepoItemDescriptor[] getCommitContent() {return null;}
+									@Override public String getComment() {return comment2;}
+									@Override public String getAuthor() {return author2;}
+							};
+		ExpressionResult	result = SimpleLightRepoQuery.testCommit(desc, buildNode("commit.author ~ \".*2\" and commit.prev.author.uppercase == \"AUTHOR 1\"", Priority.OR, -1));
+		
+		Assert.assertEquals(ValueType.BOOL, result.type);
+		Assert.assertTrue(result.boolValue);
+	}
+
+	@Test
+	public void repoItemCalculationTest() throws ContentException, NullPointerException, IOException {
+		final UUID					commitId = UUID.randomUUID(); 
+		final long					timestamp = 100;
+		final String				comment = "comment";
+		final String				author = "author";
+		final String				pathPrev = "/test/testPrev.txt", path = "/test/test.txt";
+		final long					versionPrev = 1, version = 2;
+		final RepoItemDescriptor	itemPrev = new RepoItemDescriptor() {
+										@Override public UUID getCommitId() {return commitId;}
+										@Override public CommitDescriptor getCommit() {return null;}
+										@Override public Date getTimestamp() {return new Date(timestamp);}
+										@Override public String getPath() {return pathPrev;}
+										@Override public long getVersion() {return versionPrev;}
+										@Override public String getAuthor() {return author;}
+										@Override public String getComment() {return comment;}
+										@Override public InputStream getContent() throws IOException {return null;}
+										@Override public ChangesDescriptor[] getChanges() throws IOException {return null;}
+										@Override public RepoItemDescriptor getPrevious() throws IOException {return null;}
+										@Override public RepoItemDescriptor getNext() throws IOException {return null;}
+									}; 
+		final RepoItemDescriptor	item = new RepoItemDescriptor() {
+										@Override public UUID getCommitId() {return commitId;}
+										@Override public CommitDescriptor getCommit() {return null;}
+										@Override public Date getTimestamp() {return new Date(timestamp);}
+										@Override public String getPath() {return path;}
+										@Override public long getVersion() {return version;}
+										@Override public String getAuthor() {return author;}
+										@Override public String getComment() {return comment;}
+										@Override public InputStream getContent() throws IOException {return null;}
+										@Override public ChangesDescriptor[] getChanges() throws IOException {return null;}
+										@Override public RepoItemDescriptor getPrevious() throws IOException {return itemPrev;}
+										@Override public RepoItemDescriptor getNext() throws IOException {return null;}
+									}; 
+		final CommitDescriptor		desc = new CommitDescriptor() {
+										@Override public Date getTimestamp() {return new Date(timestamp);}
+										@Override public CommitDescriptor getPrevious() throws IOException {return null;}
+										@Override public CommitDescriptor getNext() throws IOException {return null;}
+										@Override public UUID getCommitId() {return commitId;}
+										@Override public RepoItemDescriptor[] getCommitContent() {return new RepoItemDescriptor[] {item};}
+										@Override public String getComment() {return comment;}
+										@Override public String getAuthor() {return author;}
+									};
+		ExpressionResult			result = SimpleLightRepoQuery.testRepoItem(item, buildNode("file.path ~ \"/test/.*\" and file.prev.path.uppercase == \"/TEST/TESTPREV.TXT\"", Priority.OR, -1));
+		
+		Assert.assertEquals(ValueType.BOOL, result.type);
+		Assert.assertTrue(result.boolValue);
+	}
 	
 	private static SyntaxNode<NodeType, SyntaxNode> buildNode(final String content, final Priority prty, final int awaitedLex) throws SyntaxException {
 		final Lexema[]	lex = SimpleLightRepoQuery.parseQuery((content+SimpleLightRepoQuery.END_OF_QUERY).toCharArray(), 0);
 		final SyntaxNode<NodeType, SyntaxNode>	root = new SyntaxNode<NodeType, SyntaxNode>(0, 0, NodeType.OR, 0, null);
 		final int 		stop = SimpleLightRepoQuery.translateQuery(prty, lex, 0, new Hashtable<String, Object>(), root);
 
-		Assert.assertEquals(awaitedLex, stop);
+		if (awaitedLex >= 0) {
+			Assert.assertEquals(awaitedLex, stop);
+		}
 		return root;
 	}
 }

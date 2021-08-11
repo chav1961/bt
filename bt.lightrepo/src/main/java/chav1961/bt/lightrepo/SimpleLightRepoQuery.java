@@ -3,6 +3,7 @@ package chav1961.bt.lightrepo;
 import chav1961.bt.lightrepo.interfaces.LightRepoInterface.CommitDescriptor;
 import chav1961.bt.lightrepo.interfaces.LightRepoInterface.RepoItemDescriptor;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Hashtable;
@@ -10,17 +11,22 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.regex.Pattern;
 
+import chav1961.bt.lightrepo.SimpleLightRepoQuery.ExpressionResult.ValueType;
 import chav1961.bt.lightrepo.interfaces.LightRepoInterface;
 import chav1961.bt.lightrepo.interfaces.LightRepoQueryInterface;
 import chav1961.purelib.basic.AndOrTree;
 import chav1961.purelib.basic.CharUtils;
+import chav1961.purelib.basic.exceptions.CalculationException;
+import chav1961.purelib.basic.exceptions.ContentException;
 import chav1961.purelib.basic.exceptions.SyntaxException;
 import chav1961.purelib.basic.growablearrays.GrowableCharArray;
 import chav1961.purelib.basic.interfaces.SyntaxTreeInterface;
+import chav1961.purelib.cdb.CompilerUtils;
 import chav1961.purelib.cdb.SyntaxNode;
 import chav1961.purelib.cdb.SyntaxNodeUtils;
 import chav1961.purelib.enumerations.ContinueMode;
 import chav1961.purelib.enumerations.NodeEnterMode;
+import chav1961.purelib.sql.SQLUtils;
 
 public class SimpleLightRepoQuery implements LightRepoQueryInterface {
 	public static final Hashtable<String, Object>		NULL_ATTRIBUTES = new Hashtable<>();
@@ -177,7 +183,7 @@ public class SimpleLightRepoQuery implements LightRepoQueryInterface {
 	
 	static enum NodeType {
 		OR, AND, NOT,
-		LIST, RANGE,
+		RANGE,
 		COMPARISON,
 		ADD,
 		NUM_CONST, STR_CONST, VAR, FUNCION
@@ -188,12 +194,14 @@ public class SimpleLightRepoQuery implements LightRepoQueryInterface {
 	}
 	
 	private final SyntaxNode<NodeType, SyntaxNode> 	root;
+	private final boolean	commitsPresents, repoItemsPresents;
 	private final boolean	hasCommits, hasRepoItems;
 	private final boolean	hasExplicitCommits, hasExplicitRepoItems;
 	private final String	commitsPattern, repoItemsPattern;
 	
 	private SimpleLightRepoQuery(final String query, final Hashtable<String, Object> attributes, final SyntaxNode<NodeType, SyntaxNode> root) {
 		final List<SyntaxNode<NodeType, SyntaxNode>>	dnf = new ArrayList<>();
+		boolean	pathUsed = false, commitUsed = false; 
 		boolean	wasPath = false, wasCommit = false; 
 		int		pathAmount = 0, commitAmount = 0; 
 		
@@ -208,6 +216,12 @@ public class SimpleLightRepoQuery implements LightRepoQueryInterface {
 			boolean	wasPathHere = false, wasCommitHere = false;
 			
 			for (SyntaxNode<NodeType, SyntaxNode> op : item.children) {
+				if (isVarPresents(op, LexType.COMMIT)) {
+					commitUsed = true;
+				}
+				if (isVarPresents(op, LexType.FILE)) {
+					pathUsed = true;
+				}
 				if (canApplyPatternFor(op)) {
 					if (isPureFieldUsed(op.children[0], LexType.COMMIT, LexType.ID)) {
 						wasCommit = true;
@@ -228,12 +242,24 @@ public class SimpleLightRepoQuery implements LightRepoQueryInterface {
 		}
 		
 		this.root = root;
+		this.commitsPresents = commitUsed;
+		this.repoItemsPresents = pathUsed;
 		this.hasCommits = wasCommit;
 		this.hasRepoItems = wasPath;
 		this.hasExplicitCommits = commitAmount == dnf.size();
 		this.hasExplicitRepoItems = pathAmount == dnf.size();
 		this.commitsPattern = hasExplicitCommits ? collectExplicitPattern(dnf, LexType.COMMIT, LexType.ID) : ".*";
 		this.repoItemsPattern = hasExplicitRepoItems ? collectExplicitPattern(dnf, LexType.FILE, LexType.PATH) : ".*";
+	}
+
+	@Override
+	public boolean isCommitUsed() {
+		return commitsPresents;
+	}
+
+	@Override
+	public boolean isRepoItemUsed() {
+		return repoItemsPresents;
 	}
 	
 	@Override
@@ -272,7 +298,17 @@ public class SimpleLightRepoQuery implements LightRepoQueryInterface {
 			throw new NullPointerException("Commit descriptor can't be null");
 		}
 		else {
-			return ((Boolean)testCommit(desc,root));
+			try {final ExpressionResult	result = testCommit(desc,root);
+			
+				if (result.type == ValueType.BOOL) {
+					return result.boolValue;
+				}
+				else {
+					throw new ContentException("Expression result is not a boolean value");
+				}
+			} catch (ContentException | IOException e) {
+				return false; 
+			}
 		}
 	}
 
@@ -282,7 +318,17 @@ public class SimpleLightRepoQuery implements LightRepoQueryInterface {
 			throw new NullPointerException("Repo item descriptor can't be null");
 		}
 		else {
-			return ((Boolean)testRepoItem(desc,root));
+			try {final ExpressionResult	result = testRepoItem(desc,root);
+			
+				if (result.type == ValueType.BOOL) {
+					return result.boolValue;
+				}
+				else {
+					throw new ContentException("Expression result is not a boolean value");
+				}
+			} catch (ContentException | IOException e) {
+				return false; 
+			}
 		}
 	}
 	
@@ -602,63 +648,416 @@ loop:	while (content[from] != END_OF_QUERY) {
 				throw new UnsupportedOperationException("Priority ["+prty+"] is not suported yet"); 
 		}
 	}
-
 	
-	Object testCommit(final CommitDescriptor desc, final SyntaxNode<NodeType, SyntaxNode> node) {
-		// TODO Auto-generated method stub
+	static ExpressionResult testCommit(final CommitDescriptor desc, final SyntaxNode<NodeType, SyntaxNode> node) throws ContentException, NullPointerException, IOException {
 		switch (node.getType()) {
 			case OR			:
 				for (SyntaxNode<NodeType, SyntaxNode> item : node.children) {
-					if (((Boolean)testCommit(desc, item))) {
-						return true;
+					final ExpressionResult	 result = testCommit(desc, item);
+					
+					if (result.type == ValueType.UNKNOWN) {
+						return result;
+					}
+					else if (result.type == ValueType.BOOL && result.boolValue) {
+						return new ExpressionResult(true);
 					}
 				}
-				return false;
+				return new ExpressionResult(false);
 			case AND		:
 				for (SyntaxNode<NodeType, SyntaxNode> item : node.children) {
-					if (!((Boolean)testCommit(desc, item))) {
-						return false;
+					final ExpressionResult	 result = testCommit(desc, item);
+					
+					if (result.type == ValueType.UNKNOWN) {
+						return result;
+					}
+					else if (result.type == ValueType.BOOL) {
+						if (!result.boolValue) {
+							return new ExpressionResult(false);
+						}
+					}
+					else {
+						return new ExpressionResult(false);
 					}
 				}
-				return true;
-			case COMPARISON	:
-				break;
+				return new ExpressionResult(true);
 			case NOT	:
-				return !((Boolean)testCommit(desc, (SyntaxNode<NodeType, SyntaxNode>)node.cargo));
+				final ExpressionResult	 notResult = testCommit(desc, (SyntaxNode<NodeType, SyntaxNode>)node.cargo);
+				
+				if (notResult.type == ValueType.UNKNOWN) {
+					return notResult;
+				}
+				else if (notResult.type == ValueType.BOOL) {
+					return new ExpressionResult(!notResult.boolValue);
+				}
+				else {
+					return new ExpressionResult(false);
+				}
+			case COMPARISON	:
+				final ExpressionResult left = testCommit(desc, node.children[0]);
+				
+				if (left.type == ValueType.UNKNOWN) {
+					return left;
+				}
+				else {
+					switch ((LexType)node.cargo) {
+						case LIKE	: return new ExpressionResult(ExpressionResult.convertTo(left, ValueType.STR).strValue.matches(ExpressionResult.convertTo(testCommit(desc, node.children[1]), ValueType.STR).strValue));
+						case EQ		: return new ExpressionResult(left.equals(ExpressionResult.convertTo(testCommit(desc, node.children[1]), left.type)));
+						case NE		: return new ExpressionResult(!left.equals(ExpressionResult.convertTo(testCommit(desc, node.children[1]), left.type)));
+						case GT		: return new ExpressionResult(left.compareTo(ExpressionResult.convertTo(testCommit(desc, node.children[1]), left.type)) > 0);
+						case GE		: return new ExpressionResult(left.compareTo(ExpressionResult.convertTo(testCommit(desc, node.children[1]), left.type)) >= 0);
+						case LT		: return new ExpressionResult(left.compareTo(ExpressionResult.convertTo(testCommit(desc, node.children[1]), left.type)) < 0);
+						case LE		: return new ExpressionResult(left.compareTo(ExpressionResult.convertTo(testCommit(desc, node.children[1]), left.type)) <= 0);
+						case IN		:
+							for (int index = 1; index < node.children.length; index++) {
+								if (node.children[index].getType() == NodeType.RANGE) {
+									final ExpressionResult min = ExpressionResult.convertTo(testCommit(desc, node.children[index].children[0]), left.type);
+									final ExpressionResult max = ExpressionResult.convertTo(testCommit(desc, node.children[index].children[1]), left.type);
+									
+									if (left.compareTo(min) >= 0 && left.compareTo(max) <= 0) {
+										return new ExpressionResult(true);
+									}
+								}
+								else {
+									final ExpressionResult right = ExpressionResult.convertTo(testCommit(desc, node.children[index]), left.type);
+									
+									if (left.equals(right)) {
+										return new ExpressionResult(true);
+									}
+								}
+							}
+							return new ExpressionResult(false);
+						default : throw new UnsupportedOperationException();
+					}
+				}
 			case ADD		:
 				final long	op = node.value; 
 				long		result = 0;
 				
 				for (SyntaxNode<NodeType, SyntaxNode> item : node.children) {
-					final Object add = testCommit(desc, item);
+					ExpressionResult add = testCommit(desc, item);
 					
+					if (add.type == ValueType.UNKNOWN) {
+						return add;
+					}
+					else if (add.type != ValueType.INT) {
+						add = ExpressionResult.convertTo(add, ValueType.INT);
+					}
 					if ((op & (1 << node.children.length)) != 0) {
-						result -= ((Number)testCommit(desc, item)).longValue();
+						result -= add.intValue;
 					}
 					else {
-						result += ((Number)testCommit(desc, item)).longValue();
+						result += add.intValue;
 					}
 				}
-				return result;
+				return new ExpressionResult(result);
 			case FUNCION	:
-				break;
+				throw new UnsupportedOperationException();
 			case NUM_CONST	:
-				return node.value;
+				return new ExpressionResult(node.value);
 			case STR_CONST	:
-				return (String)node.cargo;
+				return new ExpressionResult(new String((char[])node.cargo));
 			case VAR		:
-				break;
+				return extractVarValue(desc, node);
 			default	:
-				break;
+				throw new UnsupportedOperationException();
 		}
-		return false;
 	}
 	
-	Object testRepoItem(final RepoItemDescriptor desc, final SyntaxNode<NodeType, SyntaxNode> node) {
-		// TODO Auto-generated method stub
-		return false;
+	static ExpressionResult testRepoItem(final RepoItemDescriptor desc, final SyntaxNode<NodeType, SyntaxNode> node) throws ContentException, NullPointerException, IOException {
+		switch (node.getType()) {
+			case OR			:
+				for (SyntaxNode<NodeType, SyntaxNode> item : node.children) {
+					final ExpressionResult	 result = testRepoItem(desc, item);
+
+					if (result.type == ValueType.UNKNOWN) {
+						return result;
+					}
+					else if (result.type == ValueType.BOOL && result.boolValue) {
+						return new ExpressionResult(true);
+					}
+				}
+				return new ExpressionResult(false);
+			case AND		:
+				for (SyntaxNode<NodeType, SyntaxNode> item : node.children) {
+					final ExpressionResult	 result = testRepoItem(desc, item);
+					
+					if (result.type == ValueType.UNKNOWN) {
+						return result;
+					}
+					else if (result.type == ValueType.BOOL) {
+						if (!result.boolValue) {
+							return new ExpressionResult(false);
+						}
+					}
+					else {
+						return new ExpressionResult(false);
+					}
+				}
+				return new ExpressionResult(true);
+			case NOT	:
+				final ExpressionResult	 notResult = testRepoItem(desc, (SyntaxNode<NodeType, SyntaxNode>)node.cargo);
+				
+				if (notResult.type == ValueType.UNKNOWN) {
+					return notResult;
+				}
+				else if (notResult.type == ValueType.BOOL) {
+					return new ExpressionResult(!notResult.boolValue);
+				}
+				else {
+					return new ExpressionResult(false);
+				}
+			case COMPARISON	:
+				final ExpressionResult left = testRepoItem(desc, node.children[0]);
+				
+				if (left.type == ValueType.UNKNOWN) {
+					return left;
+				}
+				else {
+					switch ((LexType)node.cargo) {
+						case LIKE	: return new ExpressionResult(ExpressionResult.convertTo(left, ValueType.STR).strValue.matches(ExpressionResult.convertTo(testRepoItem(desc, node.children[1]), ValueType.STR).strValue));
+						case EQ		: return new ExpressionResult(left.equals(ExpressionResult.convertTo(testRepoItem(desc, node.children[1]), left.type)));
+						case NE		: return new ExpressionResult(!left.equals(ExpressionResult.convertTo(testRepoItem(desc, node.children[1]), left.type)));
+						case GT		: return new ExpressionResult(left.compareTo(ExpressionResult.convertTo(testRepoItem(desc, node.children[1]), left.type)) > 0);
+						case GE		: return new ExpressionResult(left.compareTo(ExpressionResult.convertTo(testRepoItem(desc, node.children[1]), left.type)) >= 0);
+						case LT		: return new ExpressionResult(left.compareTo(ExpressionResult.convertTo(testRepoItem(desc, node.children[1]), left.type)) < 0);
+						case LE		: return new ExpressionResult(left.compareTo(ExpressionResult.convertTo(testRepoItem(desc, node.children[1]), left.type)) <= 0);
+						case IN		:
+							for (int index = 1; index < node.children.length; index++) {
+								if (node.children[index].getType() == NodeType.RANGE) {
+									final ExpressionResult min = ExpressionResult.convertTo(testRepoItem(desc, node.children[index].children[0]), left.type);
+									final ExpressionResult max = ExpressionResult.convertTo(testRepoItem(desc, node.children[index].children[1]), left.type);
+									
+									if (left.compareTo(min) >= 0 && left.compareTo(max) <= 0) {
+										return new ExpressionResult(true);
+									}
+								}
+								else {
+									final ExpressionResult right = ExpressionResult.convertTo(testRepoItem(desc, node.children[index]), left.type);
+									
+									if (left.equals(right)) {
+										return new ExpressionResult(true);
+									}
+								}
+							}
+							return new ExpressionResult(false);
+						default : throw new UnsupportedOperationException();
+					}
+				}
+			case ADD		:
+				final long	op = node.value; 
+				long		result = 0;
+				
+				for (SyntaxNode<NodeType, SyntaxNode> item : node.children) {
+					ExpressionResult add = testRepoItem(desc, item);
+					
+					if (add.type == ValueType.UNKNOWN) {
+						return add;
+					}
+					else if (add.type != ValueType.INT) {
+						add = ExpressionResult.convertTo(add, ValueType.INT);
+					}
+					if ((op & (1 << node.children.length)) != 0) {
+						result -= add.intValue;
+					}
+					else {
+						result += add.intValue;
+					}
+				}
+				return new ExpressionResult(result);
+			case FUNCION	:
+				throw new UnsupportedOperationException();
+			case NUM_CONST	:
+				return new ExpressionResult(node.value);
+			case STR_CONST	:
+				return new ExpressionResult(new String((char[])node.cargo));
+			case VAR		:
+				return extractVarValue(desc, node);
+			default	:
+				throw new UnsupportedOperationException();
+		}
 	}
 
+	static ExpressionResult extractVarValue(final CommitDescriptor desc, final SyntaxNode<NodeType, SyntaxNode> node) throws ContentException, IOException {
+		if ((LexType)node.cargo == LexType.FILE) {
+			throw new ContentException();
+		}
+		else {
+			ExpressionResult	result = null;
+			CommitDescriptor	temp = desc;
+			
+			for (int index = 0; index < node.children.length; index++) {
+				switch ((LexType)node.children[index].cargo) {
+					case PREV		:
+						final ExpressionResult	prevStep = node.children[index].children != null ? testCommit(desc, node.children[index].children[0]) : new ExpressionResult(1);
+						
+						if (prevStep.type != ValueType.INT) {
+							return new ExpressionResult();
+						}
+						else {
+							for (int step = 0; temp != null && step < prevStep.intValue; step++) {
+								temp = temp.getPrevious();
+							}
+							if (temp == null) {
+								return new ExpressionResult();
+							}
+						}
+						break;
+					case NEXT		:
+						final ExpressionResult	nextStep = node.children[index].children != null ? testCommit(desc, node.children[index].children[0]) : new ExpressionResult(1);
+						
+						if (nextStep.type != ValueType.INT) {
+							return new ExpressionResult();
+						}
+						else {
+							for (int step = 0; temp != null && step < nextStep.intValue; step++) {
+								temp = temp.getNext();
+							}
+							if (temp == null) {
+								return new ExpressionResult();
+							}
+						}
+						break;
+					case AUTHOR 	:
+						result = new ExpressionResult(temp.getAuthor());
+						break;
+					case COMMENT	:
+						result = new ExpressionResult(temp.getComment());
+						break;
+					case ID			:
+						result = new ExpressionResult(temp.getCommitId().toString());
+						break;
+					case TIMESTAMP	:
+						result = new ExpressionResult(temp.getTimestamp().getTime());
+						break;
+					case UPPERCASE	:
+						if (result != null) {
+							result = new ExpressionResult(ExpressionResult.convertTo(result, ValueType.STR).strValue.toUpperCase());
+						}
+						else {
+							throw new ContentException(); 
+						}
+						break;
+					case LOWERCASE	:
+						if (result != null) {
+							result = new ExpressionResult(ExpressionResult.convertTo(result, ValueType.STR).strValue.toLowerCase());
+						}
+						else {
+							throw new ContentException(); 
+						}
+						break;
+					default : throw new IllegalArgumentException();
+				}
+			}
+			return result;
+		}
+	}
+	
+	static ExpressionResult extractVarValue(final RepoItemDescriptor desc, final SyntaxNode<NodeType, SyntaxNode> node) throws ContentException, IOException {
+		if ((LexType)node.cargo == LexType.COMMIT) {
+			return extractVarValue(desc.getCommit(), node);
+		}
+		else {
+			ExpressionResult	result = null;
+			RepoItemDescriptor	temp = desc;
+			
+			for (int index = 0; index < node.children.length; index++) {
+				switch ((LexType)node.children[index].cargo) {
+					case PREV		:
+						final ExpressionResult	prevStep = node.children[index].children != null ? testRepoItem(desc, node.children[index].children[0]) : new ExpressionResult(1);
+						
+						if (prevStep.type != ValueType.INT) {
+							return new ExpressionResult();
+						}
+						else {
+							for (int step = 0; temp != null && step < prevStep.intValue; step++) {
+								temp = temp.getPrevious();
+							}
+							if (temp == null) {
+								return new ExpressionResult();
+							}
+						}
+						break;
+					case NEXT		:
+						final ExpressionResult	nextStep = node.children[index].children != null ? testRepoItem(desc, node.children[index].children[0]) : new ExpressionResult(1);
+						
+						if (nextStep.type != ValueType.INT) {
+							return new ExpressionResult();
+						}
+						else {
+							for (int step = 0; temp != null && step < nextStep.intValue; step++) {
+								temp = temp.getNext();
+							}
+							if (temp == null) {
+								return new ExpressionResult();
+							}
+						}
+						break;
+					case AUTHOR 	:
+						result = new ExpressionResult(temp.getAuthor());
+						break;
+					case COMMENT	:
+						result = new ExpressionResult(temp.getComment());
+						break;
+					case ID			:
+						result = new ExpressionResult(temp.getCommitId().toString());
+						break;
+					case PATH		:
+						result = new ExpressionResult(temp.getPath());
+						break;
+					case TIMESTAMP	:
+						result = new ExpressionResult(temp.getTimestamp().getTime());
+						break;
+					case CHANGE		:
+						result = new ExpressionResult(temp.getChanges().toString());
+						break;
+					case PARSEABLE	:
+						result = new ExpressionResult(false);
+						break;
+					case VERSION	:
+						result = new ExpressionResult(temp.getVersion());
+						break;
+					case CONTENT	:
+						result = new ExpressionResult("");
+						break;
+					case UPPERCASE	:
+						if (result != null) {
+							result = new ExpressionResult(ExpressionResult.convertTo(result, ValueType.STR).strValue.toUpperCase());
+						}
+						else {
+							throw new ContentException(); 
+						}
+						break;
+					case LOWERCASE	:
+						if (result != null) {
+							result = new ExpressionResult(ExpressionResult.convertTo(result, ValueType.STR).strValue.toLowerCase());
+						}
+						else {
+							throw new ContentException(); 
+						}
+						break;
+					default : throw new IllegalArgumentException();
+				}
+			}
+			return result;
+		}
+	}
+
+	static String collectExplicitPattern(final List<SyntaxNode<NodeType, SyntaxNode>> content, final LexType var, final LexType field) {
+		if (content.size() == 1) {
+			return collectExplicitPatternInternal(content.get(0), var, field);
+		}
+		else {
+			final StringBuilder	sb = new StringBuilder();
+			String				prefix = "";
+			
+			for (SyntaxNode<NodeType, SyntaxNode> item : content) {
+				sb.append(prefix).append(collectExplicitPatternInternal(item, var, field));
+				prefix = "|";
+			}
+			return sb.toString();
+		}
+	}
+	
 	private static int translateCommitQuery(final Lexema[] content, final int from, final SyntaxNode<NodeType, SyntaxNode> node) throws SyntaxException {
 		final List<SyntaxNode<NodeType, SyntaxNode>>	path = new ArrayList<>();
 		boolean prevEnded = false;
@@ -675,6 +1074,12 @@ loop:	do {final SyntaxNode<NodeType, SyntaxNode> 		item = (SyntaxNode<NodeType, 
 					pos++;
 					break;
 				case ID :
+					item.type = NodeType.VAR;
+					item.cargo = content[pos].type;
+					path.add(item);
+					pos++;
+					break loop;
+				case TIMESTAMP :
 					item.type = NodeType.VAR;
 					item.cargo = content[pos].type;
 					path.add(item);
@@ -711,6 +1116,9 @@ loop:	do {final SyntaxNode<NodeType, SyntaxNode> 		item = (SyntaxNode<NodeType, 
 						path.add(item);
 						pos++;
 					}
+					break;
+				default :
+					throw new SyntaxException(0, content[pos].position, "this predefined name doesn't support for current variable'"); 
 			}
 		} while (content[pos].type == LexType.DOT);
 		
@@ -772,6 +1180,9 @@ loop:	do {final SyntaxNode<NodeType, SyntaxNode> 		item = (SyntaxNode<NodeType, 
 						path.add(item);
 						pos++;
 					}
+					break;
+				default :
+					throw new SyntaxException(0, content[pos].position, "this predefined name doesn't support for current variable'"); 
 			}
 		} while (content[pos].type == LexType.DOT);
 		
@@ -814,49 +1225,48 @@ loop:	do {final SyntaxNode<NodeType, SyntaxNode> 		item = (SyntaxNode<NodeType, 
 			return Arrays.asList(desc);
 		}
 	}
-
-	
-	static String collectExplicitPattern(final List<SyntaxNode<NodeType, SyntaxNode>> content, final LexType var, final LexType field) {
-		if (content.size() == 1) {
-			return collectExplicitPatternInternal(content.get(0), var, field);
-		}
-		else {
-			final StringBuilder	sb = new StringBuilder();
-			String				prefix = "(";
-			
-			for (SyntaxNode<NodeType, SyntaxNode> item : content) {
-				sb.append(prefix).append(collectExplicitPatternInternal(item, var, field));
-				prefix = ",";
-			}
-			return sb.append(")").toString();
-		}
-	}
 	
 	private static String collectExplicitPatternInternal(final SyntaxNode<NodeType, SyntaxNode> list, final LexType var, final LexType field) {
 		final StringBuilder	sb = new StringBuilder();
-		String		prefix = "(";
+		String		prefix = "";
 
 		for (SyntaxNode<NodeType, SyntaxNode> item : list.children) {
 			if (canApplyPatternFor(item) && isPureFieldUsed(item.children[0], var, field)) {
 				sb.append(prefix).append(extractPattern(item));
-				prefix = ",";
+				prefix = "";
 			}			
 		}
-		return sb.append(")").toString();
+		return sb.toString();
 	}
 
 	private static boolean canApplyPatternFor(final SyntaxNode<NodeType, SyntaxNode> node) {
 		if (node.getType() == NodeType.COMPARISON) {
 			switch (((LexType)node.cargo)) {
-				case EQ	: case IN : case NE : case LIKE : return true;
-				default : return false;
+				case EQ	: case IN : case NE : case LIKE :
+					for (int index = 1; index < node.children.length; index++) {
+						if (!isConstantHere(node.children[index])) {
+							return false;
+						}
+					}
+					return true;
+				default : 
+					return false;
 			}
 		}
 		else {
 			return false;
 		}
 	}
+
+	private boolean isVarPresents(final SyntaxNode<NodeType, SyntaxNode> node, final LexType var) {
+		// TODO Auto-generated method stub
+		return false;
+	}
 	
+	private static boolean isConstantHere(final SyntaxNode<NodeType, SyntaxNode> node) {
+		return node.getType() == NodeType.NUM_CONST || node.getType() == NodeType.STR_CONST;
+	}
+
 	private static boolean isPureFieldUsed(final SyntaxNode<NodeType, SyntaxNode> node, final LexType var, final LexType field) {
 		if (node.getType() == NodeType.VAR) {
 			if (node.cargo == var && node.children != null && node.children.length >= 1) {
@@ -872,8 +1282,27 @@ loop:	do {final SyntaxNode<NodeType, SyntaxNode> 		item = (SyntaxNode<NodeType, 
 	}
 
 	private static String extractPattern(final SyntaxNode<NodeType, SyntaxNode> node) {
-		// TODO Auto-generated method stub
-		return null;
+		switch (node.getType()) {
+			case COMPARISON	:
+				if (node.cargo == LexType.IN) {
+					final StringBuilder	sb = new StringBuilder();
+					String	prefix = "";
+					
+					for (int index = 1; index < node.children.length; index++) {
+						sb.append(prefix).append(extractPattern(node.children[index]));
+						prefix = "|";
+					}
+					return sb.toString();
+				}
+				else {
+					return extractPattern(node.children[1]);
+				}
+			case NUM_CONST	:
+				return String.valueOf(node.value);
+			case STR_CONST	:
+				return new String((char[])node.cargo);
+			default : throw new IllegalArgumentException("Node type ["+node.getType()+"] is not available here");
+		}
 	}
 
 	static class Lexema {
@@ -910,4 +1339,146 @@ loop:	do {final SyntaxNode<NodeType, SyntaxNode> 		item = (SyntaxNode<NodeType, 
 			return "Lexema [position=" + position + ", type=" + type + ", value=" + value + ", string=" + Arrays.toString(string) + "]";
 		}
 	}
+	
+	static class ExpressionResult implements Comparable<ExpressionResult> {
+		static enum ValueType {
+			UNKNOWN(Object.class),
+			INT(long.class), 
+			STR(String.class),
+			BOOL(boolean.class);
+			
+			private final Class<?>	valueClass;
+			
+			private ValueType(final Class<?> valueClass) {
+				this.valueClass = valueClass;
+			}
+			
+			public Class<?> getValueClass() {
+				return valueClass;
+			}
+		}
+		
+		final ValueType	type;
+		final long		intValue;
+		final String	strValue;
+		final boolean	boolValue;
+
+		ExpressionResult(long intValue) {
+			this(ValueType.INT, intValue, null, false);
+		}		
+
+		ExpressionResult(String strValue) {
+			this(ValueType.STR, 0, strValue, false);
+		}		
+		
+		ExpressionResult(boolean boolValue) {
+			this(ValueType.BOOL, 0, null, boolValue);
+		}		
+
+		ExpressionResult() {
+			this(ValueType.UNKNOWN, 0, null, false);
+		}		
+		
+		private ExpressionResult(ValueType type, long intValue, String strValue, boolean boolValue) {
+			this.type = type;
+			this.intValue = intValue;
+			this.strValue = strValue;
+			this.boolValue = boolValue;
+		}
+
+		@Override
+		public int hashCode() {
+			final int prime = 31;
+			int result = 1;
+			result = prime * result + (boolValue ? 1231 : 1237);
+			result = prime * result + (int) (intValue ^ (intValue >>> 32));
+			result = prime * result + ((strValue == null) ? 0 : strValue.hashCode());
+			result = prime * result + ((type == null) ? 0 : type.hashCode());
+			return result;
+		}
+
+		@Override
+		public boolean equals(Object obj) {
+			if (this == obj) return true;
+			if (obj == null) return false;
+			if (getClass() != obj.getClass()) return false;
+			ExpressionResult other = (ExpressionResult) obj;
+			if (boolValue != other.boolValue) return false;
+			if (intValue != other.intValue) return false;
+			if (strValue == null) {
+				if (other.strValue != null) return false;
+			} else if (!strValue.equals(other.strValue)) return false;
+			if (type != other.type) return false;
+			return true;
+		}
+
+		@Override
+		public int compareTo(final ExpressionResult o) {
+			if (o != null &&  o.type == this.type) {
+				switch (type) {
+					case INT	:
+						final long	diff = this.intValue - o.intValue;
+						
+						if (diff < 0) {
+							return -1;
+						}
+						else if (diff > 0) {
+							return 1;
+						}
+						else {
+							return 0;
+						}
+					case STR	:
+						return this.strValue.compareTo(o.strValue);
+					case BOOL	:
+						final int	other = o.boolValue ? 1 : 0, my = this.boolValue ? 1 : 0;
+						
+						return my - other;
+					default : throw new UnsupportedOperationException("Value type ["+type+"]  is not supported yet"); 
+				}
+			}
+			else {
+				return 0;
+			}
+		}
+
+		@Override
+		public String toString() {
+			return "ExpressionResult [type=" + type + ", intValue=" + intValue + ", strValue=" + strValue + ", boolValue=" + boolValue + "]";
+		}
+
+		public static ExpressionResult convertTo(final ExpressionResult item, final ValueType awaited) throws ContentException, NullPointerException {
+			if (item == null) {
+				throw new NullPointerException("Item to convert can't be null");
+			}
+			else if (awaited == null) {
+				throw new NullPointerException("Awaited type can't be null");
+			}
+			else if (item.type == awaited) {
+				return item;
+			}
+			else {
+				final Object	result;
+				
+				switch (item.type) {
+					case INT	: result = SQLUtils.convert(awaited.getValueClass(), item.intValue); break;
+					case STR	: result = SQLUtils.convert(awaited.getValueClass(), item.strValue); break;
+					case BOOL	: result = SQLUtils.convert(awaited.getValueClass(), item.boolValue); break;
+					default : throw new UnsupportedOperationException("Value type ["+item.type+"]  is not supported yet"); 
+				}
+				for (ValueType valType : ValueType.values()) {
+					if (CompilerUtils.toWrappedClass(valType.getValueClass()) == result.getClass()) {
+						switch (valType) {
+							case INT	: return new ExpressionResult((Long)result);
+							case STR	: return new ExpressionResult((String)result);
+							case BOOL	: return new ExpressionResult((Boolean)result);
+							default : throw new UnsupportedOperationException("Value type ["+item.type+"]  is not supported yet"); 
+						}
+					}
+				}
+				throw new IllegalArgumentException("Result class ["+result.getClass().getCanonicalName()+"] is not compatible with value type ["+awaited+"]");
+			}
+		}
+	}
+
 }
