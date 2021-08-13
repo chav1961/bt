@@ -2,6 +2,7 @@ package chav1961.bt.lightrepo;
 
 
 import java.io.Closeable;
+import java.io.File;
 import java.io.IOException;
 import java.io.Reader;
 import java.util.ArrayList;
@@ -22,6 +23,7 @@ import chav1961.purelib.basic.exceptions.SyntaxException;
 import chav1961.purelib.basic.growablearrays.GrowableCharArray;
 import chav1961.purelib.basic.interfaces.InputStreamGetter;
 import chav1961.purelib.basic.interfaces.OutputStreamGetter;
+import chav1961.purelib.fsys.FileSystemOnFile;
 import chav1961.purelib.fsys.interfaces.FileSystemInterface;
 
 public class AbstractLightRepo implements LightRepoInterface, Closeable {
@@ -165,7 +167,6 @@ public class AbstractLightRepo implements LightRepoInterface, Closeable {
 		}
 		else {
 			// TODO Auto-generated method stub
-			
 			return null;
 		}
 	}
@@ -283,6 +284,50 @@ public class AbstractLightRepo implements LightRepoInterface, Closeable {
 		@Override
 		public String toString() {
 			return "ChangesDescriptorImpl [changeType=" + changeType + ", firstLine=" + firstLine + ", secondLine=" + secondLine + ", first=" + first + ", second=" + second + "]";
+		}
+	}
+	
+	static class TransactionDescriptorImpl implements TransactionDescriptor {
+		final String	author;
+		final String	comment;
+
+		private final FileSystemInterface 	joinedFS;
+		private final UUID					commitId;
+		private boolean 					commitProcessed = false;
+		
+		TransactionDescriptorImpl(final UUID commitId, final FileSystemInterface joinedPoint, final FileSystemInterface joinedFS, final String author, final String comment) {
+			this.joinedFS = joinedFS;
+			this.commitId = commitId;
+			this.author = author;
+			this.comment = comment;
+		}
+		
+		@Override
+		public void close() throws IOException {
+			// TODO Auto-generated method stub
+			if (commitProcessed) {
+				
+			}
+		}
+
+		@Override
+		public UUID getCommitId() {
+			return commitId;
+		}
+
+		@Override
+		public FileSystemInterface getFileSystem() throws IOException {
+			return joinedFS;
+		}
+
+		@Override
+		public void commit() throws IOException {
+			if (commitProcessed) {
+				throw new IOException("Attempt to commit already committed content");
+			}
+			else {
+				commitProcessed = true;
+			}
 		}
 	}
 }

@@ -494,7 +494,6 @@ public class SimpleLightRepoQueryTest {
 		Assert.assertEquals(ValueType.INT, result.type);
 		Assert.assertEquals(timestamp2,result.intValue);
 	}
-
 	
 	@Test
 	public void commitCalculationTest() throws ContentException, NullPointerException, IOException {
