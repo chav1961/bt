@@ -14,11 +14,14 @@ import java.util.Map.Entry;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
+import chav1961.bt.lightrepo.TransactionalFileSystemOnFile.ChangeLogRecord;
 import chav1961.bt.lightrepo.interfaces.LightRepoInterface;
 import chav1961.bt.lightrepo.interfaces.LightRepoInterface.ChangesDescriptor.ChangeType;
 import chav1961.bt.lightrepo.interfaces.LightRepoQueryInterface;
 import chav1961.purelib.basic.CharUtils;
 import chav1961.purelib.basic.CharUtils.Prescription;
+import chav1961.purelib.basic.Utils;
+import chav1961.purelib.basic.exceptions.EnvironmentException;
 import chav1961.purelib.basic.exceptions.SyntaxException;
 import chav1961.purelib.basic.growablearrays.GrowableCharArray;
 import chav1961.purelib.basic.interfaces.InputStreamGetter;
@@ -34,9 +37,10 @@ public class AbstractLightRepo implements LightRepoInterface, Closeable {
 	private final FileSystemInterface			nested;
 	private final InputStreamGetter				inGetter;
 	private final OutputStreamGetter			outGetter;
-	private final Map<UUID,TransalatedQuery>	queries = new ConcurrentHashMap<>(); 
+	private final Map<UUID,TransalatedQuery>	queries = new ConcurrentHashMap<>();
+	private final TransactionalFileSystemOnFile	tfs;
 	
-	public AbstractLightRepo(final FileSystemInterface nested, final InputStreamGetter inGetter, final OutputStreamGetter outGetter) {
+	public AbstractLightRepo(final FileSystemInterface nested, final InputStreamGetter inGetter, final OutputStreamGetter outGetter) throws IOException {
 		if (nested == null) {
 			throw new NullPointerException("Nested file system can't be null");
 		}
@@ -50,6 +54,7 @@ public class AbstractLightRepo implements LightRepoInterface, Closeable {
 			this.nested = nested;
 			this.inGetter = inGetter;
 			this.outGetter = outGetter;
+			this.tfs = new TransactionalFileSystemOnFile();
 		}
 	}
 
@@ -166,11 +171,80 @@ public class AbstractLightRepo implements LightRepoInterface, Closeable {
 			throw new IllegalArgumentException("Comment can't be null or empty");
 		}
 		else {
-			// TODO Auto-generated method stub
-			return null;
+			final UUID	id = UUID.randomUUID();
+			final File	transDir = new File(System.getProperty("java.io.tmpdir"), ""+id);
+			
+			try{final TransactionalFileSystemOnFile	fsof = (TransactionalFileSystemOnFile) tfs.newInstance(transDir.toURI());
+				final FileSystemInterface			fsi = nested.clone().open("/current").joinedList()[0];
+				
+				return new AbstractTransactionDescriptor(id, fsi, fsof, author, comment) {
+							@Override
+							public void commit() throws IOException {
+								// TODO Auto-generated method stub
+								if (!commitProcessed) {
+									commitProcessed = true;
+									
+									fixCommit(fsi, fsof, getCommitId(), author, comment);
+								}
+							}
+						};
+			} catch (IOException e) {
+				Utils.deleteDir(transDir);
+				throw e;
+			} catch (EnvironmentException e) {
+				Utils.deleteDir(transDir);
+				throw new IOException(e);
+			}
 		}
 	}
 	
+	protected static void fixCommit(final FileSystemInterface fsi, final TransactionalFileSystemOnFile fsof, final UUID commitId, final String author,final String comment) throws IOException {
+		try{fsi.lock("/", false);
+
+			for (String item : buildNewContent(fsof)) {
+				try(final FileSystemInterface	left = fsi.clone().open(item);
+					final FileSystemInterface	right = fsof.clone().open(item)) {
+					
+					if (right.isDirectory()) {
+						left.mkDir();
+					}
+					else {
+						right.copy(left.open("../"));
+					}
+				}
+			}
+			
+			for (String[] item : buildChangedContent(fsof)) {
+				try(final FileSystemInterface	left = fsi.clone().open(item[0]);
+					final FileSystemInterface	right = fsof.clone().open(item[1])) {
+	
+					if (requireDeltas(item[0], item[1])) {
+						try(final Reader				leftReader = left.charRead();
+							final Reader				rightReader = right.charRead()) {
+							
+							for (ChangesDescriptor desc : calculateChanges(leftReader, rightReader)) {
+								
+							}
+						}
+					}
+					moveChanges2Repo(right, left);
+				}
+			}
+
+			for (String[] item : buildRenamedContent(fsof)) {
+				try(final FileSystemInterface	left = fsi.clone().open(item[0]).rename(item[0])) {
+				}
+			}
+
+			for (String item : buildRemovedContent(fsof)) {
+				try(final FileSystemInterface	left = fsi.clone().open(item).deleteAll()) {
+				}
+			}
+		} finally {
+			fsi.unlock("/", false);
+		}
+	}
+
 	protected void removeQuery(final UUID queryId) {
 		queries.remove(queryId);
 	}
@@ -180,7 +254,7 @@ public class AbstractLightRepo implements LightRepoInterface, Closeable {
 		return null;
 	}
 
-	protected Iterable<ChangesDescriptor> calculateChanges(final Reader left, final Reader right) throws IOException {
+	protected static Iterable<ChangesDescriptor> calculateChanges(final Reader left, final Reader right) throws IOException {
 		final GrowableCharArray<?>	gLeft = new GrowableCharArray<>(false), gRight = new GrowableCharArray<>(false);
 		
 		gLeft.append(left);
@@ -203,6 +277,35 @@ public class AbstractLightRepo implements LightRepoInterface, Closeable {
 			}
 		}
 		return Arrays.asList(desc);
+	}
+
+	private static String[] buildNewContent(final TransactionalFileSystemOnFile fsof) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+	
+	private static String[][] buildChangedContent(final TransactionalFileSystemOnFile fsof) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	private static String[][] buildRenamedContent(final TransactionalFileSystemOnFile fsof) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	private static String[] buildRemovedContent(final TransactionalFileSystemOnFile fsof) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	private static void moveChanges2Repo(final FileSystemInterface from, final FileSystemInterface to) throws IOException {
+		from.copy(to);
+	}
+
+	private static boolean requireDeltas(final String nameLeft, final String nameRight) {
+		// TODO Auto-generated method stub
+		return false;
 	}
 
 	private static class TransalatedQueryImpl implements TransalatedQuery {
@@ -287,27 +390,32 @@ public class AbstractLightRepo implements LightRepoInterface, Closeable {
 		}
 	}
 	
-	static class TransactionDescriptorImpl implements TransactionDescriptor {
+	static abstract class AbstractTransactionDescriptor implements TransactionDescriptor {
 		final String	author;
 		final String	comment;
 
+		private final FileSystemInterface 	joinedPoint;
 		private final FileSystemInterface 	joinedFS;
 		private final UUID					commitId;
-		private boolean 					commitProcessed = false;
+		protected boolean 					commitProcessed = false;
 		
-		TransactionDescriptorImpl(final UUID commitId, final FileSystemInterface joinedPoint, final FileSystemInterface joinedFS, final String author, final String comment) {
+		AbstractTransactionDescriptor(final UUID commitId, final FileSystemInterface joinedPoint, final FileSystemInterface joinedFS, final String author, final String comment) throws IOException {
+			this.joinedPoint = joinedPoint;
 			this.joinedFS = joinedFS;
 			this.commitId = commitId;
 			this.author = author;
 			this.comment = comment;
+			joinedPoint.join(joinedFS);
 		}
+
+		@Override public abstract void commit() throws IOException;
 		
 		@Override
 		public void close() throws IOException {
-			// TODO Auto-generated method stub
-			if (commitProcessed) {
-				
+			if (!commitProcessed) {
+				joinedPoint.unjoin();
 			}
+			commitProcessed = true;
 		}
 
 		@Override
@@ -317,16 +425,11 @@ public class AbstractLightRepo implements LightRepoInterface, Closeable {
 
 		@Override
 		public FileSystemInterface getFileSystem() throws IOException {
-			return joinedFS;
-		}
-
-		@Override
-		public void commit() throws IOException {
 			if (commitProcessed) {
-				throw new IOException("Attempt to commit already committed content");
+				throw new IOException("Attempt to get file system after calling commit()");
 			}
 			else {
-				commitProcessed = true;
+				return joinedFS;
 			}
 		}
 	}
