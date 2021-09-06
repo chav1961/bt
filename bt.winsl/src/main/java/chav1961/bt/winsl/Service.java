@@ -1,12 +1,15 @@
 package chav1961.bt.winsl;
 
+import java.io.FileWriter;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.net.URI;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.ArrayBlockingQueue;
 
 import chav1961.bt.winsl.utils.JavaServiceLibrary;
 import chav1961.purelib.basic.ArgParser;
@@ -19,51 +22,100 @@ import chav1961.purelib.basic.exceptions.SyntaxException;
 public class Service {
 	private static final char	EOF = '\0';
 
-	public static void main(String[] args) {
+	public static void main(String[] args) throws IOException {
 		final ArgParser		parser = new ApplicationArgParser();
-		String				serviceName = "unknown";
+		String				serviceNameErr = "unknown";
 
-		try{final ArgParser	ap = parser.parse(false, false, args);
-		
+		try(final FileWriter	fw = new FileWriter("c:/tmp/x.txt")) {
+			fw.write("start 1: "+Arrays.toString(args)+"\n");
+			
+			try {final ArgParser	ap = parser.parse(false, false, args);
+			
+				fw.write("p1="+System.getProperty("java.library.path")+"\n");
+			
 			if (!System.getProperty("os.name","unknown").toUpperCase().contains("WINDOWS")) {
 				throw new CommandLineParametersException("This application can be used in the Windows-based systems only");
 			}
+			fw.write("p2\n");
 		
-			final SubstitutableProperties	sp = Application.getConfiguration(ap.getValue(Application.CONF_KEY, URI.class));
+			final SubstitutableProperties		sp = Application.getConfiguration(ap.getValue(Application.CONF_KEY, URI.class));
 			
-			serviceName = sp.getProperty(Application.SERVICE_NAME_KEY); 
+			fw.write("p3\n");
 			
-			prepareService();
+			final String						serviceName = serviceNameErr = sp.getProperty(Application.SERVICENAME_INI);
+			final ArrayBlockingQueue<Integer>	queue =  new ArrayBlockingQueue<>(10);
+			
+			fw.write("p4 created!!!\n");
+			final Thread	t = new Thread(()->{
+				try{fw.write("Service preapre="+prepareService(serviceName, queue)+"\n");
+					fw.flush();
+				} catch (EnvironmentException | IOException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+			});
+			t.start();
+			fw.write("p5 prepared 2!!!\n");
+			fw.flush();
+			
+//			queue.put(JavaServiceLibrary.RC_STOP);
+			
+			Integer  i;
+			
 loop:		for(;;) {
-				switch (getServiceRequest()) {
+				switch (i=queue.take()) {
 					case JavaServiceLibrary.RC_START :
-						callService(serviceName,Application.START_INI,sp.getProperty(Application.START_INI));
+						fw.write("p6 start\n");
+						fw.flush();
+//						JavaServiceLibrary.startService(serviceName);
+//						callService(serviceName,Application.START_INI,sp.getProperty(Application.START_INI));
 						break;
 					case JavaServiceLibrary.RC_PAUSE :
-						if (sp.containsKey(Application.PAUSE_INI)) {
-							callService(serviceName,Application.PAUSE_INI,sp.getProperty(Application.PAUSE_INI));
-						}
+						fw.write("p6 pause\n");
+						fw.flush();
+//						if (sp.containsKey(Application.PAUSE_INI)) {
+//							callService(serviceName,Application.PAUSE_INI,sp.getProperty(Application.PAUSE_INI));
+//						}
 						break;
 					case JavaServiceLibrary.RC_RESUME :
-						if (sp.containsKey(Application.RESUME_INI)) {
-							callService(serviceName,Application.RESUME_INI,sp.getProperty(Application.RESUME_INI));
-						}
+						fw.write("p6 resume\n");
+						fw.flush();
+//						if (sp.containsKey(Application.RESUME_INI)) {
+//							callService(serviceName,Application.RESUME_INI,sp.getProperty(Application.RESUME_INI));
+//						}
 						break;
 					case JavaServiceLibrary.RC_STOP : 
-						if (sp.containsKey(Application.STOP_INI)) {
-							callService(serviceName,Application.STOP_INI,sp.getProperty(Application.STOP_INI));
-						}
+						fw.write("p6 stop\n");
+						fw.flush();
+//						if (sp.containsKey(Application.STOP_INI)) {
+//							callService(serviceName,Application.STOP_INI,sp.getProperty(Application.STOP_INI));
+//						}
 					default : 
+						fw.write("Alles: "+i+"\n");
+						fw.flush();
 						break loop;
 				}
 			}
+			fw.write("p7 EXIT!!!!\n");
 			unprepareService();
+			fw.write("p8\n");
+			fw.flush();
+			
 		} catch (CommandLineParametersException e) {
-			printError(128,serviceName,"Command line parameter error: "+e.getLocalizedMessage());
-		} catch (SyntaxException e) {
-			printError(128,serviceName,"Syntax error: "+e.getLocalizedMessage());
-		} catch (IOException | EnvironmentException e) {
-			printError(129,serviceName,"I/O error processing config URI: "+e.getClass().getSimpleName()+" - "+e.getLocalizedMessage());
+			fw.write("ERROR!!!!: "+e);
+			printError(128,serviceNameErr,"Command line parameter error: "+e.getLocalizedMessage());
+//		} catch (SyntaxException e) {
+//			printError(128,serviceName,"Syntax error: "+e.getLocalizedMessage());
+		} catch (IOException e) {
+			printError(129,serviceNameErr,"I/O error processing config URI: "+e.getClass().getSimpleName()+" - "+e.getLocalizedMessage());
+//		} catch (EnvironmentException e) {
+//			printError(129,serviceName,"I/O error processing config URI: "+e.getClass().getSimpleName()+" - "+e.getLocalizedMessage());
+		} catch (Throwable t) {
+			fw.write("ACHTUNG!!!!"+t);
+		} finally {
+			fw.flush();
+		}
+			fw.flush();
 		}
 	}
 
@@ -74,8 +126,8 @@ loop:		for(;;) {
 		System.exit(rc);
 	}
 	
-	private static void prepareService() throws EnvironmentException {
-		JavaServiceLibrary.prepareService();
+	private static int prepareService(final String serviceName, final Object queue) throws EnvironmentException {
+		return JavaServiceLibrary.prepareService(serviceName, queue);
 	}
 
 	private static int getServiceRequest() throws EnvironmentException {
@@ -166,7 +218,7 @@ loop:		for(;;) {
 
 	static class ApplicationArgParser extends ArgParser {
 		public ApplicationArgParser() {
-			super(new URIArg(Application.CONF_KEY,false,"config source with service settings ("+Application.CONFIG_FILE+" if not typed)",Application.CONFIG_FILE));
+			super(new URIArg(Application.CONF_KEY,false,"config source with service settings ("+Application.CONFIG_FILE+" if not typed)","file:/c:/tmp/x.conf"/*Application.CONFIG_FILE*/));
 		}
 	}
 }

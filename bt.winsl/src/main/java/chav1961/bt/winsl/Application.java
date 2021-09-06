@@ -18,7 +18,6 @@ import chav1961.purelib.basic.exceptions.EnvironmentException;
 public class Application {
 	public static final String	MODE_KEY = "mode";	
 	public static final String	CONF_KEY = "conf";	
-	public static final String	SERVICE_NAME_KEY = "name";	
 	public static final String	CONFIG_FILE = "./service.conf";	
 
 	public static final String	SERVICENAME_INI = "serviceName";
@@ -54,7 +53,7 @@ public class Application {
 			}
 		
 			final SubstitutableProperties	sp = getConfiguration(ap.getValue(CONF_KEY, URI.class)); 
-			final String					serviceName = sp.getProperty(SERVICE_NAME_KEY, String.class);
+			final String					serviceName = sp.getProperty(SERVICENAME_INI, String.class);
 			
 			switch (ap.getValue(MODE_KEY, ApplicationMode.class)) {
 				case install	:
@@ -96,6 +95,8 @@ public class Application {
 			
 			props.load(is);
 			return props;
+		} catch (IllegalArgumentException exc) {
+			throw new IOException("Error converting URI ["+source+"]: "+exc.getLocalizedMessage());
 		}
 	}
 	
@@ -159,7 +160,9 @@ public class Application {
 	
 	private static void removeService(final String name, final SubstitutableProperties conf) throws EnvironmentException, ContentException {
 		if (conf.containsAllKeys(REMOVE_MANDATORIES)) {
-			if (JavaServiceLibrary.queryService(name) != null) {
+			JavaServiceDescriptor  d;
+			
+			if ((d = JavaServiceLibrary.queryService(name)) != null) {
 				JavaServiceLibrary.removeService(name);
 			}
 			else {
@@ -175,7 +178,7 @@ public class Application {
 		public ApplicationArgParser() {
 			super(new EnumArg<ApplicationMode>(MODE_KEY,ApplicationMode.class,true,true,"Mode to start application. "+Arrays.toString(ApplicationMode.values())+" are available"),
 			  	  new URIArg(CONF_KEY,false,"config source with service settings ("+CONFIG_FILE+" if not typed)",CONFIG_FILE),
-			  	  new StringArg(SERVICE_NAME_KEY,false,"service name to manage","unknown")
+			  	  new StringArg(SERVICENAME_INI,false,"service name to manage","unknown")
 			);
 		}
 	}

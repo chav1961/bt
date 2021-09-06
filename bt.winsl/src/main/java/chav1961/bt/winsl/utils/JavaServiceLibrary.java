@@ -1,5 +1,8 @@
 package chav1961.bt.winsl.utils;
 
+import java.io.FileWriter;
+import java.io.IOException;
+
 import chav1961.purelib.basic.exceptions.ContentException;
 import chav1961.purelib.basic.exceptions.EnvironmentException;
 
@@ -31,11 +34,12 @@ public class JavaServiceLibrary {
 	public static final int RC_UNKNOWN = 4;
 	
 	static {
-		try {
-			System.loadLibrary("JavaServiceLibrary");
-		} catch (UnsatisfiedLinkError err) {
-			System.loadLibrary("JavaServiceLibrary32");
-		}
+			try{System.loadLibrary("srvmgr");
+	//			System.loadLibrary("JavaServiceLibrary");
+			} catch (UnsatisfiedLinkError err) {
+				System.loadLibrary("srvmgr");
+	//			System.loadLibrary("JavaServiceLibrary32");
+			}
 	}
 
 	/**
@@ -85,10 +89,11 @@ public class JavaServiceLibrary {
 	
 	/**
 	 * <p>Prepare inter-thread communications. Must be the same first call when starting service </p>
+	 * @param serviceName service name to prepare
 	 * @return 0 when successful, otherwise Windows error code
 	 * @throws EnvironmentException on any errors
 	 */
-	public static native int prepareService() throws EnvironmentException;
+	public static native int prepareService(final String serviceName, final Object queue) throws EnvironmentException;
 
 	/**
 	 * <p>Get callback service request from the Windows</p>
