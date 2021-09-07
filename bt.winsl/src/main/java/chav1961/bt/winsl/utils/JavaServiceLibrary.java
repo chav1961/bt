@@ -1,8 +1,5 @@
 package chav1961.bt.winsl.utils;
 
-import java.io.FileWriter;
-import java.io.IOException;
-
 import chav1961.purelib.basic.exceptions.ContentException;
 import chav1961.purelib.basic.exceptions.EnvironmentException;
 
@@ -101,42 +98,6 @@ public class JavaServiceLibrary {
 	 * @throws EnvironmentException on any errors
 	 */
 	public static native int getServiceRequest() throws EnvironmentException;
-
-	/**
-	 * <p>Start service. Must be the second call when starting service</p>
-	 * @param serviceName service name to start
-	 * @return 0 when successful, otherwise Windows error code. Stops calling thread before service will be terminated
-	 * @throws EnvironmentException on any errors
-	 * @throws ContentException when service name is not exists
-	 */
-	public static native int startService(final String serviceName) throws EnvironmentException, ContentException;
-
-	/**
-	 * <p>Pause service</p>
-	 * @param serviceName service name to pause
-	 * @return 0 when successful, otherwise Windows error code.
-	 * @throws EnvironmentException on any errors
-	 * @throws ContentException when service name is not exists
-	 */
-	public static native int pauseService(final String serviceName) throws EnvironmentException, ContentException;
-
-	/**
-	 * <p>Resume service</p>
-	 * @param serviceName service name to resume
-	 * @return 0 when successful, otherwise Windows error code.
-	 * @throws EnvironmentException on any errors
-	 * @throws ContentException when service name is not exists
-	 */
-	public static native int resumeService(final String serviceName) throws EnvironmentException, ContentException;
-
-	/**
-	 * <p>Stop service</p>
-	 * @param serviceName service name to stop
-	 * @return 0 when successful, otherwise Windows error code.
-	 * @throws EnvironmentException on any errors
-	 * @throws ContentException when service name is not exists
-	 */
-	public static native int stopService(final String serviceName) throws EnvironmentException, ContentException;
 
 	/**
 	 * <p>Destroy inter-thread communications. Mist be the same last call when starting service

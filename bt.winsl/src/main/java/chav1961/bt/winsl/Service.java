@@ -1,13 +1,11 @@
 package chav1961.bt.winsl;
 
-import java.io.FileWriter;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.net.URI;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.ArrayBlockingQueue;
 
@@ -26,96 +24,64 @@ public class Service {
 		final ArgParser		parser = new ApplicationArgParser();
 		String				serviceNameErr = "unknown";
 
-		try(final FileWriter	fw = new FileWriter("c:/tmp/x.txt")) {
-			fw.write("start 1: "+Arrays.toString(args)+"\n");
-			
-			try {final ArgParser	ap = parser.parse(false, false, args);
-			
-				fw.write("p1="+System.getProperty("java.library.path")+"\n");
-			
+		try {final ArgParser	ap = parser.parse(false, false, args);
+		
 			if (!System.getProperty("os.name","unknown").toUpperCase().contains("WINDOWS")) {
 				throw new CommandLineParametersException("This application can be used in the Windows-based systems only");
 			}
-			fw.write("p2\n");
 		
 			final SubstitutableProperties		sp = Application.getConfiguration(ap.getValue(Application.CONF_KEY, URI.class));
-			
-			fw.write("p3\n");
-			
 			final String						serviceName = serviceNameErr = sp.getProperty(Application.SERVICENAME_INI);
 			final ArrayBlockingQueue<Integer>	queue =  new ArrayBlockingQueue<>(10);
 			
-			fw.write("p4 created!!!\n");
 			final Thread	t = new Thread(()->{
-				try{fw.write("Service preapre="+prepareService(serviceName, queue)+"\n");
-					fw.flush();
-				} catch (EnvironmentException | IOException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
+				try{prepareService(serviceName, queue);
+				} catch (EnvironmentException e) {
+				} finally {
+					try{queue.put(JavaServiceLibrary.RC_STOP);
+					} catch (InterruptedException e1) {
+					}
 				}
 			});
 			t.start();
-			fw.write("p5 prepared 2!!!\n");
-			fw.flush();
 			
-//			queue.put(JavaServiceLibrary.RC_STOP);
+			try{queue.put(JavaServiceLibrary.RC_START);
 			
-			Integer  i;
-			
-loop:		for(;;) {
-				switch (i=queue.take()) {
-					case JavaServiceLibrary.RC_START :
-						fw.write("p6 start\n");
-						fw.flush();
-//						JavaServiceLibrary.startService(serviceName);
-//						callService(serviceName,Application.START_INI,sp.getProperty(Application.START_INI));
-						break;
-					case JavaServiceLibrary.RC_PAUSE :
-						fw.write("p6 pause\n");
-						fw.flush();
-//						if (sp.containsKey(Application.PAUSE_INI)) {
-//							callService(serviceName,Application.PAUSE_INI,sp.getProperty(Application.PAUSE_INI));
-//						}
-						break;
-					case JavaServiceLibrary.RC_RESUME :
-						fw.write("p6 resume\n");
-						fw.flush();
-//						if (sp.containsKey(Application.RESUME_INI)) {
-//							callService(serviceName,Application.RESUME_INI,sp.getProperty(Application.RESUME_INI));
-//						}
-						break;
-					case JavaServiceLibrary.RC_STOP : 
-						fw.write("p6 stop\n");
-						fw.flush();
-//						if (sp.containsKey(Application.STOP_INI)) {
-//							callService(serviceName,Application.STOP_INI,sp.getProperty(Application.STOP_INI));
-//						}
-					default : 
-						fw.write("Alles: "+i+"\n");
-						fw.flush();
-						break loop;
+loop:			for(;;) {
+					switch (queue.take()) {
+						case JavaServiceLibrary.RC_START :
+							callService(serviceName,Application.START_INI,sp.getProperty(Application.START_INI));
+							break;
+						case JavaServiceLibrary.RC_PAUSE :
+							if (sp.containsKey(Application.PAUSE_INI)) {
+								callService(serviceName,Application.PAUSE_INI,sp.getProperty(Application.PAUSE_INI));
+							}
+							break;
+						case JavaServiceLibrary.RC_RESUME :
+							if (sp.containsKey(Application.RESUME_INI)) {
+								callService(serviceName,Application.RESUME_INI,sp.getProperty(Application.RESUME_INI));
+							}
+							break;
+						case JavaServiceLibrary.RC_STOP : 
+							if (sp.containsKey(Application.STOP_INI)) {
+								callService(serviceName,Application.STOP_INI,sp.getProperty(Application.STOP_INI));
+							}
+							break loop;
+						default : 
+							break loop;
+					}
 				}
+			} finally {
+				unprepareService();
 			}
-			fw.write("p7 EXIT!!!!\n");
-			unprepareService();
-			fw.write("p8\n");
-			fw.flush();
-			
 		} catch (CommandLineParametersException e) {
-			fw.write("ERROR!!!!: "+e);
 			printError(128,serviceNameErr,"Command line parameter error: "+e.getLocalizedMessage());
-//		} catch (SyntaxException e) {
-//			printError(128,serviceName,"Syntax error: "+e.getLocalizedMessage());
+		} catch (SyntaxException e) {
+			printError(128,serviceNameErr,"Syntax error: "+e.getLocalizedMessage());
 		} catch (IOException e) {
 			printError(129,serviceNameErr,"I/O error processing config URI: "+e.getClass().getSimpleName()+" - "+e.getLocalizedMessage());
-//		} catch (EnvironmentException e) {
-//			printError(129,serviceName,"I/O error processing config URI: "+e.getClass().getSimpleName()+" - "+e.getLocalizedMessage());
-		} catch (Throwable t) {
-			fw.write("ACHTUNG!!!!"+t);
-		} finally {
-			fw.flush();
-		}
-			fw.flush();
+		} catch (EnvironmentException | InterruptedException e) {
+			printError(129,serviceNameErr,"I/O error processing config URI: "+e.getClass().getSimpleName()+" - "+e.getLocalizedMessage());
 		}
 	}
 
@@ -130,10 +96,6 @@ loop:		for(;;) {
 		return JavaServiceLibrary.prepareService(serviceName, queue);
 	}
 
-	private static int getServiceRequest() throws EnvironmentException {
-		return JavaServiceLibrary.getServiceRequest();
-	}
-	
 	private static void unprepareService() throws EnvironmentException {
 		JavaServiceLibrary.unprepareService();
 	}
@@ -172,7 +134,6 @@ loop:		for(;;) {
 												}
 											}
 										});
-						t.setDaemon(true);
 						t.start();
 					}
 					else {
