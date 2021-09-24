@@ -34,5 +34,6 @@
   	<module>bt.opc</module>
   	<module>bt.mnemoed</module>
   	<module>bt.mnemort</module>
+  	<module>bt.lucenewrapper</module>
   </modules>
 </project>
