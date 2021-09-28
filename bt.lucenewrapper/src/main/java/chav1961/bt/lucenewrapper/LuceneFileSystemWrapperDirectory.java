@@ -1,12 +1,16 @@
 package chav1961.bt.lucenewrapper;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.ObjectInputStream;
 import java.io.OutputStream;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Set;
 import java.util.UUID;
+import java.util.zip.CRC32;
+import java.util.zip.CRC32C;
 
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.IOContext;
@@ -14,6 +18,7 @@ import org.apache.lucene.store.IndexInput;
 import org.apache.lucene.store.IndexOutput;
 import org.apache.lucene.store.Lock;
 
+import chav1961.purelib.basic.Utils;
 import chav1961.purelib.basic.interfaces.LoggerFacade;
 import chav1961.purelib.fsys.interfaces.FileSystemInterface;
 
@@ -36,12 +41,12 @@ public class LuceneFileSystemWrapperDirectory extends Directory {
 	
 	@Override
 	public String[] listAll() throws IOException {
-		return fsi.list();
+		return fsi.open("/").list();
 	}
 
 	@Override
 	public void deleteFile(final String name) throws IOException {
-		fsi.open(name).delete();
+		fsi.open("/"+name).delete();
 	}
 
 	@Override
@@ -51,15 +56,23 @@ public class LuceneFileSystemWrapperDirectory extends Directory {
 
 	@Override
 	public IndexOutput createOutput(final String name, final IOContext context) throws IOException {
-		final OutputStream	os = fsi.clone().open(name).write();
+		try (final FileSystemInterface	temp = fsi.clone().open("/"+name)) {
+			if (temp.exists() && temp.isDirectory()) {
+				temp.deleteAll();
+			}
+			if (!temp.exists()) {
+				temp.create();
+			}
+		}
+		final OutputStream	os = fsi.clone().open("/"+name).write();
 		final long[]		info = {0, 0};
 		
 		return new IndexOutput(name,name) {
+			final CRC32 crc = new CRC32(); 
+			
 			@Override
 			public void writeBytes(byte[] b, int offset, int length) throws IOException {
-				for (byte i : b) {
-					info[1] += i;
-				}
+				crc.update(b,offset,length);
 				info[0] += length;
 				os.write(b, offset, length);
 			}
@@ -67,7 +80,7 @@ public class LuceneFileSystemWrapperDirectory extends Directory {
 			@Override
 			public void writeByte(byte b) throws IOException {
 				info[0]++;
-				info[1] += b;
+				crc.update(b);
 				os.write(b);
 			}
 			
@@ -78,7 +91,7 @@ public class LuceneFileSystemWrapperDirectory extends Directory {
 			
 			@Override
 			public long getChecksum() throws IOException {
-				return info[1];
+				return crc.getValue();
 			}
 			
 			@Override
@@ -105,55 +118,26 @@ public class LuceneFileSystemWrapperDirectory extends Directory {
 
 	@Override
 	public void rename(final String source, final String dest) throws IOException {
-		fsi.open(source).rename(dest);
+		fsi.open("/"+source).rename(dest);
 	}
 
 	@Override
 	public IndexInput openInput(final String name, final IOContext context) throws IOException {
 		// TODO Auto-generated method stub
-		final InputStream	is = fsi.clone().open(name).read();
+		final FileSystemInterface		temp = fsi.clone().open("/"+name);
+		final byte[]					content;
 		
-		return new IndexInput(name) {
+		try(final InputStream			is = temp.read();
+			final ByteArrayOutputStream	baos = new ByteArrayOutputStream()) {
 			
-			@Override
-			public void readBytes(byte[] arg0, int arg1, int arg2) throws IOException {
-				// TODO Auto-generated method stub
-				
-			}
-			
-			@Override
-			public byte readByte() throws IOException {
-				// TODO Auto-generated method stub
-				return 0;
-			}
-			
-			@Override
-			public IndexInput slice(String sliceDescription, long offset, long length) throws IOException {
-				// TODO Auto-generated method stub
-				return null;
-			}
-			
-			@Override
-			public void seek(long pos) throws IOException {
-				// TODO Auto-generated method stub
-				
-			}
-			
-			@Override
-			public long length() {
-				// TODO Auto-generated method stub
-				return 0;
-			}
-			
-			@Override
-			public long getFilePointer() {
-				// TODO Auto-generated method stub
-				return 0;
-			}
-			
+			Utils.copyStream(is, baos);
+			content = baos.toByteArray();
+		}
+		
+		return new InternalIndexInput(name,content) {
 			@Override
 			public void close() throws IOException {
-				is.close();
+				temp.close();
 			}
 		}; 
 	}
@@ -183,5 +167,55 @@ public class LuceneFileSystemWrapperDirectory extends Directory {
 	@Override
 	public void close() throws IOException {
 		fsi.close();
+	}
+	
+	private abstract static class InternalIndexInput extends IndexInput {
+		final byte[]	buffer = new byte[1];
+		final byte[]	content;
+		int				pos = 0;
+		
+		InternalIndexInput(final String name, final byte[]	content) {
+			super(name);
+			this.content = content;
+		}
+		
+		
+		@Override
+		public void readBytes(byte[] buf, int offset, int length) throws IOException {
+			System.arraycopy(content, pos, buf, offset, length);
+			pos += length;
+		}
+		
+		@Override
+		public byte readByte() throws IOException {
+			readBytes(buffer,0,buffer.length);
+			return buffer[0];
+		}
+		
+		@Override
+		public IndexInput slice(final String sliceDescription, long offset, long length) throws IOException {
+			return new InternalIndexInput(sliceDescription, Arrays.copyOfRange(content, (int)offset, (int)(offset+length))) {
+				@Override
+				public void close() throws IOException {
+				}
+			};
+		}
+		
+		@Override
+		public void seek(long pos) throws IOException {
+			this.pos = (int)pos;
+		}
+		
+		@Override
+		public long length() {
+			return content.length;
+		}
+		
+		@Override
+		public long getFilePointer() {
+			return pos;
+		}
+		
+		@Override public abstract void close() throws IOException;
 	}
 }

@@ -18,17 +18,26 @@ import org.apache.lucene.search.Query;
 import org.apache.lucene.search.TopDocs;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.MMapDirectory;
+
+import chav1961.purelib.basic.PureLibSettings;
+import chav1961.purelib.fsys.FileSystemOnFile;
+import chav1961.purelib.fsys.interfaces.FileSystemInterface;
  
 public class LuceneHelloWorld {
  
  public static void main(String[] args) throws IOException, ParseException {
  //New index
 	 File	temp = File.createTempFile("tmp", ".mmap");
-	 try {
+	 final File f = new File(new File(System.getProperty("java.io.tmpdir")),"inside");
+	 
+	 f.mkdirs();
+	 
+	 try (final FileSystemInterface	fsi = new FileSystemOnFile(f.toURI())) {
 		 temp.delete();
+		 
  StandardAnalyzer standardAnalyzer = new StandardAnalyzer();
  
- Directory directory = new MMapDirectory(temp.toPath());
+ Directory directory = new LuceneFileSystemWrapperDirectory(PureLibSettings.CURRENT_LOGGER, fsi);//MMapDirectory(temp.toPath());
  IndexWriterConfig config = new IndexWriterConfig(standardAnalyzer); 
  //Create a writer
  IndexWriter writer = new IndexWriter(directory, config);
