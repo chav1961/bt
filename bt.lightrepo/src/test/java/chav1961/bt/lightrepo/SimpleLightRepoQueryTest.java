@@ -7,7 +7,7 @@ import java.util.Hashtable;
 import java.util.UUID;
 
 import org.junit.Assert;
-import org.junit.jupiter.api.Test;
+import org.junit.Test;
 
 import chav1961.bt.lightrepo.SimpleLightRepoQuery.ExpressionResult;
 import chav1961.bt.lightrepo.SimpleLightRepoQuery.ExpressionResult.ValueType;

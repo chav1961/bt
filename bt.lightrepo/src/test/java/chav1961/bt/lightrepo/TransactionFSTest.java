@@ -8,7 +8,7 @@ import java.io.Writer;
 import java.net.URI;
 
 import org.junit.Assert;
-import org.junit.jupiter.api.Test;
+import org.junit.Test;
 
 import chav1961.bt.lightrepo.TransactionalFileSystemOnFile.ChangeLogRecord;
 import chav1961.purelib.basic.PureLibSettings;

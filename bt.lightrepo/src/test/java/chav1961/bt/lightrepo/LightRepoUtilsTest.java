@@ -6,7 +6,7 @@ import java.io.Reader;
 import java.net.URI;
 
 import org.junit.Assert;
-import org.junit.jupiter.api.Test;
+import org.junit.Test;
 
 import chav1961.purelib.basic.Utils;
 import chav1961.purelib.fsys.FileSystemOnFile;

@@ -9,7 +9,7 @@ import java.util.Date;
 import java.util.UUID;
 
 import org.junit.Assert;
-import org.junit.jupiter.api.Test;
+import org.junit.Test;
 
 import chav1961.bt.lightrepo.interfaces.LightRepoInterface.RepoItemDescriptor;
 import chav1961.bt.lightrepo.interfaces.LightRepoInterface.ChangesDescriptor;

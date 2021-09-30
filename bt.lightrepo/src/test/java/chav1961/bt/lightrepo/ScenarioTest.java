@@ -1,7 +1,5 @@
 package chav1961.bt.lightrepo;
 
-import org.junit.jupiter.api.Test;
-
 import chav1961.bt.lightrepo.interfaces.LightRepoInterface;
 import chav1961.bt.lightrepo.interfaces.LightRepoInterface.TransactionDescriptor;
 import chav1961.purelib.basic.PureLibSettings;
@@ -17,6 +15,7 @@ import java.io.StringReader;
 import java.io.Writer;
 
 import org.junit.Assert;
+import org.junit.Test;
 
 public class ScenarioTest {
 
