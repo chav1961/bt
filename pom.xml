@@ -35,5 +35,7 @@
   	<module>bt.mnemoed</module>
   	<module>bt.mnemort</module>
   	<module>bt.lucenewrapper</module>
+  	<module>bt.comm</module>
+  	<module>bt.mediaplayer</module>
   </modules>
 </project>
