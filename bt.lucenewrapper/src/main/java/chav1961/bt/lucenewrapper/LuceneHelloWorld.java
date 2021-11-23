@@ -25,10 +25,10 @@ import chav1961.purelib.fsys.interfaces.FileSystemInterface;
  
 public class LuceneHelloWorld {
  
- public static void main1(String[] args) throws IOException, ParseException {
+ public static void main(String[] args) throws IOException, ParseException {
 	 final File 	f = new File(new File(System.getProperty("java.io.tmpdir")),"inside");
 	 
-	 f.mkdirs();
+	 f.mkdirs(); 
 	 
 	 try(final FileSystemInterface	fsi = new FileSystemOnFile(f.toURI())) {
 		 try(final Directory directory = new LuceneFileSystemWrapperDirectory(fsi)) {
