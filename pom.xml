@@ -37,5 +37,6 @@
   	<module>bt.lucenewrapper</module>
   	<module>bt.comm</module>
   	<module>bt.mediaplayer</module>
+  	<module>bt.database</module>
   </modules>
 </project>
