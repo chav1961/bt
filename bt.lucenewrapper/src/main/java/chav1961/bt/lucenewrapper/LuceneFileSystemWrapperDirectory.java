@@ -87,6 +87,7 @@ public class LuceneFileSystemWrapperDirectory extends Directory {
 			
 			@Override
 			public void close() throws IOException {
+				os.flush();
 				os.close();
 				output.close();
 			}
@@ -156,7 +157,7 @@ public class LuceneFileSystemWrapperDirectory extends Directory {
 		fsi.close();
 	}
 	
-	private abstract static class InternalIndexInput extends IndexInput {
+	abstract static class InternalIndexInput extends IndexInput {
 		final PseudoRandomInputStream	content;
 		final byte[]					buffer = new byte[1];
 		
