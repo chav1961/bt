@@ -6,6 +6,7 @@ import java.io.Reader;
 import java.net.URI;
 
 import org.junit.Assert;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import chav1961.purelib.basic.Utils;
@@ -14,6 +15,7 @@ import chav1961.purelib.fsys.interfaces.FileSystemInterface;
 
 public class LightRepoUtilsTest {
 	@Test
+	@Ignore
 	public void buildLightRepoFileSystemByFSTest() throws IOException {
 		try(final FileSystemInterface	current = new FileSystemOnFile(new File("./src/test/resources/chav1961/bt/lightrepo/fs1/").toURI());
 			final FileSystemInterface	deltas = new FileSystemOnFile(new File("./src/test/resources/chav1961/bt/lightrepo/fs2/").toURI());
@@ -54,6 +56,7 @@ public class LightRepoUtilsTest {
 	}
 
 	@Test
+	@Ignore
 	public void buildLightRepoFileSystemByURITest() throws IOException {
 		final URI	current = URI.create(FileSystemInterface.FILESYSTEM_URI_SCHEME+":"+new File("./src/test/resources/chav1961/bt/lightrepo/fs1/").toURI().toString());
 		final URI	deltas = URI.create(FileSystemInterface.FILESYSTEM_URI_SCHEME+":"+new File("./src/test/resources/chav1961/bt/lightrepo/fs2/").toURI().toString());

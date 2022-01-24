@@ -42,7 +42,7 @@
         <directory>src/main/resources</directory>
       </resource>
     </resources>
-    <finalName>starter-0.0.1</finalName>
+    <finalName>nlp-0.0.1</finalName>
     <plugins>
       <plugin>
         <artifactId>maven-compiler-plugin</artifactId>

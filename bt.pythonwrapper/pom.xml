@@ -5,8 +5,9 @@
     <artifactId>bt</artifactId>
     <version>0.0.1-SNAPSHOT</version>
   </parent>
-  <artifactId>bt.nlp</artifactId>
-
+  <artifactId>bt.pythonwrapper</artifactId>
+  
+  
 	<developers>
 		<developer>
 			<name>Alexander Chernomyrdin aka chav1961</name>
@@ -30,19 +31,21 @@
 			<url>https://github.com/chav1961/calculator/blob/master/LICENSE</url>
 		</license>
 	</licenses>
+  
+  <dependencies>
+  <dependency>
+  	<groupId>org.python</groupId>
+  	<artifactId>jython-standalone</artifactId>
+  	<version>2.7.2</version>
+	</dependency>
+  </dependencies>
+
+
 
   	<properties>
 	    <github.global.server>github</github.global.server>
 	</properties>
 
-	<dependencies>
-	   <dependency>
-			<groupId>com.github.chav1961</groupId>
-			<artifactId>funnypro</artifactId>
-			<version>0.0.1</version>
-	   </dependency>
-    </dependencies>
-  
 	<repositories>
 	    <repository>
 	        <id>purelib-mvn-repo</id>
@@ -67,7 +70,7 @@
 	</distributionManagement>
   
      <build>
-       <finalName>nlp-0.0.1</finalName>
+       <finalName>monitoring-0.0.1</finalName>
         <resources>
             <resource>
                 <directory>src/main/java</directory>
@@ -122,7 +125,6 @@
                        <manifest>
                            <addClasspath>true</addClasspath>
                            <classpathPrefix>./</classpathPrefix>
-                            <mainClass>chav1961.bt.xsys.Application</mainClass>
                        </manifest>
                    </archive>
                </configuration>

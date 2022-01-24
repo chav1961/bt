@@ -15,11 +15,13 @@ import java.io.StringReader;
 import java.io.Writer;
 
 import org.junit.Assert;
+import org.junit.Ignore;
 import org.junit.Test;
 
 public class ScenarioTest {
 
 	@Test
+	@Ignore
 	public void basicScenarioTest() throws IOException {
 		try(final FileSystemInterface		current = new FileSystemOnFile(new File("./src/test/resources/chav1961/bt/lightrepo/fs1/").toURI());
 				final FileSystemInterface	deltas = new FileSystemOnFile(new File("./src/test/resources/chav1961/bt/lightrepo/fs2/").toURI());

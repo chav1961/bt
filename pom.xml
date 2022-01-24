@@ -9,7 +9,7 @@
         <dependency>
             <groupId>com.github.chav1961</groupId>
             <artifactId>purelib</artifactId>
-            <version>0.0.5</version>
+            <version>0.0.6</version>
         </dependency>
 		<dependency>
 			<groupId>junit</groupId>
@@ -20,23 +20,21 @@
 	</dependencies>
   
   <modules>
-  	<module>bt.grants</module>
   	<module>bt.starter</module>
   	<module>bt.monitoring</module>
   	<module>bt.xsys</module>
-  	<module>bt.speech</module>
   	<module>bt.jsapi</module>
   	<module>bt.nlp</module>
   	<module>bt.winsl</module>
   	<module>bt.lightrepo</module>
-  	<module>bt.modelbricks</module>
   	<module>bt.model</module>
   	<module>bt.opc</module>
   	<module>bt.mnemoed</module>
   	<module>bt.mnemort</module>
   	<module>bt.lucenewrapper</module>
   	<module>bt.comm</module>
-  	<module>bt.mediaplayer</module>
   	<module>bt.database</module>
+  	<module>bt.mediaplayer</module>
+  	<module>bt.pythonwrapper</module>
   </modules>
 </project>
