@@ -1,6 +1,6 @@
 module chav1961.bt.lucenewrapper {
 	requires transitive java.sql;
-	requires chav1961.purelib;
+	requires transitive chav1961.purelib;
 	requires transitive lucene.core;
 	requires transitive lucene.queryparser;
 
