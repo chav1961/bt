@@ -8,6 +8,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.net.URI;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -28,9 +29,11 @@ import org.apache.lucene.store.IndexOutput;
 import org.apache.lucene.store.Lock;
 
 import chav1961.bt.lucenewrapper.LuceneFileSystemWrapperDirectory.InternalIndexInput;
+import chav1961.purelib.basic.exceptions.EnvironmentException;
+import chav1961.purelib.basic.interfaces.SpiService;
 import chav1961.purelib.streams.byte2byte.PseudoRandomInputStream;
 
-public class LuceneDatabaseWrapperDirectory extends Directory implements Closeable {
+public class LuceneDatabaseWrapperDirectory extends Directory implements Closeable, SpiService<Directory> {
 	private static final long			ROOT_ID = -1L;
 	private static final String			COL_ID = "id";
 	private static final String			COL_PARENT = "parent";
@@ -88,6 +91,23 @@ public class LuceneDatabaseWrapperDirectory extends Directory implements Closeab
 	private final Connection	conn;
 	private final String		tableName;
 	private final EnumMap<SQLS, PreparedStatement>	stmts = new EnumMap<>(SQLS.class);
+
+	public LuceneDatabaseWrapperDirectory() throws IOException {
+		this.conn = null;
+		this.tableName = null;
+	}	
+	
+	@Override
+	public boolean canServe(final URI resource) throws NullPointerException {
+		// TODO Auto-generated method stub
+		return false;
+	}
+
+	@Override
+	public Directory newInstance(final URI resource) throws EnvironmentException, NullPointerException, IllegalArgumentException {
+		// TODO Auto-generated method stub
+		return null;
+	}
 	
 	public LuceneDatabaseWrapperDirectory(final Connection conn, final String tableName) throws IOException {
 		if (conn == null) {
@@ -441,4 +461,5 @@ public class LuceneDatabaseWrapperDirectory extends Directory implements Closeab
 			}
 		}
 	}
+
 }

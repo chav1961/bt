@@ -2,6 +2,7 @@ package chav1961.bt.lucenewrapper;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
@@ -46,8 +47,10 @@ import chav1961.purelib.basic.SubstitutableProperties;
 import chav1961.purelib.basic.exceptions.SyntaxException;
 import chav1961.purelib.basic.interfaces.LoggerFacade;
 import chav1961.purelib.basic.interfaces.LoggerFacade.Severity;
+import chav1961.purelib.fsys.FileSystemFactory;
 
 public class LuceneSearchRepository implements SearchRepository {
+	public static final String		LUCENE_DIR_SCHEMA = "lucenedir"; 
 	static final UUID				NULL_UUID = UUID.fromString("123e4567-e89b-12d3-a456-426614174000");
 	
 	private static final String		F_ID = "id";
@@ -65,6 +68,10 @@ public class LuceneSearchRepository implements SearchRepository {
 	private final StandardAnalyzer 	standardAnalyzer = new StandardAnalyzer();
 	private IndexReader				reader;
 	private IndexSearcher			searcher;
+
+	public LuceneSearchRepository(final LoggerFacade logger, final URI directoryType) throws NullPointerException, SearchRepositoryException {
+		this(logger, createLuceneDirectory(directoryType));
+	}
 	
 	public LuceneSearchRepository(final LoggerFacade logger, final Directory directory) throws NullPointerException, SearchRepositoryException {
 		if (logger == null) {
@@ -207,6 +214,15 @@ public class LuceneSearchRepository implements SearchRepository {
 		}
 	}
 
+	public static Directory createLuceneDirectory(final URI directoryType) throws SearchRepositoryException, NullPointerException, IllegalArgumentException {
+		if (directoryType == null) {
+			throw new NullPointerException("Directory typeURI can't be null"); 
+		}
+		else {
+			return null;
+		}
+	}
+	
 	public static void prepareDirectory(final Directory directory) throws IOException {
 		if (directory == null) {
 			throw new NullPointerException("Directory to prepare can't be null");

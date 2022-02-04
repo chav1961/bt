@@ -2,6 +2,7 @@ package chav1961.bt.lucenewrapper;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.URI;
 import java.util.UUID;
 
 import org.apache.lucene.store.Directory;
@@ -97,11 +98,19 @@ public class LuceneSearchRepositoryTest {
 				}
 			}
 			
+			try{new LuceneSearchRepository(null, URI.create("test:/"));
+				Assert.fail("Mandatory exception was not detected (null 1-st argument)");
+			} catch (NullPointerException exc) {
+			}
 			try{new LuceneSearchRepository(null, dir);
 				Assert.fail("Mandatory exception was not detected (null 1-st argument)");
 			} catch (NullPointerException exc) {
 			}
-			try{new LuceneSearchRepository(PureLibSettings.CURRENT_LOGGER, null);
+			try{new LuceneSearchRepository(PureLibSettings.CURRENT_LOGGER, (URI)null);
+				Assert.fail("Mandatory exception was not detected (null 2-nd argument)");
+			} catch (NullPointerException exc) {
+			}
+			try{new LuceneSearchRepository(PureLibSettings.CURRENT_LOGGER, (Directory)null);
 				Assert.fail("Mandatory exception was not detected (null 2-nd argument)");
 			} catch (NullPointerException exc) {
 			}

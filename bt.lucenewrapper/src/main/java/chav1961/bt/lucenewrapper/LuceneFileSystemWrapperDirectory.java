@@ -3,6 +3,7 @@ package chav1961.bt.lucenewrapper;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.net.URI;
 import java.util.Collection;
 import java.util.Set;
 import java.util.UUID;
@@ -14,11 +15,26 @@ import org.apache.lucene.store.IndexInput;
 import org.apache.lucene.store.IndexOutput;
 import org.apache.lucene.store.Lock;
 
+import chav1961.purelib.basic.exceptions.EnvironmentException;
+import chav1961.purelib.basic.interfaces.SpiService;
 import chav1961.purelib.fsys.interfaces.FileSystemInterface;
 import chav1961.purelib.streams.byte2byte.PseudoRandomInputStream;
 
-public class LuceneFileSystemWrapperDirectory extends Directory {
+public class LuceneFileSystemWrapperDirectory extends Directory implements SpiService<Directory> {
 	private final FileSystemInterface	fsi;
+
+	@Override
+	public boolean canServe(final URI resource) throws NullPointerException {
+		// TODO Auto-generated method stub
+		return false;
+	}
+
+	@Override
+	public Directory newInstance(final URI resource) throws EnvironmentException, NullPointerException, IllegalArgumentException {
+		// TODO Auto-generated method stub
+		return null;
+	}
+	
 	
 	public LuceneFileSystemWrapperDirectory(final FileSystemInterface fsi) throws NullPointerException {
 		if (fsi == null) {
