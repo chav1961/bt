@@ -43,6 +43,7 @@ import chav1961.bt.lucenewrapper.interfaces.DocumentState;
 import chav1961.bt.lucenewrapper.interfaces.SearchRepository;
 import chav1961.bt.lucenewrapper.interfaces.SearchRepositoryException;
 import chav1961.bt.lucenewrapper.interfaces.SearchableDocument;
+import chav1961.purelib.basic.PureLibSettings;
 import chav1961.purelib.basic.SubstitutableProperties;
 import chav1961.purelib.basic.exceptions.SyntaxException;
 import chav1961.purelib.basic.interfaces.LoggerFacade;
@@ -50,7 +51,7 @@ import chav1961.purelib.basic.interfaces.LoggerFacade.Severity;
 import chav1961.purelib.fsys.FileSystemFactory;
 
 public class LuceneSearchRepository implements SearchRepository {
-	public static final String		LUCENE_DIR_SCHEMA = "lucenedir"; 
+	public static final String		LUCENE_DIR_SCHEME = "lucenedir"; 
 	static final UUID				NULL_UUID = UUID.fromString("123e4567-e89b-12d3-a456-426614174000");
 	
 	private static final String		F_ID = "id";
@@ -69,6 +70,10 @@ public class LuceneSearchRepository implements SearchRepository {
 	private IndexReader				reader;
 	private IndexSearcher			searcher;
 
+	public LuceneSearchRepository(final URI directoryType) throws NullPointerException, SearchRepositoryException {
+		this(PureLibSettings.CURRENT_LOGGER, directoryType);
+	}
+	
 	public LuceneSearchRepository(final LoggerFacade logger, final URI directoryType) throws NullPointerException, SearchRepositoryException {
 		this(logger, createLuceneDirectory(directoryType));
 	}

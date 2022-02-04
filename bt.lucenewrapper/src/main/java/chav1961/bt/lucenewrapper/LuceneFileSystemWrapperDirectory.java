@@ -15,18 +15,29 @@ import org.apache.lucene.store.IndexInput;
 import org.apache.lucene.store.IndexOutput;
 import org.apache.lucene.store.Lock;
 
+import chav1961.purelib.basic.URIUtils;
 import chav1961.purelib.basic.exceptions.EnvironmentException;
 import chav1961.purelib.basic.interfaces.SpiService;
 import chav1961.purelib.fsys.interfaces.FileSystemInterface;
 import chav1961.purelib.streams.byte2byte.PseudoRandomInputStream;
 
 public class LuceneFileSystemWrapperDirectory extends Directory implements SpiService<Directory> {
+	private static final URI			SUPPORTED_URI = URI.create(LuceneSearchRepository.LUCENE_DIR_SCHEME+":"+FileSystemInterface.FILESYSTEM_URI_SCHEME+":/");
+	
 	private final FileSystemInterface	fsi;
 
+	public LuceneFileSystemWrapperDirectory() throws NullPointerException {
+		this.fsi = null;
+	}
+	
 	@Override
 	public boolean canServe(final URI resource) throws NullPointerException {
-		// TODO Auto-generated method stub
-		return false;
+		if (resource == null) {
+			throw new NullPointerException("Resource URI can't be null");
+		}
+		else {
+			return URIUtils.canServeURI(resource, SUPPORTED_URI);
+		}
 	}
 
 	@Override

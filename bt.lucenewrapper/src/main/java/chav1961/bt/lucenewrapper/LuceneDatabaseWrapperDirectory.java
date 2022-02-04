@@ -29,11 +29,13 @@ import org.apache.lucene.store.IndexOutput;
 import org.apache.lucene.store.Lock;
 
 import chav1961.bt.lucenewrapper.LuceneFileSystemWrapperDirectory.InternalIndexInput;
+import chav1961.purelib.basic.URIUtils;
 import chav1961.purelib.basic.exceptions.EnvironmentException;
 import chav1961.purelib.basic.interfaces.SpiService;
 import chav1961.purelib.streams.byte2byte.PseudoRandomInputStream;
 
 public class LuceneDatabaseWrapperDirectory extends Directory implements Closeable, SpiService<Directory> {
+	private static final URI			SUPPORTED_URI = URI.create(LuceneSearchRepository.LUCENE_DIR_SCHEME+":jdbc:/"); 
 	private static final long			ROOT_ID = -1L;
 	private static final String			COL_ID = "id";
 	private static final String			COL_PARENT = "parent";
@@ -99,8 +101,12 @@ public class LuceneDatabaseWrapperDirectory extends Directory implements Closeab
 	
 	@Override
 	public boolean canServe(final URI resource) throws NullPointerException {
-		// TODO Auto-generated method stub
-		return false;
+		if (resource == null) {
+			throw new NullPointerException("Resource URI can't be null");
+		}
+		else {
+			return URIUtils.canServeURI(resource, SUPPORTED_URI);
+		}
 	}
 
 	@Override
@@ -309,7 +315,7 @@ public class LuceneDatabaseWrapperDirectory extends Directory implements Closeab
 				@Override
 				public void close() throws IOException {
 					try {
-						conn.commit();
+						getConnection().commit();
 					} catch (SQLException e) {
 						throw new IOException(e);
 					}
@@ -327,7 +333,7 @@ public class LuceneDatabaseWrapperDirectory extends Directory implements Closeab
 			}
 		}
 		try{
-			conn.commit();
+			getConnection().commit();
 		} catch (SQLException e) {
 			throw new IOException(e); 
 		}
@@ -338,6 +344,14 @@ public class LuceneDatabaseWrapperDirectory extends Directory implements Closeab
 		return Set.of();
 	}
 
+	protected Connection getConnection() {
+		return conn;
+	}
+	
+	protected String getTableName() {
+		return tableName;
+	}
+	
 	private synchronized boolean exists(final SQLS queryType, final Object... parameters) throws IOException {
 		try(final ResultSet	rs = bindParameters(getStmt(queryType), queryType, parameters).executeQuery()) {
 			
@@ -368,7 +382,7 @@ public class LuceneDatabaseWrapperDirectory extends Directory implements Closeab
 	
 	private PreparedStatement getStmt(final SQLS queryType) throws SQLException {
 		if (!stmts.containsKey(queryType)) {
-			stmts.put(queryType, conn.prepareStatement(String.format(queryType.getSql(), tableName)));
+			stmts.put(queryType, getConnection().prepareStatement(String.format(queryType.getSql(), getTableName())));
 		}
 		return stmts.get(queryType);
 	}
