@@ -52,6 +52,9 @@ import chav1961.purelib.fsys.FileSystemFactory;
 
 public class LuceneSearchRepository implements SearchRepository {
 	public static final String		LUCENE_DIR_SCHEME = "lucenedir"; 
+	public static final String		STANDARD_LUCENE_IN_MEMORY_SCHEME = "lucenedir:inmemory:/"; 
+	public static final String		STANDARD_LUCENE_FILE_SCHEME = "lucenedir:file:/";
+	
 	static final UUID				NULL_UUID = UUID.fromString("123e4567-e89b-12d3-a456-426614174000");
 	
 	private static final String		F_ID = "id";
