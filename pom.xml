@@ -36,5 +36,6 @@
   	<module>bt.database</module>
   	<module>bt.mediaplayer</module>
   	<module>bt.pythonwrapper</module>
+  	<module>bt.clipper</module>
   </modules>
 </project>
