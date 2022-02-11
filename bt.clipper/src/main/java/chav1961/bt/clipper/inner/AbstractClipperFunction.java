@@ -3,10 +3,12 @@ package chav1961.bt.clipper.inner;
 import java.util.Arrays;
 import java.util.Iterator;
 
-import chav1961.bt.clipper.interfaces.ClipperFunction;
-import chav1961.bt.clipper.interfaces.ClipperParameter;
-import chav1961.bt.clipper.interfaces.ClipperType;
-import chav1961.bt.clipper.interfaces.ClipperValue;
+import chav1961.bt.clipper.ClipperRuntime;
+import chav1961.bt.clipper.inner.interfaces.ClipperFunction;
+import chav1961.bt.clipper.inner.interfaces.ClipperIdentifiedValue;
+import chav1961.bt.clipper.inner.interfaces.ClipperParameter;
+import chav1961.bt.clipper.inner.interfaces.ClipperType;
+import chav1961.bt.clipper.inner.interfaces.ClipperValue;
 import chav1961.purelib.basic.exceptions.SyntaxException;
 
 public abstract class AbstractClipperFunction extends AbstractClipperExecutableValue implements ClipperFunction {
@@ -61,6 +63,11 @@ public abstract class AbstractClipperFunction extends AbstractClipperExecutableV
 	}
 
 	@Override
+	public ClipperParameter[] getParameters() {
+		return parm;
+	}
+	
+	@Override
 	public ClipperParameter getParameter(final int parameterNo) {
 		return parm[parameterNo];
 	}
@@ -70,22 +77,50 @@ public abstract class AbstractClipperFunction extends AbstractClipperExecutableV
 		return ret;
 	}
 
-	@Override
-	public <T> T get() throws SyntaxException {
-		throw new IllegalStateException("Calling this method is not applicable with the class");
-	}
-
-	@Override
-	public <T> ClipperValue set(T value) throws SyntaxException {
-		throw new IllegalStateException("Calling this method is not applicable with the class");
-	}
-
-	@Override
-	public <T> ClipperValue set(final ClipperValue value) throws SyntaxException {
-		throw new IllegalStateException("Calling this method is not applicable with the class");
+	protected void checkInputParameters(final ClipperValue... parameters) throws SyntaxException {
+		final int		minLength = Math.min(parm.length, parameters.length);
+		StringBuilder	sb = null;
+		
+		for(int index = 0; index < minLength; index++) {
+			if (getParameter(index).isOptional()) {
+				if (parameters[index] == ClipperRuntime.NULL) {
+					continue;
+				}
+				else if (!getParameter(index).isCompatibleWith(parameters[index].getType())) {
+					if (sb == null) {
+						sb = new StringBuilder();
+					}
+					sb.append("Parameter [").append(getParameterName(index)).append("] - value type ["+parameters[index].getType()+"] is not compatible with "+Arrays.toString(getParameter(index).getAllSupportedTypes())+"\n");
+				}
+			}
+			else if (!getParameter(index).isCompatibleWith(parameters[index].getType())) {
+				if (sb == null) {
+					sb = new StringBuilder();
+				}
+				sb.append("Parameter [").append(getParameterName(index)).append("] - value type ["+parameters[index].getType()+"] is not compatible with "+Arrays.toString(getParameter(index).getAllSupportedTypes())+"\n");
+			}
+		}
+		for (int index = minLength; index < parm.length;index++) {
+			if (!getParameter(index).isOptional()) {
+				if (sb == null) {
+					sb = new StringBuilder();
+				}
+				sb.append("Mandatory parameter [").append(index).append("] is missing in the call stack frame\n");
+			}
+		}
+		if (sb != null) {
+			throw new SyntaxException(0, 0, sb.toString());
+		}
 	}
 	
-	protected void checkInputParameters(final ClipperValue... parameters) throws SyntaxException {
+	protected String getParameterName(final int index) {
+		final ClipperParameter	p = getParameter(index);
 		
+		if (p instanceof ClipperIdentifiedValue) {
+			return ClipperRuntime.DICTIONARY.getName(p.getId());
+		}
+		else {
+			return ""+index;
+		}
 	}
 }

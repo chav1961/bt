@@ -1,5 +1,5 @@
 package chav1961.bt.clipper;
 
-public class Runtime {
+public class ClipperCompiler {
 
 }

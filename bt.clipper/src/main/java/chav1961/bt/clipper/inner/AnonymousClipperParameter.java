@@ -1,20 +1,22 @@
 package chav1961.bt.clipper.inner;
 
-import chav1961.bt.clipper.interfaces.ClipperParameter;
-import chav1961.bt.clipper.interfaces.ClipperType;
-import chav1961.bt.clipper.interfaces.ClipperValue;
+import chav1961.bt.clipper.inner.interfaces.ClipperParameter;
+import chav1961.bt.clipper.inner.interfaces.ClipperType;
+import chav1961.bt.clipper.inner.interfaces.ClipperValue;
 import chav1961.purelib.basic.exceptions.SyntaxException;
 
 public class AnonymousClipperParameter implements ClipperParameter {
-	public static final ClipperParameter	ANON_ARRAY = new AnonymousClipperParameter(false, ClipperType.C_Array); 
-	public static final ClipperParameter	ANON_NUMBER = new AnonymousClipperParameter(false, ClipperType.C_Number); 
+	public static final ClipperParameter	ANON_ARRAY = new AnonymousClipperParameter(-1, false, ClipperType.C_Array); 
+	public static final ClipperParameter	ANON_NUMBER = new AnonymousClipperParameter(-1, false, ClipperType.C_Number); 
 	
 	private static final long serialVersionUID = 909299429159738445L;
 
+	private final int			order;
 	private final boolean		isOptional;
 	private final ClipperType[]	types; 
 	
-	public AnonymousClipperParameter(final boolean isOptional, final ClipperType... types) {
+	public AnonymousClipperParameter(final int order, final boolean isOptional, final ClipperType... types) {
+		this.order = order;
 		this.isOptional = isOptional;
 		this.types = types;
 	}
@@ -25,7 +27,7 @@ public class AnonymousClipperParameter implements ClipperParameter {
 	}
 
 	@Override
-	public <T> T get() throws SyntaxException {
+	public <T> T get(final Class<T> awaited) throws SyntaxException {
 		throw new IllegalStateException("Calling this method is not applicable with the class");
 	}
 
@@ -46,7 +48,7 @@ public class AnonymousClipperParameter implements ClipperParameter {
 
 	@Override
 	public long getId() {
-		return -1;
+		return -order;
 	}
 
 	@Override

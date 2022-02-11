@@ -1,14 +1,17 @@
 package chav1961.bt.clipper.inner.functions;
 
+import chav1961.bt.clipper.inner.AbstractBuiltinClipperFunction;
 import chav1961.bt.clipper.inner.AbstractClipperFunction;
-import chav1961.bt.clipper.inner.AbstractClipperValue;
 import chav1961.bt.clipper.inner.AnonymousClipperParameter;
-import chav1961.bt.clipper.interfaces.ClipperType;
-import chav1961.bt.clipper.interfaces.ClipperValue;
+import chav1961.bt.clipper.inner.ImmutableClipperValue;
+import chav1961.bt.clipper.inner.interfaces.ClipperBuiltinFunction;
+import chav1961.bt.clipper.inner.interfaces.ClipperParameter;
+import chav1961.bt.clipper.inner.interfaces.ClipperType;
+import chav1961.bt.clipper.inner.interfaces.ClipperValue;
 import chav1961.purelib.basic.exceptions.ContentException;
 import chav1961.purelib.basic.exceptions.SyntaxException;
 
-public class ADEL_Function extends AbstractClipperFunction {
+public class ADEL_Function extends AbstractBuiltinClipperFunction {
 	private static final long serialVersionUID = -4730484660325717512L;
 	
 	protected ADEL_Function(ClipperType type, long id) {
@@ -19,8 +22,8 @@ public class ADEL_Function extends AbstractClipperFunction {
 	public ClipperValue invoke(final ClipperValue... parameters) throws ContentException {
 		checkInputParameters(parameters);
 		
-		final ClipperValue[]	from = (ClipperValue[]) parameters[0].get(), to = from.clone();
-		final int				index = ((Number)parameters[1].get()).intValue();
+		final ClipperValue[]	from = parameters[0].get(ClipperValue[].class), to = from.clone();
+		final int				index = parameters[1].get(Number.class).intValue();
 		if (index < 0 || index >= from.length) {
 			throw new SyntaxException(0,0,""); 
 		}
@@ -28,23 +31,6 @@ public class ADEL_Function extends AbstractClipperFunction {
 			System.arraycopy(from, index+1, to, index, from.length-index);
 			to[to.length-1] = null;
 		}
-		return new AbstractClipperValue(ClipperType.C_Array) {
-			@Override
-			public <T> ClipperValue set(ClipperValue value) throws SyntaxException {
-				// TODO Auto-generated method stub
-				return null;
-			}
-			
-			@Override
-			public <T> ClipperValue set(T value) throws SyntaxException {
-				// TODO Auto-generated method stub
-				return null;
-			}
-			
-			@Override
-			public <T> T get() throws SyntaxException {
-				return (T)to;
-			}
-		};
+		return new ImmutableClipperValue(ClipperType.C_Array, to);
 	}
 }

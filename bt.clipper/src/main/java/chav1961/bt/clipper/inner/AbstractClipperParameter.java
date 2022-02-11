@@ -1,8 +1,8 @@
 package chav1961.bt.clipper.inner;
 
-import chav1961.bt.clipper.interfaces.ClipperIdentifiedValue;
-import chav1961.bt.clipper.interfaces.ClipperParameter;
-import chav1961.bt.clipper.interfaces.ClipperType;
+import chav1961.bt.clipper.inner.interfaces.ClipperIdentifiedValue;
+import chav1961.bt.clipper.inner.interfaces.ClipperParameter;
+import chav1961.bt.clipper.inner.interfaces.ClipperType;
 
 public abstract  class AbstractClipperParameter extends AbstractClipperValue implements ClipperParameter, ClipperIdentifiedValue  {
 	private static final long serialVersionUID = -6086605059895368478L;
