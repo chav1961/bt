@@ -97,6 +97,73 @@ class CommandParser {
 		}
 	}
 
+
+	static boolean identify(final char[] content, int from, final SyntaxTreeInterface<Long> names, final Lexema lex, final int[] temp, final List<int[]> markerRanges) throws SyntaxException {
+		from = CharUtils.skipBlank(content, from, true);
+		
+		switch (lex.type) {
+			case Char				:
+				from = CharUtils.parseName(content, from, temp);
+				final long 	id = names.seekNameI(content, temp[0], temp[1] + 1);
+				
+				if (id >= 0 && names.getCargo(id).intValue() == lex.entityId) {
+					temp[1]++;
+					return true;
+				}
+				else {
+					return false;
+				}
+			case ExtendedMarker		:
+				temp[0] = from;
+				from = extractExpression(content, from, NULL_TERMINALS);
+				temp[1] = from;
+				markerRanges.add(temp.clone());
+				return true;
+			case Keyword			:
+				if (Character.isJavaIdentifierStart(content[from])) {
+					from = CharUtils.parseName(content, from, temp);
+					final long 	kw = names.seekNameI(content, temp[0], temp[1] + 1);
+					
+					if (kw >= 0 && names.getCargo(kw).intValue() == lex.entityId) {
+						temp[1]++;
+						return true;
+					}
+					else {
+						return false;
+					}
+				}
+				else {
+					return false;
+				}
+			case ListMarker			:
+				from--;
+				do {temp[0] = ++from;
+					from = extractExpression(content, from, NULL_TERMINALS);
+					temp[1] = from;
+					markerRanges.add(temp.clone());
+					from = CharUtils.skipBlank(content, from, true);
+				} while (content[from] == ',');
+				return true;
+			case RegularMarker		:
+				temp[0] = from;
+				from = extractExpression(content, from, NULL_TERMINALS);
+				temp[1] = from;
+				markerRanges.add(temp.clone());
+				return true;
+			case RestrictedMarker	:
+				break;
+			case WildMarker			:
+				temp[0] = from;
+				while (content[from] != '\r' && content[from] != '\n') {
+					from++;
+				}
+				temp[1] = from;
+				markerRanges.add(temp.clone());
+				return true;
+			default	: return false;
+		}
+	}	
+	
 	
 	static void upload(final char[] content, final SyntaxNode<NodeType, SyntaxNode> root, final int[] temp, final int[][] markerRanges) {
 	}
