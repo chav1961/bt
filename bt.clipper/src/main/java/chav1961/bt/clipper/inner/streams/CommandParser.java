@@ -30,13 +30,33 @@ class CommandParser {
 	}
 
 	static boolean identify(final char[] content, int from, final SyntaxTreeInterface<Long> names, final SyntaxNode<NodeType, SyntaxNode> root, final int[] temp, final int[][] markerRanges) throws SyntaxException {
-		int		current = 0;
+		int		current = from, next;
 		long	id;
 		
 		for (;;) {
 			from = CharUtils.skipBlank(content, from, true);
 			
 			switch((NodeType)root.children[current].type) {
+				case Sequence	:
+					for (SyntaxNode<NodeType, SyntaxNode> item : root.children) {
+						switch (item.type) {
+							case Mandatory	:	
+								if (!identify(content, from, names, item, temp, markerRanges)) {
+									temp[0] = current;
+									return false;
+								}
+								break;
+							case Optional	:
+								while (identify(content, from, names, item, temp, markerRanges)) {
+									from = temp[0];
+								}
+								break;
+							case Sequence	:
+								break;
+							default:
+								break;
+						}
+					}
 				case Mandatory	:
 					switch (((Lexema)root.children[current].cargo).type) {
 						case Char :
@@ -45,7 +65,6 @@ class CommandParser {
 							from = CharUtils.parseName(content, from, temp); 
 							
 							if (names.seekName(content, temp[0], temp[1]) < 0) {
-								return false;
 							}
 							break;
 						case ExtendedMarker		:
@@ -65,7 +84,6 @@ class CommandParser {
 								from++;
 							}
 							temp[1] = from - 1;
-							return true;
 						default :
 							throw new UnsupportedOperationException("Lexema type ["+((Lexema)root.children[current].cargo).type+"] is not supported uet"); 
 					}
@@ -79,34 +97,6 @@ class CommandParser {
 		}
 	}
 
-	private static boolean identify(final char[] content, int from, final SyntaxTreeInterface<Long> names, final Lexema lex, final int[] temp, final int[][] markerRanges) {
-//		switch (lex.type) {
-//			case Char :
-//				break;
-//			case Keyword :
-//				from = CharUtils.parseName(content, from, temp); 
-//				
-//				return names.seekName(content, temp[0], temp[1])>=0;
-//			case ExtendedMarker		:
-//				break;
-//			case ListMarker			:
-//				break;
-//			case RegularMarker		:
-//				break;
-//			case RestrictedMarker	:
-//				break;
-//			case WildMarker			:
-//				temp[0] = from; 
-//				while(content[from] < ' ' && content[from] != '\n') {
-//					from++;
-//				}
-//				temp[1] = from - 1;
-//				return true;
-//			default :
-//				throw new UnsupportedOperationException("Lexema type ["+lex.type+"] is not supported uet"); 
-//		}
-		return false;
-	}
 	
 	static void upload(final char[] content, final SyntaxNode<NodeType, SyntaxNode> root, final int[] temp, final int[][] markerRanges) {
 	}
@@ -142,9 +132,6 @@ loop:	for(;;) {
 					break;
 				case '\\' :
 					result.add(new Lexema(Lexema.LexType.Char, content[++from]));
-					break;
-				case '>' :
-					result.add(new Lexema(Lexema.LexType.Continuation));
 					break;
 				case '=' :
 					if (content[from + 1] == '>') {
@@ -276,6 +263,7 @@ loop:	for(;;) {
 						default :
 							if (Character.isLetter(content[from + 1])) {
 								from = extractName(content, from + 1, names, forNames, idCount);
+								
 								if (content[from] == ',' && content[from + 1] == '.' && content[from + 2] == '.' && content[from + 3] == '.' && content[from + 4] == '>') {
 									if (!afterErgo) {
 										idCount += forNames[0];
@@ -296,11 +284,20 @@ loop:	for(;;) {
 									
 									idCount += forNames[0];
 									from = extractList(content, from, names, forNames, idCount, list);
-									idCount += forNames[0];
-									result.add(new Lexema(Lexema.LexType.ListMarker, nameId, Utils.unwrapArray(list.toArray(new Long[list.size()]))));
+									if (content[from] == '>') {
+										if (afterErgo) {
+											throw new SyntaxException(0, from, "Use restricted marker in the right of '=>'");
+										}
+										else {
+											result.add(new Lexema(Lexema.LexType.RestrictedMarker, nameId, Utils.unwrapArray(list.toArray(new Long[list.size()]))));
+										}
+									}
+									else {
+										throw new SyntaxException(0, from, "Missing '>'");
+									}
 								}
 								else {
-									throw new SyntaxException(0, from, "Missing '>' or ',...>");
+									throw new SyntaxException(0, from, "Missing ':'");
 								}
 							}
 							else {
@@ -312,13 +309,14 @@ loop:	for(;;) {
 					if (Character.isLetter(content[from])) {
 						from = CharUtils.parseName(content, from, forNames) - 1;
 						
-						long	nameId = names.seekNameI(content, forNames[0], forNames[1]);
+						long	nameId = names.seekNameI(content, forNames[0], forNames[1] + 1);
 						
 						if (nameId < 0) {
-							nameId = names.placeName(content, forNames[0], forNames[1], 0L);
+							nameId = names.placeName(content, forNames[0], forNames[1] + 1, 0L);
 						}
 						
 						result.add(new Lexema(Lexema.LexType.Keyword, nameId));
+//						System.err.println("===== add kwd: ["+new String(content,forNames[0],forNames[1]-forNames[0]+1)+"]");
 					}
 					else if (content[from] > ' ') {
 						forNames[0] = from;
@@ -327,10 +325,16 @@ loop:	for(;;) {
 						}
 						forNames[1] = from--;
 						result.add(new Lexema(Lexema.LexType.Char, names.placeName(content, forNames[0], forNames[1], 0L)));
+//						System.err.println("===== add chars: ["+new String(content,forNames[0],forNames[1]-forNames[0])+"]");
 					}
 					else {
 						throw new SyntaxException(0, from, "Illegal char ["+(0+content[from])+"]");
 					}
+//					names.walk((c,len,id,car)->{
+//						System.err.println(new String(c,0,len));
+//						return true;
+//					});
+//					System.err.println("-----");
 			}
 			from++;
 		}
@@ -369,7 +373,6 @@ loop:	for(;;) {
 			from = CharUtils.skipBlank(content, from, true);
 		} while (content[from] == ',');
 		
-		temp[0] = newId;
 		return from;
 	}
 	
@@ -411,10 +414,11 @@ loop:	for(;;) {
 		}
 	}
 	
-	private static int buildTree(final Lexema[] content, int from, final Level level, final SyntaxNode<NodeType, SyntaxNode> root) throws SyntaxException {
+	static int buildTree(final Lexema[] content, int from, final Level level, final SyntaxNode<NodeType, SyntaxNode> root) throws SyntaxException {
 		switch (level) {
 			case Top	:
-				final SyntaxNode<NodeType, SyntaxNode> 	left = (SyntaxNode<NodeType, SyntaxNode>) root.clone(), right = (SyntaxNode<NodeType, SyntaxNode>) root.clone();
+				final SyntaxNode<NodeType, SyntaxNode>	left = (SyntaxNode<NodeType, SyntaxNode>) root.clone();
+				final SyntaxNode<NodeType, SyntaxNode>	right = (SyntaxNode<NodeType, SyntaxNode>) root.clone();
 				
 				from = buildTree(content, from, Level.Left, left);
 				if (content[from].type == Lexema.LexType.Ergo) {
@@ -455,20 +459,24 @@ leftLoop:		for(;;) {
 									throw new SyntaxException(0, from, "']' is missing"); 
 								}
 								else {
-									leftItem.type = NodeType.Optional;
 									leftOptional.add(leftItem);
+									from++;
 								}
 							} while (content[from].type == Lexema.LexType.OpenB);
 							leftItem = (SyntaxNode<NodeType, SyntaxNode>) root.clone();
 							leftItem.type = NodeType.Optional;
 							leftItem.children = leftOptional.toArray(new SyntaxNode[leftOptional.size()]);
+							leftItem.cargo = null;
 							leftContent.add(leftItem);
+							from--;
 							break;
 						default :
 							break leftLoop;
 					}
 					from++;
 				}
+				root.type = NodeType.Sequence;
+				root.children = leftContent.toArray(new SyntaxNode[leftContent.size()]);
 				break;
 			case Right	:
 				final List<SyntaxNode<NodeType, SyntaxNode>>	rightContent = new ArrayList<>();
@@ -506,6 +514,8 @@ rightLoop:		for(;;) {
 					}
 					from++;
 				}
+				root.type = NodeType.Sequence;
+				root.children = rightContent.toArray(new SyntaxNode[rightContent.size()]);
 				break;
 			default 	:
 				throw new UnsupportedOperationException("Level type ["+level+"] is not supported yet"); 
@@ -513,11 +523,48 @@ rightLoop:		for(;;) {
 		return from;
 	}
 	
-	private static enum NodeType {
-		Mandatory, Optional, Root
+	static String printTree(final SyntaxNode<NodeType, SyntaxNode> root) {
+		final StringBuilder	sb = new StringBuilder();
+		
+		printTree(root, sb);
+		return sb.toString();
+	}
+	
+	private static void printTree(final SyntaxNode<NodeType, SyntaxNode> root, final StringBuilder sb) {
+		switch (root.getType()) {
+			case Mandatory	:
+				sb.append(' ').append(root.cargo).append(' ');
+				break;
+			case Optional	:
+				String	prefix = " [ ";
+				for (SyntaxNode<NodeType, SyntaxNode> item : root.children) {
+					sb.append(prefix);
+					printTree(item,sb);
+					prefix = " |,| ";
+				}
+				sb.append(" ] ");
+				break;
+			case Sequence	:
+				for (SyntaxNode<NodeType, SyntaxNode> item : root.children) {
+					printTree(item,sb);
+				}
+				break;
+			case Root		:
+				printTree(root.children[0], sb);
+				sb.append(" => ");
+				printTree(root.children[1], sb);
+				break;
+			default 		:	
+				sb.append("?????");
+				break;
+		}
+	}
+	
+	static enum NodeType {
+		Mandatory, Optional, Sequence, Root
 	}
 
-	private static enum Level {
+	static enum Level {
 		Top, Left, Right
 	}
 	
