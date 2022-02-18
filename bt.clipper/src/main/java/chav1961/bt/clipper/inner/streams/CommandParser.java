@@ -29,11 +29,14 @@ class CommandParser {
 		return new PatternAndSubstitutorImpl(names, root, 0);
 	}
 
+	//temp[0] - current pos in the root children
+	//temp[1] - from pos in the content
 	static boolean identify(final char[] content, int from, final SyntaxTreeInterface<Long> names, final SyntaxNode<NodeType, SyntaxNode> root, final int[] temp, final int[][] markerRanges) throws SyntaxException {
-		int		current = from, next;
+		int		current = 0, total = root.children != null ? root.children.length : 0;
+		int		start = from;
 		long	id;
 		
-		for (;;) {
+		while (content[from] != '\n' && current < total) {
 			from = CharUtils.skipBlank(content, from, true);
 			
 			switch((NodeType)root.children[current].type) {
@@ -43,49 +46,45 @@ class CommandParser {
 							case Mandatory	:	
 								if (!identify(content, from, names, item, temp, markerRanges)) {
 									temp[0] = current;
+									temp[1] = from;
 									return false;
 								}
-								break;
+								else {
+									from = temp[1];
+									current++;
+									break;
+								}
 							case Optional	:
 								while (identify(content, from, names, item, temp, markerRanges)) {
-									from = temp[0];
+									from = temp[1];
 								}
 								break;
 							case Sequence	:
-								break;
+								if (identify(content, from, names, item, temp, markerRanges)) {
+									from = temp[1];
+									current++;
+									break;
+								}
+								else {
+									temp[0] = current;
+									return false;
+								}
 							default:
 								break;
 						}
 					}
+					break;
 				case Mandatory	:
-					switch (((Lexema)root.children[current].cargo).type) {
-						case Char :
-							break;
-						case Keyword :
-							from = CharUtils.parseName(content, from, temp); 
-							
-							if (names.seekName(content, temp[0], temp[1]) < 0) {
-							}
-							break;
-						case ExtendedMarker		:
-							break;
-						case ListMarker			:
-							break;
-						case RegularMarker		:
-							break;
-						case RestrictedMarker	:
-							markerRanges[1] = new int[] {from, 0};
-							from = extractExpression(content, from, NULL_TERMINALS);
-							markerRanges[1][1] = from;
-							break;
-						case WildMarker			:
-							temp[0] = from; 
-							while(content[from] < ' ' && content[from] != '\n') {
-								from++;
-							}
-							temp[1] = from - 1;
-						default :
-							throw new UnsupportedOperationException("Lexema type ["+((Lexema)root.children[current].cargo).type+"] is not supported uet"); 
+					final List<int[]>	markers = new ArrayList<>();
+					
+					if (identify(content, from, names, (Lexema)root.children[current].cargo, temp, markers)) {
+						from = temp[1];
+						current++;
+					}
+					else {
+						temp[0] =  current;
+						temp[1] = start;
+						return false;
 					}
 					break;
 				case Optional	:
@@ -93,26 +92,47 @@ class CommandParser {
 				default:
 					break;
 			}
-			from++;
+		}
+		
+		if (current >= total) {
+			temp[0] = current;
+			temp[1] = from;
+			return true;
+		}
+		else {
+			temp[0] = current;
+			temp[1] = start;
+			return false;
 		}
 	}
 
-
 	static boolean identify(final char[] content, int from, final SyntaxTreeInterface<Long> names, final Lexema lex, final int[] temp, final List<int[]> markerRanges) throws SyntaxException {
+		final int	start = from;
+		
 		from = CharUtils.skipBlank(content, from, true);
 		
 		switch (lex.type) {
 			case Char				:
-				from = CharUtils.parseName(content, from, temp);
-				final long 	id = names.seekNameI(content, temp[0], temp[1] + 1);
-				
-				if (id >= 0 && names.getCargo(id).intValue() == lex.entityId) {
-					temp[1]++;
-					return true;
+				final char[]	template = lex.sequence;
+
+				for(int index = 0; index < template.length; index++) {
+					if (template[index] <= ' ') {
+						continue;
+					}
+					else {
+						from = CharUtils.skipBlank(content, from, true);
+						
+						if (content[from] != template[index]) {
+							temp[1] = start;
+							return false;
+						}
+						else {
+							from++;
+						}
+					}
 				}
-				else {
-					return false;
-				}
+				temp[1] = from;
+				return true;
 			case ExtendedMarker		:
 				temp[0] = from;
 				from = extractExpression(content, from, NULL_TERMINALS);
@@ -124,8 +144,8 @@ class CommandParser {
 					from = CharUtils.parseName(content, from, temp);
 					final long 	kw = names.seekNameI(content, temp[0], temp[1] + 1);
 					
-					if (kw >= 0 && names.getCargo(kw).intValue() == lex.entityId) {
-						temp[1]++;
+					if (kw == lex.entityId) {
+						temp[1] = from;
 						return true;
 					}
 					else {
@@ -162,6 +182,7 @@ class CommandParser {
 				return true;
 			default	: return false;
 		}
+		return false;
 	}	
 	
 	
@@ -387,11 +408,11 @@ loop:	for(;;) {
 					}
 					else if (content[from] > ' ') {
 						forNames[0] = from;
-						while (!STOP_CHARS.contains(content[from])) {
+						while (!STOP_CHARS.contains(content[from]) && !Character.isJavaIdentifierStart(content[from])) {
 							from++;
 						}
-						forNames[1] = from--;
-						result.add(new Lexema(Lexema.LexType.Char, names.placeName(content, forNames[0], forNames[1], 0L)));
+						result.add(new Lexema(Lexema.LexType.Char, Arrays.copyOfRange(content, forNames[0], from)));
+						from--;
 //						System.err.println("===== add chars: ["+new String(content,forNames[0],forNames[1]-forNames[0])+"]");
 					}
 					else {
@@ -644,6 +665,7 @@ rightLoop:		for(;;) {
 		
 		private final LexType	type;
 		private final long		entityId;
+		private final char[]	sequence;
 		private final long[]	associations;
 		
 		public Lexema(LexType type) {
@@ -657,15 +679,27 @@ rightLoop:		for(;;) {
 		public Lexema(LexType type, long entityId, long[] associations) {
 			this.type = type;
 			this.entityId = entityId;
+			this.sequence = null;
 			this.associations = associations;
 		}
 
+		public Lexema(LexType type, char[] sequence) {
+			this.type = type;
+			this.sequence = sequence;
+			this.entityId = -1;
+			this.associations = null;
+		}
+		
 		public LexType getType() {
 			return type;
 		}
 		
 		public long getEntityId() {
 			return entityId;
+		}
+		
+		public char[] getSequence() {
+			return sequence;
 		}
 		
 		public long[] getAssociations() {
@@ -678,6 +712,7 @@ rightLoop:		for(;;) {
 			int result = 1;
 			result = prime * result + Arrays.hashCode(associations);
 			result = prime * result + (int) (entityId ^ (entityId >>> 32));
+			result = prime * result + Arrays.hashCode(sequence);
 			result = prime * result + ((type == null) ? 0 : type.hashCode());
 			return result;
 		}
@@ -690,13 +725,14 @@ rightLoop:		for(;;) {
 			Lexema other = (Lexema) obj;
 			if (!Arrays.equals(associations, other.associations)) return false;
 			if (entityId != other.entityId) return false;
+			if (!Arrays.equals(sequence, other.sequence)) return false;
 			if (type != other.type) return false;
 			return true;
 		}
 
 		@Override
 		public String toString() {
-			return "Lexema [type=" + type + ", entityId=" + entityId + ", associations=" + Arrays.toString(associations) + "]";
+			return "Lexema [type=" + type + ", entityId=" + entityId + ", sequence=" + Arrays.toString(sequence) + ", associations=" + Arrays.toString(associations) + "]";
 		}
 	}
 	
