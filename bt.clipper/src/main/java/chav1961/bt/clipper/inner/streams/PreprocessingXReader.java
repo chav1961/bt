@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
+import java.lang.reflect.InvocationTargetException;
 import java.net.URI;
 import java.net.URL;
 import java.util.ArrayList;
@@ -15,39 +16,56 @@ import java.util.Map;
 import chav1961.purelib.basic.AndOrTree;
 import chav1961.purelib.basic.CharUtils;
 import chav1961.purelib.basic.PureLibSettings;
+import chav1961.purelib.basic.SimpleURLClassLoader;
+import chav1961.purelib.basic.Utils;
+import chav1961.purelib.basic.exceptions.PreparationException;
 import chav1961.purelib.basic.exceptions.SyntaxException;
 import chav1961.purelib.basic.growablearrays.GrowableCharArray;
 import chav1961.purelib.basic.interfaces.SyntaxTreeInterface;
+import chav1961.purelib.cdb.CompilerUtils;
+import chav1961.purelib.cdb.interfaces.RuleBasedParser;
 import chav1961.purelib.streams.char2char.AbstractPreprocessingReader;
 
 public class PreprocessingXReader extends AbstractPreprocessingReader {
 	private static SyntaxTreeInterface<CommandType>	COMMANDS = new AndOrTree<>();
-	private static final char[]						EMPTY = new char[0];
+	private static final SimpleURLClassLoader		LOADER = new SimpleURLClassLoader(new URL[0]);
+	private static final char[]						NL = "\n".toCharArray();
+	private static final Class<RuleBasedParser<Expression, Object>>		EXPRESSION_SKIPPER;
+	private static final Class<RuleBasedParser<XExpression, Object>>	X_EXPRESSION_SKIPPER;
 	
 	private enum CommandType {
 		CMD_UNKNOWN, CMD_COMMAND, CMD_DEFINE, CMD_ELSE, CMD_END, CMD_ERROR, CMD_IFDEF, CMD_IFNDEF, CMD_INCLUDE, CMD_STDOUT, CMD_TRANSLATE, CMD_UNDEF, CMD_XCOMMAND, CMD_XTRANSLATE  
 	}
 
 	static {
-		COMMANDS.placeName("#command",CommandType.CMD_COMMAND);
-		COMMANDS.placeName("#define",CommandType.CMD_DEFINE);
-		COMMANDS.placeName("#else",CommandType.CMD_ELSE);
-		COMMANDS.placeName("#end",CommandType.CMD_END);
-		COMMANDS.placeName("#error",CommandType.CMD_ERROR);
-		COMMANDS.placeName("#ifdef",CommandType.CMD_IFDEF);
-		COMMANDS.placeName("#ifndef",CommandType.CMD_IFNDEF);
-		COMMANDS.placeName("#include",CommandType.CMD_INCLUDE);
-		COMMANDS.placeName("#stdout",CommandType.CMD_STDOUT);
-		COMMANDS.placeName("#translate",CommandType.CMD_TRANSLATE);
-		COMMANDS.placeName("#undef",CommandType.CMD_UNDEF);
-		COMMANDS.placeName("#xcommand",CommandType.CMD_XCOMMAND);
-		COMMANDS.placeName("#xtranslate",CommandType.CMD_XTRANSLATE);
+		COMMANDS.placeName("command",CommandType.CMD_COMMAND);
+		COMMANDS.placeName("define",CommandType.CMD_DEFINE);
+		COMMANDS.placeName("else",CommandType.CMD_ELSE);
+		COMMANDS.placeName("end",CommandType.CMD_END);
+		COMMANDS.placeName("error",CommandType.CMD_ERROR);
+		COMMANDS.placeName("ifdef",CommandType.CMD_IFDEF);
+		COMMANDS.placeName("ifndef",CommandType.CMD_IFNDEF);
+		COMMANDS.placeName("include",CommandType.CMD_INCLUDE);
+		COMMANDS.placeName("stdout",CommandType.CMD_STDOUT);
+		COMMANDS.placeName("translate",CommandType.CMD_TRANSLATE);
+		COMMANDS.placeName("undef",CommandType.CMD_UNDEF);
+		COMMANDS.placeName("xcommand",CommandType.CMD_XCOMMAND);
+		COMMANDS.placeName("xtranslate",CommandType.CMD_XTRANSLATE);
+		
+		try{EXPRESSION_SKIPPER = CompilerUtils.buildRuleBasedParserClass(PreprocessingXReader.class.getPackageName()+".ExpressionSkipper", Expression.class, Utils.fromResource(PreprocessingXReader.class.getResource("expression.txt"), PureLibSettings.DEFAULT_CONTENT_ENCODING), LOADER);
+			X_EXPRESSION_SKIPPER = CompilerUtils.buildRuleBasedParserClass(PreprocessingXReader.class.getPackageName()+".XExpressionSkipper", XExpression.class, Utils.fromResource(PreprocessingXReader.class.getResource("x_expression.txt"), PureLibSettings.DEFAULT_CONTENT_ENCODING), LOADER);
+		} catch (SyntaxException | IOException e) {
+			throw new PreparationException(e.getLocalizedMessage(), e);
+		}
 	}
 
 	private final GrowableCharArray<GrowableCharArray<?>>	collector = new GrowableCharArray<GrowableCharArray<?>>(false);
 	private final int[]			forNames = new int[2], forStrings = new int[2];
 	private final SyntaxTreeInterface<List<PatternAndSubstitutor>>	commands = new AndOrTree<>();
 	private final SyntaxTreeInterface<List<PatternAndSubstitutor>>	translations = new AndOrTree<>();
+	private final RuleBasedParser<Expression, Object>				skipper;
+	private final RuleBasedParser<XExpression, Object>				xSkipper;
+	private final SyntaxTreeInterface<Object>						tree = new AndOrTree<>();
 	private long				nestedMask = ENABLED_OUTPUT_MASK, skipMask = ENABLED_OUTPUT_MASK;
 	private boolean				insideMultiline = false;
 	private boolean				insideCollector = false;
@@ -58,8 +76,9 @@ public class PreprocessingXReader extends AbstractPreprocessingReader {
 	/**
 	 * <p>Create reader with the nested source and default settings.</p>
 	 * @param nestedReader reader to use as content source. Can't be null
+	 * @throws IOException on any I/O errors 
 	 */
-	public PreprocessingXReader(final Reader nestedReader) {
+	public PreprocessingXReader(final Reader nestedReader) throws IOException {
 		this(nestedReader,new HashMap<>());
 	}
 	
@@ -68,8 +87,9 @@ public class PreprocessingXReader extends AbstractPreprocessingReader {
 	 * @param nestedReader reader to use as content source. Can't be null
 	 * @param varsAndOptions explicitly typed options. Can't be null. Use static string keys defined in the class as key names for the map. 
 	 * Changing it's content during processing data is not affected on processing behavior, but will take effect on all #include content 
+	 * @throws IOException on any I/O errors 
 	 */
-	public PreprocessingXReader(final Reader nestedReader, final Map<String,Object> varsAndOptions) {
+	public PreprocessingXReader(final Reader nestedReader, final Map<String,Object> varsAndOptions) throws IOException {
 		this(nestedReader, varsAndOptions, new IncludeCallback(){
 				@Override
 				public Reader getIncludeStream(final URI streamRef) throws IOException {
@@ -88,13 +108,19 @@ public class PreprocessingXReader extends AbstractPreprocessingReader {
 	 * @param varsAndOptions explicitly typed options. Can't be null. Use static string keys defined in the class as key names for the map. 
 	 * Changing it's content during processing data is not affected on processing behavior, but will take effect on all #include content 
 	 * @param includeCallback include callback to get reader for the given include URI. Can't be null
+	 * @throws IOException on any I/O errors 
 	 */
-	public PreprocessingXReader(final Reader nestedReader, final Map<String,Object> varsAndOptions, final IncludeCallback includeCallback) {
+	public PreprocessingXReader(final Reader nestedReader, final Map<String,Object> varsAndOptions, final IncludeCallback includeCallback) throws IOException {
 		this(null,nestedReader,varsAndOptions,includeCallback);
 	}
 	
-	protected PreprocessingXReader(final URI nestedReaderURI, final Reader nestedReader, final Map<String,Object> varsAndOptions, final IncludeCallback includeCallback) {
+	protected PreprocessingXReader(final URI nestedReaderURI, final Reader nestedReader, final Map<String,Object> varsAndOptions, final IncludeCallback includeCallback) throws IOException {
 		super(nestedReaderURI, nestedReader, varsAndOptions, includeCallback);
+		try{this.skipper = (RuleBasedParser<Expression, Object>)EXPRESSION_SKIPPER.getConstructor(Class.class,SyntaxTreeInterface.class).newInstance(Expression.class, tree);
+			this.xSkipper = (RuleBasedParser<XExpression, Object>)X_EXPRESSION_SKIPPER.getConstructor(Class.class,SyntaxTreeInterface.class).newInstance(Expression.class, tree);
+		} catch (InstantiationException | IllegalAccessException | IllegalArgumentException | InvocationTargetException | NoSuchMethodException | SecurityException e) {
+			throw new IOException(e.getLocalizedMessage(), e);
+		}
 	}	
 	
 	@Override
@@ -104,12 +130,55 @@ public class PreprocessingXReader extends AbstractPreprocessingReader {
 		if (data[from] == '#') {
 			from = CharUtils.skipBlank(data,CharUtils.parseName(data, from + 1, forNames),true);
 			
-			switch (getCommandType(data,forNames[0],forNames[1])) {
+			switch (getCommandType(data,forNames[0],forNames[1]+1)) {
 				case CMD_DEFINE		:
-					from = CharUtils.skipBlank(data,CharUtils.parseName(data, CharUtils.skipBlank(data,from + 1, true), forNames),true);
-					from = CharUtils.skipBlank(data,toEndOfLine(data, CharUtils.skipBlank(data, from + 1, true), forStrings),true);
+					if (Character.isJavaIdentifierStart(data[from])) {
+						from = CharUtils.skipBlank(data,CharUtils.parseName(data, from, forNames),true);
+						from = CharUtils.skipBlank(data,toEndOfLine(data, from, forStrings),true);
+						
+						putDefinition(data, forNames[0], forNames[1]+1, Arrays.copyOfRange(data, forStrings[0], forStrings[1]+1));
+					}
+					else {
+						throw new SyntaxException(lineNo, from - start, "Missing name in the #define directive");
+					}
+					break;
+				case CMD_ERROR		:
+					from = CharUtils.skipBlank(data,toEndOfLine(data, from, forStrings), true);
 					
-					putDefinition(data, forNames[0], forNames[1], Arrays.copyOfRange(data, forStrings[0], forStrings[1]-forStrings[0]));
+					throw new SyntaxException(lineNo, 0, new String(data, forStrings[0], forStrings[1]-forStrings[0]));
+				case CMD_STDOUT		:
+					from = CharUtils.skipBlank(data,toEndOfLine(data, from, forStrings),true);
+					
+					putContent(data, forStrings[0], forStrings[1]-forStrings[0]);
+					putContent(NL);
+					break;
+				case CMD_IFDEF		:
+					if (Character.isJavaIdentifierStart(data[from])) {
+						from = CharUtils.skipBlank(data,CharUtils.parseName(data, from, forNames),true);
+						
+						currentDepth++;
+						nestedMask ^= (1L << currentDepth);
+						if (!definitionExists(data, forNames[0], forNames[1]+1)) {
+							skipMask ^= (1L << currentDepth);
+						}
+					}
+					else {
+						throw new SyntaxException(lineNo, from - start, "Missing name in the #ifdef directive");
+					}
+					break;
+				case CMD_IFNDEF		:
+					if (Character.isJavaIdentifierStart(data[from])) {
+						from = CharUtils.skipBlank(data,CharUtils.parseName(data, from, forNames),true);
+	
+						currentDepth++;
+						nestedMask ^= (1L << currentDepth);
+						if (definitionExists(data, forNames[0], forNames[1]+1)) {
+							skipMask ^= (1L << currentDepth);
+						}
+					}
+					else {
+						throw new SyntaxException(lineNo, from - start, "Missing name in the #ifndef directive");
+					}
 					break;
 				case CMD_ELSE		:
 					if ((nestedMask & (1L << currentDepth)) == 1) {
@@ -125,52 +194,43 @@ public class PreprocessingXReader extends AbstractPreprocessingReader {
 						nestedMask ^= (1L << currentDepth);
 						skipMask |= (1L << currentDepth);
 						currentDepth--;
-					}
-					break;
-				case CMD_ERROR		:
-					from = CharUtils.skipBlank(data,toEndOfLine(data, CharUtils.skipBlank(data, from + 1, true), forStrings),true);
-					
-					throw new SyntaxException(lineNo, 0, new String(data, forStrings[0], forStrings[1]-forStrings[0]));
-				case CMD_IFDEF		:
-					from = CharUtils.skipBlank(data,CharUtils.parseName(data, CharUtils.skipBlank(data, from + 1,true), forNames),true);
-					
-					currentDepth++;
-					nestedMask ^= (1L << currentDepth);
-					if (!definitionExists(data, forNames[0], forNames[1])) {
-						skipMask ^= (1L << currentDepth);
-					}
-					break;
-				case CMD_IFNDEF		:
-					from = CharUtils.skipBlank(data,CharUtils.parseName(data, CharUtils.skipBlank(data, from + 1,true), forNames),true);
-
-					currentDepth++;
-					nestedMask ^= (1L << currentDepth);
-					if (definitionExists(data, forNames[0], forNames[1])) {
-						skipMask ^= (1L << currentDepth);
+						if (insideMultiline) {
+							insideMultiline = false;
+							putContent(getEndMultilineComment());
+							putContent(NL);
+						}
 					}
 					break;
 				case CMD_INCLUDE	:
-					from = CharUtils.skipBlank(data,toEndOfLine(data, CharUtils.skipBlank(data, from + 1, true), forStrings),true);
-
+					final StringBuilder	sb = new StringBuilder();
 					final URI	uri;
 					
-					if (data[forStrings[0]] == '<' || data[forStrings[0]] == '\"') {
-						uri = URI.create("root:/"+this.getClass().getCanonicalName()+"/bt.clipper/includes/"+new String(data, forStrings[0]+1, forStrings[1]-forStrings[0]-2));
-					}
-					else {
-						uri = URI.create(new String(data, forStrings[0], forStrings[1]-forStrings[0]));
+					switch (data[from]) {
+						case '\"' :
+							from = CharUtils.parseString(data,from + 1,'\"',sb);
+							uri = URI.create("root:/"+this.getClass().getCanonicalName()+"/bt.clipper/includes/"+sb);
+							break;
+						case '<'  :
+							from = CharUtils.parseString(data,from + 1,'>',sb);
+							uri = URI.create("root:/"+this.getClass().getCanonicalName()+"/bt.clipper/includes/"+sb);
+							break;
+						default :
+							from = toEndOfLine(data, from, forStrings);
+							sb.append(data, forStrings[0], forStrings[1]);
+							uri = URI.create(new String(data, forStrings[0], forStrings[1]-forStrings[0]+1));
+							break;
 					}
 					pushReader(uri, getIncludeCallback().getIncludeStream(uri));
 					break;
-				case CMD_STDOUT		:
-					from = CharUtils.skipBlank(data,toEndOfLine(data, CharUtils.skipBlank(data, from + 1, true), forStrings),true);
-					
-					putContent(data, forStrings[0], forStrings[1]-forStrings[0]);
-					break;
 				case CMD_UNDEF		:
-					from = CharUtils.skipBlank(data,CharUtils.parseName(data, CharUtils.skipBlank(data, from + 1,true), forNames),true);
-					
-					removeDefinition(data, forNames[0], forNames[1]);
+					if (Character.isJavaIdentifierStart(data[from])) {
+						from = CharUtils.skipBlank(data,CharUtils.parseName(data, from, forNames),true);
+						
+						removeDefinition(data, forNames[0], forNames[1]+1);
+					}
+					else {
+						throw new SyntaxException(lineNo, from - start, "Missing name in the #undef directive");
+					}
 					break;
 				case CMD_COMMAND	:
 					insideCollector = true;
@@ -211,7 +271,7 @@ public class PreprocessingXReader extends AbstractPreprocessingReader {
 				collector.length(0);
 			}
 		}
-		else if (skipMask == ENABLED_OUTPUT_MASK) {
+		else if (skipMask != ENABLED_OUTPUT_MASK) {
 			switch (getHidingMethod()) {
 				case EXCLUDE				:
 					break;
@@ -240,24 +300,12 @@ public class PreprocessingXReader extends AbstractPreprocessingReader {
 	}
 
 	@Override
-	protected AbstractPreprocessingReader newDelegate(URI nestedReaderURI, Reader nestedReader, Map<String, Object> varsAndOptions, IncludeCallback includeCallback) throws IOException, SyntaxException {
+	protected AbstractPreprocessingReader newDelegate(final URI nestedReaderURI, final Reader nestedReader, final Map<String, Object> varsAndOptions, final IncludeCallback includeCallback) throws IOException, SyntaxException {
 		return new PreprocessingXReader(nestedReaderURI, nestedReader, varsAndOptions, includeCallback);
 	}
 	
 	protected CommandType getCommandType(final char[] data, final int start, final int end) {
-		final long	id;
-		
-		if (isIgnoreCase()) {
-			final char[]	command = new char[end-start];
-			
-			for (int index = 0; index < command.length; index++) {
-				command[index] = Character.toLowerCase(data[start+index]);
-			}
-			id = COMMANDS.seekName(command,0,command.length);
-		}
-		else {
-			id = COMMANDS.seekName(data,start,end);
-		}
+		final long	id = isIgnoreCase() ? COMMANDS.seekNameI(data,start,end) : COMMANDS.seekName(data,start,end); 
 		
 		if (id >= 0) {
 			return COMMANDS.getCargo(id);
@@ -321,40 +369,26 @@ public class PreprocessingXReader extends AbstractPreprocessingReader {
 	}
 	
 	private void putDefinition(final char[] data, final int from, final int to, final char[] value) {
-		if (isIgnoreCase()) {
-			final char[]	upperCase = new char[to - from];
-			
-			for (int index = 0; index < upperCase.length; index++) {
-				upperCase[index] = Character.toUpperCase(data[from + index]);
-			}
-			for (int index = 0; index < upperCase.length; index++) {
-				value[index] = Character.toUpperCase(value[index]);
-			}
-			definitions.placeName(upperCase, 0, upperCase.length, value);
-		}
-		else {
-			definitions.placeName(data, from, to, value);
-		}
+		definitions.placeName(data, from, to, value);
 	}
 
 	private boolean definitionExists(final char[] data, final int from, final int to) {
-		// TODO Auto-generated method stub
-		return false;
+		return (isIgnoreCase() ? definitions.seekNameI(data, from, to) : definitions.seekName(data, from, to)) >= 0; 
 	}
 
 	private int toEndOfLine(final char[] data, int from, final int[] ranges) {
-		ranges[0] = CharUtils.skipBlank(data, from, false);
+		ranges[0] = CharUtils.skipBlank(data, from, true);
 		
 		while (data[from] != '\r' && data[from] != '\n') {
-			if (data[from] == '/' && data[from+1] == '/') {
+			if (data[from] == '/' && data[from + 1] == '/') {
 				break;
 			}
 			else {
 				from++;
 			}
 		}
-		while (data[from] <= ' ') {
-			from++;
+		while (from > ranges[0] && data[from] <= ' ') {
+			from--;
 		}
 		if (from <= ranges[0]) {
 			ranges[1] = ranges[0];
@@ -366,23 +400,10 @@ public class PreprocessingXReader extends AbstractPreprocessingReader {
 	}
 	
 	private void removeDefinition(final char[] data, final int from, final int to) {
-		final long	id;
+		final long	id = isIgnoreCase() ? definitions.seekNameI(data, from, to) : definitions.seekName(data, from, to); 
 		
-		if (isIgnoreCase()) {
-			final char[]	upperCase = new char[to - from];
-			
-			for (int index = 0; index < upperCase.length; index++) {
-				upperCase[index] = Character.toUpperCase(data[from + index]);
-			}
-			id = definitions.seekName(upperCase,0,upperCase.length);
-		}
-		else {
-			id = definitions.seekName(data, from, to);
-		}
 		if (id >= 0) {
 			definitions.removeName(id);
 		}
 	}
-
-	
 }
