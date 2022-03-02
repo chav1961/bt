@@ -31,12 +31,40 @@ public class PreprocessingXReaderTest {
 		try{readContent("#error test message//tail \n", Utils.mkMap(PreprocessingXReader.INLINE_SUBSTITUTION, true));
 			Assert.fail("Mandatory exception was not detected (#error directive inside)");
 		} catch (IOException exc) {
-			Assert.assertEquals("Line 1, pos 0: test message", exc.getLocalizedMessage());
+			Assert.assertEquals("Line 1, pos 0: test message", exc.getCause().getLocalizedMessage());
 		}
 		
-		Assert.assertEquals("test message\n", readContent("#include "+URIUtils.convert2selfURI("test string".toCharArray(), PureLibSettings.DEFAULT_CONTENT_ENCODING)+"\ntest", Utils.mkMap(PreprocessingXReader.INLINE_SUBSTITUTION, true)));
+//		Assert.assertEquals("test message\n", readContent("#include "+URIUtils.convert2selfURI("test string".toCharArray(), PureLibSettings.DEFAULT_CONTENT_ENCODING)+"\ntest", Utils.mkMap(PreprocessingXReader.INLINE_SUBSTITUTION, true)));
+	}
+
+	@Test
+	public void commentAndContinuationTest() throws IOException {
+		Assert.assertEquals("simple\n", readContent("simple\n", Utils.mkMap(PreprocessingXReader.INLINE_SUBSTITUTION, true, PreprocessingXReader.COMMENT_SEQUENCE, "//\n/*\t*/")));
+		Assert.assertEquals("simple \n", readContent("simple // comment\n", Utils.mkMap(PreprocessingXReader.INLINE_SUBSTITUTION, true, PreprocessingXReader.COMMENT_SEQUENCE, "//\n/*\t*/")));
+		
+		Assert.assertEquals("line1line2\n", readContent("line1;\nline2\n", Utils.mkMap(PreprocessingXReader.INLINE_SUBSTITUTION, true, PreprocessingXReader.COMMENT_SEQUENCE, "//\n/*\t*/")));
+		Assert.assertEquals("line1line2line3\n", readContent("line1;\nline2;\nline3\n", Utils.mkMap(PreprocessingXReader.INLINE_SUBSTITUTION, true, PreprocessingXReader.COMMENT_SEQUENCE, "//\n/*\t*/")));
+		Assert.assertEquals("line1line2line3\n", readContent("line1;//comment\nline2;//comment\nline3//comment\n", Utils.mkMap(PreprocessingXReader.INLINE_SUBSTITUTION, true, PreprocessingXReader.COMMENT_SEQUENCE, "//\n/*\t*/")));
+		
+		Assert.assertEquals("before  after\n", readContent("before /*comment*/ after\n", Utils.mkMap(PreprocessingXReader.INLINE_SUBSTITUTION, true, PreprocessingXReader.COMMENT_SEQUENCE, "//\n/*\t*/")));
+		Assert.assertEquals("before  after\n", readContent("before /*comment1\ncomment2*/ after\n", Utils.mkMap(PreprocessingXReader.INLINE_SUBSTITUTION, true, PreprocessingXReader.COMMENT_SEQUENCE, "//\n/*\t*/")));
+		Assert.assertEquals("before  after\n", readContent("before /*comment1\ncomment2\ncomment3*/ after\n", Utils.mkMap(PreprocessingXReader.INLINE_SUBSTITUTION, true, PreprocessingXReader.COMMENT_SEQUENCE, "//\n/*\t*/")));
+		
+		Assert.assertEquals("before \n", readContent("before // /*comment*/ after\n", Utils.mkMap(PreprocessingXReader.INLINE_SUBSTITUTION, true, PreprocessingXReader.COMMENT_SEQUENCE, "//\n/*\t*/")));
+		Assert.assertEquals("before  after\n", readContent("before /*comment // */ after\n", Utils.mkMap(PreprocessingXReader.INLINE_SUBSTITUTION, true, PreprocessingXReader.COMMENT_SEQUENCE, "//\n/*\t*/")));
+		Assert.assertEquals("before  after\n", readContent("before /*comment \ncomment1 // comment*/ after\n", Utils.mkMap(PreprocessingXReader.INLINE_SUBSTITUTION, true, PreprocessingXReader.COMMENT_SEQUENCE, "//\n/*\t*/")));
+		Assert.assertEquals("before  after\n", readContent("before /*comment \ncomment1 // comment \ncomment2 */ after\n", Utils.mkMap(PreprocessingXReader.INLINE_SUBSTITUTION, true, PreprocessingXReader.COMMENT_SEQUENCE, "//\n/*\t*/")));
+
+		Assert.assertEquals("line1line2\n", readContent("line1;/*comment*/\n/*comment*/line2\n", Utils.mkMap(PreprocessingXReader.INLINE_SUBSTITUTION, true, PreprocessingXReader.COMMENT_SEQUENCE, "//\n/*\t*/")));
+		Assert.assertEquals("line1line2\n", readContent("line1;/*comment\ncomment*/line2\n", Utils.mkMap(PreprocessingXReader.INLINE_SUBSTITUTION, true, PreprocessingXReader.COMMENT_SEQUENCE, "//\n/*\t*/")));
+		Assert.assertEquals("line1line2line3\n", readContent("line1;/*comment\ncomment*/line2;\nline3\n", Utils.mkMap(PreprocessingXReader.INLINE_SUBSTITUTION, true, PreprocessingXReader.COMMENT_SEQUENCE, "//\n/*\t*/")));
 	}
 	
+	@Test
+	public void commandTest() throws IOException {
+		Assert.assertEquals("X 20\n", readContent("#command X <item> => (<item>)\nX 20\n", Utils.mkMap()));
+		Assert.assertEquals("(20)\n", readContent("#command X <item> => (<item>)\nX 20\n", Utils.mkMap(PreprocessingXReader.INLINE_SUBSTITUTION, true)));
+	}
 	
 	private String readContent(final String content, final Map<String,Object> options) throws IOException {
 		try(final Writer		wr = new StringWriter()) {

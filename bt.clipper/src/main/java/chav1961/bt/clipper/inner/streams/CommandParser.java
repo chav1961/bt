@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import chav1961.bt.clipper.inner.streams.PatternAndSubstitutor.OutputWriter;
 import chav1961.purelib.basic.AndOrTree;
 import chav1961.purelib.basic.BitCharSet;
 import chav1961.purelib.basic.CharUtils;
@@ -33,7 +34,7 @@ class CommandParser {
 	//temp[1] - from pos in the content
 	static boolean identify(final char[] content, int from, final SyntaxTreeInterface<Long> names, final SyntaxNode<NodeType, SyntaxNode> root, final int[] temp, final int[][] markerRanges) throws SyntaxException {
 		int		current = 0, total = root.children != null ? root.children.length : 0;
-		int		start = from;
+		int		start = from, rangesId = 0;
 		long	id;
 		
 		while (content[from] != '\n' && current < total) {
@@ -186,7 +187,7 @@ class CommandParser {
 	}	
 	
 	
-	static void upload(final char[] content, final SyntaxNode<NodeType, SyntaxNode> root, final int[] temp, final int[][] markerRanges) {
+	static void upload(final char[] content, final SyntaxNode<NodeType, SyntaxNode> root, final int[] temp, final int[][] markerRanges,final OutputWriter wr) {
 	}
 	
 	static Lexema[] parse(final char[] content, int from, final SyntaxTreeInterface<Long> names, final boolean fourLetter) throws SyntaxException {
@@ -749,7 +750,12 @@ rightLoop:		for(;;) {
 
 		@Override
 		public char[] getKeyword() {
-			return (char[])root.children[0].cargo;
+			SyntaxNode	node = root;
+			
+			while (node.children != null && node.children.length > 0) {
+				node = node.children[0];
+			}
+			return names.getName(((Lexema)node.cargo).entityId).toCharArray();
 		}
 
 		@Override
@@ -760,7 +766,7 @@ rightLoop:		for(;;) {
 			if (identify(data, from, names, root.children[0], ranges, markers)) {
 				final int	result = ranges[0]; 
 				
-				upload(data, root.children[1], ranges, markers);
+				upload(data, root.children[1], ranges, markers, writer);
 				return result;
 			}
 			else {

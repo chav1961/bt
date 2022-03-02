@@ -15,9 +15,11 @@ import java.util.Map;
 
 import chav1961.purelib.basic.AndOrTree;
 import chav1961.purelib.basic.CharUtils;
+import chav1961.purelib.basic.FSM;
 import chav1961.purelib.basic.PureLibSettings;
 import chav1961.purelib.basic.SimpleURLClassLoader;
 import chav1961.purelib.basic.Utils;
+import chav1961.purelib.basic.exceptions.FlowException;
 import chav1961.purelib.basic.exceptions.PreparationException;
 import chav1961.purelib.basic.exceptions.SyntaxException;
 import chav1961.purelib.basic.growablearrays.GrowableCharArray;
@@ -32,6 +34,47 @@ public class PreprocessingXReader extends AbstractPreprocessingReader {
 	private static final char[]						NL = "\n".toCharArray();
 	private static final Class<RuleBasedParser<Expression, Object>>		EXPRESSION_SKIPPER;
 	private static final Class<RuleBasedParser<XExpression, Object>>	X_EXPRESSION_SKIPPER;
+
+	private static enum XReaderTerminals {
+		START_INLINE, CONTINUATION, NL, START_MULTILINE, END_MULTILINE 
+	}
+	
+	private static enum XReaderState {
+		LINE, CONTINUE, IN_MILTILINE, IN_MILTILINE_CONTINUED, AWAITING_NL, AWAITING_CONTINUED_NL, AWAITING_CONTINUED_MULTILINE_NL
+	}
+	
+	private static enum XReaderActions {
+		PARSE_AS_IS, PARSE_TRUNCATED, CLEAN, COLLECT, COLLECT_PREFIX, EXTRACT_AND_PARSE, PARSE_TAIL
+	}
+
+	@FunctionalInterface
+	private interface ActionsCallback {
+		void process(XReaderActions[] actions) throws Exception;
+	}
+	
+	private static final FSM.FSMLine<XReaderTerminals,XReaderState,XReaderActions>[]	FSM_TABLE = new FSM.FSMLine[]{
+												new FSM.FSMLine<>(XReaderState.LINE,XReaderTerminals.NL,XReaderState.LINE,XReaderActions.PARSE_AS_IS),
+												new FSM.FSMLine<>(XReaderState.LINE,XReaderTerminals.START_INLINE,XReaderState.AWAITING_NL,XReaderActions.PARSE_TRUNCATED),
+												new FSM.FSMLine<>(XReaderState.LINE,XReaderTerminals.START_MULTILINE,XReaderState.IN_MILTILINE,XReaderActions.CLEAN,XReaderActions.COLLECT_PREFIX),
+												new FSM.FSMLine<>(XReaderState.LINE,XReaderTerminals.CONTINUATION,XReaderState.AWAITING_CONTINUED_NL,XReaderActions.CLEAN,XReaderActions.COLLECT_PREFIX),
+												
+												new FSM.FSMLine<>(XReaderState.CONTINUE,XReaderTerminals.NL,XReaderState.LINE,XReaderActions.COLLECT,XReaderActions.EXTRACT_AND_PARSE),
+												new FSM.FSMLine<>(XReaderState.CONTINUE,XReaderTerminals.START_INLINE,XReaderState.AWAITING_NL,XReaderActions.COLLECT_PREFIX,XReaderActions.EXTRACT_AND_PARSE),
+												new FSM.FSMLine<>(XReaderState.CONTINUE,XReaderTerminals.CONTINUATION,XReaderState.AWAITING_CONTINUED_NL,XReaderActions.COLLECT_PREFIX),
+												new FSM.FSMLine<>(XReaderState.CONTINUE,XReaderTerminals.START_MULTILINE,XReaderState.IN_MILTILINE_CONTINUED,XReaderActions.COLLECT_PREFIX),
+									
+												new FSM.FSMLine<>(XReaderState.IN_MILTILINE,XReaderTerminals.END_MULTILINE,XReaderState.CONTINUE,XReaderActions.PARSE_TAIL),
+												new FSM.FSMLine<>(XReaderState.IN_MILTILINE,XReaderTerminals.NL,XReaderState.IN_MILTILINE),
+									
+												new FSM.FSMLine<>(XReaderState.IN_MILTILINE_CONTINUED,XReaderTerminals.END_MULTILINE,XReaderState.CONTINUE,XReaderActions.PARSE_TAIL),
+												
+												new FSM.FSMLine<>(XReaderState.AWAITING_NL,XReaderTerminals.NL,XReaderState.LINE),
+												new FSM.FSMLine<>(XReaderState.AWAITING_CONTINUED_NL,XReaderTerminals.NL,XReaderState.CONTINUE),
+												new FSM.FSMLine<>(XReaderState.AWAITING_CONTINUED_NL,XReaderTerminals.START_MULTILINE,XReaderState.AWAITING_CONTINUED_MULTILINE_NL),
+
+												new FSM.FSMLine<>(XReaderState.AWAITING_CONTINUED_MULTILINE_NL,XReaderTerminals.END_MULTILINE,XReaderState.AWAITING_CONTINUED_NL),
+												new FSM.FSMLine<>(XReaderState.AWAITING_CONTINUED_MULTILINE_NL,XReaderTerminals.NL,XReaderState.IN_MILTILINE_CONTINUED),
+											};
 	
 	private enum CommandType {
 		CMD_UNKNOWN, CMD_COMMAND, CMD_DEFINE, CMD_ELSE, CMD_END, CMD_ERROR, CMD_IFDEF, CMD_IFNDEF, CMD_INCLUDE, CMD_STDOUT, CMD_TRANSLATE, CMD_UNDEF, CMD_XCOMMAND, CMD_XTRANSLATE  
@@ -59,17 +102,18 @@ public class PreprocessingXReader extends AbstractPreprocessingReader {
 		}
 	}
 
-	private final GrowableCharArray<GrowableCharArray<?>>	collector = new GrowableCharArray<GrowableCharArray<?>>(false);
-	private final int[]			forNames = new int[2], forStrings = new int[2];
+	private final GrowableCharArray<GrowableCharArray<?>>			collector = new GrowableCharArray<GrowableCharArray<?>>(false);
+	private final int[]												forNames = new int[2], forStrings = new int[2], forRanges = new int[2];
 	private final SyntaxTreeInterface<List<PatternAndSubstitutor>>	commands = new AndOrTree<>();
 	private final SyntaxTreeInterface<List<PatternAndSubstitutor>>	translations = new AndOrTree<>();
 	private final RuleBasedParser<Expression, Object>				skipper;
 	private final RuleBasedParser<XExpression, Object>				xSkipper;
 	private final SyntaxTreeInterface<Object>						tree = new AndOrTree<>();
+	private final StringBuilder										sb = new StringBuilder();
+	private final FSM<XReaderTerminals,XReaderState,XReaderActions,ActionsCallback>	fsm = new FSM<>(this::processFSM, XReaderState.LINE, FSM_TABLE);
+	private final char			inlineStart, multilineStart, multilineEnd;
 	private long				nestedMask = ENABLED_OUTPUT_MASK, skipMask = ENABLED_OUTPUT_MASK;
 	private boolean				insideMultiline = false;
-	private boolean				insideCollector = false;
-	private CommandType			collectorCommand = null;
 	private int					currentDepth = -1;
 	
 	
@@ -79,7 +123,7 @@ public class PreprocessingXReader extends AbstractPreprocessingReader {
 	 * @throws IOException on any I/O errors 
 	 */
 	public PreprocessingXReader(final Reader nestedReader) throws IOException {
-		this(nestedReader,new HashMap<>());
+		this(nestedReader,Utils.mkMap(PreprocessingXReader.INLINE_SUBSTITUTION, true, PreprocessingXReader.RECURSIVE_SUBSTITUTION, true, PreprocessingXReader.COMMENT_SEQUENCE, "//\n/*\t*/"));
 	}
 	
 	/**
@@ -121,10 +165,212 @@ public class PreprocessingXReader extends AbstractPreprocessingReader {
 		} catch (InstantiationException | IllegalAccessException | IllegalArgumentException | InvocationTargetException | NoSuchMethodException | SecurityException e) {
 			throw new IOException(e.getLocalizedMessage(), e);
 		}
+		this.inlineStart = getInlineComment().length > 0 ? getInlineComment()[0] : '\uFFFF'; 
+		this.multilineStart = getStartMultilineComment().length > 0 ? getStartMultilineComment()[0] : '\uFFFF'; 
+		this.multilineEnd = getEndMultilineComment().length > 0 ? getEndMultilineComment()[0] : '\uFFFF'; 
+//		fsm.debugEnable(PureLibSettings.CURRENT_LOGGER, false);
 	}	
-	
+
 	@Override
 	protected void internalProcessLine(final long displacement, final int lineNo, final char[] data, int from, final int length) throws IOException, SyntaxException {
+		final int	to = from + length;
+		boolean		skipConstant = false;
+		
+		forRanges[0] = from;
+		
+		for(int index = from; index < to; index++) {
+			forRanges[1] = index;
+			
+			if (data[index] == '\"') {
+				skipConstant = !skipConstant;
+			}
+			else if (!skipConstant) {
+				try{if (data[index] == ';') {
+						fsm.processTerminal(XReaderTerminals.CONTINUATION, (a)->{
+//							System.err.println("P1:");
+							for (XReaderActions item : a) {
+								switch(item) {
+									case CLEAN					:
+										sb.setLength(0);
+										break;
+									case COLLECT				:
+										sb.append(data, forRanges[0], to-forRanges[0]);
+										break;
+									case COLLECT_PREFIX			:
+										sb.append(data, forRanges[0], forRanges[1]-forRanges[0]);
+										break;
+									case EXTRACT_AND_PARSE		:
+										internalProcessLine0(displacement, lineNo, sb.toString().toCharArray(), 0, sb.length());
+										break;
+									case PARSE_AS_IS			:
+										internalProcessLine0(displacement, lineNo, data, forRanges[0], forRanges[1]-forRanges[0]);
+										break;
+									case PARSE_TAIL				:
+										forRanges[0] = forRanges[1];
+										break;
+									case PARSE_TRUNCATED		:
+										internalProcessLine0(displacement, lineNo, data, forRanges[0], forRanges[1]-forRanges[0]);
+										putContent(NL);
+										break;
+									default:
+										break;
+									}
+							}
+						});
+					}
+					else if (data[index] == '\r' || data[index] == '\n') {
+						fsm.processTerminal(XReaderTerminals.NL, (a)->{
+//							System.err.println("P2:");
+							for (XReaderActions item : a) {
+								switch(item) {
+									case CLEAN					:
+										sb.setLength(0);
+										break;
+									case COLLECT				:
+										sb.append(data, forRanges[0], forRanges[1]-forRanges[0]+1);
+										break;
+									case COLLECT_PREFIX			:
+										sb.append(data, forRanges[0], forRanges[1]-forRanges[0]-1);
+										break;
+									case EXTRACT_AND_PARSE		:
+										internalProcessLine0(displacement, lineNo, sb.toString().toCharArray(), 0, sb.length());
+										break;
+									case PARSE_AS_IS			:
+										internalProcessLine0(displacement, lineNo, data, forRanges[0], forRanges[1]-forRanges[0]+1);
+										break;
+									case PARSE_TAIL				:
+										forRanges[0] = forRanges[1];
+										break;
+									case PARSE_TRUNCATED		:
+										internalProcessLine0(displacement, lineNo, data, forRanges[0], forRanges[1]-forRanges[0]);
+										putContent(NL);
+										break;
+									default:
+										break;
+									}
+							}
+						});
+					}
+					else if (data[index] == inlineStart &&CharUtils.compare(data, index, getInlineComment())) {
+						fsm.processTerminal(XReaderTerminals.START_INLINE, (a)->{
+//							System.err.println("P3:");
+							for (XReaderActions item : a) {
+								switch(item) {
+									case CLEAN					:
+										sb.setLength(0);
+										break;
+									case COLLECT				:
+										sb.append(data, forRanges[0], forRanges[1]-forRanges[0]);
+										break;
+									case COLLECT_PREFIX			:
+										sb.append(data, forRanges[0], forRanges[1]-forRanges[0]);
+										break;
+									case EXTRACT_AND_PARSE		:
+										internalProcessLine0(displacement, lineNo, sb.toString().toCharArray(), 0, sb.length());
+										putContent(NL);
+										break;
+									case PARSE_AS_IS			:
+										internalProcessLine0(displacement, lineNo, data, forRanges[0], forRanges[1]-forRanges[0]);
+										break;
+									case PARSE_TAIL				:
+										forRanges[0] = forRanges[1];
+										break;
+									case PARSE_TRUNCATED		:
+										internalProcessLine0(displacement, lineNo, data, forRanges[0], forRanges[1]-forRanges[0]);
+										putContent(NL);
+										break;
+									default:
+										break;
+									}
+							}
+						});
+					}
+					else if (data[index] == multilineStart &&CharUtils.compare(data, index, getStartMultilineComment())) {
+						fsm.processTerminal(XReaderTerminals.START_MULTILINE, (a)->{
+//							System.err.println("P4:");
+							for (XReaderActions item : a) {
+								switch(item) {
+									case CLEAN					:
+										sb.setLength(0);
+										break;
+									case COLLECT				:
+										sb.append(data, forRanges[0], forRanges[1]-forRanges[0]);
+										break;
+									case COLLECT_PREFIX			:
+										sb.append(data, forRanges[0], forRanges[1]-forRanges[0]);
+										break;
+									case EXTRACT_AND_PARSE		:
+										internalProcessLine0(displacement, lineNo, sb.toString().toCharArray(), 0, sb.length());
+										break;
+									case PARSE_AS_IS			:
+										internalProcessLine0(displacement, lineNo, data, forRanges[0], forRanges[1]-forRanges[0]);
+										break;
+									case PARSE_TAIL				:
+										forRanges[0] = forRanges[1];
+										break;
+									case PARSE_TRUNCATED		:
+										internalProcessLine0(displacement, lineNo, data, forRanges[0], forRanges[1]-forRanges[0]);
+										putContent(NL);
+										break;
+									default:
+										break;
+									}
+							}
+						});
+					}
+					else if (data[index] == multilineEnd &&CharUtils.compare(data, index, getEndMultilineComment())) {
+						fsm.processTerminal(XReaderTerminals.END_MULTILINE, (a)->{
+//							System.err.println("P5:");
+							for (XReaderActions item : a) {
+								switch(item) {
+									case CLEAN					:
+										sb.setLength(0);
+										break;
+									case COLLECT				:
+										sb.append(data, forRanges[0], forRanges[1]-forRanges[0]);
+										break;
+									case COLLECT_PREFIX			:
+										sb.append(data, forRanges[0], forRanges[1]-forRanges[0]-1);
+										break;
+									case EXTRACT_AND_PARSE		:
+										internalProcessLine0(displacement, lineNo, sb.toString().toCharArray(), 0, sb.length());
+										break;
+									case PARSE_AS_IS			:
+										internalProcessLine0(displacement, lineNo, data, forRanges[0], forRanges[1]-forRanges[0]);
+										break;
+									case PARSE_TAIL				:
+										forRanges[0] = forRanges[1] + getEndMultilineComment().length;
+										break;
+									case PARSE_TRUNCATED		:
+										internalProcessLine0(displacement, lineNo, data, forRanges[0], forRanges[1]-forRanges[0]);
+										putContent(NL);
+										break;
+									default:
+										break;
+									}
+							}
+						});
+					}
+				} catch (FlowException e) {
+					if (e.getCause() instanceof SyntaxException) {
+						throw (SyntaxException)e.getCause(); 
+					}
+					else {
+						throw new SyntaxException(lineNo, index-from, e.getLocalizedMessage(), e); 
+					}
+				}
+			}
+		}
+	}	
+	
+	private void processFSM(final FSM<XReaderTerminals,XReaderState,XReaderActions,ActionsCallback> fsm, final XReaderTerminals terminal, final XReaderState fromState, final XReaderState toState, final XReaderActions[] action, final ActionsCallback parameter) throws FlowException {
+		try{parameter.process(action);
+		} catch (Exception e) {
+			throw new FlowException(e);
+		}
+	}
+	
+	private void internalProcessLine0(final long displacement, final int lineNo, final char[] data, int from, final int length) throws IOException, SyntaxException {
 		final int	start = from, to = from + length;
 		
 		if (data[from] == '#') {
@@ -233,24 +479,16 @@ public class PreprocessingXReader extends AbstractPreprocessingReader {
 					}
 					break;
 				case CMD_COMMAND	:
-					insideCollector = true;
-					collectorCommand = CommandType.CMD_COMMAND;
-					internalProcessLine(displacement, lineNo, data, from, length);
+					processCommand(CommandType.CMD_COMMAND,data,from);
 					break;
 				case CMD_XCOMMAND	:
-					insideCollector = true;
-					collectorCommand = CommandType.CMD_XCOMMAND;
-					internalProcessLine(displacement, lineNo, data, from, length);
+					processCommand(CommandType.CMD_XCOMMAND,data,from);
 					break;
 				case CMD_TRANSLATE	:
-					insideCollector = true;
-					collectorCommand = CommandType.CMD_TRANSLATE;
-					internalProcessLine(displacement, lineNo, data, from, length);
+					processCommand(CommandType.CMD_TRANSLATE,data,from);
 					break;
 				case CMD_XTRANSLATE	:
-					insideCollector = true;
-					collectorCommand = CommandType.CMD_XTRANSLATE;
-					internalProcessLine(displacement, lineNo, data, from, length);
+					processCommand(CommandType.CMD_XTRANSLATE,data,from);
 					break;
 				case CMD_UNKNOWN	:
 					putContent(data, start, length);
@@ -258,18 +496,6 @@ public class PreprocessingXReader extends AbstractPreprocessingReader {
 				default:
 					throw new UnsupportedOperationException("Command type ["+getCommandType(data,forNames[0],forNames[1])+"] is not supprted yet");
 			}			
-		}
-		else if (insideCollector) {
-			from = CharUtils.skipBlank(data,toEndOfLine(data, CharUtils.skipBlank(data, from + 1,true), forStrings),true);
-			if (data[forStrings[1]] == ';') {
-				collector.append(data,forStrings[0],forStrings[1]-1);
-			}
-			else {
-				collector.append(data,forStrings[0],forStrings[1]).append('\n');
-				insideCollector = false;
-				processCommand(collectorCommand,collector.extract());
-				collector.length(0);
-			}
 		}
 		else if (skipMask != ENABLED_OUTPUT_MASK) {
 			switch (getHidingMethod()) {
@@ -304,6 +530,47 @@ public class PreprocessingXReader extends AbstractPreprocessingReader {
 		return new PreprocessingXReader(nestedReaderURI, nestedReader, varsAndOptions, includeCallback);
 	}
 	
+	@Override
+	protected void substitute(final char[] data, final int from, final int length) throws SyntaxException {	// This method is used to reduce stringbuilder operations
+		boolean	sameFirst = true;
+		long	id;
+		int		end;
+		
+		for (int index = from, to = from + length; index < to; index++) {
+			if (Character.isJavaIdentifierStart(data[index])) {
+				end = index;
+				while (end < to && Character.isJavaIdentifierPart(data[end])) {
+					end++;
+				}
+				if (sameFirst) {
+					if ((id = commands.seekName(data,index,end)) >= 0) {
+						for(PatternAndSubstitutor	pas : commands.getCargo(id)) {
+							pas.process(data, from, (c,f,l)->putContent(c, f, l));
+						}
+						return;
+					}
+					else {
+						sameFirst = false;
+					}
+				}
+				if (translations.seekName(data,index,end) >= 0) {
+					final StringBuilder	sb = new StringBuilder();
+					
+					putContent(data,from,index-from);
+					substitute(sb.append(data,index,to-index),0);
+					putContent(sb.toString().toCharArray());
+					return;
+				}
+				else {
+					index = end;
+				}
+			}
+		}
+		super.substitute(data,from,length);
+	}
+
+	
+	
 	protected CommandType getCommandType(final char[] data, final int start, final int end) {
 		final long	id = isIgnoreCase() ? COMMANDS.seekNameI(data,start,end) : COMMANDS.seekName(data,start,end); 
 		
@@ -315,30 +582,30 @@ public class PreprocessingXReader extends AbstractPreprocessingReader {
 		}
 	}
 
-	private void processCommand(final CommandType command, final char[] content) throws SyntaxException {
+	private void processCommand(final CommandType command, final char[] content, final int from) throws SyntaxException {
 		PatternAndSubstitutor	pas; 
 		
 		switch (command) {
 			case CMD_COMMAND		:
-				pas = CommandParser.build(content, 0, true);
+				pas = CommandParser.build(content, from, true);
 				placePattern(commands, pas.getKeyword(), pas);
 				if (pas.getKeyword().length > 4) {
 					placePattern(commands, trunc2four(pas.getKeyword()), pas);
 				}
 				break;
 			case CMD_TRANSLATE		:
-				pas = CommandParser.build(content, 0, true);
+				pas = CommandParser.build(content, from, true);
 				placePattern(translations, pas.getKeyword(), pas);
 				if (pas.getKeyword().length > 4) {
 					placePattern(translations, trunc2four(pas.getKeyword()), pas);
 				}
 				break;
 			case CMD_XCOMMAND		:
-				pas = CommandParser.build(content, 0, false);
+				pas = CommandParser.build(content, from, false);
 				placePattern(commands, pas.getKeyword(), pas);
 				break;
 			case CMD_XTRANSLATE		:
-				pas = CommandParser.build(content, 0, false);
+				pas = CommandParser.build(content, from, false);
 				placePattern(translations, pas.getKeyword(), pas);
 				break;
 			default :

@@ -7,7 +7,7 @@ import chav1961.purelib.basic.exceptions.SyntaxException;
 interface PatternAndSubstitutor {
 	@FunctionalInterface
 	interface OutputWriter {
-		void store(char[] content, int from, int to) throws IOException;
+		void store(char[] content, int from, int to) throws IOException, SyntaxException;
 	}
 	
 	char[] getKeyword();
