@@ -1,1 +1,9 @@
-<Rule>::='1'
+<Rule>::=[(<AndItem>'.or.')...]<AndItem>
+<AndItem>::=[(<NotItem>'.and.')...]<NotItem>
+<NotItem>::=['.not.']<Comparison>
+<Comparison>::=<ComparisonPart>{'>'|'>='|'<'|'<='|'=='|'!='}<ComparisonPart>
+<ComparisonPart>::=[(<AddPart>'#')...]<AddPart>
+<AddPart>::=[(<MulPart>{'+'|'-'})...]<MulPart>
+<MulPart>::=[(<NegPart>{'**'|'*'|'/'|'%'})...]<NegPart>
+<NegPart>::=[{'+'|'-'}]<Term>
+<Term>::={@Name|@FixedNumber|@FloatNumber|@DoubleQuotedString|'('<Rule>')'}

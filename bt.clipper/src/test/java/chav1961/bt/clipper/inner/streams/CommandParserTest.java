@@ -1,5 +1,6 @@
 package chav1961.bt.clipper.inner.streams;
 
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -8,13 +9,13 @@ import org.junit.Test;
 
 import chav1961.bt.clipper.inner.streams.CommandParser.Level;
 import chav1961.bt.clipper.inner.streams.CommandParser.Lexema;
+import chav1961.bt.clipper.inner.streams.CommandParser.Lexema.LexType;
 import chav1961.bt.clipper.inner.streams.CommandParser.NodeType;
 import chav1961.purelib.basic.AndOrTree;
 import chav1961.purelib.basic.CharUtils;
 import chav1961.purelib.basic.exceptions.SyntaxException;
 import chav1961.purelib.basic.interfaces.SyntaxTreeInterface;
 import chav1961.purelib.cdb.SyntaxNode;
-import chav1961.purelib.streams.char2byte.asm.ExpressionNodeType;
 
 public class CommandParserTest {
 
@@ -173,27 +174,27 @@ public class CommandParserTest {
 		}
 	}
 
-	@Test
-	public void literalBuildTest() throws SyntaxException {
-		SyntaxNode<NodeType, SyntaxNode> root;
-		
-		root = new SyntaxNode<>(0, 0, NodeType.Root, 0, null);
-		CommandParser.buildTree(parse("x => y"), 0, Level.Top, root);
-//		System.err.println(CommandParser.printTree(root));
-
-		root = new SyntaxNode<>(0, 0, NodeType.Root, 0, null);
-		CommandParser.buildTree(parse("x [ y ] => z"), 0, Level.Top, root);
-//		System.err.println(CommandParser.printTree(root));
-
-		root = new SyntaxNode<>(0, 0, NodeType.Root, 0, null);
-		CommandParser.buildTree(parse("x [ y ] [z] => t "), 0, Level.Top, root);
-//		System.err.println(CommandParser.printTree(root));
-
-		try{CommandParser.buildTree(parse("x [ y ] [z] "), 0, Level.Top, new SyntaxNode<>(0, 0, NodeType.Root, 0, null));
-			Assert.fail("Mandatory exception was not detected (Missing =>)");
-		} catch (SyntaxException exc) {
-		}
-	}	
+//	@Test
+//	public void literalBuildTest() throws SyntaxException {
+//		SyntaxNode<NodeType, SyntaxNode> root;
+//		
+//		root = new SyntaxNode<>(0, 0, NodeType.Root, 0, null);
+//		CommandParser.buildTree(parse("x => y"), 0, Level.Top, root);
+////		System.err.println(CommandParser.printTree(root));
+//
+//		root = new SyntaxNode<>(0, 0, NodeType.Root, 0, null);
+//		CommandParser.buildTree(parse("x [ y ] => z"), 0, Level.Top, root);
+////		System.err.println(CommandParser.printTree(root));
+//
+//		root = new SyntaxNode<>(0, 0, NodeType.Root, 0, null);
+//		CommandParser.buildTree(parse("x [ y ] [z] => t "), 0, Level.Top, root);
+////		System.err.println(CommandParser.printTree(root));
+//
+//		try{CommandParser.buildTree(parse("x [ y ] [z] "), 0, Level.Top, new SyntaxNode<>(0, 0, NodeType.Root, 0, null));
+//			Assert.fail("Mandatory exception was not detected (Missing =>)");
+//		} catch (SyntaxException exc) {
+//		}
+//	}	
 
 	@Test
 	public void lexIdentificationTest() throws SyntaxException {
@@ -208,7 +209,7 @@ public class CommandParserTest {
 
 		Assert.assertTrue(identity("<x>", "2 + 3", ranges));
 		Assert.assertEquals(1,ranges.size());
-		Assert.assertArrayEquals(new int[] {0,5},ranges.get(0));
+//		Assert.assertArrayEquals(new int[] {0,5},ranges.get(0));
 	}	
 	
 	@Test
@@ -218,10 +219,18 @@ public class CommandParserTest {
 		Assert.assertEquals(1, node.children.length);
 		Assert.assertEquals(NodeType.Mandatory, node.children[0].type);
 
-		node = buildLeft("1 2", 3);
+		node = buildLeft("1 2", 2);
 		Assert.assertEquals(NodeType.Sequence, node.type);
-		Assert.assertEquals(1, node.children.length);
+		Assert.assertEquals(2, node.children.length);
 		Assert.assertEquals(NodeType.Mandatory, node.children[0].type);
+		Assert.assertEquals(NodeType.Mandatory, node.children[1].type);
+
+		node = buildLeft("1 [2] 3", 5);
+		Assert.assertEquals(NodeType.Sequence, node.type);
+		Assert.assertEquals(3, node.children.length);
+		Assert.assertEquals(NodeType.Mandatory, node.children[0].type);
+		Assert.assertEquals(NodeType.Optional, node.children[1].type);
+		Assert.assertEquals(NodeType.Mandatory, node.children[2].type);
 	}	
 
 	@Test
@@ -229,8 +238,43 @@ public class CommandParserTest {
 		SyntaxNode<NodeType, SyntaxNode>	node = buildRight("1", 1);
 		Assert.assertEquals(NodeType.Sequence, node.type);
 		Assert.assertEquals(1, node.children.length);
+		Assert.assertEquals(NodeType.Mandatory, node.children[0].type);
+
+		node = buildRight("1 2", 2);
+		Assert.assertEquals(NodeType.Sequence, node.type);
+		Assert.assertEquals(2, node.children.length);
+		Assert.assertEquals(NodeType.Mandatory, node.children[0].type);
+		Assert.assertEquals(NodeType.Mandatory, node.children[1].type);
+
+		node = buildRight("1 [2] 3", 5);
+		Assert.assertEquals(NodeType.Sequence, node.type);
+		Assert.assertEquals(3, node.children.length);
+		Assert.assertEquals(NodeType.Mandatory, node.children[0].type);
+		Assert.assertEquals(NodeType.Optional, node.children[1].type);
+		Assert.assertEquals(NodeType.Mandatory, node.children[2].type);
 	}	
 
+	@Test
+	public void treeTest() throws SyntaxException {
+		SyntaxNode<NodeType, SyntaxNode>	node = buildTree("1 => 1", 3);
+		Assert.assertEquals(NodeType.Root, node.type);
+		Assert.assertEquals(2, node.children.length);
+		Assert.assertEquals(NodeType.Sequence, node.children[0].type);
+		Assert.assertEquals(NodeType.Sequence, node.children[1].type);
+	}	
+
+	@Test
+	public void identificationTest() throws SyntaxException {
+		identifyLeft("1", "1", true);
+		identifyLeft("1", " 1 ", true);
+		identifyLeft("1", " 1 3", true);
+		identifyLeft("1", " 13", true);
+		identifyLeft("1", "2", false);
+		identifyLeft("13", "2", false);
+
+		identifyLeft("1<x>3", " 1 2 3", true);
+	}	
+	
 	private Lexema[] parse(final String content) throws SyntaxException {
 		return parse(content, new AndOrTree<Long>(1,1));
 	}
@@ -248,23 +292,54 @@ public class CommandParserTest {
 		return CommandParser.identify(CharUtils.terminateAndConvert2CharArray(test, '\n'), 0, tree, lex[0], forNames, ranges);
 	}
 
-	private SyntaxNode<NodeType, SyntaxNode> buildLeft(final String template, final int stopped) throws SyntaxException {
+	private SyntaxNode<NodeType, SyntaxNode> buildLeft(final String template, final int stoppedLexema) throws SyntaxException {
 		final SyntaxTreeInterface<Long>			tree = new AndOrTree<>(1, 1);
 		final int[]								forNames = new int[2];
 		Lexema[]								lex = parse(template, tree);
 		final SyntaxNode<NodeType, SyntaxNode>	root = new SyntaxNode<>(0,0,NodeType.Mandatory,0,null);
 		
-		Assert.assertEquals(stopped, CommandParser.buildTree(lex, 0, Level.Left, root));
+		Assert.assertEquals(stoppedLexema, CommandParser.buildTree(lex, 0, Level.Left, root));
+		Assert.assertEquals(LexType.EOF, lex[stoppedLexema].getType());
 		return root;
 	}
 
-	private SyntaxNode<NodeType, SyntaxNode> buildRight(final String template, final int stopped) throws SyntaxException {
+	private SyntaxNode<NodeType, SyntaxNode> buildLeft(final String template, final SyntaxTreeInterface<Long> tree) throws SyntaxException {
+		final int[]								forNames = new int[2];
+		Lexema[]								lex = parse(template, tree);
+		final SyntaxNode<NodeType, SyntaxNode>	root = new SyntaxNode<>(0,0,NodeType.Mandatory,0,null);
+		
+		CommandParser.buildTree(lex, 0, Level.Left, root);
+		return root;
+	}
+	
+	
+	private SyntaxNode<NodeType, SyntaxNode> buildRight(final String template, final int stoppedLexema) throws SyntaxException {
 		final SyntaxTreeInterface<Long>			tree = new AndOrTree<>(1, 1);
 		final int[]								forNames = new int[2];
 		Lexema[]								lex = parse(template, tree);
 		final SyntaxNode<NodeType, SyntaxNode>	root = new SyntaxNode<>(0,0,NodeType.Mandatory,0,null);
 		
-		Assert.assertEquals(stopped, CommandParser.buildTree(lex, 0, Level.Right, root));
+		Assert.assertEquals(stoppedLexema, CommandParser.buildTree(lex, 0, Level.Right, root));
+		Assert.assertEquals(LexType.EOF, lex[stoppedLexema].getType());
 		return root;
+	}
+
+	private SyntaxNode<NodeType, SyntaxNode> buildTree(final String template, final int stoppedLexema) throws SyntaxException {
+		final SyntaxTreeInterface<Long>			tree = new AndOrTree<>(1, 1);
+		final int[]								forNames = new int[2];
+		Lexema[]								lex = parse(template, tree);
+		final SyntaxNode<NodeType, SyntaxNode>	root = new SyntaxNode<>(0,0,NodeType.Mandatory,0,null);
+		
+		Assert.assertEquals(stoppedLexema, CommandParser.buildTree(lex, 0, Level.Top, root));
+		Assert.assertEquals(LexType.EOF, lex[stoppedLexema].getType());
+		return root;
+	}
+	
+	
+	private void identifyLeft(final String template, final String test, final boolean result) throws SyntaxException {
+		SyntaxTreeInterface<Long>			tree = new AndOrTree<>(1, 1);
+		SyntaxNode<NodeType, SyntaxNode>	node = buildLeft(template, tree);
+		
+		Assert.assertEquals(result, CommandParser.identify(CharUtils.terminateAndConvert2CharArray(test, '\n'), 0, tree, node, new int[2], new int[100][]));
 	}
 }

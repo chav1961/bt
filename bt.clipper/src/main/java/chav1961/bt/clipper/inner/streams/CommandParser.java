@@ -1,5 +1,7 @@
 package chav1961.bt.clipper.inner.streams;
 
+import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -9,9 +11,12 @@ import chav1961.purelib.basic.AndOrTree;
 import chav1961.purelib.basic.BitCharSet;
 import chav1961.purelib.basic.CharUtils;
 import chav1961.purelib.basic.Utils;
+import chav1961.purelib.basic.exceptions.PreparationException;
 import chav1961.purelib.basic.exceptions.SyntaxException;
 import chav1961.purelib.basic.interfaces.SyntaxTreeInterface;
+import chav1961.purelib.cdb.CompilerUtils;
 import chav1961.purelib.cdb.SyntaxNode;
+import chav1961.purelib.cdb.interfaces.RuleBasedParser;
 
 class CommandParser {
 	static final char[][]		NULL_TERMINALS = new char[0][0];
@@ -19,6 +24,15 @@ class CommandParser {
 	
 	private static BitCharSet	STOP_CHARS = new BitCharSet("\r\n\t\f [];\\=><#");
 	private static final char[]	AMP_TEXT = "&".toCharArray();
+	private static final RuleBasedParser<Expression, Object>	EXPRESSION;
+	
+	static {
+		try{final Class<RuleBasedParser<Expression, Object>>	cl = CompilerUtils.buildRuleBasedParserClass(CommandParser.class.getPackageName()+".ExpressionSkipper", Expression.class, Utils.fromResource(CommandParser.class.getResource("expression.txt")));
+			EXPRESSION = cl.getConstructor(Class.class,SyntaxTreeInterface.class).newInstance(Expression.class,new AndOrTree<>());
+		} catch (SyntaxException | IOException | InstantiationException | IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
+			throw new PreparationException(e.getLocalizedMessage(), e);
+		}
+	}
 
 	
 	static PatternAndSubstitutor build(final char[] content, int from, final boolean fourLetter) throws SyntaxException {
@@ -167,7 +181,9 @@ class CommandParser {
 				return true;
 			case RegularMarker		:
 				temp[0] = from;
-				from = extractExpression(content, from, NULL_TERMINALS);
+				final SyntaxNode root = new SyntaxNode(0,0,Expression.Rule,0,null);
+				
+				from = EXPRESSION.parse(content, from, root);
 				temp[1] = from;
 				markerRanges.add(temp.clone());
 				return true;
@@ -515,7 +531,7 @@ loop:	for(;;) {
 					root.type = NodeType.Root;
 					root.children = new SyntaxNode[]{left, right};
 					if (content[from].type == Lexema.LexType.EOF) {
-						return from + 1;
+						return from;
 					}
 					else {
 						throw new SyntaxException(0, from, "Dust in the tail");
