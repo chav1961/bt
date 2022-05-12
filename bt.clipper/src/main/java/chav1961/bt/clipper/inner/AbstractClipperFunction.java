@@ -77,7 +77,7 @@ public abstract class AbstractClipperFunction extends AbstractClipperExecutableV
 		return ret;
 	}
 
-	protected void checkInputParameters(final ClipperValue... parameters) throws SyntaxException {
+	protected void checkInputParameters(final int parameterCount, final ClipperValue... parameters) throws SyntaxException {
 		final int		minLength = Math.min(parm.length, parameters.length);
 		StringBuilder	sb = null;
 		
