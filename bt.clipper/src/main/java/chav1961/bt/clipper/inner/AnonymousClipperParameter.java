@@ -8,6 +8,8 @@ import chav1961.purelib.basic.exceptions.SyntaxException;
 public class AnonymousClipperParameter implements ClipperParameter {
 	public static final ClipperParameter	ANON_ARRAY = new AnonymousClipperParameter(-1, false, ClipperType.C_Array); 
 	public static final ClipperParameter	ANON_NUMBER = new AnonymousClipperParameter(-1, false, ClipperType.C_Number); 
+	public static final ClipperParameter	ANON_STRING = new AnonymousClipperParameter(-1, false, ClipperType.C_String); 
+	public static final ClipperParameter	ANON_VOID = new AnonymousClipperParameter(-1, false, ClipperType.C_Void); 
 	
 	private static final long serialVersionUID = 909299429159738445L;
 
