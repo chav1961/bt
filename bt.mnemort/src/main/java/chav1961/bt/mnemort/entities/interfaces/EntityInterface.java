@@ -5,6 +5,7 @@ import chav1961.purelib.enumerations.ContinueMode;
 import chav1961.purelib.enumerations.NodeEnterMode;
 
 public interface EntityInterface<Cargo> {
+	@FunctionalInterface
 	public interface WalkerCallback<Cargo> {
 		ContinueMode walkDown(NodeEnterMode mode, EntityInterface<Cargo> node) throws ContentException;
 	}
