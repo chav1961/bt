@@ -19,7 +19,7 @@ public interface DrawingCanvas extends AutoCloseable, Cloneable {
 		draw(true, true, wrappers);
 	}
 	
-	DrawingCanvas push();
+	DrawingCanvas push(AffineTransform transform);
 	
 	@Override
 	void close() throws RuntimeException;

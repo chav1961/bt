@@ -33,7 +33,7 @@ public class HtCanvas implements DrawingCanvas {
 	}
 
 	@Override
-	public DrawingCanvas push() {
+	public DrawingCanvas push(final AffineTransform trans) {
 		// TODO Auto-generated method stub
 		return null;
 	}
