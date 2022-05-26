@@ -1,8 +1,24 @@
 package chav1961.bt.mnemort.entities;
 
 import java.awt.geom.AffineTransform;
+import java.io.IOException;
 
-public class Location {
+import chav1961.purelib.basic.exceptions.PrintingException;
+import chav1961.purelib.basic.exceptions.SyntaxException;
+import chav1961.purelib.json.interfaces.JsonSerializable;
+import chav1961.purelib.streams.JsonStaxParser;
+import chav1961.purelib.streams.JsonStaxPrinter;
+import chav1961.purelib.streams.interfaces.JsonStaxParserLexType;
+
+public class Location implements JsonSerializable {
+	public static final String	F_LOCATION = "location";
+	
+	public static final String	F_X = "x";
+	public static final String	F_Y = "y";
+	public static final String	F_SCALE_X = "scaleX";
+	public static final String	F_SCALE_Y = "scaleY";
+	public static final String	F_ANGLE = "angle";
+	
 	private float			x = 0, y = 0;
 	private float			scaleX = 1, scaleY = 1;
 	private float			angle = 0;
@@ -58,6 +74,92 @@ public class Location {
 
 	public AffineTransform toAffineTransform() {
 		return at;
+	}
+
+	@Override
+	public void fromJson(final JsonStaxParser parser) throws SyntaxException, IOException {
+		if (parser == null) {
+			throw new NullPointerException("Json parser can't be null");
+		}
+		else {
+			float		_x = 0, _y = 0, _scaleX = 1, _scaleY = 1, _angle = 0;
+			boolean		xPresents = false, yPresents = false, xScalePresents = false, yScalePresents = false, anglePresents = false;
+			
+			if (parser.current() == JsonStaxParserLexType.START_OBJECT) {
+loop:			for(JsonStaxParserLexType item : parser) {
+					switch (item) {
+						case NAME 		:
+							switch (parser.name()) {
+								case F_X		:
+									_x = BasicEntity.checkAndExtractFloat(parser, F_X, xPresents);
+									xPresents = true;
+									break;
+								case F_Y		:
+									_y = BasicEntity.checkAndExtractFloat(parser, F_Y, yPresents);
+									yPresents = true;
+									break;
+								case F_SCALE_X	:
+									_scaleX = BasicEntity.checkAndExtractFloat(parser, F_SCALE_X, xScalePresents);
+									xScalePresents = true;
+									break;
+								case F_SCALE_Y	:
+									_scaleY = BasicEntity.checkAndExtractFloat(parser, F_SCALE_Y, yScalePresents);
+									yScalePresents = true;
+									break;
+								case F_ANGLE	:
+									_angle = BasicEntity.checkAndExtractFloat(parser, F_ANGLE, anglePresents);
+									anglePresents = true;
+									break;
+								default :
+									throw new SyntaxException(parser.row(), parser.col(), "Unsupported name ["+parser.name()+"]");
+							}
+						case END_OBJECT	:
+							break loop;
+						default :
+							throw new SyntaxException(parser.row(), parser.col(), "Name or '}' awaited");
+					}
+				}
+				parser.next();
+				if (!xPresents || !yPresents || !xScalePresents || !yScalePresents || !anglePresents) {
+					final StringBuilder	sb = new StringBuilder();
+					
+					if (!xPresents) {
+						sb.append(',').append(F_X);
+					}
+					if (!yPresents) {
+						sb.append(',').append(F_Y);
+					}
+					if (!xScalePresents) {
+						sb.append(',').append(F_SCALE_X);
+					}
+					if (!yScalePresents) {
+						sb.append(',').append(F_SCALE_Y);
+					}
+					if (!anglePresents) {
+						sb.append(',').append(F_ANGLE);
+					}
+					throw new SyntaxException(parser.row(), parser.col(), "Mandatory field(s) ["+sb.substring(1)+"] are missing");
+				}
+				else {
+					x = _x;				y = _y;
+					scaleX = _scaleX;	scaleY = _scaleY;
+					angle = _angle;
+					refreshAffineTransform();
+				}
+			}
+		}
+	}
+
+	@Override
+	public void toJson(final JsonStaxPrinter printer) throws PrintingException, IOException {
+		if (printer == null) {
+			throw new NullPointerException("Json printer can't be null");
+		}
+		else {
+			printer.startObject().name(F_X).value(x).name(F_Y).value(y)
+				.name(F_SCALE_X).value(scaleX).name(F_SCALE_Y).value(scaleY)
+				.name(F_ANGLE).value(angle).endObject();
+		}
 	}
 	
 	private void refreshAffineTransform() {

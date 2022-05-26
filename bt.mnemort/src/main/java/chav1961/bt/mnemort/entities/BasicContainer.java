@@ -26,11 +26,11 @@ public abstract class BasicContainer<Canvas extends DrawingCanvas> extends Basic
 		super(meta, entityId);
 	}
 
-	protected abstract void drawBackground(final Canvas canvas, final float x, final float y, final float width, final float height);
+	protected abstract void drawBackground(final Canvas canvas, final float width, final float height);
 	
 	@Override
-	public void draw(final Canvas canvas, final float x, final float y, final float width, final float height) {
-		drawBackground(canvas, x, y, width, height);
+	public void draw(final Canvas canvas, final float width, final float height) {
+		drawBackground(canvas, width, height);
 		forEach((e)->drawChild(canvas, e));
 	}
 
