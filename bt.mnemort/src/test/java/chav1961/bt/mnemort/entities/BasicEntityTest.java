@@ -2,6 +2,7 @@ package chav1961.bt.mnemort.entities;
 
 
 import java.io.IOException;
+import java.net.URI;
 import java.util.UUID;
 
 import org.junit.Assert;
@@ -25,7 +26,7 @@ public class BasicEntityTest {
 }
 
 
-class PseudoBasicEntity<Canvas extends DrawingCanvas> extends BasicEntity<Canvas> {
+class PseudoBasicEntity<Canvas extends DrawingCanvas, Self> extends BasicEntity<Canvas, Self> {
 	protected PseudoBasicEntity(ContentNodeMetadata meta, UUID entityId) {
 		super(meta, entityId);
 	}
@@ -45,5 +46,10 @@ class PseudoBasicEntity<Canvas extends DrawingCanvas> extends BasicEntity<Canvas
 
 	@Override
 	public void draw(Canvas canvas, float width, float height) {
+	}
+
+	@Override
+	public URI getViewURI() {
+		return null;
 	}
 }

@@ -13,13 +13,13 @@ import chav1961.purelib.concurrent.LightWeightRWLockerWrapper;
 import chav1961.purelib.concurrent.LightWeightRWLockerWrapper.Locker;
 import chav1961.purelib.model.interfaces.ContentMetadataInterface.ContentNodeMetadata;
 
-public abstract class BasicContainer<Canvas extends DrawingCanvas> extends BasicEntity<Canvas> {
+public abstract class BasicContainer<Canvas extends DrawingCanvas> extends BasicEntity<Canvas, BasicContainer<?>> {
 	private final LightWeightRWLockerWrapper		lock = new LightWeightRWLockerWrapper();
-	private final Map<UUID, BasicEntity<Canvas>>	collection = new HashMap<>();
+	private final Map<UUID, BasicEntity<Canvas,?>>	collection = new HashMap<>();
 	
 	@FunctionalInterface
-	public static interface WalkerCallback<Canvas extends DrawingCanvas> {
-		void process(final BasicEntity<Canvas> entity) throws ContentException;
+	public static interface WalkerCallback<Canvas extends DrawingCanvas, Self> {
+		void process(final BasicEntity<Canvas, Self> entity) throws ContentException;
 	}
 	
 	protected BasicContainer(final ContentNodeMetadata meta, final UUID entityId) {
@@ -34,13 +34,13 @@ public abstract class BasicContainer<Canvas extends DrawingCanvas> extends Basic
 		forEach((e)->drawChild(canvas, e));
 	}
 
-	public BasicContainer<Canvas> addEntities(final BasicEntity<Canvas>... entities) {
+	public BasicContainer<Canvas> addEntities(final BasicEntity<Canvas, ?>... entities) {
 		if (entities == null || Utils.checkArrayContent4Nulls(entities) >= 0) {
 			throw new IllegalArgumentException("Entities list is null or contains nulls inside");
 		}
 		else {
 			try (final Locker	l = lock.lock(false)) {
-				for (BasicEntity<Canvas> item : entities) {
+				for (BasicEntity<Canvas, ?> item : entities) {
 					if (collection.containsKey(item.getEntityId())) {
 						throw new IllegalArgumentException("Entity id ["+item.getEntityId()+"] is already presents in the collection");
 					}
@@ -72,13 +72,13 @@ public abstract class BasicContainer<Canvas extends DrawingCanvas> extends Basic
 		}
 	}
 	
-	public void forEach(WalkerCallback<Canvas> callback) {
+	public void forEach(WalkerCallback callback) {
 		if (callback == null) {
 			throw new NullPointerException("Callback can't be null"); 
 		}
 		else {
 			try (final Locker	l = lock.lock()) {
-				for (Entry<UUID, BasicEntity<Canvas>> item : collection.entrySet()) {
+				for (Entry<UUID, BasicEntity<Canvas, ?>> item : collection.entrySet()) {
 					try{
 						callback.process(item.getValue());
 					} catch (ContentException e) {
@@ -88,7 +88,7 @@ public abstract class BasicContainer<Canvas extends DrawingCanvas> extends Basic
 		}
 	}
 
-	private void drawChild(final Canvas canvas, final BasicEntity<Canvas> child) {
+	private void drawChild(final Canvas canvas, final BasicEntity<Canvas, ?> child) {
 		try(final Canvas	local = (Canvas) canvas.push(child.getLocation().toAffineTransform())) {
 			
 			child.draw(local);

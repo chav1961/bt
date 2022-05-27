@@ -4,6 +4,7 @@ import java.awt.Color;
 import java.awt.Paint;
 import java.awt.RadialGradientPaint;
 import java.awt.geom.Rectangle2D;
+import java.net.URI;
 import java.util.UUID;
 
 import chav1961.bt.mnemort.canvas.swing.SwingCanvas;
@@ -51,6 +52,12 @@ public class SceneContainer extends BasicContainer<SwingCanvas>{
 												,width, height);
 		
 		canvas.with(CanvasWrapper.of(rgp)).draw(false,true,CanvasWrapper.of(r2d));
+	}
+
+	@Override
+	public URI getViewURI() {
+		// TODO Auto-generated method stub
+		return null;
 	}
 
 }

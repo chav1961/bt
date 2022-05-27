@@ -10,6 +10,7 @@ import javax.swing.JComponent;
 
 import chav1961.bt.mnemort.canvas.swing.SwingCanvas;
 import chav1961.bt.mnemort.entities.BasicContainer;
+import chav1961.bt.mnemort.entities.library.StaticCircle;
 import chav1961.bt.mnemort.interfaces.DrawingCanvas.DrawingMode;
 
 public class Scene extends JComponent {
@@ -20,8 +21,8 @@ public class Scene extends JComponent {
 	public Scene() {
 		this.container = new SceneContainer(null, UUID.randomUUID());
 		
-		final CircleItem	item1 = new CircleItem(null, UUID.randomUUID());
-		final CircleItem	item2 = new CircleItem(null, UUID.randomUUID());
+		final StaticCircle 	item1 = new StaticCircle(null, UUID.randomUUID());
+		final StaticCircle	item2 = new StaticCircle(null, UUID.randomUUID());
 		
 		item1.getLocation().setX(-10);
 		item2.getLocation().setX(10);
