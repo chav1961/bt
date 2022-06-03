@@ -22,7 +22,7 @@ import chav1961.purelib.streams.JsonStaxPrinter;
 import chav1961.purelib.streams.interfaces.JsonStaxParserLexType;
 import chav1961.purelib.ui.ColorPair;
 
-public class StaticCircle<Canvas extends DrawingCanvas> extends BasicEntity<Canvas, StaticCircle> {
+public class StaticCircle<Canvas extends DrawingCanvas> extends BasicEntity<Canvas, StaticCircle<?>> {
 	public static final URI		ITEM_URI = URI.create("static:/circle");
 	public static final String	F_COLORS = "colors";
 	public static final String	F_THICKNESS = "thickness";

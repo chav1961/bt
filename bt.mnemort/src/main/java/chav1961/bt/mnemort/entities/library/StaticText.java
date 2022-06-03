@@ -1,17 +1,12 @@
 package chav1961.bt.mnemort.entities.library;
 
-import java.awt.BasicStroke;
 import java.awt.Color;
-import java.awt.LinearGradientPaint;
-import java.awt.geom.Ellipse2D;
-import java.awt.geom.Point2D;
 import java.io.IOException;
 import java.net.URI;
 import java.util.UUID;
 
 import chav1961.bt.mnemort.entities.BasicEntity;
 import chav1961.bt.mnemort.entities.Location;
-import chav1961.bt.mnemort.interfaces.CanvasWrapper;
 import chav1961.bt.mnemort.interfaces.DrawingCanvas;
 import chav1961.purelib.basic.exceptions.PrintingException;
 import chav1961.purelib.basic.exceptions.SyntaxException;
@@ -21,7 +16,7 @@ import chav1961.purelib.streams.JsonStaxPrinter;
 import chav1961.purelib.streams.interfaces.JsonStaxParserLexType;
 import chav1961.purelib.ui.ColorPair;
 
-public class StaticText<Canvas extends DrawingCanvas> extends BasicEntity<Canvas, StaticText> {
+public class StaticText<Canvas extends DrawingCanvas> extends BasicEntity<Canvas, StaticText<?>> {
 	public static final URI		ITEM_URI = URI.create("static:/text");
 	public static final String	F_COLORS = "colors";
 	public static final String	F_FONT = "font";

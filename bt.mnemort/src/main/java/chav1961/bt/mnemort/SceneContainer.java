@@ -16,7 +16,7 @@ import chav1961.purelib.model.interfaces.ContentMetadataInterface.ContentNodeMet
 import chav1961.purelib.streams.JsonStaxParser;
 import chav1961.purelib.streams.JsonStaxPrinter;
 
-public class SceneContainer extends BasicContainer<SwingCanvas>{
+public class SceneContainer extends BasicContainer<SwingCanvas>  {
 	public SceneContainer(final ContentNodeMetadata meta, final UUID entityId) {
 		super(meta, entityId);
 		setWidth(100);
