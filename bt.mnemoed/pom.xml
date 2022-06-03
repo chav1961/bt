@@ -59,11 +59,6 @@
 		</dependency>
   		<dependency>
 			<groupId>com.github.chav1961</groupId>
-			<artifactId>purelib</artifactId>
-			<version>0.0.5</version>
-		</dependency>
-  		<dependency>
-			<groupId>com.github.chav1961</groupId>
 			<artifactId>bt.mnemort</artifactId>
 			<version>0.0.1-SNAPSHOT</version>
 		</dependency>

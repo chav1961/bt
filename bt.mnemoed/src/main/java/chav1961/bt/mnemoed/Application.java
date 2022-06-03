@@ -79,7 +79,6 @@ import chav1961.purelib.ui.swing.useful.FileContentChangedEvent;
 import chav1961.purelib.ui.swing.useful.JDialogContainer;
 import chav1961.purelib.ui.swing.useful.JFileContentManipulator;
 import chav1961.purelib.ui.swing.useful.interfaces.FileContentChangeType;
-import chav1961.purelib.ui.swing.useful.interfaces.LRUPersistence;
 import chav1961.purelib.ui.swing.useful.JStateString;
 
 public class Application extends JFrame implements LocaleChangeListener, AutoCloseable {
@@ -592,7 +591,7 @@ public class Application extends JFrame implements LocaleChangeListener, AutoClo
 		try(final SimpleURLClassLoader		loader = new SimpleURLClassLoader(EMPTY_URLS, this.getClass().getClassLoader())) {
 			final AboutProjectSettings		aps = new AboutProjectSettings(state);
 			final ContentMetadataInterface	mdi = ContentModelFactory.forAnnotatedClass(aps.getClass());
-			final AutoBuiltForm<AboutProjectSettings>	form = new AutoBuiltForm<AboutProjectSettings>(mdi, localizer, loader, aps, aps);
+			final AutoBuiltForm<AboutProjectSettings,Object>	form = new AutoBuiltForm<AboutProjectSettings,Object>(mdi, localizer, loader, aps, aps);
 			
 			aps.allowUnnamedModuleAccess(loader.getUnnamedModule());
 			form.setPreferredSize(new Dimension(300,230));
