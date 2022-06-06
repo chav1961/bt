@@ -6,26 +6,37 @@ import java.awt.Paint;
 import java.awt.Shape;
 import java.awt.Stroke;
 import java.awt.geom.GeneralPath;
+import java.awt.geom.Rectangle2D;
 
 import chav1961.purelib.ui.ColorPair;
 
 public interface CanvasWrapper {
+	public static enum DrawingType {
+		UNKNOWN,
+		SHAPE,
+		TEXT,
+		IMAGE
+	}
+	
 	public static enum WrapperType {
-		COLOR_PAIR(false, true, false),
-		COLOR(true, false, false),
-		STROKE(true, false, false),
-		PAINT(true, false, false),
-		SHAPE(false, false, true),
-		STRING(false, false, true);
+		COLOR_PAIR(false, true, false, DrawingType.UNKNOWN),
+		COLOR(true, false, false, DrawingType.UNKNOWN),
+		STROKE(true, false, false, DrawingType.UNKNOWN),
+		FONT(true, false, false, DrawingType.UNKNOWN),
+		PAINT(true, false, false, DrawingType.UNKNOWN),
+		SHAPE(false, false, true, DrawingType.SHAPE),
+		STRING(false, false, true, DrawingType.TEXT);
 		
-		private final boolean	isAttribute;
-		private final boolean	isAttributeContainer;
-		private final boolean	isEntity;
+		private final boolean		isAttribute;
+		private final boolean		isAttributeContainer;
+		private final boolean		isEntity;
+		private final DrawingType	drawingType;
 		
-		private WrapperType(final boolean attribute, final boolean attributeContainer, final boolean entity) {
+		private WrapperType(final boolean attribute, final boolean attributeContainer, final boolean entity, final DrawingType drawingType) {
 			this.isAttribute = attribute;
 			this.isAttributeContainer = attributeContainer;
 			this.isEntity = entity;
+			this.drawingType = drawingType;
 		}
 		
 		public boolean isAttribute() {
@@ -39,13 +50,26 @@ public interface CanvasWrapper {
 		public boolean isEntity() {
 			return isEntity;
 		}
+		
+		public DrawingType getDrawingType() {
+			return drawingType;
+		}
 	}
 	
 	WrapperType getType();
 	<T> T getValue();
 	
-	static CanvasWrapper of(Font font) {
+	default <T> T getParameter() {
 		return null;
+	}
+	
+	static CanvasWrapper of(final Font font) {
+		if (font == null) {
+			throw new NullPointerException("Font descriptor can't be null"); 
+		}
+		else {
+			return new CanvasWrapperImpl(WrapperType.FONT, font);
+		}
 	}
 
 	static CanvasWrapper of(final Paint paint) {
@@ -104,14 +128,34 @@ public interface CanvasWrapper {
 			return new CanvasWrapperImpl(WrapperType.SHAPE, shape);
 		}
 	}
+
+	static CanvasWrapper of(final String content, final Rectangle2D parameter) {
+		if (content == null) {
+			throw new NullPointerException("String content can't be null"); 
+		}
+		else if (parameter == null) {
+			throw new NullPointerException("Rectangle parameter can't be null"); 
+		}
+		else {
+			return new CanvasWrapperImpl(WrapperType.STRING, content, parameter);
+		}
+	}
 	
 	static class CanvasWrapperImpl implements CanvasWrapper {
 		private final WrapperType	type;
 		private final Object		value;
+		private final Object		parameter;
 		
 		private CanvasWrapperImpl(final WrapperType type, final Object value) {
 			this.type = type;
 			this.value = value;
+			this.parameter = null;
+		}
+
+		private CanvasWrapperImpl(final WrapperType type, final Object value, final Object parameter) {
+			this.type = type;
+			this.value = value;
+			this.parameter = parameter;
 		}
 		
 		@Override
@@ -123,6 +167,10 @@ public interface CanvasWrapper {
 		public <T> T getValue() {
 			return (T)value;
 		}
-		
+
+		@Override
+		public <T> T getParameter() {
+			return (T)parameter;
+		}
 	}
 }

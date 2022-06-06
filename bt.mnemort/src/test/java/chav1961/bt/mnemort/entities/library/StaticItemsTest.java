@@ -13,6 +13,8 @@ import org.junit.Assert;
 import org.junit.Test;
 
 import chav1961.bt.mnemort.entities.BasicEntity;
+import chav1961.bt.mnemort.entities.library.statics.StaticCircle;
+import chav1961.bt.mnemort.entities.library.statics.StaticText;
 import chav1961.bt.mnemort.interfaces.DrawingCanvas;
 import chav1961.purelib.basic.exceptions.PrintingException;
 import chav1961.purelib.basic.exceptions.SyntaxException;
@@ -23,6 +25,7 @@ public class StaticItemsTest {
 	@Test
 	public void serializationTest() throws PrintingException, SyntaxException, IOException {
 		copyAndTestEquals(new StaticCircle<DrawingCanvas>(null, UUID.randomUUID()), new StaticCircle<DrawingCanvas>(null, UUID.randomUUID()));
+		copyAndTestEquals(new StaticText<DrawingCanvas>(null, UUID.randomUUID()), new StaticText<DrawingCanvas>(null, UUID.randomUUID()));
 	}
 	
 	private static void copyAndTestEquals(final BasicEntity<DrawingCanvas,?> from, final BasicEntity<DrawingCanvas,?> to) throws IOException, PrintingException, SyntaxException {

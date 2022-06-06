@@ -10,7 +10,9 @@ import javax.swing.JComponent;
 
 import chav1961.bt.mnemort.canvas.swing.SwingCanvas;
 import chav1961.bt.mnemort.entities.BasicContainer;
-import chav1961.bt.mnemort.entities.library.StaticCircle;
+import chav1961.bt.mnemort.entities.library.statics.StaticCircle;
+import chav1961.bt.mnemort.entities.library.statics.StaticRectangle;
+import chav1961.bt.mnemort.entities.library.statics.StaticText;
 import chav1961.bt.mnemort.interfaces.DrawingCanvas.DrawingMode;
 
 public class Scene extends JComponent {
@@ -21,13 +23,17 @@ public class Scene extends JComponent {
 	public Scene() {
 		this.container = new SceneContainer(null, UUID.randomUUID());
 		
-		final StaticCircle 	item1 = new StaticCircle(null, UUID.randomUUID());
-		final StaticCircle	item2 = new StaticCircle(null, UUID.randomUUID());
+		final StaticCircle 		item1 = new StaticCircle(null, UUID.randomUUID());
+		final StaticCircle		item2 = new StaticCircle(null, UUID.randomUUID());
+		final StaticText		item3 = new StaticText(null, UUID.randomUUID());
+		final StaticRectangle	item4 = new StaticRectangle(null, UUID.randomUUID());
 		
 		item1.getLocation().setX(-10);
 		item2.getLocation().setX(10);
+		item3.getLocation().setX(-10).setY(-10);
+		item4.getLocation().setX(10).setY(10);
 		
-		this.container.addEntities(item1, item2);
+		this.container.addEntities(item1, item2, item3, item4);
 	}
 	
 	@Override

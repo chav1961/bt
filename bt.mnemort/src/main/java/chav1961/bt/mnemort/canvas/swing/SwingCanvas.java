@@ -1,11 +1,14 @@
 package chav1961.bt.mnemort.canvas.swing;
 
 import java.awt.Color;
+import java.awt.Font;
+import java.awt.FontMetrics;
 import java.awt.Graphics2D;
 import java.awt.Paint;
 import java.awt.Shape;
 import java.awt.Stroke;
 import java.awt.geom.AffineTransform;
+import java.awt.geom.Rectangle2D;
 
 import chav1961.bt.mnemort.interfaces.CanvasWrapper;
 import chav1961.bt.mnemort.interfaces.DrawingCanvas;
@@ -119,7 +122,15 @@ public class SwingCanvas implements DrawingCanvas {
 						throw new IllegalArgumentException("Item ["+item+"] is not entity"); 
 					}
 					else {
-						getGraphics().fill((Shape)item.getValue());
+						switch (item.getType().getDrawingType()) {
+							case SHAPE	:
+								getGraphics().fill((Shape)item.getValue());
+								break;
+							case TEXT	:
+								break;
+							default	:
+								throw new UnsupportedOperationException("Drawing type ["+item.getType().getDrawingType()+"] is not supported yet");
+						}
 					}
 				}
 			}
@@ -129,7 +140,26 @@ public class SwingCanvas implements DrawingCanvas {
 						throw new IllegalArgumentException("Item ["+item+"] is not entity"); 
 					}
 					else {
-						getGraphics().draw((Shape)item.getValue());
+						switch (item.getType().getDrawingType()) {
+							case SHAPE	:
+								getGraphics().draw((Shape)item.getValue());
+								break;
+							case TEXT	:
+								final Rectangle2D		parameter = (Rectangle2D)item.getParameter();
+								final FontMetrics		metrics = getGraphics().getFontMetrics();
+								final Rectangle2D		area = metrics.getStringBounds((String)item.getValue(), getGraphics());
+								final AffineTransform	oldTransform = getGraphics().getTransform();
+								final AffineTransform	newTransform = new AffineTransform(oldTransform);
+								
+								newTransform.translate(parameter.getX(), -area.getCenterY());
+								newTransform.scale(parameter.getWidth()/area.getWidth(), parameter.getHeight()/area.getHeight());
+								getGraphics().setTransform(newTransform);
+								getGraphics().drawString((String)item.getValue(), 0, 0);
+								getGraphics().setTransform(oldTransform);
+								break;
+							default	:
+								throw new UnsupportedOperationException("Drawing type ["+item.getType().getDrawingType()+"] is not supported yet");
+						}
 					}
 				}
 			}
@@ -159,6 +189,8 @@ public class SwingCanvas implements DrawingCanvas {
 				return CanvasWrapper.of(getNativeGraphics().getPaint());
 			case STROKE		:
 				return CanvasWrapper.of(getNativeGraphics().getStroke());
+			case FONT		:
+				return CanvasWrapper.of(getNativeGraphics().getFont());
 			default			:
 				throw new UnsupportedOperationException("Item type ["+type+"] is not supported");
 		}
@@ -174,6 +206,9 @@ public class SwingCanvas implements DrawingCanvas {
 				break;
 			case STROKE		:
 				getNativeGraphics().setStroke((Stroke)item.getValue());
+				break;
+			case FONT		:
+				getNativeGraphics().setFont((Font)item.getValue());
 				break;
 			default			:
 				throw new UnsupportedOperationException("Item type ["+item.getType()+"] is not supported");

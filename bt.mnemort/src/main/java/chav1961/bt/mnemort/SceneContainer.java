@@ -43,15 +43,15 @@ public class SceneContainer extends BasicContainer<SwingCanvas>  {
 
 	@Override
 	protected void drawBackground(final SwingCanvas canvas, float width, float height) {
-		final RadialGradientPaint rgp = new RadialGradientPaint(0.0f, 0.0f
-											, (float)(0.75f*Math.max(width, height))
-											, new float[]{0.0f, 1.0f}
-											, new Color[]{Color.YELLOW, Color.BLACK});
+//		final RadialGradientPaint	rgp = new RadialGradientPaint(0.0f, 0.0f
+//											, (float)(0.75f*Math.max(width, height))
+//											, new float[]{0.0f, 1.0f}
+//											, new Color[]{Color.YELLOW, Color.BLACK});
 		final Rectangle2D.Double	r2d = new Rectangle2D.Double(
 												-width/2,-height/2
 												,width, height);
 		
-		canvas.with(CanvasWrapper.of(rgp)).draw(false,true,CanvasWrapper.of(r2d));
+		canvas.with(CanvasWrapper.of(Color.LIGHT_GRAY)).draw(false,true,CanvasWrapper.of(r2d));
 	}
 
 	@Override

@@ -32,45 +32,50 @@ public class Location implements JsonSerializable<Location> {
 		return x;
 	}
 
-	public void setX(final float x) {
+	public Location setX(final float x) {
 		this.x = x;
 		refreshAffineTransform();
+		return this;
 	}
 
 	public float getY() {
 		return y;
 	}
 
-	public void setY(final float y) {
+	public Location setY(final float y) {
 		this.y = y;
 		refreshAffineTransform();
+		return this;
 	}
 
 	public float getScaleX() {
 		return scaleX;
 	}
 
-	public void setScaleX(final float scaleX) {
+	public Location setScaleX(final float scaleX) {
 		this.scaleX = scaleX;
 		refreshAffineTransform();
+		return this;
 	}
 
 	public float getScaleY() {
 		return scaleY;
 	}
 
-	public void setScaleY(final float scaleY) {
+	public Location setScaleY(final float scaleY) {
 		this.scaleY = scaleY;
 		refreshAffineTransform();
+		return this;
 	}
 
 	public float getAngle() {
 		return angle;
 	}
 
-	public void setAngle(final float angle) {
+	public Location setAngle(final float angle) {
 		this.angle = angle;
 		refreshAffineTransform();
+		return this;
 	}
 
 	public AffineTransform toAffineTransform() {

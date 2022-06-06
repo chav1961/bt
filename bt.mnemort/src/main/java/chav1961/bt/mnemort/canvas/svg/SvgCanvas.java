@@ -1,4 +1,4 @@
-package chav1961.bt.mnemort.canvas.http;
+package chav1961.bt.mnemort.canvas.svg;
 
 import java.awt.geom.AffineTransform;
 
@@ -6,7 +6,7 @@ import chav1961.bt.mnemort.interfaces.CanvasWrapper;
 import chav1961.bt.mnemort.interfaces.DrawingCanvas;
 import chav1961.bt.mnemort.interfaces.DrawingCanvas.DrawingMode;
 
-public class HtCanvas implements DrawingCanvas {
+public class SvgCanvas implements DrawingCanvas {
 
 	
 	@Override

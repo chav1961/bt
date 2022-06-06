@@ -1,5 +1,6 @@
 package chav1961.bt.mnemort.entities;
 
+import java.awt.geom.Rectangle2D;
 import java.io.IOException;
 import java.net.URI;
 import java.util.Arrays;
@@ -24,6 +25,11 @@ public abstract class BasicEntity<Canvas extends DrawingCanvas, Self> implements
 	private final Location				location = new Location();
 	private UUID						entityId;
 	private float						width = 1.0f, height = 1.0f;
+
+	
+	protected static enum FillMode {
+		FILL, PROPORTIONAL;
+	}
 	
 	protected BasicEntity(final ContentNodeMetadata meta, final UUID entityId) {
 		this.meta = meta;
@@ -169,6 +175,17 @@ public abstract class BasicEntity<Canvas extends DrawingCanvas, Self> implements
 			throw new SyntaxException(parser.row(), parser.col(), "Missing ':'");
 		}
 	}
+
+	protected static Rectangle2D fillRectangle(final FillMode mode, final Rectangle2D area, final Rectangle2D control) {
+		switch (mode) {
+			case FILL			:
+				return	area.createIntersection(control);
+			case PROPORTIONAL	:
+				return	area.createIntersection(control);
+			default	:
+				throw new UnsupportedOperationException("Fill mode ["+mode+"] is not supported yet");
+		}
+	}
 	
 	protected static class FieldNamesCollection {
 		private final String[]	names;
@@ -229,4 +246,6 @@ public abstract class BasicEntity<Canvas extends DrawingCanvas, Self> implements
 			return "FieldNamesCollection [names=" + Arrays.toString(names) + ", bits=" + Arrays.toString(bits) + "]";
 		}
 	}
+	
+	
 }
