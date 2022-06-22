@@ -141,13 +141,25 @@ loop:		for(URI item : candidates) {
 			item.close();
 		}
 	}
-	
-	public int read(final int storageId, final int partId, final int poolId, final long pageNo, final byte[] target, final boolean readOnly) throws NullPointerException, IllegalArgumentException, IOException {
+
+	public byte[] read(final int storageId, final int partId, final int poolId, final long pageNo) throws NullPointerException, IllegalArgumentException, IOException {
 		if (storageId >= 0 && storageId < providers.length) {
-			return providers[storageId].read(readService, partId, poolId, pageNo, target, readOnly);
+			return providers[storageId].read(partId, poolId, pageNo);
 		}
 		else if (storageId == BOOT_STORAGE_ID) {
-			return rootProvider.read(readService, partId, poolId, pageNo, target, readOnly);
+			return rootProvider.read(partId, poolId, pageNo);
+		}
+		else {
+			throw new IllegalArgumentException("Storage id ["+storageId+"] out of range 0.."+(providers.length-1));
+		}
+	}
+	
+	public int read(final int storageId, final int partId, final int poolId, final long pageNo, final byte[] target) throws NullPointerException, IllegalArgumentException, IOException {
+		if (storageId >= 0 && storageId < providers.length) {
+			return providers[storageId].read(partId, poolId, pageNo, target);
+		}
+		else if (storageId == BOOT_STORAGE_ID) {
+			return rootProvider.read(partId, poolId, pageNo, target);
 		}
 		else {
 			throw new IllegalArgumentException("Storage id ["+storageId+"] out of range 0.."+(providers.length-1));
@@ -156,10 +168,10 @@ loop:		for(URI item : candidates) {
 
 	public int write(final byte[] source, final int storageId, final int partId, final int poolId, final long pageNo) throws NullPointerException, IllegalArgumentException, IOException {
 		if (storageId >= 0 && storageId < providers.length) {
-			return providers[storageId].write(writeService, source, partId, poolId, pageNo);
+			return providers[storageId].write(source, partId, poolId, pageNo);
 		}
 		else if (storageId == BOOT_STORAGE_ID) {
-			return rootProvider.write(writeService, source, partId, poolId, pageNo);
+			return rootProvider.write(source, partId, poolId, pageNo);
 		}
 		else {
 			throw new IllegalArgumentException("Storage id ["+storageId+"] out of range 0.."+(providers.length-1));
@@ -173,7 +185,7 @@ loop:		for(URI item : candidates) {
 	private StorageDescriptor loadRootDescriptor(final AbstractIOProvider provider) throws IOException {
 		final byte[]	buffer = new byte[8];
 		
-		read(BOOT_STORAGE_ID, BOOT_PART_ID, BOOT_POOL_ID, 0, buffer, true);
+		read(BOOT_STORAGE_ID, BOOT_PART_ID, BOOT_POOL_ID, 0, buffer);
 		
 		try(final InputStream		is = new ByteArrayInputStream(buffer);
 			final DataInputStream	dis = new DataInputStream(is)) {
@@ -190,7 +202,7 @@ loop:		for(URI item : candidates) {
 				else {
 					final byte[]	content = new byte[currentSize];
 
-					read(BOOT_STORAGE_ID, BOOT_PART_ID, BOOT_POOL_ID, 0, content, true);
+					read(BOOT_STORAGE_ID, BOOT_PART_ID, BOOT_POOL_ID, 0, content);
 					
 					try(final InputStream		isC = new ByteArrayInputStream(buffer);
 						final DataInputStream	disC = new DataInputStream(isC)) {
