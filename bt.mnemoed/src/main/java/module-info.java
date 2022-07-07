@@ -14,4 +14,6 @@ module chav1961.bt.mnemoed {
 	opens chav1961.bt.mnemoed to chav1961.purelib;
 	opens chav1961.bt.mnemoed.controls to chav1961.purelib;
 	opens chav1961.bt.mnemoed.util to chav1961.purelib;
+
+	exports chav1961.bt.mnemoed.editor to chav1961.purelib;
 }

@@ -236,6 +236,66 @@
 		<key name="chav1961.bt.mnemoed.controls.settings.AboutProjectSettings.copyright.tt">Copyright string for the project</key>
 		<key name="chav1961.bt.mnemoed.controls.settings.AboutProjectSettings.license">License</key>
 		<key name="chav1961.bt.mnemoed.controls.settings.AboutProjectSettings.license.tt">License text for project</key>
+
+<!-- Main menu -->
+		<key name="menu.main.file">File</key>
+		<key name="menu.main.file.tt">File menu</key>
+		<key name="menu.main.file.new">New</key>
+		<key name="menu.main.file.new.tt">Create new image</key>
+		<key name="menu.main.file.load">Load</key>
+		<key name="menu.main.file.load.tt">Load image</key>
+		<key name="menu.main.file.save">Save</key>
+		<key name="menu.main.file.save.tt">Save image</key>
+		<key name="menu.main.file.saveAs">Save as...</key>
+		<key name="menu.main.file.saveAs.tt">Save image as...</key>
+		<key name="menu.main.file.exit">Exit</key>
+		<key name="menu.main.file.exit.tt">Exit application</key>
+
+<!-- Toolbar ColorBar -->
+		<key name="toolbar.colorbar.black"></key>
+		<key name="toolbar.colorbar.black.tt"></key>
+		<key name="toolbar.colorbar.blue"></key>
+		<key name="toolbar.colorbar.blue.tt"></key>
+		<key name="toolbar.colorbar.cyan"></key>
+		<key name="toolbar.colorbar.cyan.tt"></key>
+		<key name="toolbar.colorbar.darkgray"></key>
+		<key name="toolbar.colorbar.darkgray.tt"></key>
+		<key name="toolbar.colorbar.gray"></key>
+		<key name="toolbar.colorbar.gray.tt"></key>
+		<key name="toolbar.colorbar.green"></key>
+		<key name="toolbar.colorbar.green.tt"></key>
+		<key name="toolbar.colorbar.lightgray"></key>
+		<key name="toolbar.colorbar.lightgray.tt"></key>
+		<key name="toolbar.colorbar.magenta"></key>
+		<key name="toolbar.colorbar.magenta.tt"></key>
+		<key name="toolbar.colorbar.orange"></key>
+		<key name="toolbar.colorbar.orange.tt"></key>
+		<key name="toolbar.colorbar.pink"></key>
+		<key name="toolbar.colorbar.pink.tt"></key>
+		<key name="toolbar.colorbar.red"></key>
+		<key name="toolbar.colorbar.red.tt"></key>
+		<key name="toolbar.colorbar.white"></key>
+		<key name="toolbar.colorbar.white.tt"></key>
+		<key name="toolbar.colorbar.yellow"></key>
+		<key name="toolbar.colorbar.yellow.tt"></key>
+		<key name="toolbar.colorbar.choose">Choose color</key>
+		<key name="toolbar.colorbar.choose.tt">Choose color by dialog</key>
+
+<!-- Toolbar ModeBar -->
+		<key name="toolbar.modebar.pen"></key>
+		<key name="toolbar.modebar.pen.tt"></key>
+		<key name="toolbar.modebar.brush"></key>
+		<key name="toolbar.modebar.brush.tt"></key>
+		<key name="toolbar.modebar.erase"></key>
+		<key name="toolbar.modebar.erase.tt"></key>
+		<key name="toolbar.modebar.text"></key>
+		<key name="toolbar.modebar.text.tt"></key>
+		<key name="toolbar.modebar.line"></key>
+		<key name="toolbar.modebar.line.tt"></key>
+		<key name="toolbar.modebar.ellipse"></key>
+		<key name="toolbar.modebar.ellipse.tt"></key>
+		<key name="toolbar.modebar.rect"></key>
+		<key name="toolbar.modebar.rect.tt"></key>
 		 
 	</lang>
 	<lang name="ru">
@@ -473,6 +533,66 @@
 		<key name="chav1961.bt.mnemoed.controls.settings.AboutProjectSettings.copyright.tt">Строка копирайта для проекта</key>
 		<key name="chav1961.bt.mnemoed.controls.settings.AboutProjectSettings.license">Лицензия</key>
 		<key name="chav1961.bt.mnemoed.controls.settings.AboutProjectSettings.license.tt">Текст лицензии проекта</key>
+		
+<!-- Main menu -->
+		<key name="menu.main.file">Файл</key>
+		<key name="menu.main.file.tt">Меню файлов</key>
+		<key name="menu.main.file.new">Новый</key>
+		<key name="menu.main.file.new.tt">Создать новое изображение</key>
+		<key name="menu.main.file.load">Load</key>
+		<key name="menu.main.file.load.tt">Загрузить изображение из файла</key>
+		<key name="menu.main.file.save">Сохранить</key>
+		<key name="menu.main.file.save.tt">Сохранить изображение</key>
+		<key name="menu.main.file.saveAs">Сохранить как...</key>
+		<key name="menu.main.file.saveAs.tt">Сохранить изображение как...</key>
+		<key name="menu.main.file.exit">Выход</key>
+		<key name="menu.main.file.exit.tt">Выход из редактора</key>
+
+<!-- Toolbar ColorBar -->
+		<key name="toolbar.colorbar.black"></key>
+		<key name="toolbar.colorbar.black.tt"></key>
+		<key name="toolbar.colorbar.blue"></key>
+		<key name="toolbar.colorbar.blue.tt"></key>
+		<key name="toolbar.colorbar.cyan"></key>
+		<key name="toolbar.colorbar.cyan.tt"></key>
+		<key name="toolbar.colorbar.darkgray"></key>
+		<key name="toolbar.colorbar.darkgray.tt"></key>
+		<key name="toolbar.colorbar.gray"></key>
+		<key name="toolbar.colorbar.gray.tt"></key>
+		<key name="toolbar.colorbar.green"></key>
+		<key name="toolbar.colorbar.green.tt"></key>
+		<key name="toolbar.colorbar.lightgray"></key>
+		<key name="toolbar.colorbar.lightgray.tt"></key>
+		<key name="toolbar.colorbar.magenta"></key>
+		<key name="toolbar.colorbar.magenta.tt"></key>
+		<key name="toolbar.colorbar.orange"></key>
+		<key name="toolbar.colorbar.orange.tt"></key>
+		<key name="toolbar.colorbar.pink"></key>
+		<key name="toolbar.colorbar.pink.tt"></key>
+		<key name="toolbar.colorbar.red"></key>
+		<key name="toolbar.colorbar.red.tt"></key>
+		<key name="toolbar.colorbar.white"></key>
+		<key name="toolbar.colorbar.white.tt"></key>
+		<key name="toolbar.colorbar.yellow"></key>
+		<key name="toolbar.colorbar.yellow.tt"></key>
+		<key name="toolbar.colorbar.choose">Выбрать цвет</key>
+		<key name="toolbar.colorbar.choose.tt">Выбрать цвет с помощью диалога</key>
+
+<!-- Toolbar ModeBar -->
+		<key name="toolbar.modebar.pen"></key>
+		<key name="toolbar.modebar.pen.tt"></key>
+		<key name="toolbar.modebar.brush"></key>
+		<key name="toolbar.modebar.brush.tt"></key>
+		<key name="toolbar.modebar.erase"></key>
+		<key name="toolbar.modebar.erase.tt"></key>
+		<key name="toolbar.modebar.text"></key>
+		<key name="toolbar.modebar.text.tt"></key>
+		<key name="toolbar.modebar.line"></key>
+		<key name="toolbar.modebar.line.tt"></key>
+		<key name="toolbar.modebar.ellipse"></key>
+		<key name="toolbar.modebar.ellipse.tt"></key>
+		<key name="toolbar.modebar.rect"></key>
+		<key name="toolbar.modebar.rect.tt"></key>
 		
 	</lang>
 </localization>
