@@ -55,7 +55,7 @@ public class ImageEdit {
 	
     // Режим рисования 
 	public enum DrawMode {
-		PEN, BRUSH, ERASE, TEXT, LINE, ELLIPSE, RECT, FILL 
+		UNKNOWN, PEN, BRUSH, ERASE, TEXT, LINE, ELLIPSE, RECT, FILL 
 	}
 	private DrawMode	currentDrawMode = DrawMode.PEN;
     private Color 		currentColor;
