@@ -1,4 +1,4 @@
-package chav1961.bt.mnemoed.editor;
+package chav1961.bt.mnemoed.bgeditor;
 
 import java.awt.Image;
 import java.awt.image.RenderedImage;

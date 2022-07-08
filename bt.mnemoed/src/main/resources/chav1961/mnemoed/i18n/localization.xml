@@ -252,50 +252,53 @@
 		<key name="menu.main.file.exit.tt">Exit application</key>
 
 <!-- Toolbar ColorBar -->
-		<key name="toolbar.colorbar.black"></key>
-		<key name="toolbar.colorbar.black.tt"></key>
-		<key name="toolbar.colorbar.blue"></key>
-		<key name="toolbar.colorbar.blue.tt"></key>
-		<key name="toolbar.colorbar.cyan"></key>
-		<key name="toolbar.colorbar.cyan.tt"></key>
-		<key name="toolbar.colorbar.darkgray"></key>
-		<key name="toolbar.colorbar.darkgray.tt"></key>
-		<key name="toolbar.colorbar.gray"></key>
-		<key name="toolbar.colorbar.gray.tt"></key>
-		<key name="toolbar.colorbar.green"></key>
-		<key name="toolbar.colorbar.green.tt"></key>
-		<key name="toolbar.colorbar.lightgray"></key>
-		<key name="toolbar.colorbar.lightgray.tt"></key>
-		<key name="toolbar.colorbar.magenta"></key>
-		<key name="toolbar.colorbar.magenta.tt"></key>
-		<key name="toolbar.colorbar.orange"></key>
-		<key name="toolbar.colorbar.orange.tt"></key>
-		<key name="toolbar.colorbar.pink"></key>
-		<key name="toolbar.colorbar.pink.tt"></key>
-		<key name="toolbar.colorbar.red"></key>
-		<key name="toolbar.colorbar.red.tt"></key>
-		<key name="toolbar.colorbar.white"></key>
-		<key name="toolbar.colorbar.white.tt"></key>
-		<key name="toolbar.colorbar.yellow"></key>
-		<key name="toolbar.colorbar.yellow.tt"></key>
+		<key name="toolbar.colorbar.black">Black</key>
+		<key name="toolbar.colorbar.black.tt">Captain Obvious says: Black color</key>
+		<key name="toolbar.colorbar.blue">Blue</key>
+		<key name="toolbar.colorbar.blue.tt">Captain Obvious says: Blue color</key>
+		<key name="toolbar.colorbar.cyan">Cyan</key>
+		<key name="toolbar.colorbar.cyan.tt">Captain Obvious says: Cyan color</key>
+		<key name="toolbar.colorbar.darkgray">Dark gray</key>
+		<key name="toolbar.colorbar.darkgray.tt">Captain Obvious says: Dark gray color</key>
+		<key name="toolbar.colorbar.gray">Gray</key>
+		<key name="toolbar.colorbar.gray.tt">Captain Obvious says: Gray color</key>
+		<key name="toolbar.colorbar.green">Green</key>
+		<key name="toolbar.colorbar.green.tt">Captain Obvious says: Green color</key>
+		<key name="toolbar.colorbar.lightgray">Light gray</key>
+		<key name="toolbar.colorbar.lightgray.tt">Captain Obvious says: Light gray color</key>
+		<key name="toolbar.colorbar.magenta">Magenta</key>
+		<key name="toolbar.colorbar.magenta.tt">Captain Obvious says: Magenta color</key>
+		<key name="toolbar.colorbar.orange">Orange</key>
+		<key name="toolbar.colorbar.orange.tt">Captain Obvious says: Orange color</key>
+		<key name="toolbar.colorbar.pink">Pink</key>
+		<key name="toolbar.colorbar.pink.tt">Captain Obvious says: Pink color</key>
+		<key name="toolbar.colorbar.red">Red</key>
+		<key name="toolbar.colorbar.red.tt">Captain Obvious says: Red color</key>
+		<key name="toolbar.colorbar.white">White</key>
+		<key name="toolbar.colorbar.white.tt">Captain Obvious says: White color</key>
+		<key name="toolbar.colorbar.yellow">Yellow</key>
+		<key name="toolbar.colorbar.yellow.tt">Captain Obvious says: Yellow color</key>
 		<key name="toolbar.colorbar.choose">Choose color</key>
 		<key name="toolbar.colorbar.choose.tt">Choose color by dialog</key>
 
 <!-- Toolbar ModeBar -->
-		<key name="toolbar.modebar.pen"></key>
-		<key name="toolbar.modebar.pen.tt"></key>
-		<key name="toolbar.modebar.brush"></key>
-		<key name="toolbar.modebar.brush.tt"></key>
-		<key name="toolbar.modebar.erase"></key>
-		<key name="toolbar.modebar.erase.tt"></key>
-		<key name="toolbar.modebar.text"></key>
-		<key name="toolbar.modebar.text.tt"></key>
-		<key name="toolbar.modebar.line"></key>
-		<key name="toolbar.modebar.line.tt"></key>
-		<key name="toolbar.modebar.ellipse"></key>
-		<key name="toolbar.modebar.ellipse.tt"></key>
-		<key name="toolbar.modebar.rect"></key>
-		<key name="toolbar.modebar.rect.tt"></key>
+		<key name="toolbar.modebar.pen">Pen</key>
+		<key name="toolbar.modebar.pen.tt">Draw any curve</key>
+		<key name="toolbar.modebar.brush">Brush</key>
+		<key name="toolbar.modebar.brush.tt">Fill current area</key>
+		<key name="toolbar.modebar.erase">Eraser</key>
+		<key name="toolbar.modebar.erase.tt">Erase selected area</key>
+		<key name="toolbar.modebar.text">Text</key>
+		<key name="toolbar.modebar.text.tt">Type text</key>
+		<key name="toolbar.modebar.line">Line</key>
+		<key name="toolbar.modebar.line.tt">Draw line</key>
+		<key name="toolbar.modebar.ellipse">Ellipse</key>
+		<key name="toolbar.modebar.ellipse.tt">Draw ellipse</key>
+		<key name="toolbar.modebar.rect">Rectangle</key>
+		<key name="toolbar.modebar.rect.tt">Draw rectangle</key>
+
+<!-- ImageEdit class localization -->
+		<key name="chav1961.bt.mnemoed.editor.ImageEdit.selectColor">Select color</key>		
 		 
 	</lang>
 	<lang name="ru">
@@ -539,7 +542,7 @@
 		<key name="menu.main.file.tt">Меню файлов</key>
 		<key name="menu.main.file.new">Новый</key>
 		<key name="menu.main.file.new.tt">Создать новое изображение</key>
-		<key name="menu.main.file.load">Load</key>
+		<key name="menu.main.file.load">Загрузить</key>
 		<key name="menu.main.file.load.tt">Загрузить изображение из файла</key>
 		<key name="menu.main.file.save">Сохранить</key>
 		<key name="menu.main.file.save.tt">Сохранить изображение</key>
@@ -549,50 +552,53 @@
 		<key name="menu.main.file.exit.tt">Выход из редактора</key>
 
 <!-- Toolbar ColorBar -->
-		<key name="toolbar.colorbar.black"></key>
-		<key name="toolbar.colorbar.black.tt"></key>
-		<key name="toolbar.colorbar.blue"></key>
-		<key name="toolbar.colorbar.blue.tt"></key>
-		<key name="toolbar.colorbar.cyan"></key>
-		<key name="toolbar.colorbar.cyan.tt"></key>
-		<key name="toolbar.colorbar.darkgray"></key>
-		<key name="toolbar.colorbar.darkgray.tt"></key>
-		<key name="toolbar.colorbar.gray"></key>
-		<key name="toolbar.colorbar.gray.tt"></key>
-		<key name="toolbar.colorbar.green"></key>
-		<key name="toolbar.colorbar.green.tt"></key>
-		<key name="toolbar.colorbar.lightgray"></key>
-		<key name="toolbar.colorbar.lightgray.tt"></key>
-		<key name="toolbar.colorbar.magenta"></key>
-		<key name="toolbar.colorbar.magenta.tt"></key>
-		<key name="toolbar.colorbar.orange"></key>
-		<key name="toolbar.colorbar.orange.tt"></key>
-		<key name="toolbar.colorbar.pink"></key>
-		<key name="toolbar.colorbar.pink.tt"></key>
-		<key name="toolbar.colorbar.red"></key>
-		<key name="toolbar.colorbar.red.tt"></key>
-		<key name="toolbar.colorbar.white"></key>
-		<key name="toolbar.colorbar.white.tt"></key>
-		<key name="toolbar.colorbar.yellow"></key>
-		<key name="toolbar.colorbar.yellow.tt"></key>
+		<key name="toolbar.colorbar.black">Черный</key>
+		<key name="toolbar.colorbar.black.tt">Кэп сообщает: черный цвет</key>
+		<key name="toolbar.colorbar.blue">Синий</key>
+		<key name="toolbar.colorbar.blue.tt">Кэп сообщает: синий цвет</key>
+		<key name="toolbar.colorbar.cyan">Голубой</key>
+		<key name="toolbar.colorbar.cyan.tt">Кэп сообщает: голубой цвет</key>
+		<key name="toolbar.colorbar.darkgray">Темно-серый</key>
+		<key name="toolbar.colorbar.darkgray.tt">Кэп сообщает: темно-серый цвет</key>
+		<key name="toolbar.colorbar.gray">Серый</key>
+		<key name="toolbar.colorbar.gray.tt">Кэп сообщает: Серый цвет</key>
+		<key name="toolbar.colorbar.green">Зеленый</key>
+		<key name="toolbar.colorbar.green.tt">Кэп сообщает: зеленый цвет</key>
+		<key name="toolbar.colorbar.lightgray">Светло-серый</key>
+		<key name="toolbar.colorbar.lightgray.tt">Кэп сообщает: светло-серый цвет</key>
+		<key name="toolbar.colorbar.magenta">Малиновый</key>
+		<key name="toolbar.colorbar.magenta.tt">Кэп сообщает: малиновый цвет</key>
+		<key name="toolbar.colorbar.orange">Оранжевый</key>
+		<key name="toolbar.colorbar.orange.tt">Кэп сообщает: оранжевый цвет</key>
+		<key name="toolbar.colorbar.pink">Розовый</key>
+		<key name="toolbar.colorbar.pink.tt">Кэп сообщает: розовый цвет</key>
+		<key name="toolbar.colorbar.red">Красный</key>
+		<key name="toolbar.colorbar.red.tt">Кэп сообщает: красный цвет</key>
+		<key name="toolbar.colorbar.white">Белый</key>
+		<key name="toolbar.colorbar.white.tt">Кэп сообщает: белый цвет</key>
+		<key name="toolbar.colorbar.yellow">Желтый</key>
+		<key name="toolbar.colorbar.yellow.tt">Кэп сообщает: желтый цвет</key>
 		<key name="toolbar.colorbar.choose">Выбрать цвет</key>
 		<key name="toolbar.colorbar.choose.tt">Выбрать цвет с помощью диалога</key>
 
 <!-- Toolbar ModeBar -->
-		<key name="toolbar.modebar.pen"></key>
-		<key name="toolbar.modebar.pen.tt"></key>
-		<key name="toolbar.modebar.brush"></key>
-		<key name="toolbar.modebar.brush.tt"></key>
-		<key name="toolbar.modebar.erase"></key>
-		<key name="toolbar.modebar.erase.tt"></key>
-		<key name="toolbar.modebar.text"></key>
-		<key name="toolbar.modebar.text.tt"></key>
-		<key name="toolbar.modebar.line"></key>
-		<key name="toolbar.modebar.line.tt"></key>
-		<key name="toolbar.modebar.ellipse"></key>
-		<key name="toolbar.modebar.ellipse.tt"></key>
-		<key name="toolbar.modebar.rect"></key>
-		<key name="toolbar.modebar.rect.tt"></key>
+		<key name="toolbar.modebar.pen">Линия</key>
+		<key name="toolbar.modebar.pen.tt">Рисовать произвольную линию</key>
+		<key name="toolbar.modebar.brush">Заливка</key>
+		<key name="toolbar.modebar.brush.tt">Залить текущую область</key>
+		<key name="toolbar.modebar.erase">Лсстик</key>
+		<key name="toolbar.modebar.erase.tt">Стереть область</key>
+		<key name="toolbar.modebar.text">Текст</key>
+		<key name="toolbar.modebar.text.tt">Набрать текст</key>
+		<key name="toolbar.modebar.line">Линия</key>
+		<key name="toolbar.modebar.line.tt">Нарисовать линию</key>
+		<key name="toolbar.modebar.ellipse">Эллипс</key>
+		<key name="toolbar.modebar.ellipse.tt">Нарисовать эллипс</key>
+		<key name="toolbar.modebar.rect">Прямоугольник</key>
+		<key name="toolbar.modebar.rect.tt">Нарисовать прямоугольник</key>
+		
+<!-- Локализация класса ImageEdit -->
+		<key name="chav1961.bt.mnemoed.editor.ImageEdit.selectColor">Выберите цвет</key>		
 		
 	</lang>
 </localization>
