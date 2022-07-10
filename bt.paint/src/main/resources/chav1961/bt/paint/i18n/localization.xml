@@ -1,0 +1,312 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<localization xmlns="http://www.i18n.purelib.chav1961.ru/">
+	<lang name="en">
+<!-- Application -->
+		<key name="chav1961.bt.paint.Application.title">(c) 2022, A.V.Chernomyrdin. Simple graphic editor V.R.=0.0 %1$s</key>
+		<key name="application.about.title">About...</key>
+		<key name="application.about.content">uri(about.cre)</key>
+		<key name="chav1961.bt.paint.Application.filter.pngfiles">PNG images</key>
+		<key name="chav1961.bt.paint.Application.filter.jpgfiles">JPEG images</key>
+		<key name="chav1961.bt.paint.Application.unsavedChanges">You have some changes in the editor. Save it?</key>
+		<key name="chav1961.bt.paint.Application.unsavedChanges.title">Unsaved changes</key>
+		<key name="chav1961.bt.paint.Application.message.ready">Ready</key>		
+		<key name="chav1961.bt.paint.Application.help.title">About...</key>
+		<key name="chav1961.bt.paint.Application.help.content">uri(aboutApplication.cre)</key>
+
+<!-- Main menu -->
+		<key name="menu.main.file">File</key>
+		<key name="menu.main.file.tt">File menu</key>
+		<key name="menu.main.file.new">New</key>
+		<key name="menu.main.file.new.tt">Create new image</key>
+		<key name="menu.main.file.load">Load</key>
+		<key name="menu.main.file.load.tt">Load image</key>
+		<key name="menu.main.file.save">Save</key>
+		<key name="menu.main.file.save.tt">Save image</key>
+		<key name="menu.main.file.saveAs">Save as...</key>
+		<key name="menu.main.file.saveAs.tt">Save image as...</key>
+		<key name="menu.main.file.exit">Exit</key>
+		<key name="menu.main.file.exit.tt">Exit application</key>
+		<key name="menu.main.edit">Edit</key>
+		<key name="menu.main.edit.tt">Edit image</key>
+		<key name="menu.main.edit.undo">Undo</key>
+		<key name="menu.main.edit.undo.tt">Undo last operations</key>
+		<key name="menu.main.edit.redo">Redo</key>
+		<key name="menu.main.edit.redo.tt">Redo last operations</key>
+		<key name="menu.main.edit.cut">Cut</key>
+		<key name="menu.main.edit.cut.tt">Cut selected area into clipboard</key>
+		<key name="menu.main.edit.copy">Copy</key>
+		<key name="menu.main.edit.copy.tt">Copy selected area into clipboard</key>
+		<key name="menu.main.edit.paste">Paste</key>
+		<key name="menu.main.edit.paste.tt">Paste selected area from clipboard</key>
+		<key name="menu.main.tools">Tools</key>
+		<key name="menu.main.tools.tt">Manage the application</key>
+		<key name="menu.main.tools.settings">Settings</key>
+		<key name="menu.main.tools.settings.tt">Application settings</key>
+		<key name="menu.main.tools.languages">Language</key>
+		<key name="menu.main.tools.languages.tt">Select interface language</key>
+		<key name="menu.main.help">Help</key>
+		<key name="menu.main.help.tt">Help system</key>
+		<key name="menu.main.help.about">About...</key>
+		<key name="menu.main.help.about.tt">Info about the application</key>
+
+<!-- Toolbar ColorBar -->
+		<key name="toolbar.colorbar.black">Black</key>
+		<key name="toolbar.colorbar.black.tt">Captain Obvious says: Black color</key>
+		<key name="toolbar.colorbar.blue">Blue</key>
+		<key name="toolbar.colorbar.blue.tt">Captain Obvious says: Blue color</key>
+		<key name="toolbar.colorbar.cyan">Cyan</key>
+		<key name="toolbar.colorbar.cyan.tt">Captain Obvious says: Cyan color</key>
+		<key name="toolbar.colorbar.darkgray">Dark gray</key>
+		<key name="toolbar.colorbar.darkgray.tt">Captain Obvious says: Dark gray color</key>
+		<key name="toolbar.colorbar.gray">Gray</key>
+		<key name="toolbar.colorbar.gray.tt">Captain Obvious says: Gray color</key>
+		<key name="toolbar.colorbar.green">Green</key>
+		<key name="toolbar.colorbar.green.tt">Captain Obvious says: Green color</key>
+		<key name="toolbar.colorbar.lightgray">Light gray</key>
+		<key name="toolbar.colorbar.lightgray.tt">Captain Obvious says: Light gray color</key>
+		<key name="toolbar.colorbar.magenta">Magenta</key>
+		<key name="toolbar.colorbar.magenta.tt">Captain Obvious says: Magenta color</key>
+		<key name="toolbar.colorbar.orange">Orange</key>
+		<key name="toolbar.colorbar.orange.tt">Captain Obvious says: Orange color</key>
+		<key name="toolbar.colorbar.pink">Pink</key>
+		<key name="toolbar.colorbar.pink.tt">Captain Obvious says: Pink color</key>
+		<key name="toolbar.colorbar.red">Red</key>
+		<key name="toolbar.colorbar.red.tt">Captain Obvious says: Red color</key>
+		<key name="toolbar.colorbar.white">White</key>
+		<key name="toolbar.colorbar.white.tt">Captain Obvious says: White color</key>
+		<key name="toolbar.colorbar.yellow">Yellow</key>
+		<key name="toolbar.colorbar.yellow.tt">Captain Obvious says: Yellow color</key>
+		<key name="toolbar.colorbar.choose">Choose color</key>
+		<key name="toolbar.colorbar.choose.tt">Choose color by dialog</key>
+
+<!-- Toolbar ModeBar -->
+		<key name="toolbar.modebar.selection">Select</key>
+		<key name="toolbar.modebar.selection.tt">Select area on image</key>
+		<key name="toolbar.modebar.pen">Pen</key>
+		<key name="toolbar.modebar.pen.tt">Draw any curve</key>
+		<key name="toolbar.modebar.brush">Brush</key>
+		<key name="toolbar.modebar.brush.tt">Fill current area</key>
+		<key name="toolbar.modebar.erase">Eraser</key>
+		<key name="toolbar.modebar.erase.tt">Erase selected area</key>
+		<key name="toolbar.modebar.text">Text</key>
+		<key name="toolbar.modebar.text.tt">Type text</key>
+		<key name="toolbar.modebar.line">Line</key>
+		<key name="toolbar.modebar.line.tt">Draw line</key>
+		<key name="toolbar.modebar.ellipse">Ellipse</key>
+		<key name="toolbar.modebar.ellipse.tt">Draw ellipse</key>
+		<key name="toolbar.modebar.rect">Rectangle</key>
+		<key name="toolbar.modebar.rect.tt">Draw rectangle</key>
+
+<!-- Toolbar ActionBar -->
+		<key name="toolbar.actionbar.crop">Crop</key>
+		<key name="toolbar.actionbar.crop.tt">Crop image by selection</key>
+		<key name="toolbar.actionbar.resize">Resize</key>
+		<key name="toolbar.actionbar.resize.tt">Resize image</key>
+		<key name="toolbar.actionbar.rotate">Rotate</key>
+		<key name="toolbar.actionbar.rotate.tt">Rotate image on 90 degrees</key>
+		<key name="toolbar.actionbar.reflectVert">Reflect vertically</key>
+		<key name="toolbar.actionbar.reflectVert.tt">Reflect image vertically</key>
+		<key name="toolbar.actionbar.reflectHor">Reflect horizontally</key>
+		<key name="toolbar.actionbar.reflectHor.tt">Reflect image horizontally</key>
+
+<!-- Toolbar SettingsBar -->
+		<key name="toolbar.settingsbar.font">Font</key>
+		<key name="toolbar.settingsbar.font.tt">Select font</key>
+		<key name="toolbar.settingsbar.line.thickness">Line thickness</key>
+		<key name="toolbar.settingsbar.line.thickness.tt">Select line thickness</key>
+		<key name="toolbar.settingsbar.line.thickness.1"></key>
+		<key name="toolbar.settingsbar.line.thickness.1.tt"></key>
+		<key name="toolbar.settingsbar.line.thickness.3"></key>
+		<key name="toolbar.settingsbar.line.thickness.3.tt"></key>
+		<key name="toolbar.settingsbar.line.thickness.5"></key>
+		<key name="toolbar.settingsbar.line.thickness.5.tt"></key>
+		<key name="toolbar.settingsbar.line.thickness.7"></key>
+		<key name="toolbar.settingsbar.line.thickness.7.tt"></key>
+		<key name="toolbar.settingsbar.line.stroke">Line style</key>
+		<key name="toolbar.settingsbar.line.stroke.tt">Select line style</key>
+		<key name="toolbar.settingsbar.line.stroke.solid"></key>
+		<key name="toolbar.settingsbar.line.stroke.solid.tt">Solid line</key>
+		<key name="toolbar.settingsbar.line.stroke.dashed"></key>
+		<key name="toolbar.settingsbar.line.stroke.dashed.tt">Dashed line</key>
+		<key name="toolbar.settingsbar.line.stroke.dotted"></key>
+		<key name="toolbar.settingsbar.line.stroke.dotted.tt">Dotted line</key>
+		<key name="toolbar.settingsbar.filling">Fill contours</key>
+		<key name="toolbar.settingsbar.filling.tt">Weather fill figures and text background</key>
+
+<!-- ImageEditPanel class localization -->
+		<key name="chav1961.bt.mnemoed.editor.ImageEditPanel.selectColor">Select color</key>
+				
+<!-- ImageEditPanel.EditStateString -->
+		<key name="chav1961.bt.mnemoed.bgeditor.ImageEditPanel.EditStateString.prompt">Type command</key>
+		<key name="chav1961.bt.mnemoed.bgeditor.ImageEditPanel.EditStateString.path.tt">Type command in SVG tag style</key>
+		<key name="chav1961.bt.mnemoed.bgeditor.ImageEditPanel.EditStateString.coord.tt">Current mouse cursor</key>
+		<key name="chav1961.bt.mnemoed.bgeditor.ImageEditPanel.EditStateString.size.tt">Current image size</key>
+		<key name="chav1961.bt.mnemoed.bgeditor.ImageEditPanel.EditStateString.font.tt">Current font selected</key>
+		<key name="chav1961.bt.mnemoed.bgeditor.ImageEditPanel.EditStateString.settings.tt">Current foreground, background, line thickness and style</key>
+
+<!-- AskImageSize class localization -->
+		<key name="askimagesize.title">Type image size</key>
+		<key name="askimagesize.title.tt">Type image size</key>
+		<key name="askimagesize.title.help">Type image size</key>
+		<key name="askimagesize.width">Width</key>
+		<key name="askimagesize.width.tt">Width in pixels</key>
+		<key name="askimagesize.height">Height</key>
+		<key name="askimagesize.height.tt">Height in pixels</key>
+		 
+	</lang>
+	<lang name="ru">
+<!-- Приложение -->
+		<key name="chav1961.bt.paint.Application.title">(c) 2022, А.В.Черномырдин. Простой графический редактор V.R.=0.0 %1$s</key>
+		<key name="application.about.title">О программе...</key>
+		<key name="application.about.content">uri(about.cre)</key>
+		<key name="chav1961.bt.paint.Application.filter.pngfiles">PNG изображения</key>
+		<key name="chav1961.bt.paint.Application.filter.jpgfiles">JPEG изображения</key>
+		<key name="chav1961.bt.paint.Application.unsavedChanges">Есть несохраненные изменения. Сохранить их?</key>
+		<key name="chav1961.bt.paint.Application.unsavedChanges.title">Несохраненные изменения</key>
+		<key name="chav1961.bt.paint.Application.message.ready">Готово</key>		
+		<key name="chav1961.bt.paint.Application.help.title">О программе</key>
+		<key name="chav1961.bt.paint.Application.help.content">uri(aboutApplication.cre)</key>
+		
+<!-- Main menu -->
+		<key name="menu.main.file">Файл</key>
+		<key name="menu.main.file.tt">Меню файлов</key>
+		<key name="menu.main.file.new">Новый</key>
+		<key name="menu.main.file.new.tt">Создать новое изображение</key>
+		<key name="menu.main.file.load">Загрузить</key>
+		<key name="menu.main.file.load.tt">Загрузить изображение из файла</key>
+		<key name="menu.main.file.save">Сохранить</key>
+		<key name="menu.main.file.save.tt">Сохранить изображение</key>
+		<key name="menu.main.file.saveAs">Сохранить как...</key>
+		<key name="menu.main.file.saveAs.tt">Сохранить изображение как...</key>
+		<key name="menu.main.file.exit">Выход</key>
+		<key name="menu.main.file.exit.tt">Выход из редактора</key>
+		<key name="menu.main.edit">Правка</key>
+		<key name="menu.main.edit.tt">Правка изображения</key>
+		<key name="menu.main.edit.undo">Отмена</key>
+		<key name="menu.main.edit.undo.tt">Отмена последних операций</key>
+		<key name="menu.main.edit.redo">Восстановить</key>
+		<key name="menu.main.edit.redo.tt">Восстановить последние отмененные операции</key>
+		<key name="menu.main.edit.cut">Вырезать</key>
+		<key name="menu.main.edit.cut.tt">Вырезать выделенный участок изображения</key>
+		<key name="menu.main.edit.copy">Копировать</key>
+		<key name="menu.main.edit.copy.tt">Копировать выделенный участок изображения</key>
+		<key name="menu.main.edit.paste">Вставить</key>
+		<key name="menu.main.edit.paste.tt">Вставить изображение из буфера обмена</key>
+		<key name="menu.main.tools">Инструменты</key>
+		<key name="menu.main.tools.tt">Управление приложением</key>
+		<key name="menu.main.tools.settings">Настройки</key>
+		<key name="menu.main.tools.settings.tt">Настройки приложения</key>
+		<key name="menu.main.tools.languages">Язык</key>
+		<key name="menu.main.tools.languages.tt">Выбрать язык интерфейса</key>
+		<key name="menu.main.help">Справка</key>
+		<key name="menu.main.help.tt">Справочная система</key>
+		<key name="menu.main.help.about">О программе</key>
+		<key name="menu.main.help.about.tt">Информация о приложении</key>
+
+<!-- Toolbar ColorBar -->
+		<key name="toolbar.colorbar.black">Черный</key>
+		<key name="toolbar.colorbar.black.tt">Кэп сообщает: черный цвет</key>
+		<key name="toolbar.colorbar.blue">Синий</key>
+		<key name="toolbar.colorbar.blue.tt">Кэп сообщает: синий цвет</key>
+		<key name="toolbar.colorbar.cyan">Голубой</key>
+		<key name="toolbar.colorbar.cyan.tt">Кэп сообщает: голубой цвет</key>
+		<key name="toolbar.colorbar.darkgray">Темно-серый</key>
+		<key name="toolbar.colorbar.darkgray.tt">Кэп сообщает: темно-серый цвет</key>
+		<key name="toolbar.colorbar.gray">Серый</key>
+		<key name="toolbar.colorbar.gray.tt">Кэп сообщает: Серый цвет</key>
+		<key name="toolbar.colorbar.green">Зеленый</key>
+		<key name="toolbar.colorbar.green.tt">Кэп сообщает: зеленый цвет</key>
+		<key name="toolbar.colorbar.lightgray">Светло-серый</key>
+		<key name="toolbar.colorbar.lightgray.tt">Кэп сообщает: светло-серый цвет</key>
+		<key name="toolbar.colorbar.magenta">Малиновый</key>
+		<key name="toolbar.colorbar.magenta.tt">Кэп сообщает: малиновый цвет</key>
+		<key name="toolbar.colorbar.orange">Оранжевый</key>
+		<key name="toolbar.colorbar.orange.tt">Кэп сообщает: оранжевый цвет</key>
+		<key name="toolbar.colorbar.pink">Розовый</key>
+		<key name="toolbar.colorbar.pink.tt">Кэп сообщает: розовый цвет</key>
+		<key name="toolbar.colorbar.red">Красный</key>
+		<key name="toolbar.colorbar.red.tt">Кэп сообщает: красный цвет</key>
+		<key name="toolbar.colorbar.white">Белый</key>
+		<key name="toolbar.colorbar.white.tt">Кэп сообщает: белый цвет</key>
+		<key name="toolbar.colorbar.yellow">Желтый</key>
+		<key name="toolbar.colorbar.yellow.tt">Кэп сообщает: желтый цвет</key>
+		<key name="toolbar.colorbar.choose">Выбрать цвет</key>
+		<key name="toolbar.colorbar.choose.tt">Выбрать цвет с помощью диалога</key>
+
+<!-- Toolbar ModeBar -->
+		<key name="toolbar.modebar.selection">Выбор</key>
+		<key name="toolbar.modebar.selection.tt">Выбор области изображения</key>
+		<key name="toolbar.modebar.pen">Линия</key>
+		<key name="toolbar.modebar.pen.tt">Рисовать произвольную линию</key>
+		<key name="toolbar.modebar.brush">Заливка</key>
+		<key name="toolbar.modebar.brush.tt">Залить текущую область</key>
+		<key name="toolbar.modebar.erase">Лсстик</key>
+		<key name="toolbar.modebar.erase.tt">Стереть область</key>
+		<key name="toolbar.modebar.text">Текст</key>
+		<key name="toolbar.modebar.text.tt">Набрать текст</key>
+		<key name="toolbar.modebar.line">Линия</key>
+		<key name="toolbar.modebar.line.tt">Нарисовать линию</key>
+		<key name="toolbar.modebar.ellipse">Эллипс</key>
+		<key name="toolbar.modebar.ellipse.tt">Нарисовать эллипс</key>
+		<key name="toolbar.modebar.rect">Прямоугольник</key>
+		<key name="toolbar.modebar.rect.tt">Нарисовать прямоугольник</key>
+		
+<!-- Toolbar ActionBar -->
+		<key name="toolbar.actionbar.crop">Обрезка</key>
+		<key name="toolbar.actionbar.crop.tt">Обрезать изображение по выделенному</key>
+		<key name="toolbar.actionbar.resize">Изменить размер</key>
+		<key name="toolbar.actionbar.resize.tt">Изменить размер изображения</key>
+		<key name="toolbar.actionbar.rotate">Повернуть</key>
+		<key name="toolbar.actionbar.rotate.tt">Повернуть изображение на 90 градусов</key>
+		<key name="toolbar.actionbar.reflectVert">Отобразить по вертикали</key>
+		<key name="toolbar.actionbar.reflectVert.tt">Зеркально отобразить по вертикали</key>
+		<key name="toolbar.actionbar.reflectHor">Отобразить по горизонтали</key>
+		<key name="toolbar.actionbar.reflectHor.tt">Зеркально отобразить по горизонтали</key>
+		
+<!-- Toolbar SettingsBar -->
+		<key name="toolbar.settingsbar.font">Шрифт</key>
+		<key name="toolbar.settingsbar.font.tt">Выбор шрифта</key>
+		<key name="toolbar.settingsbar.line.thickness">Толщина линий</key>
+		<key name="toolbar.settingsbar.line.thickness.tt">Выбор толщины линий для рисования</key>
+		<key name="toolbar.settingsbar.line.thickness.1"></key>
+		<key name="toolbar.settingsbar.line.thickness.1.tt"></key>
+		<key name="toolbar.settingsbar.line.thickness.3"></key>
+		<key name="toolbar.settingsbar.line.thickness.3.tt"></key>
+		<key name="toolbar.settingsbar.line.thickness.5"></key>
+		<key name="toolbar.settingsbar.line.thickness.5.tt"></key>
+		<key name="toolbar.settingsbar.line.thickness.7"></key>
+		<key name="toolbar.settingsbar.line.thickness.7.tt"></key>
+		<key name="toolbar.settingsbar.line.stroke">Стиль линии</key>
+		<key name="toolbar.settingsbar.line.stroke.tt">Выбор стиля линий</key>
+		<key name="toolbar.settingsbar.line.stroke.solid"></key>
+		<key name="toolbar.settingsbar.line.stroke.solid.tt">Сплошная линия</key>
+		<key name="toolbar.settingsbar.line.stroke.dashed"></key>
+		<key name="toolbar.settingsbar.line.stroke.dashed.tt">Штриховая линия</key>
+		<key name="toolbar.settingsbar.line.stroke.dotted"></key>
+		<key name="toolbar.settingsbar.line.stroke.dotted.tt">Пунктирная линия</key>
+		<key name="toolbar.settingsbar.filling">Заливка фигур</key>
+		<key name="toolbar.settingsbar.filling.tt">Заливать или не заливатьь замкнутые контуры фигур</key>
+
+<!-- ImageEditPanel.EditStateString -->
+		<key name="chav1961.bt.mnemoed.bgeditor.ImageEditPanel.EditStateString.prompt">Введите команду</key>
+		<key name="chav1961.bt.mnemoed.bgeditor.ImageEditPanel.EditStateString.path.tt">В это поле можно ввести команду в стиле тега SVG</key>
+		<key name="chav1961.bt.mnemoed.bgeditor.ImageEditPanel.EditStateString.coord.tt">Текущие координаты курсора мыши</key>
+		<key name="chav1961.bt.mnemoed.bgeditor.ImageEditPanel.EditStateString.size.tt">Размер текущего изображения</key>
+		<key name="chav1961.bt.mnemoed.bgeditor.ImageEditPanel.EditStateString.font.tt">Настройки текущего шрифтв</key>
+		<key name="chav1961.bt.mnemoed.bgeditor.ImageEditPanel.EditStateString.settings.tt">Цвет фона, переднего плата, стиль и толщина линии</key>
+		
+<!-- Локализация класса ImageEditPanel -->
+		<key name="chav1961.bt.mnemoed.editor.ImageEditPanel.selectColor">Выберите цвет</key>		
+		
+<!-- Локализация класса AskImageSize -->
+		<key name="askimagesize.title">Задайте размер изображения</key>
+		<key name="askimagesize.title.tt">Задайте размер изображения</key>
+		<key name="askimagesize.title.help">Задайте размер изображения</key>
+		<key name="askimagesize.width">Ширина</key>
+		<key name="askimagesize.width.tt">Ширина в пикселях</key>
+		<key name="askimagesize.height">Высота</key>
+		<key name="askimagesize.height.tt">Высота в пикселях</key>
+		
+		
+	</lang>
+</localization>

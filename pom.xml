@@ -37,5 +37,6 @@
   	<module>bt.mediaplayer</module>
   	<module>bt.pythonwrapper</module>
   	<module>bt.clipper</module>
+  	<module>bt.paint</module>
   </modules>
 </project>

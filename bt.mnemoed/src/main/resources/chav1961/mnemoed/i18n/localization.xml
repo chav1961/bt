@@ -198,8 +198,6 @@
 		<key name="editor.toolbar.left.newContainer">New container</key>
 		<key name="editor.toolbar.left.newContainer.tt">Insert new container</key>
 		
-		
-		
 		<key name="editor.toolbar.top.button1">TB1</key>
 		<key name="editor.toolbar.top.button1.tt">TB1</key>
 		<key name="editor.toolbar.top.button2">TB2</key>
@@ -250,6 +248,18 @@
 		<key name="menu.main.file.saveAs.tt">Save image as...</key>
 		<key name="menu.main.file.exit">Exit</key>
 		<key name="menu.main.file.exit.tt">Exit application</key>
+		<key name="menu.main.edit">Edit</key>
+		<key name="menu.main.edit.tt">Edit image</key>
+		<key name="menu.main.edit.undo">Undo</key>
+		<key name="menu.main.edit.undo.tt">Undo last operations</key>
+		<key name="menu.main.edit.redo">Redo</key>
+		<key name="menu.main.edit.redo.tt">Redo last operations</key>
+		<key name="menu.main.edit.cut">Cut</key>
+		<key name="menu.main.edit.cut.tt">Cut selected area into clipboard</key>
+		<key name="menu.main.edit.copy">Copy</key>
+		<key name="menu.main.edit.copy.tt">Copy selected area into clipboard</key>
+		<key name="menu.main.edit.paste">Paste</key>
+		<key name="menu.main.edit.paste.tt">Paste selected area from clipboard</key>
 
 <!-- Toolbar ColorBar -->
 		<key name="toolbar.colorbar.black">Black</key>
@@ -282,6 +292,8 @@
 		<key name="toolbar.colorbar.choose.tt">Choose color by dialog</key>
 
 <!-- Toolbar ModeBar -->
+		<key name="toolbar.modebar.selection">Select</key>
+		<key name="toolbar.modebar.selection.tt">Select area on image</key>
 		<key name="toolbar.modebar.pen">Pen</key>
 		<key name="toolbar.modebar.pen.tt">Draw any curve</key>
 		<key name="toolbar.modebar.brush">Brush</key>
@@ -297,8 +309,52 @@
 		<key name="toolbar.modebar.rect">Rectangle</key>
 		<key name="toolbar.modebar.rect.tt">Draw rectangle</key>
 
-<!-- ImageEdit class localization -->
-		<key name="chav1961.bt.mnemoed.editor.ImageEdit.selectColor">Select color</key>		
+<!-- Toolbar ActionBar -->
+		<key name="toolbar.actionbar.crop">Crop</key>
+		<key name="toolbar.actionbar.crop.tt">Crop image by selection</key>
+		<key name="toolbar.actionbar.resize">Resize</key>
+		<key name="toolbar.actionbar.resize.tt">Resize image</key>
+		<key name="toolbar.actionbar.rotate">Rotate</key>
+		<key name="toolbar.actionbar.rotate.tt">Rotate image on 90 degrees</key>
+		<key name="toolbar.actionbar.reflectVert">Reflect vertically</key>
+		<key name="toolbar.actionbar.reflectVert.tt">Reflect image vertically</key>
+		<key name="toolbar.actionbar.reflectHor">Reflect horizontally</key>
+		<key name="toolbar.actionbar.reflectHor.tt">Reflect image horizontally</key>
+
+<!-- Toolbar SettingsBar -->
+		<key name="toolbar.settingsbar.font">Font</key>
+		<key name="toolbar.settingsbar.font.tt">Select font</key>
+		<key name="toolbar.settingsbar.line.thickness">Line thickness</key>
+		<key name="toolbar.settingsbar.line.thickness.tt">Select line thickness</key>
+		<key name="toolbar.settingsbar.line.thickness.1"></key>
+		<key name="toolbar.settingsbar.line.thickness.1.tt"></key>
+		<key name="toolbar.settingsbar.line.thickness.3"></key>
+		<key name="toolbar.settingsbar.line.thickness.3.tt"></key>
+		<key name="toolbar.settingsbar.line.thickness.5"></key>
+		<key name="toolbar.settingsbar.line.thickness.5.tt"></key>
+		<key name="toolbar.settingsbar.line.thickness.7"></key>
+		<key name="toolbar.settingsbar.line.thickness.7.tt"></key>
+		<key name="toolbar.settingsbar.line.stroke">Line style</key>
+		<key name="toolbar.settingsbar.line.stroke.tt">Select line style</key>
+		<key name="toolbar.settingsbar.line.stroke.solid"></key>
+		<key name="toolbar.settingsbar.line.stroke.solid.tt">Solid line</key>
+		<key name="toolbar.settingsbar.line.stroke.dashed"></key>
+		<key name="toolbar.settingsbar.line.stroke.dashed.tt">Dashed line</key>
+		<key name="toolbar.settingsbar.line.stroke.dotted"></key>
+		<key name="toolbar.settingsbar.line.stroke.dotted.tt">Dotted line</key>
+		<key name="toolbar.settingsbar.filling">Fill contours</key>
+		<key name="toolbar.settingsbar.filling.tt">Weather fill figures and text background</key>
+
+<!-- ImageEditPanel class localization -->
+		<key name="chav1961.bt.mnemoed.editor.ImageEditPanel.selectColor">Select color</key>
+				
+<!-- ImageEditPanel.EditStateString -->
+		<key name="chav1961.bt.mnemoed.bgeditor.ImageEditPanel.EditStateString.prompt">Type command</key>
+		<key name="chav1961.bt.mnemoed.bgeditor.ImageEditPanel.EditStateString.path.tt">Type command in SVG tag style</key>
+		<key name="chav1961.bt.mnemoed.bgeditor.ImageEditPanel.EditStateString.coord.tt">Current mouse cursor</key>
+		<key name="chav1961.bt.mnemoed.bgeditor.ImageEditPanel.EditStateString.size.tt">Current image size</key>
+		<key name="chav1961.bt.mnemoed.bgeditor.ImageEditPanel.EditStateString.font.tt">Current font selected</key>
+		<key name="chav1961.bt.mnemoed.bgeditor.ImageEditPanel.EditStateString.settings.tt">Current foreground, background, line thickness and style</key>
 		 
 	</lang>
 	<lang name="ru">
@@ -550,6 +606,18 @@
 		<key name="menu.main.file.saveAs.tt">Сохранить изображение как...</key>
 		<key name="menu.main.file.exit">Выход</key>
 		<key name="menu.main.file.exit.tt">Выход из редактора</key>
+		<key name="menu.main.edit">Правка</key>
+		<key name="menu.main.edit.tt">Правка изображения</key>
+		<key name="menu.main.edit.undo">Отмена</key>
+		<key name="menu.main.edit.undo.tt">Отмена последних операций</key>
+		<key name="menu.main.edit.redo">Восстановить</key>
+		<key name="menu.main.edit.redo.tt">Восстановить последние отмененные операции</key>
+		<key name="menu.main.edit.cut">Вырезать</key>
+		<key name="menu.main.edit.cut.tt">Вырезать выделенный участок изображения</key>
+		<key name="menu.main.edit.copy">Копировать</key>
+		<key name="menu.main.edit.copy.tt">Копировать выделенный участок изображения</key>
+		<key name="menu.main.edit.paste">Вставить</key>
+		<key name="menu.main.edit.paste.tt">Вставить изображение из буфера обмена</key>
 
 <!-- Toolbar ColorBar -->
 		<key name="toolbar.colorbar.black">Черный</key>
@@ -582,6 +650,8 @@
 		<key name="toolbar.colorbar.choose.tt">Выбрать цвет с помощью диалога</key>
 
 <!-- Toolbar ModeBar -->
+		<key name="toolbar.modebar.selection">Выбор</key>
+		<key name="toolbar.modebar.selection.tt">Выбор области изображения</key>
 		<key name="toolbar.modebar.pen">Линия</key>
 		<key name="toolbar.modebar.pen.tt">Рисовать произвольную линию</key>
 		<key name="toolbar.modebar.brush">Заливка</key>
@@ -597,8 +667,52 @@
 		<key name="toolbar.modebar.rect">Прямоугольник</key>
 		<key name="toolbar.modebar.rect.tt">Нарисовать прямоугольник</key>
 		
-<!-- Локализация класса ImageEdit -->
-		<key name="chav1961.bt.mnemoed.editor.ImageEdit.selectColor">Выберите цвет</key>		
+<!-- Toolbar ActionBar -->
+		<key name="toolbar.actionbar.crop">Обрезка</key>
+		<key name="toolbar.actionbar.crop.tt">Обрезать изображение по выделенному</key>
+		<key name="toolbar.actionbar.resize">Изменить размер</key>
+		<key name="toolbar.actionbar.resize.tt">Изменить размер изображения</key>
+		<key name="toolbar.actionbar.rotate">Повернуть</key>
+		<key name="toolbar.actionbar.rotate.tt">Повернуть изображение на 90 градусов</key>
+		<key name="toolbar.actionbar.reflectVert">Отобразить по вертикали</key>
+		<key name="toolbar.actionbar.reflectVert.tt">Зеркально отобразить по вертикали</key>
+		<key name="toolbar.actionbar.reflectHor">Отобразить по горизонтали</key>
+		<key name="toolbar.actionbar.reflectHor.tt">Зеркально отобразить по горизонтали</key>
+		
+<!-- Toolbar SettingsBar -->
+		<key name="toolbar.settingsbar.font">Шрифт</key>
+		<key name="toolbar.settingsbar.font.tt">Выбор шрифта</key>
+		<key name="toolbar.settingsbar.line.thickness">Толщина линий</key>
+		<key name="toolbar.settingsbar.line.thickness.tt">Выбор толщины линий для рисования</key>
+		<key name="toolbar.settingsbar.line.thickness.1"></key>
+		<key name="toolbar.settingsbar.line.thickness.1.tt"></key>
+		<key name="toolbar.settingsbar.line.thickness.3"></key>
+		<key name="toolbar.settingsbar.line.thickness.3.tt"></key>
+		<key name="toolbar.settingsbar.line.thickness.5"></key>
+		<key name="toolbar.settingsbar.line.thickness.5.tt"></key>
+		<key name="toolbar.settingsbar.line.thickness.7"></key>
+		<key name="toolbar.settingsbar.line.thickness.7.tt"></key>
+		<key name="toolbar.settingsbar.line.stroke">Стиль линии</key>
+		<key name="toolbar.settingsbar.line.stroke.tt">Выбор стиля линий</key>
+		<key name="toolbar.settingsbar.line.stroke.solid"></key>
+		<key name="toolbar.settingsbar.line.stroke.solid.tt">Сплошная линия</key>
+		<key name="toolbar.settingsbar.line.stroke.dashed"></key>
+		<key name="toolbar.settingsbar.line.stroke.dashed.tt">Штриховая линия</key>
+		<key name="toolbar.settingsbar.line.stroke.dotted"></key>
+		<key name="toolbar.settingsbar.line.stroke.dotted.tt">Пунктирная линия</key>
+		<key name="toolbar.settingsbar.filling">Заливка фигур</key>
+		<key name="toolbar.settingsbar.filling.tt">Заливать или не заливатьь замкнутые контуры фигур</key>
+
+<!-- ImageEditPanel.EditStateString -->
+		<key name="chav1961.bt.mnemoed.bgeditor.ImageEditPanel.EditStateString.prompt">Введите команду</key>
+		<key name="chav1961.bt.mnemoed.bgeditor.ImageEditPanel.EditStateString.path.tt">В это поле можно ввести команду в стиле тега SVG</key>
+		<key name="chav1961.bt.mnemoed.bgeditor.ImageEditPanel.EditStateString.coord.tt">Текущие координаты курсора мыши</key>
+		<key name="chav1961.bt.mnemoed.bgeditor.ImageEditPanel.EditStateString.size.tt">Размер текущего изображения</key>
+		<key name="chav1961.bt.mnemoed.bgeditor.ImageEditPanel.EditStateString.font.tt">Настройки текущего шрифтв</key>
+		<key name="chav1961.bt.mnemoed.bgeditor.ImageEditPanel.EditStateString.settings.tt">Цвет фона, переднего плата, стиль и толщина линии</key>
+		
+<!-- Локализация класса ImageEditPanel -->
+		<key name="chav1961.bt.mnemoed.editor.ImageEditPanel.selectColor">Выберите цвет</key>		
 		
 	</lang>
 </localization>

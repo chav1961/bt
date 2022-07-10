@@ -1,4 +1,4 @@
-package chav1961.bt.mnemoed.bgeditor;
+package chav1961.bt.paint.control;
 
 import java.awt.Image;
 import java.awt.image.RenderedImage;
