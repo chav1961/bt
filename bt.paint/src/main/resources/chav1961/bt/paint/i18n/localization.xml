@@ -78,6 +78,10 @@
 		<key name="toolbar.colorbar.yellow.tt">Captain Obvious says: Yellow color</key>
 		<key name="toolbar.colorbar.choose">Choose color</key>
 		<key name="toolbar.colorbar.choose.tt">Choose color by dialog</key>
+		<key name="toolbar.colorbar.extract">Extract color</key>
+		<key name="toolbar.colorbar.extract.tt">Extract color from image point</key>
+		<key name="toolbar.colorbar.colorswitch">Switch color</key>
+		<key name="toolbar.colorbar.colorswitch.tt">Switch forground/background color</key>
 
 <!-- Toolbar ModeBar -->
 		<key name="toolbar.modebar.selection">Select</key>
@@ -108,6 +112,10 @@
 		<key name="toolbar.actionbar.reflectVert.tt">Reflect image vertically</key>
 		<key name="toolbar.actionbar.reflectHor">Reflect horizontally</key>
 		<key name="toolbar.actionbar.reflectHor.tt">Reflect image horizontally</key>
+		<key name="toolbar.actionbar.tograyscale">Grayscale</key>
+		<key name="toolbar.actionbar.tograyscale.tt">Convert image to grayscaled</key>
+		<key name="toolbar.actionbar.transparency">Transparency</key>
+		<key name="toolbar.actionbar.transparency.tt">MAke background transparend (according to background color selected)</key>
 
 <!-- Toolbar SettingsBar -->
 		<key name="toolbar.settingsbar.font">Font</key>
@@ -232,6 +240,10 @@
 		<key name="toolbar.colorbar.yellow.tt">Кэп сообщает: желтый цвет</key>
 		<key name="toolbar.colorbar.choose">Выбрать цвет</key>
 		<key name="toolbar.colorbar.choose.tt">Выбрать цвет с помощью диалога</key>
+		<key name="toolbar.colorbar.extract">Извлечь цвет</key>
+		<key name="toolbar.colorbar.extract.tt">Извлечь цвет из точки на изображении</key>
+		<key name="toolbar.colorbar.colorswitch">Переключить цвета</key>
+		<key name="toolbar.colorbar.colorswitch.tt">Переключить цвет переднего плана/цвет фона</key>
 
 <!-- Toolbar ModeBar -->
 		<key name="toolbar.modebar.selection">Выбор</key>
@@ -262,6 +274,10 @@
 		<key name="toolbar.actionbar.reflectVert.tt">Зеркально отобразить по вертикали</key>
 		<key name="toolbar.actionbar.reflectHor">Отобразить по горизонтали</key>
 		<key name="toolbar.actionbar.reflectHor.tt">Зеркально отобразить по горизонтали</key>
+		<key name="toolbar.actionbar.tograyscale">Оттенки серого</key>
+		<key name="toolbar.actionbar.tograyscale.tt">Преобразовать изображение в оттенки серого</key>
+		<key name="toolbar.actionbar.transparency">Прозрачный фон</key>
+		<key name="toolbar.actionbar.transparency.tt">Сделать фон прозрачным (в соответствии с выбранным цветом фона)</key>
 		
 <!-- Toolbar SettingsBar -->
 		<key name="toolbar.settingsbar.font">Шрифт</key>

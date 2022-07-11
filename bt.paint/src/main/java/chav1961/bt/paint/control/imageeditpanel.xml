@@ -48,6 +48,8 @@
 		<app:item name="toolbar.colorbar.white" caption="toolbar.colorbar.white" tooltip="toolbar.colorbar.white.tt" icon="root://chav1961.bt.paint.control.ImageEditPanel/chav1961/bt/paint/images/color_white.png" action="chooseColor?color=white"/>
 		<app:item name="toolbar.colorbar.yellow" caption="toolbar.colorbar.yellow" tooltip="toolbar.colorbar.yellow.tt" icon="root://chav1961.bt.paint.control.ImageEditPanel/chav1961/bt/paint/images/color_yellow.png" action="chooseColor?color=yellow"/>
 		<app:item name="toolbar.colorbar.choose" caption="toolbar.colorbar.choose" tooltip="toolbar.colorbar.choose.tt" icon="root://chav1961.bt.paint.control.ImageEditPanel/chav1961/bt/paint/images/color_choose.png" action="chooseColor?color=choose"/>
+		<app:item name="toolbar.colorbar.extract" caption="toolbar.colorbar.extract" tooltip="toolbar.colorbar.extract.tt" icon="root://chav1961.bt.paint.control.ImageEditPanel/chav1961/bt/paint/images/color_extract.png" checkable="true" action="chooseColor?color=extract"/>
+		<app:item name="toolbar.colorbar.colorswitch" caption="toolbar.colorbar.colorswitch" tooltip="toolbar.colorbar.colorswitch.tt" icon="root://chav1961.bt.paint.control.ImageEditPanel/chav1961/bt/paint/images/foreground.png?toggled=background.png" checkable="true" action="switchColor"/>
 	</app:menu>
  	<app:menu id="modeBar">
 		<app:item name="toolbar.modebar.selection" caption="toolbar.modebar.selection" tooltip="toolbar.modebar.selection.tt" icon="root://chav1961.bt.paint.control.ImageEditPanel/chav1961/bt/paint/images/selection.png" action="chooseMode?mode=SELECT"/>
@@ -65,6 +67,8 @@
 		<app:item name="toolbar.actionbar.rotate" caption="toolbar.actionbar.rotate" tooltip="toolbar.actionbar.rotate.tt" icon="root://chav1961.bt.paint.control.ImageEditPanel/chav1961/bt/paint/images/rotate.png" action="rotate"/>
 		<app:item name="toolbar.actionbar.reflectVert" caption="toolbar.actionbar.reflectVert" tooltip="toolbar.actionbar.reflectVert.tt" icon="root://chav1961.bt.paint.control.ImageEditPanel/chav1961/bt/paint/images/reflectVertically.png" action="reflectVert"/>
 		<app:item name="toolbar.actionbar.reflectHor" caption="toolbar.actionbar.reflectHor" tooltip="toolbar.actionbar.reflectHor.tt" icon="root://chav1961.bt.paint.control.ImageEditPanel/chav1961/bt/paint/images/reflectHorizontally.png" action="reflectHor"/>
+		<app:item name="toolbar.actionbar.tograyscale" caption="toolbar.actionbar.tograyscale" tooltip="toolbar.actionbar.tograyscale.tt" icon="root://chav1961.bt.paint.control.ImageEditPanel/chav1961/bt/paint/images/rgb2gs.png" action="toGrayScale"/>
+		<app:item name="toolbar.actionbar.transparency" caption="toolbar.actionbar.transparency" tooltip="toolbar.actionbar.transparency.tt" icon="root://chav1961.bt.paint.control.ImageEditPanel/chav1961/bt/paint/images/transparency.png" action="transparency"/>
 	</app:menu>
  	<app:menu id="settingsBar">
 		<app:item name="toolbar.settingsbar.font" caption="toolbar.settingsbar.font" tooltip="toolbar.settingsbar.font.tt" icon="root://chav1961.bt.paint.control.ImageEditPanel/chav1961/bt/paint/images/fontSettings.png" action="settings.font"/>

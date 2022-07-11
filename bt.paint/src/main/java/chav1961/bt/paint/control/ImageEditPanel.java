@@ -1,7 +1,9 @@
 package chav1961.bt.paint.control;
 
+
 import java.awt.BasicStroke;
 import java.awt.BorderLayout;
+import java.awt.image.BufferedImage;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Graphics;
@@ -27,6 +29,7 @@ import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JSeparator;
 import javax.swing.JTextField;
+import javax.swing.JToggleButton;
 import javax.swing.JToolBar;
 import javax.swing.border.EtchedBorder;
 import javax.swing.event.ChangeEvent;
@@ -45,6 +48,8 @@ import chav1961.purelib.i18n.interfaces.LocalizerOwner;
 import chav1961.purelib.model.ContentModelFactory;
 import chav1961.purelib.model.interfaces.ContentMetadataInterface;
 import chav1961.purelib.ui.swing.SwingUtils;
+import chav1961.purelib.ui.swing.interfaces.FunctionalMouseListener;
+import chav1961.purelib.ui.swing.interfaces.FunctionalMouseListener.EventType;
 import chav1961.purelib.ui.swing.interfaces.OnAction;
 import chav1961.purelib.ui.swing.useful.JFontSelectionDialog;
 import chav1961.purelib.ui.swing.useful.JLocalizedOptionPane;
@@ -70,6 +75,8 @@ public class ImageEditPanel extends JPanel implements LocalizerOwner, LocaleChan
 	private final JPanel			leftPanel = new JPanel();
 	private final ImageEditCanvas	canvas;
 	private final EditStateString	state;
+	private boolean 				foregroundNow = true;
+	private boolean 				waitColorExtraction = false;
 	
 	public ImageEditPanel(final Localizer localizer, final int editHistoryLength) throws NullPointerException {
 		super(new BorderLayout());
@@ -107,6 +114,13 @@ public class ImageEditPanel extends JPanel implements LocalizerOwner, LocaleChan
 				@Override public void mouseMoved(MouseEvent e) {state.refreshCoordinates(e.getX(), e.getY());}
 				@Override public void mouseDragged(MouseEvent e) {state.refreshCoordinates(e.getX(), e.getY());}
 			});
+	        canvas.addMouseListener((FunctionalMouseListener)(ct, e)->{
+	        	if (ct == EventType.CLICKED && waitColorExtraction && getImage() != null) {
+	        		setColor(new Color(((BufferedImage)getImage()).getRGB(e.getX(), e.getY())));
+	        		turnOffExtractColorButton();
+	        		waitColorExtraction = false;
+	        	}
+	        });
 	        
         	state.refreshSettings(canvas);
 	        fillLocalizedStrings();
@@ -162,10 +176,16 @@ public class ImageEditPanel extends JPanel implements LocalizerOwner, LocaleChan
 			case "white"	: setColor(Color.WHITE);		break;
 			case "yellow"	: setColor(Color.YELLOW);		break;
 			case "choose"	: chooseColor();				break;
+			case "extract"	: extractColor();				break;
 			default : throw new UnsupportedOperationException("Color type ["+colors.get("color")[0]+"] is not supported yet"); 
 		}
     }
 
+	@OnAction("action:/switchColor")
+    public void switchColor(final Hashtable<String,String[]> modes) {
+		foregroundNow = !foregroundNow;
+	}
+	
 	@OnAction("action:/chooseMode")
     public void chooseMode(final Hashtable<String,String[]> modes) throws IOException {
 		canvas.setCurrentDrawMode(DrawingMode.valueOf(modes.get("mode")[0]));
@@ -189,6 +209,14 @@ public class ImageEditPanel extends JPanel implements LocalizerOwner, LocaleChan
 	
 	@OnAction("action:/reflectHor")
 	public void reflectH() {
+	}
+
+	@OnAction("action:/toGrayScale")
+	public void toGrayScale() {
+	}
+	
+	@OnAction("action:/transparency")
+	public void makeTransparent() {
 	}
 	
 	@OnAction("action:/settings.font")
@@ -258,8 +286,23 @@ public class ImageEditPanel extends JPanel implements LocalizerOwner, LocaleChan
         }
 	}
 
+	private void extractColor() {
+		if (getImage() != null) {
+			waitColorExtraction = true;
+		}
+		else {
+			turnOffExtractColorButton();
+			waitColorExtraction = false;
+		}
+	}
+	
 	private void setColor(final Color color) {
-		canvas.setForeground(color);
+		if (foregroundNow) {
+			canvas.setForeground(color);
+		}
+		else {
+			canvas.setBackground(color);
+		}
 	}
 	
 	private JToolBar prepareModeToolBar() {
@@ -418,7 +461,10 @@ public class ImageEditPanel extends JPanel implements LocalizerOwner, LocaleChan
 			g2d.setColor(oldColor);
 		}
 	}
-	
+
+	private void turnOffExtractColorButton() {
+		((JToggleButton)SwingUtils.findComponentByName(topPanel, "toolbar.colorbar.extract")).setSelected(false);
+	}
 	
 	private void fillLocalizedStrings() {
 		

@@ -141,7 +141,7 @@ public class Application extends JFrame implements NodeMetadataOwner, LocaleChan
 		if (checkUnsavedChanges()) {
 			final AskImageSize	ais = new AskImageSize(getLogger());
 			
-			if (ask(ais,200,200)) {
+			if (ask(ais,200,80)) {
 		    	panel.setImage(new BufferedImage(ais.width, ais.height, BufferedImage.TYPE_3BYTE_BGR));
 		    	lastFile = null;
 				refreshMenuState();
