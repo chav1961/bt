@@ -31,6 +31,7 @@ public class ImageEditCanvas extends JBackgroundComponent {
 	private int							lineThickness = 1;
 	private LineStroke					lineStroke = LineStroke.SOLID;
 	private boolean						fillContours = false;
+	private Rectangle					selection = null;
 	private String						prevComment = null, currentComment = "";
 
 	public static enum DrawingMode {
@@ -95,6 +96,7 @@ public class ImageEditCanvas extends JBackgroundComponent {
 					throw new UnsupportedOperationException("Old drawing mode ["+getCurrentDrawMode()+"] is not supported yet");
 			}
 			currentDrawMode = mode;
+			selection = null;
 			switch (getCurrentDrawMode()) {
 				case SELECT		:
 					currentComment = "selects";
@@ -217,6 +219,10 @@ public class ImageEditCanvas extends JBackgroundComponent {
 		fillContours = contourFilling;
 		listeners.fireEvent((l)->l.stateChanged(ce));
 	}
+
+	public Rectangle getSelection() {
+		return selection;
+	}
 	
 	public void addChangeListener(final ChangeListener l) {
 		if (l == null) {
@@ -242,6 +248,10 @@ public class ImageEditCanvas extends JBackgroundComponent {
 		
 		g2d.setColor(getForeground());
 		switch (getCurrentDrawMode()) {
+			case SELECT		:
+				selection = rect;
+				listeners.fireEvent((l)->l.stateChanged(ce));
+				break;
 			case BRUSH		:
 				break;
 			case ELLIPSE	:
