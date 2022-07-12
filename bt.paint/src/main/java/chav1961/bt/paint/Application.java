@@ -4,9 +4,14 @@ import java.awt.BorderLayout;
 import java.awt.Dimension;
 import java.awt.image.BufferedImage;
 import java.awt.image.RenderedImage;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.Reader;
+import java.io.StringReader;
 import java.net.URI;
 import java.util.Hashtable;
 import java.util.Locale;
@@ -22,14 +27,20 @@ import javax.swing.border.EtchedBorder;
 
 import chav1961.bt.paint.control.ImageEditPanel;
 import chav1961.bt.paint.dialogs.AskImageSize;
+import chav1961.bt.paint.script.ScriptNodeType;
+import chav1961.bt.paint.script.ScriptUtils;
+import chav1961.purelib.basic.ArgParser;
 import chav1961.purelib.basic.PureLibSettings;
+import chav1961.purelib.basic.exceptions.CommandLineParametersException;
 import chav1961.purelib.basic.exceptions.ContentException;
 import chav1961.purelib.basic.exceptions.EnvironmentException;
 import chav1961.purelib.basic.exceptions.LocalizationException;
+import chav1961.purelib.basic.exceptions.SyntaxException;
 import chav1961.purelib.basic.interfaces.LoggerFacade;
 import chav1961.purelib.basic.interfaces.LoggerFacade.Severity;
 import chav1961.purelib.basic.interfaces.LoggerFacadeOwner;
 import chav1961.purelib.basic.interfaces.ModuleAccessor;
+import chav1961.purelib.cdb.SyntaxNode;
 import chav1961.purelib.fsys.interfaces.FileSystemInterface;
 import chav1961.purelib.i18n.interfaces.Localizer;
 import chav1961.purelib.i18n.interfaces.Localizer.LocaleChangeListener;
@@ -49,6 +60,13 @@ import chav1961.purelib.ui.swing.useful.JLocalizedOptionPane;
 import chav1961.purelib.ui.swing.useful.JStateString;
 
 public class Application extends JFrame implements NodeMetadataOwner, LocaleChangeListener, LoggerFacadeOwner, LocalizerOwner {
+	public static final String		ARG_COMMAND = "command";
+	public static final String		ARG_INPUT_MASK = "inputMask";
+	public static final String		ARG_OUTPUT_MASK = "outputMask";
+	public static final String		ARG_RECURSION_FLAG = "recursion";
+	public static final String		ARG_GUI_FLAG = "guiFlag";
+	public static final String		ARG_PROPFILE_LOCATION = "prop";
+	
 	private static final long 		serialVersionUID = 1083999598002477077L;
 	private static final int		MAX_UNDO_LENGTH = 10;
 	private static final String		KEY_PNG_FILES = "chav1961.bt.paint.Application.filter.pngfiles";
@@ -286,23 +304,130 @@ public class Application extends JFrame implements NodeMetadataOwner, LocaleChan
 	}
 	
 	public static void main(String[] args) {
-		try(final InputStream				is = ImageEditPanel.class.getResourceAsStream("imageeditpanel.xml")) {
-			final ContentMetadataInterface	xda = ContentModelFactory.forXmlDescription(is);
-			final Localizer					localizer = Localizer.Factory.newInstance(xda.getRoot().getLocalizerAssociated());
-			final CountDownLatch			latch = new CountDownLatch(1);
-			
-			PureLibSettings.PURELIB_LOCALIZER.push(localizer);
-			
-			final Application				app = new Application(xda, localizer, latch);
-			
-			app.setVisible(true);
-			latch.await();
-			PureLibSettings.PURELIB_LOCALIZER.pop(localizer);
-			app.dispose();
-		} catch (IOException | EnvironmentException | InterruptedException e) {
-			e.printStackTrace();
+		final ArgParser					parser = new ApplicationArgParser();
+		
+		try{final ArgParser				parsed = parser.parse(args);
+			try(final InputStream				is = ImageEditPanel.class.getResourceAsStream("imageeditpanel.xml")) {
+				final ContentMetadataInterface	xda = ContentModelFactory.forXmlDescription(is);
+				final Localizer					localizer = Localizer.Factory.newInstance(xda.getRoot().getLocalizerAssociated());
+				
+				PureLibSettings.PURELIB_LOCALIZER.push(localizer);
+				
+				if (args.length == 0) {
+					startGUI(xda, localizer);
+				}
+				else if (!parsed.isTyped(ARG_COMMAND)) {
+					throw new CommandLineParametersException("Mandatory parameter ["+ARG_COMMAND+"] is missing");
+				}
+				else {
+					final SyntaxNode<ScriptNodeType, SyntaxNode<ScriptNodeType,?>>	root;
+					
+					try(final Reader	rdr = loadCommandScript(parsed.getValue(ARG_COMMAND, String.class))) {
+						root = ScriptUtils.compile(rdr); 
+					}
+
+					if (parsed.isTyped(ARG_INPUT_MASK)) {
+						
+					}
+					else {
+						if (parsed.getValue(ARG_GUI_FLAG, boolean.class)) {
+							startGUI(xda, localizer);
+						}
+						else {
+							processImage(System.in, root, System.out);
+						}
+					}
+				}
+				
+				PureLibSettings.PURELIB_LOCALIZER.pop(localizer);
+			} catch (SyntaxException e) {
+				e.printStackTrace();
+				System.exit(129);
+			} catch (IOException | EnvironmentException | InterruptedException e) {
+				e.printStackTrace();
+				System.exit(129);
+			}	
+		} catch (CommandLineParametersException exc) {
+			System.err.println(exc.getLocalizedMessage());
+			System.err.println(parser.getUsage("bt.paint"));
 			System.exit(128);
-		}		
+		}
 	}
 
+	private static Reader loadCommandScript(final String value) throws SyntaxException, FileNotFoundException {
+		if (value.startsWith("@")) {
+			final File	f = new File(value.substring(1));
+			
+			if (!f.exists()) {
+				throw new SyntaxException(0, 1, "Script file ["+f.getAbsolutePath()+"] not exists"); 
+			}
+			else if (f.isDirectory()) {
+				throw new SyntaxException(0, 1, "Script ["+f.getAbsolutePath()+"] is directory, not a file"); 
+			}
+			else if (!f.canRead()) {
+				throw new SyntaxException(0, 1, "Script file ["+f.getAbsolutePath()+"] is not accessible for you"); 
+			}
+			else {
+				return new FileReader(f);
+			}
+		}
+		else {
+			return new StringReader(value);
+		}
+	}
+
+	private static void processImage(final InputStream is, final SyntaxNode<ScriptNodeType, SyntaxNode<ScriptNodeType,?>> root, final OutputStream os) throws IOException {
+		os.flush();
+	}
+	
+	private static void startGUI(final ContentMetadataInterface xda, final Localizer localizer) throws InterruptedException, IOException {
+		final CountDownLatch			latch = new CountDownLatch(1);
+		final Application				app = new Application(xda, localizer, latch);
+		
+		app.setVisible(true);
+		latch.await();
+		app.dispose();
+	}
+	
+	private static class ApplicationArgParser extends ArgParser {
+		private static final ArgParser.AbstractArg[]	KEYS = {
+			new StringArg(ARG_COMMAND, false, true, "Command to process content"),
+			new StringArg(ARG_INPUT_MASK, false, false, "Mask for input files. If typed, all content will be get from file system instead of stdin"),
+			new StringArg(ARG_OUTPUT_MASK, false, false, "Mask for input files. If typed, all content will be put into file system instead of stdout"),
+			new BooleanArg(ARG_RECURSION_FLAG, false, "Process input mask recursively, if types", false),
+			new BooleanArg(ARG_GUI_FLAG, false, "Start GUI after processing. If any arguments are missing, starts GUI automatically", false),
+			new FileArg(ARG_PROPFILE_LOCATION, false, "Property file location", "./.bt.paint.properties"),
+		};
+		
+		private ApplicationArgParser() {
+			super(KEYS);
+		}
+	}
+	
+//	try {
+//		fis.read(b, 0, b.length);
+//		String type = bytesToHexString(b).toUpperCase();
+//		if (type.contains("FFD8FF")) {
+//			return TYPE_JPG;
+//		} else if (type.contains("89504E47")) {
+//			return TYPE_PNG;
+//		} else if (type.contains("47494638")) {
+//			return TYPE_GIF;
+//		} else if (type.contains("424D")) {
+//			return TYPE_BMP;
+//		} else {
+//			return TYPE_UNKNOWN;
+//		}
+//	} catch (IOException e) {
+//		e.printStackTrace();
+//	} finally {
+//		if (fis != null) {
+//			try {
+//				fis.close();
+//			} catch (IOException e) {
+//				e.printStackTrace();
+//			}
+//		}
+//	}	
+	
 }

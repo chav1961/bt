@@ -141,6 +141,14 @@
 		<key name="toolbar.settingsbar.filling">Fill contours</key>
 		<key name="toolbar.settingsbar.filling.tt">Weather fill figures and text background</key>
 
+<!-- Toolbar PlayerBar -->
+		<key name="toolbar.playerbar.recording">Recording</key>
+		<key name="toolbar.playerbar.recording.tt">Recording commands</key>
+		<key name="toolbar.playerbar.pause">Pause</key>
+		<key name="toolbar.playerbar.pause.tt">Pause play/recording</key>
+		<key name="toolbar.playerbar.play">Play</key>
+		<key name="toolbar.playerbar.play.tt">Play commands</key>
+
 <!-- ImageEditPanel class localization -->
 		<key name="chav1961.bt.mnemoed.editor.ImageEditPanel.selectColor">Select color</key>
 				

@@ -9,6 +9,7 @@ module chav1961.bt.paint {
 	requires jdk.httpserver;
 	requires java.compiler;
 	requires jdk.javadoc;
+	requires java.base;
 	
 	exports chav1961.bt.paint;
 	exports chav1961.bt.paint.control;

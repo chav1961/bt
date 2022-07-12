@@ -97,9 +97,12 @@ public class ImageEditPanel extends JPanel implements LocalizerOwner, LocaleChan
 			leftPanel.add(prepareModeToolBar());
 			leftPanel.add(new JSeparator(JSeparator.HORIZONTAL));
 			leftPanel.add(prepareActionToolBar());
+			
 			topPanel.add(prepareColorToolBar());
-			leftPanel.add(new JSeparator(JSeparator.VERTICAL));
+			topPanel.add(new JSeparator(JSeparator.VERTICAL));
 			topPanel.add(prepareSettingsToolBar());
+			topPanel.add(new JSeparator(JSeparator.VERTICAL));
+			topPanel.add(preparePlayerToolBar());
 	        
 	        add(topPanel, BorderLayout.NORTH);
 	        add(leftPanel, BorderLayout.WEST);
@@ -242,6 +245,18 @@ public class ImageEditPanel extends JPanel implements LocalizerOwner, LocaleChan
 	@OnAction("action:/settings.filling")
 	public void setFilling(final Hashtable<String,String[]> modes) {
 	}
+
+	@OnAction("action:/player.recording")
+	public void recording(final Hashtable<String,String[]> modes) {
+	}	
+
+	@OnAction("action:/player.pause")
+	public void pause(final Hashtable<String,String[]> modes) {
+	}	
+
+	@OnAction("action:/player.play")
+	public void play(final Hashtable<String,String[]> modes) {
+	}	
 	
 	public UndoManager getUndoManager() {
 		return canvas.getUndoManager();
@@ -334,6 +349,15 @@ public class ImageEditPanel extends JPanel implements LocalizerOwner, LocaleChan
 
 	private JToolBar prepareSettingsToolBar() {
 	    final JToolBar	result = SwingUtils.toJComponent(xda.byUIPath(URI.create("ui:/model/navigation.top.settingsBar")), JToolBar.class);
+	
+	    result.setFloatable(false);
+	    result.setOrientation(JToolBar.HORIZONTAL);
+	    SwingUtils.assignActionListeners(result, this);
+	    return result;
+	}
+
+	private JToolBar preparePlayerToolBar() {
+	    final JToolBar	result = SwingUtils.toJComponent(xda.byUIPath(URI.create("ui:/model/navigation.top.playerBar")), JToolBar.class);
 	
 	    result.setFloatable(false);
 	    result.setOrientation(JToolBar.HORIZONTAL);
