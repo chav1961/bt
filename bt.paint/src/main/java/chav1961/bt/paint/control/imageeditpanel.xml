@@ -85,4 +85,9 @@
 		</app:submenu>
 		<app:item name="toolbar.settingsbar.filling" caption="toolbar.settingsbar.filling" tooltip="toolbar.settingsbar.filling.tt" icon="root://chav1961.bt.paint.control.ImageEditPanel/chav1961/bt/paint/images/fillOff.png?toggled=fillOn.png" checkable="true" action="settings.filling"/>
 	</app:menu>
+ 	<app:menu id="playerBar">
+		<app:item name="toolbar.playerbar.recording" caption="toolbar.playerbar.recording" tooltip="toolbar.playerbar.recording.tt" icon="root://chav1961.bt.paint.control.ImageEditPanel/chav1961/bt/paint/images/recordOff.png?toggled=recordOn.png" checkable="true" action="player.recording"/>
+		<app:item name="toolbar.playerbar.pause" caption="toolbar.playerbar.pause" tooltip="toolbar.playerbar.pause.tt" icon="root://chav1961.bt.paint.control.ImageEditPanel/chav1961/bt/paint/images/pauseOff.png?toggled=recordOn.png" checkable="true" action="player.pause"/>
+		<app:item name="toolbar.playerbar.play" caption="toolbar.playerbar.play" tooltip="toolbar.playerbar.play.tt" icon="root://chav1961.bt.paint.control.ImageEditPanel/chav1961/bt/paint/images/playOff.png?toggled=playOn.png" checkable="true" action="player.play"/>
+	</app:menu>
 </app:root>

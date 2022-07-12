@@ -10,20 +10,28 @@ import chav1961.purelib.ui.interfaces.FormManager;
 import chav1961.purelib.ui.interfaces.Format;
 import chav1961.purelib.ui.interfaces.RefreshMode;
 
-@LocaleResourceLocation("i18n:xml:root://chav1961.bt.paint.dialogs.AskImageSize/chav1961/bt/paint/i18n/localization.xml")
-@LocaleResource(value="askimagesize.title",tooltip="askimagesize.title.tt",help="askimagesize.title.help")
-public class AskImageSize implements FormManager<Object, AskImageSize>, ModuleAccessor {
+@LocaleResourceLocation("i18n:xml:root://chav1961.bt.paint.dialogs.AskImageResize/chav1961/bt/paint/i18n/localization.xml")
+@LocaleResource(value="askimageresize.title",tooltip="askimageresize.title.tt",help="askimageresize.title.help")
+public class AskImageResize implements FormManager<Object, AskImageSize>, ModuleAccessor {
 	private final LoggerFacade	facade;
+
+	@LocaleResource(value="askimagesize.width",tooltip="askimagesize.width.tt")
+	@Format("10ms")
+	public int		width = 100;
 	
 	@LocaleResource(value="askimagesize.width",tooltip="askimagesize.width.tt")
 	@Format("10ms")
-	public int	width = 100;
-	
-	@LocaleResource(value="askimagesize.height",tooltip="askimagesize.height.tt")
-	@Format("10ms")
-	public int	height = 100;
+	public int		height = 100;
 
-	public AskImageSize(final LoggerFacade facade) {
+	@LocaleResource(value="askimagesize.width",tooltip="askimagesize.width.tt")
+	@Format("1s")
+	public boolean	proprtional = true;
+	
+	@LocaleResource(value="askimagesize.width",tooltip="askimagesize.width.tt")
+	@Format("1s")
+	public boolean	stretchContent = false;
+
+	public AskImageResize(final LoggerFacade facade) {
 		if (facade == null) {
 			throw new NullPointerException("Logger facade can't be null"); 
 		}
@@ -33,8 +41,9 @@ public class AskImageSize implements FormManager<Object, AskImageSize>, ModuleAc
 	}
 	
 	@Override
-	public RefreshMode onField(final AskImageSize inst, final Object id, final String fieldName, final Object oldValue, final boolean beforeCommit) throws FlowException, LocalizationException {
-		return RefreshMode.DEFAULT;
+	public RefreshMode onField(AskImageSize inst, Object id, String fieldName, Object oldValue, boolean beforeCommit) throws FlowException, LocalizationException {
+		// TODO Auto-generated method stub
+		return null;
 	}
 
 	@Override

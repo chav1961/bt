@@ -303,6 +303,15 @@
 		<key name="toolbar.settingsbar.filling">Заливка фигур</key>
 		<key name="toolbar.settingsbar.filling.tt">Заливать или не заливатьь замкнутые контуры фигур</key>
 
+<!-- Toolbar PlayerBar -->
+		<key name="toolbar.playerbar.recording">Запись</key>
+		<key name="toolbar.playerbar.recording.tt">Записать команды</key>
+		<key name="toolbar.playerbar.pause">Пауза</key>
+		<key name="toolbar.playerbar.pause.tt">Пауза записи/воспроизведения</key>
+		<key name="toolbar.playerbar.play">Воспроизведение</key>
+		<key name="toolbar.playerbar.play.tt">Воспроизвести команды</key>
+
+
 <!-- ImageEditPanel.EditStateString -->
 		<key name="chav1961.bt.mnemoed.bgeditor.ImageEditPanel.EditStateString.prompt">Введите команду</key>
 		<key name="chav1961.bt.mnemoed.bgeditor.ImageEditPanel.EditStateString.path.tt">В это поле можно ввести команду в стиле тега SVG</key>
@@ -322,6 +331,7 @@
 		<key name="askimagesize.width.tt">Ширина в пикселях</key>
 		<key name="askimagesize.height">Высота</key>
 		<key name="askimagesize.height.tt">Высота в пикселях</key>
+		
 		
 		
 	</lang>
