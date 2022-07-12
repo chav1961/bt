@@ -2,10 +2,13 @@ package chav1961.bt.paint;
 
 import java.awt.BorderLayout;
 import java.awt.Dimension;
+import java.awt.Image;
 import java.awt.image.BufferedImage;
 import java.awt.image.RenderedImage;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -16,6 +19,7 @@ import java.net.URI;
 import java.util.Hashtable;
 import java.util.Locale;
 import java.util.concurrent.CountDownLatch;
+import java.util.regex.Pattern;
 
 import javax.imageio.ImageIO;
 import javax.swing.BorderFactory;
@@ -31,11 +35,13 @@ import chav1961.bt.paint.script.ScriptNodeType;
 import chav1961.bt.paint.script.ScriptUtils;
 import chav1961.purelib.basic.ArgParser;
 import chav1961.purelib.basic.PureLibSettings;
+import chav1961.purelib.basic.Utils;
 import chav1961.purelib.basic.exceptions.CommandLineParametersException;
 import chav1961.purelib.basic.exceptions.ContentException;
 import chav1961.purelib.basic.exceptions.EnvironmentException;
 import chav1961.purelib.basic.exceptions.LocalizationException;
 import chav1961.purelib.basic.exceptions.SyntaxException;
+import chav1961.purelib.basic.growablearrays.GrowableByteArray;
 import chav1961.purelib.basic.interfaces.LoggerFacade;
 import chav1961.purelib.basic.interfaces.LoggerFacade.Severity;
 import chav1961.purelib.basic.interfaces.LoggerFacadeOwner;
@@ -62,7 +68,6 @@ import chav1961.purelib.ui.swing.useful.JStateString;
 public class Application extends JFrame implements NodeMetadataOwner, LocaleChangeListener, LoggerFacadeOwner, LocalizerOwner {
 	public static final String		ARG_COMMAND = "command";
 	public static final String		ARG_INPUT_MASK = "inputMask";
-	public static final String		ARG_OUTPUT_MASK = "outputMask";
 	public static final String		ARG_RECURSION_FLAG = "recursion";
 	public static final String		ARG_GUI_FLAG = "guiFlag";
 	public static final String		ARG_PROPFILE_LOCATION = "prop";
@@ -327,10 +332,21 @@ public class Application extends JFrame implements NodeMetadataOwner, LocaleChan
 					}
 
 					if (parsed.isTyped(ARG_INPUT_MASK)) {
-						
+						final String	mask = parsed.getValue(ARG_INPUT_MASK, String.class);
+						final int		index = mask.lastIndexOf('/');
+
+						if (index > 0) {
+							walk(new File(mask.substring(0,index)), Pattern.compile(Utils.fileMask2Regex(mask.substring(index+1))), parsed.getValue(ARG_RECURSION_FLAG, boolean.class), root);
+						}
+						else {
+							walk(new File("./"), Pattern.compile(Utils.fileMask2Regex(mask)), parsed.getValue(ARG_RECURSION_FLAG, boolean.class), root);
+						}
 					}
 					else {
 						if (parsed.getValue(ARG_GUI_FLAG, boolean.class)) {
+							final Image	image = ImageIO.read(System.in);
+							
+							processImage(image, root);
 							startGUI(xda, localizer);
 						}
 						else {
@@ -375,10 +391,71 @@ public class Application extends JFrame implements NodeMetadataOwner, LocaleChan
 			return new StringReader(value);
 		}
 	}
+	
+	private static void walk(final File current, final Pattern mask, final boolean recursive, final SyntaxNode<ScriptNodeType, SyntaxNode<ScriptNodeType, ?>> root) throws IOException {
+		if (current.isFile()) {
+			try(final InputStream	is = new FileInputStream(current);
+				final OutputStream	os = new FileOutputStream(new File(current.getAbsolutePath()+".processed"))) {
+				
+				processImage(is, root, os);
+			}
+		}
+		else {
+			final File[]	content = current.listFiles();
+			
+			if (content != null) {
+				for (File item : content) {
+					if (item.isFile() && mask.matcher(item.getName()).matches()) {
+						walk(item, mask, recursive, root);
+					}
+				}
+				if (recursive) {
+					for (File item : content) {
+						if (item.isDirectory()) {
+							walk(item, mask, recursive, root);
+						}
+					}
+				}
+			}
+		}
+	}
 
 	private static void processImage(final InputStream is, final SyntaxNode<ScriptNodeType, SyntaxNode<ScriptNodeType,?>> root, final OutputStream os) throws IOException {
+		final GrowableByteArray	gba = new GrowableByteArray(false);
+		final byte[]			signature = new byte[4];
+		final BufferedImage		image;
+		
+		gba.append(is);
+		gba.read(0, signature);
+		
+		try(final InputStream	tmp = gba.getInputStream()) {
+			image = ImageIO.read(gba.getInputStream());
+		}
+		processImage(image, root);
+		ImageIO.write(image, defineImageFormat(signature), os);
 		os.flush();
 	}
+
+	private static String defineImageFormat(final byte[] signature) {
+		if (signature[0] == 0xFF && signature[1] == 0xD8 && signature[2] == 0xFF) {
+			return "jpeg";
+		}
+		else if (signature[0] == 0x42F && signature[1] == 0x4D) {
+			return "bmp";
+		}
+		else if (signature[0] == 0x47 && signature[1] == 0x49 && signature[2] == 0x46 && signature[3] == 0x38) {
+			return "gif";
+		}
+		else if (signature[0] == 0x89 && signature[1] == 0x50 && signature[2] == 0x4E && signature[3] == 0x47) {
+			return "png";
+		}
+		else {
+			return "webmp";
+		}
+	}
+
+	private static void processImage(final Image image, final SyntaxNode<ScriptNodeType, SyntaxNode<ScriptNodeType,?>> root) throws IOException {
+	}	
 	
 	private static void startGUI(final ContentMetadataInterface xda, final Localizer localizer) throws InterruptedException, IOException {
 		final CountDownLatch			latch = new CountDownLatch(1);
@@ -393,7 +470,6 @@ public class Application extends JFrame implements NodeMetadataOwner, LocaleChan
 		private static final ArgParser.AbstractArg[]	KEYS = {
 			new StringArg(ARG_COMMAND, false, true, "Command to process content"),
 			new StringArg(ARG_INPUT_MASK, false, false, "Mask for input files. If typed, all content will be get from file system instead of stdin"),
-			new StringArg(ARG_OUTPUT_MASK, false, false, "Mask for input files. If typed, all content will be put into file system instead of stdout"),
 			new BooleanArg(ARG_RECURSION_FLAG, false, "Process input mask recursively, if types", false),
 			new BooleanArg(ARG_GUI_FLAG, false, "Start GUI after processing. If any arguments are missing, starts GUI automatically", false),
 			new FileArg(ARG_PROPFILE_LOCATION, false, "Property file location", "./.bt.paint.properties"),
@@ -403,31 +479,4 @@ public class Application extends JFrame implements NodeMetadataOwner, LocaleChan
 			super(KEYS);
 		}
 	}
-	
-//	try {
-//		fis.read(b, 0, b.length);
-//		String type = bytesToHexString(b).toUpperCase();
-//		if (type.contains("FFD8FF")) {
-//			return TYPE_JPG;
-//		} else if (type.contains("89504E47")) {
-//			return TYPE_PNG;
-//		} else if (type.contains("47494638")) {
-//			return TYPE_GIF;
-//		} else if (type.contains("424D")) {
-//			return TYPE_BMP;
-//		} else {
-//			return TYPE_UNKNOWN;
-//		}
-//	} catch (IOException e) {
-//		e.printStackTrace();
-//	} finally {
-//		if (fis != null) {
-//			try {
-//				fis.close();
-//			} catch (IOException e) {
-//				e.printStackTrace();
-//			}
-//		}
-//	}	
-	
 }
