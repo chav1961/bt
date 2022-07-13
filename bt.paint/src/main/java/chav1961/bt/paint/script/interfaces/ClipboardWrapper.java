@@ -8,34 +8,36 @@ import java.awt.datatransfer.Transferable;
 import java.awt.datatransfer.UnsupportedFlavorException;
 import java.io.IOException;
 
+import chav1961.bt.paint.interfaces.PaintScriptException;
+
 public interface ClipboardWrapper {
-	boolean hasImage() throws ScriptException;
-	ImageWrapper getImage() throws ScriptException;
-	void setImage(ImageWrapper image) throws ScriptException;
+	boolean hasImage() throws PaintScriptException;
+	ImageWrapper getImage() throws PaintScriptException;
+	void setImage(ImageWrapper image) throws PaintScriptException;
 	
 	ClipboardWrapper singleton = new ClipboardWrapper() {
 		private final Clipboard 	clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
 		
 		@Override
-		public boolean hasImage() throws ScriptException {
+		public boolean hasImage() throws PaintScriptException {
 			return clipboard.isDataFlavorAvailable(DataFlavor.imageFlavor);
 		}
 
 		@Override
-		public ImageWrapper getImage() throws ScriptException {
+		public ImageWrapper getImage() throws PaintScriptException {
 			if (!hasImage()) {
-				throw new ScriptException("System clipboard doesn't contain image");
+				throw new PaintScriptException("System clipboard doesn't contain image");
 			}
 			else {
 				try{return ImageWrapper.of((Image)clipboard.getContents(this).getTransferData(DataFlavor.imageFlavor));
 				} catch (UnsupportedFlavorException | IOException e) {
-					throw new ScriptException(e.getLocalizedMessage(), e);
+					throw new PaintScriptException(e.getLocalizedMessage(), e);
 				}
 			}
 		}
 
 		@Override
-		public void setImage(final ImageWrapper image) throws ScriptException {
+		public void setImage(final ImageWrapper image) throws PaintScriptException {
 			if (image == null) {
 				throw new NullPointerException("Image to set can't be null");
 			}
@@ -58,7 +60,7 @@ public interface ClipboardWrapper {
 												}
 												else {
 													try{return image.getImage();
-													} catch (ScriptException e) {
+													} catch (PaintScriptException e) {
 														throw new IOException(e.getLocalizedMessage(), e);
 													}
 												}

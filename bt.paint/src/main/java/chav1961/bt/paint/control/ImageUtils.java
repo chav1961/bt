@@ -26,63 +26,63 @@ public class ImageUtils {
 		else {
 			switch (type) {
 				case CROP				:
-					if (parameters.length == 1 && (parameters[0] instanceof Rectangle)) {
+					if (checkParameterTypes(parameters, Rectangle.class)) {
 						return cropImage((BufferedImage)source, (Rectangle)parameters[0]);
 					}
 					else {
 						throw new IllegalArgumentException("[CROP] mode must have rectangle item in the parameters list"); 
 					}
 				case MIRROR_HORIZONTAL	:
-					if (parameters.length == 0) {
+					if (checkParameterTypes(parameters)) {
 						return mirrorImage((BufferedImage)source, false);
 					}
 					else {
 						throw new IllegalArgumentException("[MIRROR_HORIZONTAL] mode must not have any content in the parameters list"); 
 					}
 				case MIRROR_VERTICAL	:
-					if (parameters.length == 0) {
+					if (checkParameterTypes(parameters)) {
 						return mirrorImage((BufferedImage)source, true);
 					}
 					else {
 						throw new IllegalArgumentException("[MIRROR_VERTICAL] mode must not have any content in the parameters list"); 
 					}
 				case RESIZE				:
-					if (parameters.length == 2 && (parameters[0] instanceof Number) && (parameters[1] instanceof Number)) {
+					if (checkParameterTypes(parameters, Number.class, Number.class)) {
 						return resizeImage((BufferedImage)source, ((Number)parameters[0]).intValue(), ((Number)parameters[1]).intValue(), false);
 					}
 					else {
 						throw new IllegalArgumentException("[RESIZE] mode must have width anf height items in the parameters list"); 
 					}
 				case ROTATE_CLOCKWISE	:
-					if (parameters.length == 0) {
+					if (checkParameterTypes(parameters)) {
 						return rotateImage((BufferedImage)source, -90);
 					}
 					else {
 						throw new IllegalArgumentException("[ROTATE_CLOCKWISE] mode must not have any content in the parameters list"); 
 					}
 				case ROTATE_COUNTERCLOCKWISE:
-					if (parameters.length == 0) {
+					if (checkParameterTypes(parameters)) {
 						return rotateImage((BufferedImage)source, 90);
 					}
 					else {
 						throw new IllegalArgumentException("[ROTATE_COUNTERCLOCKWISE] mode must not have any content in the parameters list"); 
 					}
 				case SCALE				:
-					if (parameters.length == 2 && (parameters[0] instanceof Number) && (parameters[1] instanceof Number)) {
+					if (checkParameterTypes(parameters, Number.class, Number.class)) {
 						return resizeImage((BufferedImage)source, ((Number)parameters[0]).intValue(), ((Number)parameters[1]).intValue(), true);
 					}
 					else {
 						throw new IllegalArgumentException("[RESIZE] mode must have width anf height items in the parameters list"); 
 					}
 				case TO_GRAYSCALE		:
-					if (parameters.length == 0) {
+					if (checkParameterTypes(parameters)) {
 						return grayScaleImage((BufferedImage)source);
 					}
 					else {
 						throw new IllegalArgumentException("[TO_GRAYSCALE] mode must not have any content in the parameters list"); 
 					}
 				case TO_TRANSPARENT		:
-					if (parameters.length == 1 && (parameters[0] instanceof Color)) {
+					if (checkParameterTypes(parameters, Color.class)) {
 						return transparentImage((BufferedImage)source, (Color)parameters[0]);
 					}
 					else {
@@ -94,16 +94,18 @@ public class ImageUtils {
 		}
 	}
 
-	private static Image cropImage(final BufferedImage source, final Rectangle rectangle) {
-		// TODO Auto-generated method stub
+	static Image cropImage(final BufferedImage source, final Rectangle rectangle) {
 		final BufferedImage		result = new BufferedImage(rectangle.width, rectangle.height, source.getType());
 		final Graphics2D		g2d = (Graphics2D) result.getGraphics();
+		final Rectangle			rect = new Rectangle(rectangle);
 		
-		g2d.drawImage(source, 0, 0, rectangle.width, rectangle.height, rectangle.x, rectangle.y, rectangle.width, rectangle.height, null);
+		rect.intersects(0, 0, source.getWidth(), source.getHeight());
+		
+		g2d.drawImage(source, 0, 0, rect.width, rect.height, rect.x, rect.y, rect.width, rect.height, null);
 		return result;
 	}
 	
-	private static Image mirrorImage(final BufferedImage source, final boolean verticalMirror) {
+	static Image mirrorImage(final BufferedImage source, final boolean verticalMirror) {
 		// TODO Auto-generated method stub
 		final BufferedImage		result = new BufferedImage(source.getWidth(), source.getHeight(), source.getType());
 		final Graphics2D		g2d = (Graphics2D) result.getGraphics();
@@ -170,5 +172,19 @@ public class ImageUtils {
 						          }
 						       };
 	   return Toolkit.getDefaultToolkit().createImage(new FilteredImageSource(source.getSource(), filter));		
+	}
+	
+	private static boolean checkParameterTypes(final Object[] parameters, final Class<?>... types) {
+		if (parameters.length < types.length) {
+			return false;
+		}
+		else {
+			for(int index = 0; index < types.length; index++) {
+				if (!types[index].isInstance(parameters[index])) {
+					return false;
+				}
+			}
+			return true;
+		}
 	}
 }

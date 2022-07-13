@@ -1,7 +1,8 @@
-package chav1961.bt.paint.script;
+package chav1961.bt.paint.script.runtime;
 
 import java.io.Reader;
 
+import chav1961.bt.paint.script.ScriptNodeType;
 import chav1961.purelib.basic.exceptions.SyntaxException;
 import chav1961.purelib.cdb.SyntaxNode;
 

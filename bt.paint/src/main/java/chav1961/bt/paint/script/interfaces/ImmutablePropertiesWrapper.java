@@ -1,10 +1,12 @@
 package chav1961.bt.paint.script.interfaces;
 
+import chav1961.bt.paint.interfaces.PaintScriptException;
+
 public interface ImmutablePropertiesWrapper {
-	String[] getPropKeys() throws ScriptException;
-	boolean contains(String key) throws ScriptException;
-	String get(String key) throws ScriptException;
-	String get(String key, String defaultValue) throws ScriptException;
-	<T> T get(String key, Class<T> awaited) throws ScriptException;
-	<T> T get(String key, Class<T> awaited, T defaultValue) throws ScriptException;
+	String[] getPropKeys() throws PaintScriptException;
+	boolean contains(String key) throws PaintScriptException;
+	String get(String key) throws PaintScriptException;
+	String get(String key, String defaultValue) throws PaintScriptException;
+	<T> T get(String key, Class<T> awaited) throws PaintScriptException;
+	<T> T get(String key, Class<T> awaited, T defaultValue) throws PaintScriptException;
 }

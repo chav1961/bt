@@ -8,9 +8,9 @@ import java.net.URI;
 
 import javax.imageio.ImageIO;
 
+import chav1961.bt.paint.interfaces.PaintScriptException;
 import chav1961.bt.paint.script.interfaces.ImageWrapper;
 import chav1961.bt.paint.script.interfaces.PropertiesWrapper;
-import chav1961.bt.paint.script.interfaces.ScriptException;
 import chav1961.bt.paint.script.interfaces.SystemWrapper;
 import chav1961.purelib.basic.SubstitutableProperties;
 import chav1961.purelib.fsys.interfaces.FileSystemInterface;
@@ -42,12 +42,12 @@ public class SystemWrapperImpl implements SystemWrapper {
 	}
 
 	@Override
-	public String[] getPropKeys() throws ScriptException {
+	public String[] getPropKeys() throws PaintScriptException {
 		return props.keySet().toArray(new String[props.size()]);
 	}
 
 	@Override
-	public boolean contains(final String key) throws ScriptException {
+	public boolean contains(final String key) throws PaintScriptException {
 		if (key == null || key.isEmpty()) {
 			throw new IllegalArgumentException("Key to test can't be null or empty"); 
 		}
@@ -57,7 +57,7 @@ public class SystemWrapperImpl implements SystemWrapper {
 	}
 
 	@Override
-	public String get(final String key) throws ScriptException {
+	public String get(final String key) throws PaintScriptException {
 		if (key == null || key.isEmpty()) {
 			throw new IllegalArgumentException("Key to get can't be null or empty"); 
 		}
@@ -70,7 +70,7 @@ public class SystemWrapperImpl implements SystemWrapper {
 	}
 
 	@Override
-	public String get(final String key, final String defaultValue) throws ScriptException {
+	public String get(final String key, final String defaultValue) throws PaintScriptException {
 		if (key == null || key.isEmpty()) {
 			throw new IllegalArgumentException("Key to get can't be null or empty"); 
 		}
@@ -83,7 +83,7 @@ public class SystemWrapperImpl implements SystemWrapper {
 	}
 
 	@Override
-	public <T> T get(final String key, final Class<T> awaited) throws ScriptException {
+	public <T> T get(final String key, final Class<T> awaited) throws PaintScriptException {
 		if (key == null || key.isEmpty()) {
 			throw new IllegalArgumentException("Key to get can't be null or empty"); 
 		}
@@ -99,7 +99,7 @@ public class SystemWrapperImpl implements SystemWrapper {
 	}
 
 	@Override
-	public <T> T get(final String key, final Class<T> awaited, final T defaultValue) throws ScriptException {
+	public <T> T get(final String key, final Class<T> awaited, final T defaultValue) throws PaintScriptException {
 		if (key == null || key.isEmpty()) {
 			throw new IllegalArgumentException("Key to get can't be null or empty"); 
 		}
@@ -115,7 +115,7 @@ public class SystemWrapperImpl implements SystemWrapper {
 	}
 
 	@Override
-	public ImageWrapper loadImage(final String file) throws ScriptException {
+	public ImageWrapper loadImage(final String file) throws PaintScriptException {
 		if (file == null || file.isEmpty()) {
 			throw new IllegalArgumentException("File name to load image from can't be null or empty"); 
 		}
@@ -126,14 +126,14 @@ public class SystemWrapperImpl implements SystemWrapper {
 					return ImageWrapper.of(ImageIO.read(is));
 				}
 			} catch (IOException e) {
-				throw new ScriptException(e.getLocalizedMessage(), e);
+				throw new PaintScriptException(e.getLocalizedMessage(), e);
 			}
 		}
 	}
 
 
 	@Override
-	public void storeImage(final ImageWrapper image, final String file) throws ScriptException {
+	public void storeImage(final ImageWrapper image, final String file) throws PaintScriptException {
 		if (image == null) {
 			throw new NullPointerException("Omage to store can't be null"); 
 		}
@@ -147,13 +147,13 @@ public class SystemWrapperImpl implements SystemWrapper {
 					ImageIO.write((RenderedImage)image.getImage(),image.getFormat(),os);
 				}
 			} catch (IOException e) {
-				throw new ScriptException(e.getLocalizedMessage(), e);
+				throw new PaintScriptException(e.getLocalizedMessage(), e);
 			}
 		}
 	}
 
 	@Override
-	public PropertiesWrapper loadProps(final String file) throws ScriptException {
+	public PropertiesWrapper loadProps(final String file) throws PaintScriptException {
 		if (file == null || file.isEmpty()) {
 			throw new IllegalArgumentException("File name to load properties from can't be null or empty"); 
 		}
@@ -167,13 +167,13 @@ public class SystemWrapperImpl implements SystemWrapper {
 					return PropertiesWrapper.of(result);
 				}
 			} catch (IOException e) {
-				throw new ScriptException(e.getLocalizedMessage(), e);
+				throw new PaintScriptException(e.getLocalizedMessage(), e);
 			}
 		}
 	}
 
 	@Override
-	public void storeProps(final PropertiesWrapper props, final String file) throws ScriptException {
+	public void storeProps(final PropertiesWrapper props, final String file) throws PaintScriptException {
 		if (props == null) {
 			throw new NullPointerException("Properties to store can't be null"); 
 		}
@@ -187,13 +187,13 @@ public class SystemWrapperImpl implements SystemWrapper {
 					props.getProperties().store(os, "");
 				}
 			} catch (IOException e) {
-				throw new ScriptException(e.getLocalizedMessage(), e);
+				throw new PaintScriptException(e.getLocalizedMessage(), e);
 			}
 		}
 	}
 
 	@Override
-	public void print(String message) throws ScriptException {
+	public void print(String message) throws PaintScriptException {
 		System.err.println(message);
 	}
 

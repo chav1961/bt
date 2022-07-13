@@ -32,7 +32,7 @@ import javax.swing.border.EtchedBorder;
 import chav1961.bt.paint.control.ImageEditPanel;
 import chav1961.bt.paint.dialogs.AskImageSize;
 import chav1961.bt.paint.script.ScriptNodeType;
-import chav1961.bt.paint.script.ScriptUtils;
+import chav1961.bt.paint.script.runtime.ScriptUtils;
 import chav1961.purelib.basic.ArgParser;
 import chav1961.purelib.basic.PureLibSettings;
 import chav1961.purelib.basic.Utils;
