@@ -30,6 +30,7 @@ import javax.swing.JOptionPane;
 import javax.swing.border.EtchedBorder;
 
 import chav1961.bt.paint.control.ImageEditPanel;
+import chav1961.bt.paint.control.ImageUtils;
 import chav1961.bt.paint.dialogs.AskImageSize;
 import chav1961.bt.paint.script.ScriptNodeType;
 import chav1961.bt.paint.script.runtime.ScriptUtils;
@@ -164,7 +165,7 @@ public class Application extends JFrame implements NodeMetadataOwner, LocaleChan
 		if (checkUnsavedChanges()) {
 			final AskImageSize	ais = new AskImageSize(getLogger());
 			
-			if (ask(ais,200,80)) {
+			if (ask(ais,240,80)) {
 		    	panel.setImage(new BufferedImage(ais.width, ais.height, BufferedImage.TYPE_3BYTE_BGR));
 		    	lastFile = null;
 				refreshMenuState();
@@ -237,6 +238,34 @@ public class Application extends JFrame implements NodeMetadataOwner, LocaleChan
 		}
     }
 
+	@OnAction("action:/undo")
+    public void undo() {
+	}	
+	
+	@OnAction("action:/redo")
+    public void redo() {
+	}	
+
+	@OnAction("action:/cut")
+    public void cut() {
+	}	
+
+	@OnAction("action:/copy")
+    public void copy() {
+	}	
+
+	@OnAction("action:/paste")
+    public void paste() {
+	}	
+	
+	@OnAction("action:/find")
+    public void find() {
+	}	
+	
+	@OnAction("action:/replace")
+    public void replace() {
+	}
+		
 	@OnAction("action:/settings")
     public void settings() {
 	}	
@@ -245,22 +274,19 @@ public class Application extends JFrame implements NodeMetadataOwner, LocaleChan
     public void language(final Hashtable<String,String[]> langs) throws LocalizationException {
 		getLocalizer().setCurrentLocale(SupportedLanguages.valueOf(langs.get("lang")[0]).getLocale());
 	}	
+
+	@OnAction("action:/overview")
+	public void overview() {
+	}
 	
 	@OnAction("action:/about")
 	public void about() {
 		SwingUtils.showAboutScreen(this, localizer, KEY_APPLICATION_HELP_TITLE, KEY_APPLICATION_HELP_CONTENT, URI.create("root://chav1961.bt.paint.Application/chav1961/bt/paint/avatar.jpg"), new Dimension(300,300));
 	}
 	
-	
 	private <T> boolean ask(final T instance, final int width, final int height) {
-		try{final ContentMetadataInterface	mdi = ContentModelFactory.forAnnotatedClass(instance.getClass());
-		
-			try(final AutoBuiltForm<T,?>	abf = new AutoBuiltForm<>(mdi, localizer, PureLibSettings.INTERNAL_LOADER, instance, (FormManager<Object,T>)instance)) {
-				
-				((ModuleAccessor)instance).allowUnnamedModuleAccess(abf.getUnnamedModules());
-				abf.setPreferredSize(new Dimension(width,height));
-				return AutoBuiltForm.ask(this,localizer,abf);
-			}
+		try{
+			return ImageUtils.ask(instance, localizer, width, height);
 		} catch (ContentException e) {
 			getLogger().message(Severity.error,e.getLocalizedMessage());
 			return false;

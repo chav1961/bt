@@ -38,6 +38,10 @@
 		<key name="menu.main.edit.copy.tt">Copy selected area into clipboard</key>
 		<key name="menu.main.edit.paste">Paste</key>
 		<key name="menu.main.edit.paste.tt">Paste selected area from clipboard</key>
+		<key name="menu.main.edit.find">Find</key>
+		<key name="menu.main.edit.find.tt">Find fragment(s) on the image</key>
+		<key name="menu.main.edit.replace">Find &amp; replace</key>
+		<key name="menu.main.edit.replace.tt">Find fragment(s) on the image and replace them</key>
 		<key name="menu.main.tools">Tools</key>
 		<key name="menu.main.tools.tt">Manage the application</key>
 		<key name="menu.main.tools.settings">Settings</key>
@@ -46,6 +50,8 @@
 		<key name="menu.main.tools.languages.tt">Select interface language</key>
 		<key name="menu.main.help">Help</key>
 		<key name="menu.main.help.tt">Help system</key>
+		<key name="menu.main.help.overview">User manual</key>
+		<key name="menu.main.help.overview.tt">User manual</key>
 		<key name="menu.main.help.about">About...</key>
 		<key name="menu.main.help.about.tt">Info about the application</key>
 
@@ -168,6 +174,21 @@
 		<key name="askimagesize.width.tt">Width in pixels</key>
 		<key name="askimagesize.height">Height</key>
 		<key name="askimagesize.height.tt">Height in pixels</key>
+
+<!-- AskImageResize class localization -->
+		<key name="askimageresize.title">Type new image size</key>
+		<key name="askimageresize.title.tt">Type new image size</key>
+		<key name="askimageresize.title.help">Type new image size</key>
+		<key name="askimageresize.width">New width</key>
+		<key name="askimageresize.width.tt">New image width</key>
+		<key name="askimageresize.height">New height</key>
+		<key name="askimageresize.height.tt">New image height</key>
+		<key name="askimageresize.proportional">Proportional</key>
+		<key name="askimageresize.proportional.tt">Keep width/height relation when new values typed</key>
+		<key name="askimageresize.stretch">Refill</key>
+		<key name="askimageresize.stretch.tt">Scale existent image to fill new size</key>
+		<key name="askimageresize.atcenter">Center image</key>
+		<key name="askimageresize.atcenter.tt">Center old image content into new image</key>
 		 
 	</lang>
 	<lang name="ru">
@@ -208,6 +229,11 @@
 		<key name="menu.main.edit.copy.tt">Копировать выделенный участок изображения</key>
 		<key name="menu.main.edit.paste">Вставить</key>
 		<key name="menu.main.edit.paste.tt">Вставить изображение из буфера обмена</key>
+		<key name="menu.main.edit.find">Найти</key>
+		<key name="menu.main.edit.find.tt">Найти фрагмент(ы) на изображении</key>
+		<key name="menu.main.edit.replace">Найти и заменить</key>
+		<key name="menu.main.edit.replace.tt">Найти фрагмент(ы) на изображении и заменить их</key>
+		
 		<key name="menu.main.tools">Инструменты</key>
 		<key name="menu.main.tools.tt">Управление приложением</key>
 		<key name="menu.main.tools.settings">Настройки</key>
@@ -216,6 +242,8 @@
 		<key name="menu.main.tools.languages.tt">Выбрать язык интерфейса</key>
 		<key name="menu.main.help">Справка</key>
 		<key name="menu.main.help.tt">Справочная система</key>
+		<key name="menu.main.help.overview">Руководство пользователя</key>
+		<key name="menu.main.help.overview.tt">Руководство пользователя</key>
 		<key name="menu.main.help.about">О программе</key>
 		<key name="menu.main.help.about.tt">Информация о приложении</key>
 
@@ -340,7 +368,20 @@
 		<key name="askimagesize.height">Высота</key>
 		<key name="askimagesize.height.tt">Высота в пикселях</key>
 		
-		
+<!-- Локализация класса AskImageResize -->
+		<key name="askimageresize.title">Задайте новый размер изображения</key>
+		<key name="askimageresize.title.tt">Задайте новый размер изображения</key>
+		<key name="askimageresize.title.help">Задайте новый размер изображения</key>
+		<key name="askimageresize.width">Новая ширина</key>
+		<key name="askimageresize.width.tt">Новая ширина изображения</key>
+		<key name="askimageresize.height">Новая высота</key>
+		<key name="askimageresize.height.tt">Новая высота изображения</key>
+		<key name="askimageresize.proportional">Сохранять пропорции</key>
+		<key name="askimageresize.proportional.tt">Сохранить соотношение ширина/высота при задании новых размеров</key>
+		<key name="askimageresize.stretch">Заполнить</key>
+		<key name="askimageresize.stretch.tt">Масштабировать существующее изображение под новый размер</key>
+		<key name="askimageresize.atcenter">Отцентровать</key>
+		<key name="askimageresize.atcenter.tt">Отцентровать существующее изображение перед выполнением операции</key>
 		
 	</lang>
 </localization>

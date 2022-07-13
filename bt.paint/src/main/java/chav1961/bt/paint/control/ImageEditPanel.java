@@ -38,9 +38,12 @@ import javax.swing.undo.UndoManager;
 
 import chav1961.bt.paint.control.ImageEditCanvas.DrawingMode;
 import chav1961.bt.paint.control.ImageEditCanvas.LineStroke;
+import chav1961.bt.paint.dialogs.AskImageResize;
+import chav1961.purelib.basic.exceptions.ContentException;
 import chav1961.purelib.basic.exceptions.EnvironmentException;
 import chav1961.purelib.basic.exceptions.LocalizationException;
 import chav1961.purelib.basic.exceptions.PreparationException;
+import chav1961.purelib.basic.interfaces.LoggerFacade.Severity;
 import chav1961.purelib.concurrent.LightWeightListenerList;
 import chav1961.purelib.i18n.interfaces.Localizer;
 import chav1961.purelib.i18n.interfaces.Localizer.LocaleChangeListener;
@@ -90,18 +93,15 @@ public class ImageEditPanel extends JPanel implements LocalizerOwner, LocaleChan
 			this.localizer = localizer;
 			this.canvas = new ImageEditCanvas(localizer, editHistoryLength);
 			this.state = new EditStateString(localizer);
-			
+
 			topPanel.setLayout(new BoxLayout(topPanel, BoxLayout.X_AXIS));
 			leftPanel.setLayout(new BoxLayout(leftPanel, BoxLayout.Y_AXIS));
 
 			leftPanel.add(prepareModeToolBar());
-			leftPanel.add(new JSeparator(JSeparator.HORIZONTAL));
 			leftPanel.add(prepareActionToolBar());
 			
 			topPanel.add(prepareColorToolBar());
-			topPanel.add(new JSeparator(JSeparator.VERTICAL));
 			topPanel.add(prepareSettingsToolBar());
-			topPanel.add(new JSeparator(JSeparator.VERTICAL));
 			topPanel.add(preparePlayerToolBar());
 	        
 	        add(topPanel, BorderLayout.NORTH);
@@ -200,6 +200,13 @@ public class ImageEditPanel extends JPanel implements LocalizerOwner, LocaleChan
 	
 	@OnAction("action:/resize")
 	public void resize() {
+		try{final AskImageResize	air = new AskImageResize(SwingUtils.getNearestLogger(this));
+		
+			if (ImageUtils.ask(air, getLocalizer(), 300, 145)) {
+			}
+		} catch (ContentException e) {
+			SwingUtils.getNearestLogger(this).message(Severity.error, e.getLocalizedMessage());
+		}
 	}
 	
 	@OnAction("action:/rotate")

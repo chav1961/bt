@@ -18,12 +18,16 @@
 			<app:item name="menu.main.edit.cut" caption="menu.main.edit.cut" tooltip="menu.main.edit.cut.tt" action="cut"/>
 			<app:item name="menu.main.edit.copy" caption="menu.main.edit.copy" tooltip="menu.main.edit.copy.tt" action="copy"/>
 			<app:item name="menu.main.edit.paste" caption="menu.main.edit.paste" tooltip="menu.main.edit.paste.tt" action="paste"/>
+			<app:separator/>
+			<app:item name="menu.main.edit.find" caption="menu.main.edit.find" tooltip="menu.main.edit.find.tt" action="find"/>
+			<app:item name="menu.main.edit.replace" caption="menu.main.edit.replace" tooltip="menu.main.edit.replace.tt" action="replace"/>
 		</app:submenu>
 		<app:submenu name="menu.main.tools" caption="menu.main.tools" tooltip="menu.main.tools.tt">
 			<app:item name="menu.main.tools.settings" caption="menu.main.tools.settings" tooltip="menu.main.tools.settings.tt" action="settings"/>
 			<app:builtinSubmenu name="builtin.languages" caption="menu.main.tools.languages" tooltip="menu.main.tools.languages.tt"/>
 		</app:submenu>
 		<app:submenu name="menu.main.help" caption="menu.main.help" tooltip="menu.main.help.tt">
+			<app:item name="menu.main.help.overview" caption="menu.main.help.overview" tooltip="menu.main.help.overview.tt" action="overview"/>
 			<app:item name="menu.main.help.about" caption="menu.main.help.about" tooltip="menu.main.help.about.tt" action="about"/>
 		</app:submenu>
 	</app:menu>
@@ -31,7 +35,14 @@
 		<app:key code="N" ctrl="true" action="loadImage"/>
 		<app:key code="S" ctrl="true" action="saveImage"/>
 		<app:key code="Q" ctrl="true" action="exit"/>
-		<app:key code="F1" action="helpOverview"/>
+		<app:key code="Z" ctrl="true" action="undo"/>
+		<app:key code="Y" ctrl="true" action="redo"/>
+		<app:key code="X" ctrl="true" action="cut"/>
+		<app:key code="C" ctrl="true" action="copy"/>
+		<app:key code="V" ctrl="true" action="paste"/>
+		<app:key code="F" ctrl="true" action="find"/>
+		<app:key code="H" ctrl="true" action="replace"/>
+		<app:key code="F1" action="overview"/>
 	</app:keyset>
  	<app:menu id="colorBar">
 		<app:item name="toolbar.colorbar.black" caption="toolbar.colorbar.black" tooltip="toolbar.colorbar.black.tt" icon="root://chav1961.bt.paint.control.ImageEditPanel/chav1961/bt/paint/images/color_black.png" action="chooseColor?color=black"/>

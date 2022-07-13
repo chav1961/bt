@@ -12,25 +12,29 @@ import chav1961.purelib.ui.interfaces.RefreshMode;
 
 @LocaleResourceLocation("i18n:xml:root://chav1961.bt.paint.dialogs.AskImageResize/chav1961/bt/paint/i18n/localization.xml")
 @LocaleResource(value="askimageresize.title",tooltip="askimageresize.title.tt",help="askimageresize.title.help")
-public class AskImageResize implements FormManager<Object, AskImageSize>, ModuleAccessor {
+public class AskImageResize implements FormManager<Object, AskImageResize>, ModuleAccessor {
 	private final LoggerFacade	facade;
 
-	@LocaleResource(value="askimagesize.width",tooltip="askimagesize.width.tt")
+	@LocaleResource(value="askimageresize.width",tooltip="askimageresize.width.tt")
 	@Format("10ms")
 	public int		width = 100;
 	
-	@LocaleResource(value="askimagesize.width",tooltip="askimagesize.width.tt")
+	@LocaleResource(value="askimageresize.height",tooltip="askimageresize.height.tt")
 	@Format("10ms")
 	public int		height = 100;
 
-	@LocaleResource(value="askimagesize.width",tooltip="askimagesize.width.tt")
+	@LocaleResource(value="askimageresize.proportional",tooltip="askimageresize.proportional.tt")
 	@Format("1s")
 	public boolean	proprtional = true;
 	
-	@LocaleResource(value="askimagesize.width",tooltip="askimagesize.width.tt")
+	@LocaleResource(value="askimageresize.stretch",tooltip="askimageresize.stretch.tt")
 	@Format("1s")
 	public boolean	stretchContent = false;
 
+	@LocaleResource(value="askimageresize.atcenter",tooltip="askimageresize.atcenter.tt")
+	@Format("1s")
+	public boolean	fromCenter = false;
+	
 	public AskImageResize(final LoggerFacade facade) {
 		if (facade == null) {
 			throw new NullPointerException("Logger facade can't be null"); 
@@ -41,9 +45,9 @@ public class AskImageResize implements FormManager<Object, AskImageSize>, Module
 	}
 	
 	@Override
-	public RefreshMode onField(AskImageSize inst, Object id, String fieldName, Object oldValue, boolean beforeCommit) throws FlowException, LocalizationException {
+	public RefreshMode onField(final AskImageResize inst, final Object id, final String fieldName, final Object oldValue, final boolean beforeCommit) throws FlowException, LocalizationException {
 		// TODO Auto-generated method stub
-		return null;
+		return RefreshMode.DEFAULT;
 	}
 
 	@Override

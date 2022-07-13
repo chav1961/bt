@@ -1,6 +1,7 @@
 package chav1961.bt.paint.control;
 
 import java.awt.Color;
+import java.awt.Dimension;
 import java.awt.Graphics2D;
 import java.awt.Image;
 import java.awt.Rectangle;
@@ -11,9 +12,34 @@ import java.awt.image.FilteredImageSource;
 import java.awt.image.ImageFilter;
 import java.awt.image.RGBImageFilter;
 
+import javax.swing.JFrame;
+
+import chav1961.purelib.basic.PureLibSettings;
+import chav1961.purelib.basic.exceptions.ContentException;
+import chav1961.purelib.basic.exceptions.LocalizationException;
+import chav1961.purelib.basic.interfaces.LoggerFacade;
+import chav1961.purelib.basic.interfaces.LoggerFacade.Severity;
+import chav1961.purelib.basic.interfaces.ModuleAccessor;
+import chav1961.purelib.i18n.interfaces.Localizer;
+import chav1961.purelib.model.ContentModelFactory;
+import chav1961.purelib.model.interfaces.ContentMetadataInterface;
+import chav1961.purelib.ui.interfaces.FormManager;
+import chav1961.purelib.ui.swing.AutoBuiltForm;
+
 public class ImageUtils {
 	public static enum ProcessType {
 		CROP, RESIZE, SCALE, ROTATE_CLOCKWISE, ROTATE_COUNTERCLOCKWISE, MIRROR_HORIZONTAL, MIRROR_VERTICAL, TO_GRAYSCALE, TO_TRANSPARENT 
+	}
+
+	public static <T> boolean ask(final T instance, final Localizer localizer, final int width, final int height) throws ContentException {
+		final ContentMetadataInterface	mdi = ContentModelFactory.forAnnotatedClass(instance.getClass());
+		
+		try(final AutoBuiltForm<T,?>	abf = new AutoBuiltForm<>(mdi, localizer, PureLibSettings.INTERNAL_LOADER, instance, (FormManager<?,T>)instance)) {
+			
+			((ModuleAccessor)instance).allowUnnamedModuleAccess(abf.getUnnamedModules());
+			abf.setPreferredSize(new Dimension(width,height));
+			return AutoBuiltForm.ask((JFrame)null,localizer,abf);
+		}
 	}
 	
 	public static Image process(final ProcessType type, final Image source, final Object... parameters) {
