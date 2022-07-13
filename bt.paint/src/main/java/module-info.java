@@ -10,6 +10,7 @@ module chav1961.bt.paint {
 	requires java.compiler;
 	requires jdk.javadoc;
 	requires java.base;
+	requires java.datatransfer;
 	
 	exports chav1961.bt.paint;
 	exports chav1961.bt.paint.control;
