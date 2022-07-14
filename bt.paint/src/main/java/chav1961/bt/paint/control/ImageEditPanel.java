@@ -39,6 +39,7 @@ import javax.swing.undo.UndoManager;
 import chav1961.bt.paint.control.ImageEditCanvas.DrawingMode;
 import chav1961.bt.paint.control.ImageEditCanvas.LineStroke;
 import chav1961.bt.paint.dialogs.AskImageResize;
+import chav1961.bt.paint.utils.ApplicationUtils;
 import chav1961.purelib.basic.exceptions.ContentException;
 import chav1961.purelib.basic.exceptions.EnvironmentException;
 import chav1961.purelib.basic.exceptions.LocalizationException;
@@ -202,7 +203,7 @@ public class ImageEditPanel extends JPanel implements LocalizerOwner, LocaleChan
 	public void resize() {
 		try{final AskImageResize	air = new AskImageResize(SwingUtils.getNearestLogger(this));
 		
-			if (ImageUtils.ask(air, getLocalizer(), 300, 145)) {
+			if (ApplicationUtils.ask(air, getLocalizer(), 300, 145)) {
 			}
 		} catch (ContentException e) {
 			SwingUtils.getNearestLogger(this).message(Severity.error, e.getLocalizedMessage());

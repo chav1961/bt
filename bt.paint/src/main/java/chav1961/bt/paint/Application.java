@@ -34,6 +34,7 @@ import chav1961.bt.paint.control.ImageUtils;
 import chav1961.bt.paint.dialogs.AskImageSize;
 import chav1961.bt.paint.script.ScriptNodeType;
 import chav1961.bt.paint.script.runtime.ScriptUtils;
+import chav1961.bt.paint.utils.ApplicationUtils;
 import chav1961.purelib.basic.ArgParser;
 import chav1961.purelib.basic.PureLibSettings;
 import chav1961.purelib.basic.Utils;
@@ -166,7 +167,7 @@ public class Application extends JFrame implements NodeMetadataOwner, LocaleChan
 			final AskImageSize	ais = new AskImageSize(getLogger());
 			
 			if (ask(ais,240,80)) {
-		    	panel.setImage(new BufferedImage(ais.width, ais.height, BufferedImage.TYPE_3BYTE_BGR));
+		    	panel.setImage(new BufferedImage(ais.width, ais.height, BufferedImage.TYPE_INT_ARGB));
 		    	lastFile = null;
 				refreshMenuState();
 				fillTitle();
@@ -286,7 +287,7 @@ public class Application extends JFrame implements NodeMetadataOwner, LocaleChan
 	
 	private <T> boolean ask(final T instance, final int width, final int height) {
 		try{
-			return ImageUtils.ask(instance, localizer, width, height);
+			return ApplicationUtils.ask(instance, localizer, width, height);
 		} catch (ContentException e) {
 			getLogger().message(Severity.error,e.getLocalizedMessage());
 			return false;
