@@ -2,7 +2,9 @@ package chav1961.bt.paint;
 
 import java.awt.BorderLayout;
 import java.awt.Dimension;
+import java.awt.Graphics2D;
 import java.awt.Image;
+import java.awt.Rectangle;
 import java.awt.image.BufferedImage;
 import java.awt.image.RenderedImage;
 import java.io.File;
@@ -31,6 +33,7 @@ import javax.swing.border.EtchedBorder;
 
 import chav1961.bt.paint.control.ImageEditPanel;
 import chav1961.bt.paint.control.ImageUtils;
+import chav1961.bt.paint.control.ImageUtils.ProcessType;
 import chav1961.bt.paint.dialogs.AskImageSize;
 import chav1961.bt.paint.script.ScriptNodeType;
 import chav1961.bt.paint.script.runtime.ScriptUtils;
@@ -166,8 +169,16 @@ public class Application extends JFrame implements NodeMetadataOwner, LocaleChan
 		if (checkUnsavedChanges()) {
 			final AskImageSize	ais = new AskImageSize(getLogger());
 			
-			if (ask(ais,240,80)) {
-		    	panel.setImage(new BufferedImage(ais.width, ais.height, BufferedImage.TYPE_INT_ARGB));
+			if (ask(ais,240,100)) {
+				final BufferedImage	img = new BufferedImage(ais.width, ais.height, BufferedImage.TYPE_INT_ARGB);
+				
+				if (ais.fillBackbroung) {
+			    	panel.setImage(ImageUtils.process(ProcessType.FILL, img, null, new Rectangle(0, 0, ais.width, ais.height), panel.getBackground()));
+				}
+				else {
+			    	panel.setImage(img);
+				}
+				
 		    	lastFile = null;
 				refreshMenuState();
 				fillTitle();

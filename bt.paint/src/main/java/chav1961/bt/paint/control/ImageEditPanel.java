@@ -197,6 +197,9 @@ public class ImageEditPanel extends JPanel implements LocalizerOwner, LocaleChan
 	
 	@OnAction("action:/crop")
 	public void crop() {
+		if (canvas.getSelection() != null) {
+			canvas.setBackgroundImage(ImageUtils.cropImage((BufferedImage) canvas.getBackgroundImage(), canvas.getSelection(), null));
+		}
 	}
 	
 	@OnAction("action:/resize")
@@ -204,6 +207,7 @@ public class ImageEditPanel extends JPanel implements LocalizerOwner, LocaleChan
 		try{final AskImageResize	air = new AskImageResize(SwingUtils.getNearestLogger(this));
 		
 			if (ApplicationUtils.ask(air, getLocalizer(), 300, 145)) {
+				canvas.setBackgroundImage(ImageUtils.resizeImage((BufferedImage) canvas.getBackgroundImage(), air.width, air.height, canvas.getBackground(), air.stretchContent, air.fromCenter, null));
 			}
 		} catch (ContentException e) {
 			SwingUtils.getNearestLogger(this).message(Severity.error, e.getLocalizedMessage());
@@ -212,22 +216,32 @@ public class ImageEditPanel extends JPanel implements LocalizerOwner, LocaleChan
 	
 	@OnAction("action:/rotate")
 	public void rotate() {
+		canvas.setBackgroundImage(ImageUtils.rotateImage((BufferedImage) canvas.getBackgroundImage(), false, null));
 	}
 	
 	@OnAction("action:/reflectVert")
 	public void reflectV() {
+		canvas.setBackgroundImage(ImageUtils.mirrorImage((BufferedImage) canvas.getBackgroundImage(), false, null));
 	}
 	
 	@OnAction("action:/reflectHor")
 	public void reflectH() {
+		canvas.setBackgroundImage(ImageUtils.mirrorImage((BufferedImage) canvas.getBackgroundImage(), true, null));
 	}
 
 	@OnAction("action:/toGrayScale")
 	public void toGrayScale() {
+		canvas.setBackgroundImage(ImageUtils.grayScaleImage((BufferedImage) canvas.getBackgroundImage(), null));
 	}
 	
 	@OnAction("action:/transparency")
 	public void makeTransparent() {
+		if (foregroundNow) {
+			canvas.setBackgroundImage(ImageUtils.transparentImage((BufferedImage) canvas.getBackgroundImage(), canvas.getForeground(), false,null));
+		}
+		else {
+			canvas.setBackgroundImage(ImageUtils.transparentImage((BufferedImage) canvas.getBackgroundImage(), canvas.getBackground(), true, null));
+		}
 	}
 	
 	@OnAction("action:/settings.font")

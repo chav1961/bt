@@ -17,11 +17,15 @@ public class AskImageSize implements FormManager<Object, AskImageSize>, ModuleAc
 	
 	@LocaleResource(value="askimagesize.width",tooltip="askimagesize.width.tt")
 	@Format("10ms")
-	public int	width = 100;
+	public int		width = 100;
 	
 	@LocaleResource(value="askimagesize.height",tooltip="askimagesize.height.tt")
 	@Format("10ms")
-	public int	height = 100;
+	public int		height = 100;
+	
+	@LocaleResource(value="askimagesize.fillbackground",tooltip="askimagesize.fillbackground.tt")
+	@Format("1s")
+	public boolean	fillBackbroung = false;
 
 	public AskImageSize(final LoggerFacade facade) {
 		if (facade == null) {

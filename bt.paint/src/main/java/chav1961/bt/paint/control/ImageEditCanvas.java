@@ -10,6 +10,7 @@ import java.awt.Point;
 import java.awt.Rectangle;
 import java.io.IOException;
 
+import javax.swing.border.LineBorder;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import javax.swing.undo.UndoManager;
@@ -166,6 +167,7 @@ public class ImageEditCanvas extends JBackgroundComponent {
 	@Override
 	public void setBackgroundImage(final Image image) {
 		super.setBackgroundImage(image);
+		selection = null;
 		setPreferredSize(new Dimension(image.getWidth(null), image.getHeight(null)));
 		setSize(new Dimension(image.getWidth(null), image.getHeight(null)));
 		listeners.fireEvent((l)->l.stateChanged(ce));
@@ -295,13 +297,18 @@ public class ImageEditCanvas extends JBackgroundComponent {
 			g2d.setColor(oldColor);
 		}
 		else {
+			final Color		oldColor = g2d.getColor();
+
 			super.paintComponent(g2d);
+			g2d.setColor(Color.BLACK);
+			g2d.drawRect(0, 0, getBackgroundImage().getWidth(null), getBackgroundImage().getHeight(null));
 			
 			if (getCurrentDrawMode() != DrawingMode.UNKNOWN) {
 				g2d.setXORMode(Color.white);
 				smgr.paintSelection(g2d);
 				g2d.setPaintMode();
 			}
+			g2d.setColor(oldColor);
 		}
 	}	
 }

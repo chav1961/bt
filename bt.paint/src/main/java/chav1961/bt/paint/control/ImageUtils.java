@@ -20,7 +20,7 @@ import chav1961.purelib.basic.interfaces.LoggerFacade.Severity;
 
 public class ImageUtils {
 	public static enum ProcessType {
-		CROP, RESIZE, SCALE, ROTATE_CLOCKWISE, ROTATE_COUNTERCLOCKWISE, MIRROR_HORIZONTAL, MIRROR_VERTICAL, TO_GRAYSCALE, TO_TRANSPARENT 
+		FILL, CROP, RESIZE, SCALE, ROTATE_CLOCKWISE, ROTATE_COUNTERCLOCKWISE, MIRROR_HORIZONTAL, MIRROR_VERTICAL, TO_GRAYSCALE, TO_TRANSPARENT 
 	}
 
 	public static Image process(final ProcessType type, final Image source, final ImageObserver observer, final Object... parameters) {
@@ -32,6 +32,13 @@ public class ImageUtils {
 		}
 		else {
 			switch (type) {
+				case FILL				:
+					if (checkParameterTypes(parameters, Rectangle.class, Color.class)) {
+						return fillImage((BufferedImage)source, (Rectangle)parameters[0], (Color)parameters[1], observer);
+					}
+					else {
+						throw new IllegalArgumentException("[FILL] mode must have rectangle item and color in the parameters list"); 
+					}
 				case CROP				:
 					if (checkParameterTypes(parameters, Rectangle.class)) {
 						return cropImage((BufferedImage)source, (Rectangle)parameters[0], observer);
@@ -101,6 +108,16 @@ public class ImageUtils {
 		}
 	}
 
+	static Image fillImage(final BufferedImage source, final Rectangle rectangle, final Color color, final ImageObserver observer) {
+		final BufferedImage	result = new BufferedImage(rectangle.width, rectangle.height, source.getType());
+		final Graphics2D	g2d = (Graphics2D) result.getGraphics();
+		final Color			oldColor = g2d.getColor(); 
+		
+		g2d.fillRect(rectangle.x, rectangle.y, rectangle.width, rectangle.height);
+		g2d.setColor(oldColor);
+		return result;
+	}
+	
 	static Image cropImage(final BufferedImage source, final Rectangle rectangle, final ImageObserver observer) {
 		final BufferedImage		result = new BufferedImage(rectangle.width, rectangle.height, source.getType());
 		final Graphics2D		g2d = (Graphics2D) result.getGraphics();
