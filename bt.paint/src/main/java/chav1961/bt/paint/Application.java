@@ -25,11 +25,14 @@ import java.util.regex.Pattern;
 
 import javax.imageio.ImageIO;
 import javax.swing.BorderFactory;
+import javax.swing.JComponent;
 import javax.swing.JFrame;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
 import javax.swing.border.EtchedBorder;
+import javax.swing.event.UndoableEditEvent;
+import javax.swing.undo.UndoManager;
 
 import chav1961.bt.paint.control.ImageEditPanel;
 import chav1961.bt.paint.control.ImageUtils;
@@ -78,7 +81,6 @@ public class Application extends JFrame implements NodeMetadataOwner, LocaleChan
 	public static final String		ARG_PROPFILE_LOCATION = "prop";
 	
 	private static final long 		serialVersionUID = 1083999598002477077L;
-	private static final int		MAX_UNDO_LENGTH = 10;
 	private static final String		KEY_PNG_FILES = "chav1961.bt.paint.Application.filter.pngfiles";
 	private static final String		KEY_JPG_FILES = "chav1961.bt.paint.Application.filter.jpgfiles";
 	private static final String		KEY_UNSAVED_CHANGES = "chav1961.bt.paint.Application.unsavedChanges";
@@ -95,6 +97,7 @@ public class Application extends JFrame implements NodeMetadataOwner, LocaleChan
 	private final JMenuBar					menuBar;
 	private final ImageEditPanel			panel;
 	private final JStateString				state;
+	private final UndoManager				undoMgr = new UndoManager();
 	private final FilterCallback			filterCallbackPNG;
 	private final FilterCallback			filterCallbackJPG;
 		
@@ -121,8 +124,10 @@ public class Application extends JFrame implements NodeMetadataOwner, LocaleChan
 	        this.menuBar = SwingUtils.toJComponent(xda.byUIPath(URI.create("ui:/model/navigation.top.mainmenu")), JMenuBar.class); 
 	        SwingUtils.assignActionListeners(menuBar, this);
 			
-	        this.panel = new ImageEditPanel(localizer, MAX_UNDO_LENGTH);
+	        this.panel = new ImageEditPanel(localizer);
 	        this.state = new JStateString(localizer);
+	        
+	        this.panel.addUndoableEditListener((e)->processUndoEvents(e));
 	        
 	        state.setBorder(BorderFactory.createEtchedBorder(EtchedBorder.LOWERED));
 
@@ -178,7 +183,7 @@ public class Application extends JFrame implements NodeMetadataOwner, LocaleChan
 				else {
 			    	panel.setImage(img);
 				}
-				
+				undoMgr.discardAllEdits();
 		    	lastFile = null;
 				refreshMenuState();
 				fillTitle();
@@ -194,6 +199,7 @@ public class Application extends JFrame implements NodeMetadataOwner, LocaleChan
 						final InputStream			is = temp.read()) {
 						
 						panel.setImage(ImageIO.read(is));
+						undoMgr.discardAllEdits();
 						lastFile = item;
 						refreshMenuState();
 						fillTitle();
@@ -213,7 +219,7 @@ public class Application extends JFrame implements NodeMetadataOwner, LocaleChan
 				try(final OutputStream	os = temp.write()) {
 					ImageIO.write((RenderedImage) panel.getImage(), lastFile.endsWith(".png") ? "png" : "jpeg", os);
 				}
-				panel.getUndoManager().discardAllEdits();
+				undoMgr.discardAllEdits();
 				refreshMenuState();
 			}
 		} catch (IOException e) {
@@ -231,7 +237,7 @@ public class Application extends JFrame implements NodeMetadataOwner, LocaleChan
 					try(final OutputStream	os = temp.write()) {
 						ImageIO.write((RenderedImage) panel.getImage(), item.endsWith(".png") ? "png" : "jpeg", os);
 					}
-					panel.getUndoManager().discardAllEdits();
+					undoMgr.discardAllEdits();
 					lastFile = item;
 					refreshMenuState();
 					fillTitle();
@@ -252,10 +258,12 @@ public class Application extends JFrame implements NodeMetadataOwner, LocaleChan
 
 	@OnAction("action:/undo")
     public void undo() {
+		undoMgr.undo();
 	}	
 	
 	@OnAction("action:/redo")
     public void redo() {
+		undoMgr.redo();
 	}	
 
 	@OnAction("action:/cut")
@@ -304,19 +312,43 @@ public class Application extends JFrame implements NodeMetadataOwner, LocaleChan
 			return false;
 		} 
 	}
+
+	private void processUndoEvents(final UndoableEditEvent e) {
+		undoMgr.undoableEditHappened(e);
+		refreshUndoMenuState();
+	}
+
+	private void refreshUndoMenuState() {
+		final JMenuItem	undo = ((JMenuItem)SwingUtils.findComponentByName(menuBar, "menu.main.edit.undo"));
+		final JMenuItem	redo = ((JMenuItem)SwingUtils.findComponentByName(menuBar, "menu.main.edit.redo"));
+		
+		if (undoMgr.canUndo()) {
+			undo.setEnabled(true);
+			undo.setText(localizer.getValue(undoMgr.getUndoPresentationName()));
+		}
+		else {
+			undo.setEnabled(false);
+			undo.setText(localizer.getValue(((NodeMetadataOwner)undo).getNodeMetadata().getLabelId()));
+		}
+		if (undoMgr.canRedo()) {
+			redo.setEnabled(true);
+			redo.setText(localizer.getValue(undoMgr.getRedoPresentationName()));
+		}
+		else {
+			redo.setEnabled(false);
+			redo.setText((((NodeMetadataOwner)redo).getNodeMetadata().getLabelId()));
+		}
+	}
 	
 	private void refreshMenuState() {
 		((JMenuItem)SwingUtils.findComponentByName(menuBar, "menu.main.file.save")).setEnabled(lastFile != null);
 		((JMenuItem)SwingUtils.findComponentByName(menuBar, "menu.main.file.saveAs")).setEnabled(panel.getImage() != null);
 		((JMenuItem)SwingUtils.findComponentByName(menuBar, "menu.main.edit")).setEnabled(panel.getImage() != null);
-		((JMenuItem)SwingUtils.findComponentByName(menuBar, "menu.main.edit.undo")).setEnabled(panel.getUndoManager().canUndo());
-		((JMenuItem)SwingUtils.findComponentByName(menuBar, "menu.main.edit.undo")).setText(panel.getUndoManager().getUndoPresentationName());
-		((JMenuItem)SwingUtils.findComponentByName(menuBar, "menu.main.edit.redo")).setEnabled(panel.getUndoManager().canUndo());
-		((JMenuItem)SwingUtils.findComponentByName(menuBar, "menu.main.edit.redo")).setText(panel.getUndoManager().getRedoPresentationName());
+		refreshUndoMenuState();
 	}
 
 	private boolean checkUnsavedChanges() {
-		if (panel.getUndoManager().canUndoOrRedo()) {
+		if (undoMgr.canUndoOrRedo()) {
 			switch (new JLocalizedOptionPane(localizer).confirm(this, KEY_UNSAVED_CHANGES, KEY_UNSAVED_CHANGES_TITLE, JOptionPane.QUESTION_MESSAGE, JOptionPane.YES_NO_CANCEL_OPTION)) {
 				case JOptionPane.YES_OPTION 	:
 					if (lastFile != null) {

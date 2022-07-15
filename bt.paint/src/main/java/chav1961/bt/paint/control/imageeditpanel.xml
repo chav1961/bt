@@ -63,14 +63,14 @@
 		<app:item name="toolbar.colorbar.colorswitch" caption="toolbar.colorbar.colorswitch" tooltip="toolbar.colorbar.colorswitch.tt" icon="root://chav1961.bt.paint.control.ImageEditPanel/chav1961/bt/paint/images/foreground.png?toggled=background.png" checkable="true" action="switchColor"/>
 	</app:menu>
  	<app:menu id="modeBar">
-		<app:item name="toolbar.modebar.selection" caption="toolbar.modebar.selection" tooltip="toolbar.modebar.selection.tt" icon="root://chav1961.bt.paint.control.ImageEditPanel/chav1961/bt/paint/images/selection.png" action="chooseMode?mode=SELECT"/>
-		<app:item name="toolbar.modebar.pen" caption="toolbar.modebar.pen" tooltip="toolbar.modebar.pen.tt" icon="root://chav1961.bt.paint.control.ImageEditPanel/chav1961/bt/paint/images/pen.png" action="chooseMode?mode=PEN"/>
-		<app:item name="toolbar.modebar.brush" caption="toolbar.modebar.brush" tooltip="toolbar.modebar.brush.tt" icon="root://chav1961.bt.paint.control.ImageEditPanel/chav1961/bt/paint/images/brush.png" action="chooseMode?mode=BRUSH"/>
-		<app:item name="toolbar.modebar.erase" caption="toolbar.modebar.erase" tooltip="toolbar.modebar.erase.tt" icon="root://chav1961.bt.paint.control.ImageEditPanel/chav1961/bt/paint/images/eraser.png" action="chooseMode?mode=ERASE"/>
-		<app:item name="toolbar.modebar.text" caption="toolbar.modebar.text" tooltip="toolbar.modebar.text.tt" icon="root://chav1961.bt.paint.control.ImageEditPanel/chav1961/bt/paint/images/text.png" action="chooseMode?mode=TEXT"/>
-		<app:item name="toolbar.modebar.line" caption="toolbar.modebar.line" tooltip="toolbar.modebar.line.tt" icon="root://chav1961.bt.paint.control.ImageEditPanel/chav1961/bt/paint/images/line.png" action="chooseMode?mode=LINE"/>
-		<app:item name="toolbar.modebar.ellipse" caption="toolbar.modebar.ellipse" tooltip="toolbar.modebar.ellipse.tt" icon="root://chav1961.bt.paint.control.ImageEditPanel/chav1961/bt/paint/images/ellipse.png" action="chooseMode?mode=ELLIPSE"/>
-		<app:item name="toolbar.modebar.rect" caption="toolbar.modebar.rect" tooltip="toolbar.modebar.rect.tt" icon="root://chav1961.bt.paint.control.ImageEditPanel/chav1961/bt/paint/images/rect.png" action="chooseMode?mode=RECT"/>
+		<app:item name="toolbar.modebar.selection" caption="toolbar.modebar.selection" tooltip="toolbar.modebar.selection.tt" icon="root://chav1961.bt.paint.control.ImageEditPanel/chav1961/bt/paint/images/selection.png" group="drawing" action="chooseMode?mode=SELECT"/>
+		<app:item name="toolbar.modebar.pen" caption="toolbar.modebar.pen" tooltip="toolbar.modebar.pen.tt" icon="root://chav1961.bt.paint.control.ImageEditPanel/chav1961/bt/paint/images/pen.png" group="drawing" action="chooseMode?mode=PEN"/>
+		<app:item name="toolbar.modebar.brush" caption="toolbar.modebar.brush" tooltip="toolbar.modebar.brush.tt" icon="root://chav1961.bt.paint.control.ImageEditPanel/chav1961/bt/paint/images/brush.png" group="drawing" action="chooseMode?mode=BRUSH"/>
+		<app:item name="toolbar.modebar.erase" caption="toolbar.modebar.erase" tooltip="toolbar.modebar.erase.tt" icon="root://chav1961.bt.paint.control.ImageEditPanel/chav1961/bt/paint/images/eraser.png" group="drawing" action="chooseMode?mode=ERASE"/>
+		<app:item name="toolbar.modebar.text" caption="toolbar.modebar.text" tooltip="toolbar.modebar.text.tt" icon="root://chav1961.bt.paint.control.ImageEditPanel/chav1961/bt/paint/images/text.png" group="drawing" action="chooseMode?mode=TEXT"/>
+		<app:item name="toolbar.modebar.line" caption="toolbar.modebar.line" tooltip="toolbar.modebar.line.tt" icon="root://chav1961.bt.paint.control.ImageEditPanel/chav1961/bt/paint/images/line.png" group="drawing" action="chooseMode?mode=LINE"/>
+		<app:item name="toolbar.modebar.ellipse" caption="toolbar.modebar.ellipse" tooltip="toolbar.modebar.ellipse.tt" icon="root://chav1961.bt.paint.control.ImageEditPanel/chav1961/bt/paint/images/ellipse.png" group="drawing" action="chooseMode?mode=ELLIPSE"/>
+		<app:item name="toolbar.modebar.rect" caption="toolbar.modebar.rect" tooltip="toolbar.modebar.rect.tt" icon="root://chav1961.bt.paint.control.ImageEditPanel/chav1961/bt/paint/images/rect.png" group="drawing" action="chooseMode?mode=RECT"/>
 	</app:menu>
  	<app:menu id="actionBar">
 		<app:item name="toolbar.actionbar.crop" caption="toolbar.actionbar.crop" tooltip="toolbar.actionbar.crop.tt" icon="root://chav1961.bt.paint.control.ImageEditPanel/chav1961/bt/paint/images/crop.png" action="crop"/>

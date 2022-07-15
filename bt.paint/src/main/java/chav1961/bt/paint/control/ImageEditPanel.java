@@ -34,10 +34,11 @@ import javax.swing.JToolBar;
 import javax.swing.border.EtchedBorder;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
-import javax.swing.undo.UndoManager;
+import javax.swing.event.UndoableEditEvent;
+import javax.swing.event.UndoableEditListener;
 
-import chav1961.bt.paint.control.ImageEditCanvas.DrawingMode;
 import chav1961.bt.paint.control.ImageEditCanvas.LineStroke;
+import chav1961.bt.paint.control.ImageUtils.DrawingType;
 import chav1961.bt.paint.dialogs.AskImageResize;
 import chav1961.bt.paint.utils.ApplicationUtils;
 import chav1961.purelib.basic.exceptions.ContentException;
@@ -63,6 +64,21 @@ public class ImageEditPanel extends JPanel implements LocalizerOwner, LocaleChan
 	private static final ContentMetadataInterface	xda;
 	
 	private static final String				KEY_SELECT_COLOR = "chav1961.bt.mnemoed.editor.ImageEditPanel.selectColor";
+
+	private static final String				KEY_UNDO_CROP = "chav1961.bt.mnemoed.editor.ImageEditPanel.undo.crop";
+	private static final String				KEY_REDO_CROP = "chav1961.bt.mnemoed.editor.ImageEditPanel.redo.crop";
+	private static final String				KEY_UNDO_RESIZE = "chav1961.bt.mnemoed.editor.ImageEditPanel.undo.resize";
+	private static final String				KEY_REDO_RESIZE = "chav1961.bt.mnemoed.editor.ImageEditPanel.redo.resize";
+	private static final String				KEY_UNDO_ROTATE = "chav1961.bt.mnemoed.editor.ImageEditPanel.undo.rotate";
+	private static final String				KEY_REDO_ROTATE = "chav1961.bt.mnemoed.editor.ImageEditPanel.redo.rotate";
+	private static final String				KEY_UNDO_REFLECT_V = "chav1961.bt.mnemoed.editor.ImageEditPanel.undo.reflect.vertical";
+	private static final String				KEY_REDO_REFLECT_V = "chav1961.bt.mnemoed.editor.ImageEditPanel.redo.reflect.vertical";
+	private static final String				KEY_UNDO_REFLECT_H = "chav1961.bt.mnemoed.editor.ImageEditPanel.undo.reflect.horizontal";
+	private static final String				KEY_REDO_REFLECT_H = "chav1961.bt.mnemoed.editor.ImageEditPanel.redo.reflect.horizontal";
+	private static final String				KEY_UNDO_GRAYSCALE = "chav1961.bt.mnemoed.editor.ImageEditPanel.undo.grayscale";
+	private static final String				KEY_REDO_GRAYSCALE = "chav1961.bt.mnemoed.editor.ImageEditPanel.redo.grayscale";
+	private static final String				KEY_UNDO_TRANSPARENCY = "chav1961.bt.mnemoed.editor.ImageEditPanel.undo.transparency";
+	private static final String				KEY_REDO_TRANSPARENCY = "chav1961.bt.mnemoed.editor.ImageEditPanel.redo.transparency";
 	
 	static {
 		try(final InputStream				is = ImageEditPanel.class.getResourceAsStream("imageeditpanel.xml")) {
@@ -73,7 +89,8 @@ public class ImageEditPanel extends JPanel implements LocalizerOwner, LocaleChan
 		}		
 	}
 
-	private final LightWeightListenerList<ChangeListener>	listeners = new LightWeightListenerList<>(ChangeListener.class);
+	private final LightWeightListenerList<ChangeListener>		listeners = new LightWeightListenerList<>(ChangeListener.class);
+	private final LightWeightListenerList<UndoableEditListener>	undoListeners = new LightWeightListenerList<>(UndoableEditListener.class);
 	private final Localizer			localizer;
 	private final JPanel			topPanel = new JPanel();
 	private final JPanel			leftPanel = new JPanel();
@@ -82,17 +99,14 @@ public class ImageEditPanel extends JPanel implements LocalizerOwner, LocaleChan
 	private boolean 				foregroundNow = true;
 	private boolean 				waitColorExtraction = false;
 	
-	public ImageEditPanel(final Localizer localizer, final int editHistoryLength) throws NullPointerException {
+	public ImageEditPanel(final Localizer localizer) throws NullPointerException {
 		super(new BorderLayout());
 		if (localizer == null) {
 			throw new NullPointerException("Localizer can't be null");
 		}
-		else if (editHistoryLength <= 0) {
-			throw new IllegalArgumentException("Edit history length ["+editHistoryLength+"] must be positive");
-		}
 		else {
 			this.localizer = localizer;
-			this.canvas = new ImageEditCanvas(localizer, editHistoryLength);
+			this.canvas = new ImageEditCanvas(localizer);
 			this.state = new EditStateString(localizer);
 
 			topPanel.setLayout(new BoxLayout(topPanel, BoxLayout.X_AXIS));
@@ -162,6 +176,24 @@ public class ImageEditPanel extends JPanel implements LocalizerOwner, LocaleChan
 			listeners.removeListener(l);
 		}
 	}
+
+	public void addUndoableEditListener(final UndoableEditListener l) {
+		if (l == null) {
+			throw new NullPointerException("Listener to add can't be null");
+		}
+		else {
+			undoListeners.addListener(l);
+		}
+	}
+
+	public void removeChangeListener(final UndoableEditListener l) {
+		if (l == null) {
+			throw new NullPointerException("Listener to remove can't be null");
+		}
+		else {
+			undoListeners.removeListener(l);
+		}
+	}
 	
 	@OnAction("action:/chooseColor")
     public void chooseColor(final Hashtable<String,String[]> colors) {
@@ -192,22 +224,30 @@ public class ImageEditPanel extends JPanel implements LocalizerOwner, LocaleChan
 	
 	@OnAction("action:/chooseMode")
     public void chooseMode(final Hashtable<String,String[]> modes) throws IOException {
-		canvas.setCurrentDrawMode(DrawingMode.valueOf(modes.get("mode")[0]));
+		canvas.setCurrentDrawMode(DrawingType.valueOf(modes.get("mode")[0]));
     }
 	
 	@OnAction("action:/crop")
-	public void crop() {
+	public void crop() throws IOException {
 		if (canvas.getSelection() != null) {
-			canvas.setBackgroundImage(ImageUtils.cropImage((BufferedImage) canvas.getBackgroundImage(), canvas.getSelection(), null));
+			final Image			current = canvas.getBackgroundImage();
+			final ImageUndoEdit	currentEdit = new ImageUndoEdit(KEY_UNDO_CROP, KEY_REDO_CROP, current, (i)->canvas.setBackgroundImage(i)); 
+			
+			canvas.setBackgroundImage(ImageUtils.cropImage((BufferedImage) current, canvas.getSelection(), null));
+			fireUndo(currentEdit);
 		}
 	}
 	
 	@OnAction("action:/resize")
-	public void resize() {
+	public void resize() throws IOException {
 		try{final AskImageResize	air = new AskImageResize(SwingUtils.getNearestLogger(this));
 		
 			if (ApplicationUtils.ask(air, getLocalizer(), 300, 145)) {
-				canvas.setBackgroundImage(ImageUtils.resizeImage((BufferedImage) canvas.getBackgroundImage(), air.width, air.height, canvas.getBackground(), air.stretchContent, air.fromCenter, null));
+				final Image			current = canvas.getBackgroundImage();
+				final ImageUndoEdit	currentEdit = new ImageUndoEdit(KEY_UNDO_RESIZE, KEY_REDO_RESIZE, current, (i)->canvas.setBackgroundImage(i));
+			
+				canvas.setBackgroundImage(ImageUtils.resizeImage((BufferedImage) current, air.width, air.height, canvas.getBackground(), air.stretchContent, air.fromCenter, null));
+				fireUndo(currentEdit);
 			}
 		} catch (ContentException e) {
 			SwingUtils.getNearestLogger(this).message(Severity.error, e.getLocalizedMessage());
@@ -215,33 +255,53 @@ public class ImageEditPanel extends JPanel implements LocalizerOwner, LocaleChan
 	}
 	
 	@OnAction("action:/rotate")
-	public void rotate() {
-		canvas.setBackgroundImage(ImageUtils.rotateImage((BufferedImage) canvas.getBackgroundImage(), false, null));
+	public void rotate() throws IOException {
+		final Image			current = canvas.getBackgroundImage();
+		final ImageUndoEdit	currentEdit = new ImageUndoEdit(KEY_UNDO_ROTATE, KEY_REDO_ROTATE, current, (i)->canvas.setBackgroundImage(i));
+		
+		canvas.setBackgroundImage(ImageUtils.rotateImage((BufferedImage) current, false, null));
+		fireUndo(currentEdit);
 	}
 	
 	@OnAction("action:/reflectVert")
-	public void reflectV() {
-		canvas.setBackgroundImage(ImageUtils.mirrorImage((BufferedImage) canvas.getBackgroundImage(), false, null));
+	public void reflectV() throws IOException {
+		final Image			current = canvas.getBackgroundImage();
+		final ImageUndoEdit	currentEdit = new ImageUndoEdit(KEY_UNDO_REFLECT_V, KEY_REDO_REFLECT_V, current, (i)->canvas.setBackgroundImage(i));
+		
+		canvas.setBackgroundImage(ImageUtils.mirrorImage((BufferedImage) current, false, null));
+		fireUndo(currentEdit);
 	}
 	
 	@OnAction("action:/reflectHor")
-	public void reflectH() {
-		canvas.setBackgroundImage(ImageUtils.mirrorImage((BufferedImage) canvas.getBackgroundImage(), true, null));
+	public void reflectH() throws IOException {
+		final Image			current = canvas.getBackgroundImage();
+		final ImageUndoEdit	currentEdit = new ImageUndoEdit(KEY_UNDO_REFLECT_H, KEY_REDO_REFLECT_H, current, (i)->canvas.setBackgroundImage(i));
+		
+		canvas.setBackgroundImage(ImageUtils.mirrorImage((BufferedImage) current, true, null));
+		fireUndo(currentEdit);
 	}
 
 	@OnAction("action:/toGrayScale")
-	public void toGrayScale() {
-		canvas.setBackgroundImage(ImageUtils.grayScaleImage((BufferedImage) canvas.getBackgroundImage(), null));
+	public void toGrayScale() throws IOException {
+		final Image			current = canvas.getBackgroundImage();
+		final ImageUndoEdit	currentEdit = new ImageUndoEdit(KEY_UNDO_GRAYSCALE, KEY_REDO_GRAYSCALE, current, (i)->canvas.setBackgroundImage(i));
+		
+		canvas.setBackgroundImage(ImageUtils.grayScaleImage((BufferedImage) current, null));
+		fireUndo(currentEdit);
 	}
 	
 	@OnAction("action:/transparency")
-	public void makeTransparent() {
+	public void makeTransparent() throws IOException {
+		final Image			current = canvas.getBackgroundImage();
+		final ImageUndoEdit	currentEdit = new ImageUndoEdit(KEY_UNDO_TRANSPARENCY, KEY_REDO_TRANSPARENCY, current, (i)->canvas.setBackgroundImage(i));
+		
 		if (foregroundNow) {
-			canvas.setBackgroundImage(ImageUtils.transparentImage((BufferedImage) canvas.getBackgroundImage(), canvas.getForeground(), false,null));
+			canvas.setBackgroundImage(ImageUtils.transparentImage((BufferedImage) current, canvas.getForeground(), false, null));
 		}
 		else {
-			canvas.setBackgroundImage(ImageUtils.transparentImage((BufferedImage) canvas.getBackgroundImage(), canvas.getBackground(), true, null));
+			canvas.setBackgroundImage(ImageUtils.transparentImage((BufferedImage) current, canvas.getBackground(), true, null));
 		}
+		fireUndo(currentEdit);
 	}
 	
 	@OnAction("action:/settings.font")
@@ -280,10 +340,6 @@ public class ImageEditPanel extends JPanel implements LocalizerOwner, LocaleChan
 	public void play(final Hashtable<String,String[]> modes) {
 	}	
 	
-	public UndoManager getUndoManager() {
-		return canvas.getUndoManager();
-	}
-	
 	public Image getImage() {
 		return canvas.getBackgroundImage();
 	}
@@ -297,7 +353,7 @@ public class ImageEditPanel extends JPanel implements LocalizerOwner, LocaleChan
 		}
 	}
 	
-	public DrawingMode getCurrentDrawingMode() {
+	public DrawingType getCurrentDrawingMode() {
 		return canvas.getCurrentDrawMode();
 	}
 	
@@ -385,6 +441,12 @@ public class ImageEditPanel extends JPanel implements LocalizerOwner, LocaleChan
 	    result.setOrientation(JToolBar.HORIZONTAL);
 	    SwingUtils.assignActionListeners(result, this);
 	    return result;
+	}
+	
+	private void fireUndo(final ImageUndoEdit edit) {
+		final UndoableEditEvent	ee = new UndoableEditEvent(this, edit);
+		
+		undoListeners.fireEvent((l)->l.undoableEditHappened(ee));
 	}
 	
 	private static class EditStateString extends JPanel implements LocaleChangeListener {

@@ -157,6 +157,20 @@
 
 <!-- ImageEditPanel class localization -->
 		<key name="chav1961.bt.mnemoed.editor.ImageEditPanel.selectColor">Select color</key>
+		<key name="chav1961.bt.mnemoed.editor.ImageEditPanel.undo.crop">undo crop</key>
+		<key name="chav1961.bt.mnemoed.editor.ImageEditPanel.redo.crop">redo crop</key>
+		<key name="chav1961.bt.mnemoed.editor.ImageEditPanel.undo.resize">undo resize</key>
+		<key name="chav1961.bt.mnemoed.editor.ImageEditPanel.redo.resize">redo resize</key>
+		<key name="chav1961.bt.mnemoed.editor.ImageEditPanel.undo.rotate">undo rotate</key>
+		<key name="chav1961.bt.mnemoed.editor.ImageEditPanel.redo.rotate">redo rotate</key>
+		<key name="chav1961.bt.mnemoed.editor.ImageEditPanel.undo.reflect.vertical">undo vertical mirror</key>
+		<key name="chav1961.bt.mnemoed.editor.ImageEditPanel.redo.reflect.vertical">redo vertical mirror</key>
+		<key name="chav1961.bt.mnemoed.editor.ImageEditPanel.undo.reflect.horizontal">undo horizontal mirror</key>
+		<key name="chav1961.bt.mnemoed.editor.ImageEditPanel.redo.reflect.horizontal">redo horizontal mirror</key>
+		<key name="chav1961.bt.mnemoed.editor.ImageEditPanel.undo.grayscale">undo grayscale</key>
+		<key name="chav1961.bt.mnemoed.editor.ImageEditPanel.redo.grayscale">redo grayscale</key>
+		<key name="chav1961.bt.mnemoed.editor.ImageEditPanel.undo.transparency">undo transparency</key>
+		<key name="chav1961.bt.mnemoed.editor.ImageEditPanel.redo.transparency">redo transparency</key>
 				
 <!-- ImageEditPanel.EditStateString -->
 		<key name="chav1961.bt.mnemoed.bgeditor.ImageEditPanel.EditStateString.prompt">Type command</key>
@@ -360,6 +374,20 @@
 		
 <!-- Локализация класса ImageEditPanel -->
 		<key name="chav1961.bt.mnemoed.editor.ImageEditPanel.selectColor">Выберите цвет</key>		
+		<key name="chav1961.bt.mnemoed.editor.ImageEditPanel.undo.crop">undo crop</key>
+		<key name="chav1961.bt.mnemoed.editor.ImageEditPanel.redo.crop">redo crop</key>
+		<key name="chav1961.bt.mnemoed.editor.ImageEditPanel.undo.resize">undo resize</key>
+		<key name="chav1961.bt.mnemoed.editor.ImageEditPanel.redo.resize">redo resize</key>
+		<key name="chav1961.bt.mnemoed.editor.ImageEditPanel.undo.rotate">undo rotate</key>
+		<key name="chav1961.bt.mnemoed.editor.ImageEditPanel.redo.rotate">redo rotate</key>
+		<key name="chav1961.bt.mnemoed.editor.ImageEditPanel.undo.reflect.vertical">undo vertical mirror</key>
+		<key name="chav1961.bt.mnemoed.editor.ImageEditPanel.redo.reflect.vertical">redo vertical mirror</key>
+		<key name="chav1961.bt.mnemoed.editor.ImageEditPanel.undo.reflect.horizontal">undo horizontal mirror</key>
+		<key name="chav1961.bt.mnemoed.editor.ImageEditPanel.redo.reflect.horizontal">redo horizontal mirror</key>
+		<key name="chav1961.bt.mnemoed.editor.ImageEditPanel.undo.grayscale">undo grayscale</key>
+		<key name="chav1961.bt.mnemoed.editor.ImageEditPanel.redo.grayscale">redo grayscale</key>
+		<key name="chav1961.bt.mnemoed.editor.ImageEditPanel.undo.transparency">undo transparency</key>
+		<key name="chav1961.bt.mnemoed.editor.ImageEditPanel.redo.transparency">redo transparency</key>
 		
 <!-- Локализация класса AskImageSize -->
 		<key name="askimagesize.title">Задайте размер изображения</key>
@@ -387,6 +415,8 @@
 		<key name="askimageresize.stretch.tt">Масштабировать существующее изображение под новый размер</key>
 		<key name="askimageresize.atcenter">Отцентровать</key>
 		<key name="askimageresize.atcenter.tt">Отцентровать существующее изображение перед выполнением операции</key>
+		
+		
 		
 	</lang>
 </localization>

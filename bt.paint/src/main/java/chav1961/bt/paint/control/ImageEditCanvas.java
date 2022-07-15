@@ -13,8 +13,8 @@ import java.io.IOException;
 import javax.swing.border.LineBorder;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
-import javax.swing.undo.UndoManager;
 
+import chav1961.bt.paint.control.ImageUtils.DrawingType;
 import chav1961.purelib.concurrent.LightWeightListenerList;
 import chav1961.purelib.i18n.interfaces.Localizer;
 import chav1961.purelib.ui.swing.useful.JBackgroundComponent;
@@ -25,55 +25,38 @@ public class ImageEditCanvas extends JBackgroundComponent {
 	private static final String			NO_IMAGE = "NO IMAGE"; 
 	
 	private final LightWeightListenerList<ChangeListener>	listeners = new LightWeightListenerList<>(ChangeListener.class);
-	private final UndoManager			mgr = new UndoManager();
 	private final SelectionFrameManager	smgr = new SelectionFrameManager(this, false);
 	private final ChangeEvent			ce = new ChangeEvent(this);
-	private DrawingMode					currentDrawMode = DrawingMode.UNKNOWN;
+	private DrawingType					currentDrawMode = DrawingType.UNKNOWN;
 	private int							lineThickness = 1;
 	private LineStroke					lineStroke = LineStroke.SOLID;
 	private boolean						fillContours = false;
 	private Rectangle					selection = null;
 	private String						prevComment = null, currentComment = "";
-
-	public static enum DrawingMode {
-		UNKNOWN, SELECT, PEN, BRUSH, ERASE, TEXT, LINE, ELLIPSE, RECT, FILL 
-	}	
 	
 	public static enum LineStroke {
 		SOLID, DASHED, DOTTED;
 	}
 	
-	public ImageEditCanvas(final Localizer localizer, final int undoHistoryLength) {
+	public ImageEditCanvas(final Localizer localizer) {
 		super(localizer);
-		if (undoHistoryLength < 0) {
-			throw new IllegalArgumentException("Undo history can't be negative"); 
-		}
-		else {
-			mgr.setLimit(undoHistoryLength);
-			smgr.addSelectionFrameListener((start, end, rect)->processSelection(start, end, rect));
-			setBackground(Color.black);
-			setForeground(Color.white);
-			super.setFillMode(FillMode.ORIGINAL);
-		}
+		smgr.addSelectionFrameListener((start, end, rect)->processSelection(start, end, rect));
+		setBackground(Color.black);
+		setForeground(Color.white);
+		super.setFillMode(FillMode.ORIGINAL);
 	}
 
-	public void setCurrentDrawMode(final DrawingMode mode) throws IOException {
+	public void setCurrentDrawMode(final DrawingType mode) throws IOException {
 		if (mode == null) {
 			throw new NullPointerException("Drawmode can't be null");
 		}
 		else {
 			switch (getCurrentDrawMode()) {
-				case SELECT		:
-					prevComment = "selects";
-					break;
 				case BRUSH		:
 					prevComment = "add brush(es)";
 					break;
 				case ELLIPSE	:
 					prevComment = "add ellipse(s)";
-					break;
-				case ERASE		:
-					prevComment = "erase";
 					break;
 				case FILL		:
 					prevComment = "fill";
@@ -99,14 +82,8 @@ public class ImageEditCanvas extends JBackgroundComponent {
 			currentDrawMode = mode;
 			selection = null;
 			switch (getCurrentDrawMode()) {
-				case SELECT		:
-					currentComment = "selects";
-					break;
 				case ELLIPSE	:
 					currentComment = "remove ellipse(s)";
-					break;
-				case ERASE		:
-					currentComment = "revert erasing";
 					break;
 				case FILL		:
 					currentComment = "revert filling";
@@ -129,29 +106,20 @@ public class ImageEditCanvas extends JBackgroundComponent {
 				default :
 					throw new UnsupportedOperationException("New drawing mode ["+getCurrentDrawMode()+"] is not supported yet");
 			}
-			if (currentComment == null) {
-				if (prevComment == null) {
-					getUndoManager().addEdit(new ImageUndoEdit(currentComment, getBackgroundImage(), (i)->super.setBackgroundImage(i)));
-				}
-				else {
-					getUndoManager().addEdit(new ImageUndoEdit(currentComment, prevComment, getBackgroundImage(), (i)->super.setBackgroundImage(i)));
-				}
-			}
-			else {
-				getUndoManager().discardAllEdits();
-			}
+//			if (currentComment == null) {
+//				getUndoManager().addEdit(new ImageUndoEdit(currentComment, prevComment, getBackgroundImage(), (i)->super.setBackgroundImage(i)));
+//			}
+//			else {
+//				getUndoManager().discardAllEdits();
+//			}
 			listeners.fireEvent((l)->l.stateChanged(ce));
 		}
 	}
 	
-	public DrawingMode getCurrentDrawMode() {
+	public DrawingType getCurrentDrawMode() {
 		return currentDrawMode;
 	}
 	
-	public UndoManager getUndoManager() {
-		return mgr;
-	}
-
 	@Override
 	public void setForeground(final Color color) {
 		super.setForeground(color);
@@ -250,16 +218,10 @@ public class ImageEditCanvas extends JBackgroundComponent {
 		
 		g2d.setColor(getForeground());
 		switch (getCurrentDrawMode()) {
-			case SELECT		:
-				selection = rect;
-				listeners.fireEvent((l)->l.stateChanged(ce));
-				break;
 			case BRUSH		:
 				break;
 			case ELLIPSE	:
 				g2d.drawOval(rect.x, rect.y, rect.width, rect.height);
-				break;
-			case ERASE		:
 				break;
 			case FILL		:
 				break;
@@ -303,7 +265,7 @@ public class ImageEditCanvas extends JBackgroundComponent {
 			g2d.setColor(Color.BLACK);
 			g2d.drawRect(0, 0, getBackgroundImage().getWidth(null), getBackgroundImage().getHeight(null));
 			
-			if (getCurrentDrawMode() != DrawingMode.UNKNOWN) {
+			if (getCurrentDrawMode() != DrawingType.UNKNOWN) {
 				g2d.setXORMode(Color.white);
 				smgr.paintSelection(g2d);
 				g2d.setPaintMode();

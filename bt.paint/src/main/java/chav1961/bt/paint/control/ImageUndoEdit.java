@@ -17,20 +17,19 @@ import javax.swing.undo.UndoableEdit;
 class ImageUndoEdit implements UndoableEdit {
 	private final String			undo;
 	private final String			redo;
-	private final Consumer<Image>	consumer; 
+	private final Consumer<Image>	consumer;
+	private final boolean			significant;
 	private byte[]					image;
 
-	public ImageUndoEdit(final String undo, final Image image, final Consumer<Image> consumer) throws IOException {
-		this.undo = undo;
-		this.redo = null;
-		this.image = packImage(image);
-		this.consumer = consumer;
+	public ImageUndoEdit(final String undo, final String redo, final Image image, final Consumer<Image> consumer) throws IOException {
+		this(undo, redo, image, true, consumer);
 	}
 	
-	public ImageUndoEdit(final String undo, final String redo, final Image image, final Consumer<Image> consumer) throws IOException {
+	public ImageUndoEdit(final String undo, final String redo, final Image image, final boolean significant, final Consumer<Image> consumer) throws IOException {
 		this.undo = undo;
 		this.redo = redo;
 		this.image = packImage(image);
+		this.significant = significant;
 		this.consumer = consumer;
 	}
 
@@ -71,7 +70,7 @@ class ImageUndoEdit implements UndoableEdit {
 
 	@Override
 	public boolean isSignificant() {
-		return true;
+		return significant;
 	}
 
 	@Override
