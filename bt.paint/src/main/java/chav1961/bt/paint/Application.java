@@ -2,7 +2,6 @@ package chav1961.bt.paint;
 
 import java.awt.BorderLayout;
 import java.awt.Dimension;
-import java.awt.Graphics2D;
 import java.awt.Image;
 import java.awt.Rectangle;
 import java.awt.image.BufferedImage;
@@ -25,7 +24,6 @@ import java.util.regex.Pattern;
 
 import javax.imageio.ImageIO;
 import javax.swing.BorderFactory;
-import javax.swing.JComponent;
 import javax.swing.JFrame;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
@@ -53,7 +51,6 @@ import chav1961.purelib.basic.growablearrays.GrowableByteArray;
 import chav1961.purelib.basic.interfaces.LoggerFacade;
 import chav1961.purelib.basic.interfaces.LoggerFacade.Severity;
 import chav1961.purelib.basic.interfaces.LoggerFacadeOwner;
-import chav1961.purelib.basic.interfaces.ModuleAccessor;
 import chav1961.purelib.cdb.SyntaxNode;
 import chav1961.purelib.fsys.interfaces.FileSystemInterface;
 import chav1961.purelib.i18n.interfaces.Localizer;
@@ -64,8 +61,6 @@ import chav1961.purelib.model.ContentModelFactory;
 import chav1961.purelib.model.interfaces.ContentMetadataInterface;
 import chav1961.purelib.model.interfaces.ContentMetadataInterface.ContentNodeMetadata;
 import chav1961.purelib.model.interfaces.NodeMetadataOwner;
-import chav1961.purelib.ui.interfaces.FormManager;
-import chav1961.purelib.ui.swing.AutoBuiltForm;
 import chav1961.purelib.ui.swing.SwingUtils;
 import chav1961.purelib.ui.swing.interfaces.OnAction;
 import chav1961.purelib.ui.swing.useful.JFileSelectionDialog;
@@ -74,13 +69,13 @@ import chav1961.purelib.ui.swing.useful.JLocalizedOptionPane;
 import chav1961.purelib.ui.swing.useful.JStateString;
 
 public class Application extends JFrame implements NodeMetadataOwner, LocaleChangeListener, LoggerFacadeOwner, LocalizerOwner {
+	private static final long 		serialVersionUID = 1083999598002477077L;
 	public static final String		ARG_COMMAND = "command";
 	public static final String		ARG_INPUT_MASK = "inputMask";
 	public static final String		ARG_RECURSION_FLAG = "recursion";
 	public static final String		ARG_GUI_FLAG = "guiFlag";
 	public static final String		ARG_PROPFILE_LOCATION = "prop";
 	
-	private static final long 		serialVersionUID = 1083999598002477077L;
 	private static final String		KEY_PNG_FILES = "chav1961.bt.paint.Application.filter.pngfiles";
 	private static final String		KEY_JPG_FILES = "chav1961.bt.paint.Application.filter.jpgfiles";
 	private static final String		KEY_UNSAVED_CHANGES = "chav1961.bt.paint.Application.unsavedChanges";
