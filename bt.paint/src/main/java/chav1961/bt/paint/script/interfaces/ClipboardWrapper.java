@@ -6,9 +6,11 @@ import java.awt.datatransfer.Clipboard;
 import java.awt.datatransfer.DataFlavor;
 import java.awt.datatransfer.Transferable;
 import java.awt.datatransfer.UnsupportedFlavorException;
+import java.awt.image.BufferedImage;
 import java.io.IOException;
 
 import chav1961.bt.paint.interfaces.PaintScriptException;
+import chav1961.bt.paint.script.ImageWrapperImpl;
 
 public interface ClipboardWrapper {
 	boolean hasImage() throws PaintScriptException;
@@ -29,7 +31,7 @@ public interface ClipboardWrapper {
 				throw new PaintScriptException("System clipboard doesn't contain image");
 			}
 			else {
-				try{return ImageWrapper.of((Image)clipboard.getContents(this).getTransferData(DataFlavor.imageFlavor));
+				try{return new ImageWrapperImpl((BufferedImage)clipboard.getContents(this).getTransferData(DataFlavor.imageFlavor));
 				} catch (UnsupportedFlavorException | IOException e) {
 					throw new PaintScriptException(e.getLocalizedMessage(), e);
 				}
