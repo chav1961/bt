@@ -1,10 +1,13 @@
 package chav1961.bt.paint.script;
 
+import java.awt.Image;
+import java.awt.image.BufferedImage;
 import java.awt.image.RenderedImage;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.URI;
+import java.util.Set;
 
 import javax.imageio.ImageIO;
 
@@ -13,6 +16,7 @@ import chav1961.bt.paint.script.interfaces.ImageWrapper;
 import chav1961.bt.paint.script.interfaces.PropertiesWrapper;
 import chav1961.bt.paint.script.interfaces.SystemWrapper;
 import chav1961.purelib.basic.SubstitutableProperties;
+import chav1961.purelib.basic.URIUtils;
 import chav1961.purelib.fsys.interfaces.FileSystemInterface;
 
 public class SystemWrapperImpl implements SystemWrapper {
@@ -21,7 +25,7 @@ public class SystemWrapperImpl implements SystemWrapper {
 	private final URI						home;
 	
 	public SystemWrapperImpl(final FileSystemInterface fs, final URI homeDir) {
-		this(new SubstitutableProperties(), fs, homeDir);
+		this(new SubstitutableProperties(System.getProperties()), fs, homeDir);
 	}
 	
 	public SystemWrapperImpl(final SubstitutableProperties settings, final FileSystemInterface fs, final URI homeDir) {
@@ -37,13 +41,15 @@ public class SystemWrapperImpl implements SystemWrapper {
 		else {
 			this.props = settings;
 			this.fsi = fs;
-			this.home = homeDir;
+			this.home = homeDir; 
 		}
 	}
 
 	@Override
 	public String[] getPropKeys() throws PaintScriptException {
-		return props.keySet().toArray(new String[props.size()]);
+		final Set<String>	keys = props.availableKeys();
+		
+		return keys.toArray(new String[keys.size()]);
 	}
 
 	@Override
@@ -62,7 +68,7 @@ public class SystemWrapperImpl implements SystemWrapper {
 			throw new IllegalArgumentException("Key to get can't be null or empty"); 
 		}
 		else if (!contains(key)) {
-			throw new IllegalArgumentException("Key ["+key+"] doesn't exists"); 
+			throw new PaintScriptException("Key ["+key+"] doesn't exists"); 
 		}
 		else {
 			return props.getProperty(key);
@@ -88,13 +94,17 @@ public class SystemWrapperImpl implements SystemWrapper {
 			throw new IllegalArgumentException("Key to get can't be null or empty"); 
 		}
 		else if (awaited == null) {
-			throw new IllegalArgumentException("Awaited class can't be null"); 
+			throw new NullPointerException("Awaited class can't be null"); 
 		}
 		else if (!contains(key)) {
-			throw new IllegalArgumentException("Key ["+key+"] doesn't exists"); 
+			throw new PaintScriptException("Key ["+key+"] doesn't exists"); 
 		}
 		else {
-			return props.getProperty(key, awaited);
+			try {
+				return props.getProperty(key, awaited);
+			} catch (UnsupportedOperationException exc) {
+				throw new PaintScriptException(exc.getLocalizedMessage(), exc); 
+			}
 		}
 	}
 
@@ -104,16 +114,131 @@ public class SystemWrapperImpl implements SystemWrapper {
 			throw new IllegalArgumentException("Key to get can't be null or empty"); 
 		}
 		else if (awaited == null) {
-			throw new IllegalArgumentException("Awaited class can't be null"); 
+			throw new NullPointerException("Awaited class can't be null"); 
 		}
 		else if (!contains(key)) {
 			return defaultValue; 
 		}
 		else {
-			return props.getProperty(key, awaited);
+			try {
+				return props.getProperty(key, awaited);
+			} catch (UnsupportedOperationException exc) {
+				throw new PaintScriptException(exc.getLocalizedMessage(), exc); 
+			}
 		}
 	}
 
+	@Override
+	public boolean exists(final String file) throws PaintScriptException {
+		if (file == null || file.isEmpty()) {
+			throw new IllegalArgumentException("File path can't be null or empty"); 
+		}
+		else {
+			try(final FileSystemInterface	temp = fsi.clone().open(toPath(file))) {
+
+				return temp.exists();
+			} catch (IOException e) {
+				throw new PaintScriptException(e.getLocalizedMessage(), e); 
+			}
+		}
+	}
+
+	@Override
+	public boolean isFile(final String file) throws PaintScriptException {
+		if (file == null || file.isEmpty()) {
+			throw new IllegalArgumentException("File path can't be null or empty"); 
+		}
+		else {
+			try(final FileSystemInterface	temp = fsi.clone().open(toPath(file))) {
+
+				return temp.isFile();
+			} catch (IOException e) {
+				throw new PaintScriptException(e.getLocalizedMessage(), e); 
+			}
+		}
+	}
+
+	@Override
+	public boolean isDirectory(final String file) throws PaintScriptException {
+		if (file == null || file.isEmpty()) {
+			throw new IllegalArgumentException("File path can't be null or empty"); 
+		}
+		else {
+			try(final FileSystemInterface	temp = fsi.clone().open(toPath(file))) {
+
+				return temp.isDirectory();
+			} catch (IOException e) {
+				throw new PaintScriptException(e.getLocalizedMessage(), e); 
+			}
+		}
+	}
+	
+	@Override
+	public boolean mkdir(final String file) throws PaintScriptException {
+		if (file == null || file.isEmpty()) {
+			throw new IllegalArgumentException("File path can't be null or empty"); 
+		}
+		else {
+			try(final FileSystemInterface	temp = fsi.clone().open(toPath(file))) {
+
+				temp.mkDir();
+				return true;
+			} catch (IOException e) {
+				return false;
+			}
+		}
+	}
+
+	@Override
+	public boolean rm(final String file) throws PaintScriptException {
+		if (file == null || file.isEmpty()) {
+			throw new IllegalArgumentException("File path can't be null or empty"); 
+		}
+		else {
+			try(final FileSystemInterface	temp = fsi.clone().open(toPath(file))) {
+
+				temp.deleteAll();
+				return true;
+			} catch (IOException e) {
+				return false;
+			}
+		}
+	}
+
+	@Override
+	public boolean ren(final String file, final String newFile) throws PaintScriptException {
+		if (file == null || file.isEmpty()) {
+			throw new IllegalArgumentException("File path can't be null or empty"); 
+		}
+		else if (newFile == null || newFile.isEmpty()) {
+			throw new IllegalArgumentException("New file path can't be null or empty"); 
+		}
+		else {
+			try(final FileSystemInterface	temp = fsi.clone().open(toPath(file))) {
+
+				temp.rename(newFile);
+				return true;
+			} catch (IOException e) {
+				return false;
+			}
+		}
+	}
+
+	@Override
+	public String[] list(final String dir) throws PaintScriptException {
+		if (dir == null || dir.isEmpty()) {
+			throw new IllegalArgumentException("File path can't be null or empty"); 
+		}
+		else {
+			try(final FileSystemInterface	temp = fsi.clone().open(toPath(dir))) {
+
+				return temp.list();
+			} catch (IOException e) {
+				throw new PaintScriptException(e.getLocalizedMessage(), e); 
+			}
+		}
+	}
+	
 	@Override
 	public ImageWrapper loadImage(final String file) throws PaintScriptException {
 		if (file == null || file.isEmpty()) {
@@ -122,8 +247,12 @@ public class SystemWrapperImpl implements SystemWrapper {
 		else {
 			try(final FileSystemInterface	temp = fsi.clone().open(toPath(file))) {
 				try(final InputStream		is = temp.read()) {
+					final BufferedImage		image = ImageIO.read(is);
+					final ImageWrapper		wrapper = new ImageWrapperImpl(image);
 					
-					return ImageWrapper.of(ImageIO.read(is));
+					wrapper.setName(file);
+					wrapper.setFormat("png");
+					return wrapper;
 				}
 			} catch (IOException e) {
 				throw new PaintScriptException(e.getLocalizedMessage(), e);
@@ -135,7 +264,7 @@ public class SystemWrapperImpl implements SystemWrapper {
 	@Override
 	public void storeImage(final ImageWrapper image, final String file) throws PaintScriptException {
 		if (image == null) {
-			throw new NullPointerException("Omage to store can't be null"); 
+			throw new NullPointerException("Image to store can't be null"); 
 		}
 		else if (file == null || file.isEmpty()) {
 			throw new IllegalArgumentException("File name to store image to can't be null or empty"); 
@@ -204,7 +333,7 @@ public class SystemWrapperImpl implements SystemWrapper {
 			return path.toString();
 		}
 		else {
-			return home.relativize(path).toString();
+			return URIUtils.appendRelativePath2URI(home, file).toString();
 		}
 	}
 }
