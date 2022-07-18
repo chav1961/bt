@@ -19,43 +19,44 @@ class ImageUndoEdit implements UndoableEdit {
 	private final String			redo;
 	private final Consumer<Image>	consumer;
 	private final boolean			significant;
-	private byte[]					image;
+	private final byte[]			imageBefore;
+	private final byte[]			imageAfter;
 
-	public ImageUndoEdit(final String undo, final String redo, final Image image, final Consumer<Image> consumer) throws IOException {
-		this(undo, redo, image, true, consumer);
+	public ImageUndoEdit(final String undo, final String redo, final byte[] imageBefore, final byte[] imageAfter, final Consumer<Image> consumer) throws IOException {
+		this(undo, redo, imageBefore, imageAfter, true, consumer);
 	}
 	
-	public ImageUndoEdit(final String undo, final String redo, final Image image, final boolean significant, final Consumer<Image> consumer) throws IOException {
+	public ImageUndoEdit(final String undo, final String redo, final byte[] imageBefore, final byte[] imageAfter, final boolean significant, final Consumer<Image> consumer) throws IOException {
 		this.undo = undo;
 		this.redo = redo;
-		this.image = packImage(image);
+		this.imageBefore = imageBefore;
+		this.imageAfter = imageAfter;
 		this.significant = significant;
 		this.consumer = consumer;
 	}
 
 	@Override
 	public void undo() throws CannotUndoException {
-		consumer.accept(unpackImage(image));
+		consumer.accept(unpackImage(imageBefore));
 	}
 
 	@Override
 	public boolean canUndo() {
-		return image != null;
+		return imageBefore != null;
 	}
 
 	@Override
 	public void redo() throws CannotRedoException {
-		consumer.accept(unpackImage(image));
+		consumer.accept(unpackImage(imageAfter));
 	}
 
 	@Override
 	public boolean canRedo() {
-		return image != null && redo != null;
+		return imageAfter != null && redo != null;
 	}
 
 	@Override
 	public void die() {
-		image = null;
 	}
 
 	@Override
@@ -93,7 +94,7 @@ class ImageUndoEdit implements UndoableEdit {
 		return "ImageUndoEdit [undo=" + undo + ", redo=" + redo + "]";
 	}
 	
-	private byte[] packImage(final Image image) throws IOException {
+	public static byte[] packImage(final Image image) throws IOException {
 		try(final ByteArrayOutputStream	baos = new ByteArrayOutputStream();
 			final GZIPOutputStream		gzos = new GZIPOutputStream(baos)) {
 			
@@ -103,7 +104,7 @@ class ImageUndoEdit implements UndoableEdit {
 		}
 	}
 	
-	private Image unpackImage(final byte[] content) {
+	public static Image unpackImage(final byte[] content) {
 		try(final ByteArrayInputStream	bais = new ByteArrayInputStream(content);
 			final GZIPInputStream		gzis = new GZIPInputStream(bais)) {
 			
