@@ -10,6 +10,7 @@ import chav1961.purelib.basic.CharUtils;
 import chav1961.purelib.basic.LineByLineProcessor;
 import chav1961.purelib.basic.exceptions.SyntaxException;
 import chav1961.purelib.basic.interfaces.SyntaxTreeInterface;
+import chav1961.purelib.cdb.SyntaxNode;
 
 //<prog>::=<anon_block>[{<function>|<procedure>]}]...
 //<anon_block>::=[<declarations>][<body>]
@@ -223,6 +224,9 @@ public class ScriptParserUtil {
 			return opType;
 		}
 	}
+
+	private static enum SyntaxNodeType {
+	}
 	
 	static {
 		KEYWORDS.placeName("var", Keywords.VAR);
@@ -266,10 +270,10 @@ public class ScriptParserUtil {
 		KEYWORDS.placeName("proc", Keywords.PROC);
 	}
 	
-	public static List<Lexema> parseLex(final Reader content) throws SyntaxException {
+	public static <T> List<Lexema> parseLex(final Reader content, final SyntaxTreeInterface<T> names) throws SyntaxException {
 		final List<Lexema>	result = new ArrayList<>();
 		
-		try(final LineByLineProcessor	lblp = new LineByLineProcessor((displacement, lineNo, data, from, length)->parseLine(lineNo, data, from, length, result))){
+		try(final LineByLineProcessor	lblp = new LineByLineProcessor((displacement, lineNo, data, from, length)->parseLine(lineNo, data, from, length, names, result))){
 			lblp.write(content);
 			lblp.flush();
 			result.add(new Lexema(0, 0, LexTypes.EOF));
@@ -279,11 +283,10 @@ public class ScriptParserUtil {
 		}
 	}
 
-	private static void parseLine(final int lineNo, final char[] data, int from, final int length, final List<Lexema> result) throws SyntaxException {
-		// TODO Auto-generated method stub
+	private static <T> void parseLine(final int lineNo, final char[] data, int from, final int length, final SyntaxTreeInterface<T> names, final List<Lexema> result) throws SyntaxException {
 		final StringBuilder	sb = new StringBuilder();
-		final int[]			names = new int[2];
-		final long[]		numbers = new long[2];
+		final int[]			forNames = new int[2];
+		final long[]		forNumbers = new long[2];
 		final int			start = from;
 		
 		from--;
@@ -430,47 +433,159 @@ public class ScriptParserUtil {
 					}
 					break;
 				case '0' : case '1' : case '2' : case '3' : case '4' : case '5' : case '6' : case '7' : case '8' : case '9' :
-					from = CharUtils.parseNumber(data, from, numbers, CharUtils.PREF_ANY, true);
-					switch ((int)numbers[1]) {
+					from = CharUtils.parseNumber(data, from, forNumbers, CharUtils.PREF_ANY, true);
+					switch ((int)forNumbers[1]) {
 						case CharUtils.PREF_INT : case CharUtils.PREF_LONG :
-							result.add(new Lexema(lineNo, from-start, numbers[0]));
+							result.add(new Lexema(lineNo, from-start, forNumbers[0]));
 							break;
 						case CharUtils.PREF_FLOAT	: 
-							result.add(new Lexema(lineNo, from-start, Float.intBitsToFloat((int)numbers[0])));
+							result.add(new Lexema(lineNo, from-start, Float.intBitsToFloat((int)forNumbers[0])));
 							break;
 						case CharUtils.PREF_DOUBLE 	:
-							result.add(new Lexema(lineNo, from-start, Double.longBitsToDouble(numbers[0])));
+							result.add(new Lexema(lineNo, from-start, Double.longBitsToDouble(forNumbers[0])));
 							break;
 					}
 					break;
 				default :
 					if (Character.isJavaIdentifierStart(data[from])) {
-						from = CharUtils.parseName(data, from, names);
-						final long	id = KEYWORDS.seekName(data, names[0], names[1]);
+						from = CharUtils.parseName(data, from, forNames);
+						final long	id = KEYWORDS.seekName(data, forNames[0], forNames[1]);
 						
 						if (id >= 0) {
 							final Keywords	kw = KEYWORDS.getCargo(id);
 							
 							switch (kw.type) {
 								case CONSTANT	:
-									result.add(new Lexema(lineNo, names[0]-start, kw == Keywords.TRUE));
+									result.add(new Lexema(lineNo, forNames[0]-start, kw == Keywords.TRUE));
 									break;
 								default :
-									result.add(new Lexema(lineNo, names[0]-start, kw));
+									result.add(new Lexema(lineNo, forNames[0]-start, kw));
 									break;
 							}
 						}
 						else {
-							
+							result.add(new Lexema(lineNo, forNames[0]-start, LexTypes.NAME, names.placeName(data, forNames[0], forNames[1], null)));
 						}
 					}
 					else {
 						throw new SyntaxException(lineNo, from-start, "Unknown lexema");
 					}
+					break;
 			}
 		}
 	}
 
+	public static <T> SyntaxNode<SyntaxNodeType,SyntaxNode<SyntaxNodeType,?>> parseScript(final Reader content, final SyntaxTreeInterface<T> names) {
+		return null;
+	} 
+
+	private static <T> int buildSyntaxTree(final Lexema[] data, int from, final SyntaxTreeInterface<T> names, final SyntaxNode<SyntaxNodeType,SyntaxNode<SyntaxNodeType,?>> root) throws SyntaxException {
+loop:	for (;;) {
+			switch (data[from].getType()) {
+				case EOF 	:
+					break loop;
+				case PART 	:
+					switch (data[from].getKeyword()) {
+						case FUNC	:
+							from = buildFunction(data, from, names, root);
+							break; 
+						case PROC	:
+							from = buildProcedure(data, from, names, root);
+							break; 
+						default :
+							throw new SyntaxException(data[from].getRow(), data[from].getCol(), "FUNC/PROC awaited");
+					}					
+					break;
+				default :
+					from = buildAnonBlock(data, from, names, root);
+					break;
+			}
+		}
+		return from;
+	}
+
+	private static <T> int buildAnonBlock(final Lexema[] data, int from, final SyntaxTreeInterface<T> names, final SyntaxNode<SyntaxNodeType, SyntaxNode<SyntaxNodeType, ?>> root) throws SyntaxException {
+		// TODO Auto-generated method stub
+		if (data[from].getType() == LexTypes.STATEMENT && data[from].getKeyword() == Keywords.VAR) {
+			from = buildDeclarations(data, from + 1, names, root);
+		}
+		if (data[from].getType() == LexTypes.STATEMENT && data[from].getKeyword() == Keywords.BEGIN) {
+			from = buildStatements(data, from + 1, names, root);
+			if (data[from].getType() == LexTypes.STATEMENT && data[from].getKeyword() == Keywords.END) {
+				from++;
+			}
+			else {
+				throw new SyntaxException(data[from].getRow(), data[from].getCol(), "END awaited");
+			}
+		}
+		return from;
+	}
+
+	private static <T> int buildProcedure(final Lexema[] data, int from, final SyntaxTreeInterface<T> names, final SyntaxNode<SyntaxNodeType, SyntaxNode<SyntaxNodeType, ?>> root) throws SyntaxException {
+		// TODO Auto-generated method stub
+		if (data[from].getType() == LexTypes.STATEMENT && data[from].getKeyword() == Keywords.VAR) {
+			from = buildDeclarations(data, from + 1, names, root);
+		}
+		if (data[from].getType() == LexTypes.STATEMENT && data[from].getKeyword() == Keywords.BEGIN) {
+			from = buildStatements(data, from + 1, names, root);
+			if (data[from].getType() == LexTypes.STATEMENT && data[from].getKeyword() == Keywords.END) {
+				from++;
+			}
+			else {
+				throw new SyntaxException(data[from].getRow(), data[from].getCol(), "END awaited");
+			}
+		}
+		return from;
+	}
+
+	private static <T> int buildFunction(final Lexema[] data, int from, final SyntaxTreeInterface<T> names, final SyntaxNode<SyntaxNodeType, SyntaxNode<SyntaxNodeType, ?>> root) throws SyntaxException {
+		// TODO Auto-generated method stub
+		if (data[from].getType() == LexTypes.STATEMENT && data[from].getKeyword() == Keywords.VAR) {
+			from = buildDeclarations(data, from + 1, names, root);
+		}
+		if (data[from].getType() == LexTypes.STATEMENT && data[from].getKeyword() == Keywords.BEGIN) {
+			from = buildStatements(data, from + 1, names, root);
+			if (data[from].getType() == LexTypes.STATEMENT && data[from].getKeyword() == Keywords.END) {
+				from++;
+			}
+			else {
+				throw new SyntaxException(data[from].getRow(), data[from].getCol(), "END awaited");
+			}
+		}
+		return from;
+	}
+
+	private static <T> int buildDeclarations(final Lexema[] data, int from, final SyntaxTreeInterface<T> names, final SyntaxNode<SyntaxNodeType, SyntaxNode<SyntaxNodeType, ?>> root) {
+		// TODO Auto-generated method stub
+		return from;
+	}
+
+	private static <T> int buildStatements(final Lexema[] data, int from, final SyntaxTreeInterface<T> names, final SyntaxNode<SyntaxNodeType, SyntaxNode<SyntaxNodeType, ?>> root) {
+		// TODO Auto-generated method stub
+loop:	for (;;) {
+			switch (data[from].getType()) {
+				case OPENF		:
+					break;
+				case NAME		:
+					break;
+				case PREDEFINED_VAR:
+					break;
+				case SEMICOLON	:
+					from++;
+					break;
+				case STATEMENT	:
+					break;
+				default :
+					break loop;
+			}
+		}
+		return from;
+	}
+
+	private static <T> int buildExpression(final Lexema[] data, int from, final SyntaxTreeInterface<T> names, final SyntaxNode<SyntaxNodeType, SyntaxNode<SyntaxNodeType, ?>> root) {
+		// TODO Auto-generated method stub
+		return from;
+	}
 
 	public static class Lexema {
 		private final int			row;
@@ -556,6 +671,17 @@ public class ScriptParserUtil {
 			this.dataType = null;
 			this.kw = kw;
 			this.associatedLong = 0;
+			this.associatedObject = null;
+		}
+
+		Lexema(final int row, final int col, final LexTypes type, final long content) {
+			this.row = row;
+			this.col = col;
+			this.type = type;
+			this.opType = null;
+			this.dataType = null;
+			this.kw = null;
+			this.associatedLong = content;
 			this.associatedObject = null;
 		}
 		
