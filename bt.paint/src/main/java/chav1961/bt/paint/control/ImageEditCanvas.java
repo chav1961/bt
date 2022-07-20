@@ -19,6 +19,7 @@ import chav1961.purelib.concurrent.LightWeightListenerList;
 import chav1961.purelib.i18n.interfaces.Localizer;
 import chav1961.purelib.ui.swing.useful.JBackgroundComponent;
 import chav1961.purelib.ui.swing.useful.SelectionFrameManager;
+import chav1961.purelib.ui.swing.useful.interfaces.SelectionFrameListener.SelectionStyle;
 
 public class ImageEditCanvas extends JBackgroundComponent {
 	private static final long 			serialVersionUID = 3367119258812876786L;
@@ -40,7 +41,7 @@ public class ImageEditCanvas extends JBackgroundComponent {
 	
 	public ImageEditCanvas(final Localizer localizer) {
 		super(localizer);
-		smgr.addSelectionFrameListener((start, end, rect)->processSelection(start, end, rect));
+		smgr.addSelectionFrameListener((style, start, end, parameters)->processSelection(start, end, (Rectangle)parameters[0]));
 		setBackground(Color.black);
 		setForeground(Color.white);
 		super.setFillMode(FillMode.ORIGINAL);
@@ -52,6 +53,9 @@ public class ImageEditCanvas extends JBackgroundComponent {
 		}
 		else {
 			switch (getCurrentDrawMode()) {
+				case SELECT		:
+					prevComment = "add selection";
+					break;
 				case BRUSH		:
 					prevComment = "add brush(es)";
 					break;
@@ -82,6 +86,11 @@ public class ImageEditCanvas extends JBackgroundComponent {
 			currentDrawMode = mode;
 			selection = null;
 			switch (getCurrentDrawMode()) {
+				case SELECT		:
+					smgr.setSelectionStyle(SelectionStyle.RECTANGLE);
+					smgr.enableSelection(true);
+					currentComment = "remove selection(s)";
+					break;
 				case ELLIPSE	:
 					currentComment = "remove ellipse(s)";
 					break;
@@ -96,6 +105,8 @@ public class ImageEditCanvas extends JBackgroundComponent {
 					break;
 				case RECT		:
 					currentComment = "remove rectangle(s)";
+					smgr.setSelectionStyle(SelectionStyle.RECTANGLE);
+					smgr.enableSelection(true);
 					break;
 				case TEXT		:
 					currentComment = "remove text(s)";
@@ -234,6 +245,8 @@ public class ImageEditCanvas extends JBackgroundComponent {
 				g2d.drawRect(rect.x, rect.y, rect.width, rect.height);
 				break;
 			case TEXT		:
+				break;
+			case SELECT		:
 				break;
 			case UNKNOWN	:
 				break;

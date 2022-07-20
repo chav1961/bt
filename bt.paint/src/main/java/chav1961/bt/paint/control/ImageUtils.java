@@ -34,7 +34,7 @@ public class ImageUtils {
 	}
 
 	public static enum DrawingType {
-		UNKNOWN, PEN, BRUSH, TEXT, LINE, ELLIPSE, RECT, FILL 
+		UNKNOWN, SELECT, PEN, BRUSH, TEXT, LINE, ELLIPSE, RECT, FILL 
 	}	
 	
 	public static Image process(final ProcessType type, final Image source, final ImageObserver observer, final Object... parameters) {
