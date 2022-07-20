@@ -3,6 +3,7 @@ package chav1961.bt.paint.script.parsers;
 import java.io.IOException;
 import java.io.Reader;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import chav1961.purelib.basic.AndOrTree;
@@ -82,6 +83,12 @@ public class ScriptParserUtil {
 		SEMICOLON,
 		EOF
 	}
+
+	private static enum EntityType {
+		VAR,
+		FUNC,
+		PROC
+	}
 	
 	private static enum DataTypes {
 		UNKNOWN,
@@ -98,6 +105,12 @@ public class ScriptParserUtil {
 		IMAGE
 	}
 
+	private static enum CollectionType {
+		NONE,
+		ARRAY,
+		MAP
+	}
+	
 	private static enum OperatorPriorities {
 		UNARY,
 		BIT_AND,
@@ -177,7 +190,6 @@ public class ScriptParserUtil {
 		CASE(LexTypes.STATEMENT),
 		CONTINUE(LexTypes.STATEMENT),
 		BREAK(LexTypes.STATEMENT),
-		CALL(LexTypes.STATEMENT),
 		RETURN(LexTypes.STATEMENT),
 		IN(LexTypes.OPERATOR, OperatorTypes.IN),
 		TRUE(LexTypes.CONSTANT, DataTypes.BOOL),
@@ -188,6 +200,7 @@ public class ScriptParserUtil {
 		ARGS(LexTypes.PREDEFINED_VAR),
 		FUNC(LexTypes.PART),
 		PROC(LexTypes.PART),
+		FORWARD(LexTypes.OPTION),
 		;
 		
 		private final LexTypes		type;
@@ -226,6 +239,21 @@ public class ScriptParserUtil {
 	}
 
 	private static enum SyntaxNodeType {
+		SEQUENCE,
+		IF,
+		WHILE, 
+		UNTIL,
+		FORALL,
+		FOR,
+		FOR1,
+		CASE,
+		CASEDEF,
+		BREAK,
+		CONTINUE,
+		RETURN,
+		RETURN1,
+		RANGE,
+		LIST
 	}
 	
 	static {
@@ -257,7 +285,6 @@ public class ScriptParserUtil {
 		KEYWORDS.placeName("case", Keywords.CASE);
 		KEYWORDS.placeName("continue", Keywords.CONTINUE);
 		KEYWORDS.placeName("break", Keywords.BREAK);
-		KEYWORDS.placeName("call", Keywords.CALL);
 		KEYWORDS.placeName("return", Keywords.RETURN);
 		KEYWORDS.placeName("in", Keywords.IN);
 		KEYWORDS.placeName("true", Keywords.TRUE);
@@ -268,6 +295,7 @@ public class ScriptParserUtil {
 		KEYWORDS.placeName("args", Keywords.ARGS);
 		KEYWORDS.placeName("func", Keywords.FUNC);
 		KEYWORDS.placeName("proc", Keywords.PROC);
+		KEYWORDS.placeName("forward", Keywords.FORWARD);
 	}
 	
 	public static <T> List<Lexema> parseLex(final Reader content, final SyntaxTreeInterface<T> names) throws SyntaxException {
@@ -479,7 +507,7 @@ public class ScriptParserUtil {
 		return null;
 	} 
 
-	private static <T> int buildSyntaxTree(final Lexema[] data, int from, final SyntaxTreeInterface<T> names, final SyntaxNode<SyntaxNodeType,SyntaxNode<SyntaxNodeType,?>> root) throws SyntaxException {
+	private static int buildSyntaxTree(final Lexema[] data, int from, final SyntaxTreeInterface<EntityDescriptor> names, final SyntaxNode<SyntaxNodeType,SyntaxNode<SyntaxNodeType,?>> root) throws SyntaxException {
 loop:	for (;;) {
 			switch (data[from].getType()) {
 				case EOF 	:
@@ -504,13 +532,16 @@ loop:	for (;;) {
 		return from;
 	}
 
-	private static <T> int buildAnonBlock(final Lexema[] data, int from, final SyntaxTreeInterface<T> names, final SyntaxNode<SyntaxNodeType, SyntaxNode<SyntaxNodeType, ?>> root) throws SyntaxException {
+	private static int buildAnonBlock(final Lexema[] data, int from, final SyntaxTreeInterface<EntityDescriptor> names, final SyntaxNode<SyntaxNodeType, SyntaxNode<SyntaxNodeType, ?>> root) throws SyntaxException {
 		// TODO Auto-generated method stub
 		if (data[from].getType() == LexTypes.STATEMENT && data[from].getKeyword() == Keywords.VAR) {
 			from = buildDeclarations(data, from + 1, names, root);
 		}
 		if (data[from].getType() == LexTypes.STATEMENT && data[from].getKeyword() == Keywords.BEGIN) {
-			from = buildStatements(data, from + 1, names, root);
+			do {
+				from = buildStatement(data, from + 1, names, root);
+			} while (data[from].getType() == LexTypes.SEMICOLON);
+			
 			if (data[from].getType() == LexTypes.STATEMENT && data[from].getKeyword() == Keywords.END) {
 				from++;
 			}
@@ -521,13 +552,16 @@ loop:	for (;;) {
 		return from;
 	}
 
-	private static <T> int buildProcedure(final Lexema[] data, int from, final SyntaxTreeInterface<T> names, final SyntaxNode<SyntaxNodeType, SyntaxNode<SyntaxNodeType, ?>> root) throws SyntaxException {
+	private static int buildProcedure(final Lexema[] data, int from, final SyntaxTreeInterface<EntityDescriptor> names, final SyntaxNode<SyntaxNodeType, SyntaxNode<SyntaxNodeType, ?>> root) throws SyntaxException {
 		// TODO Auto-generated method stub
 		if (data[from].getType() == LexTypes.STATEMENT && data[from].getKeyword() == Keywords.VAR) {
 			from = buildDeclarations(data, from + 1, names, root);
 		}
 		if (data[from].getType() == LexTypes.STATEMENT && data[from].getKeyword() == Keywords.BEGIN) {
-			from = buildStatements(data, from + 1, names, root);
+			do {
+				from = buildStatement(data, from + 1, names, root);
+			} while (data[from].getType() == LexTypes.SEMICOLON);
+			
 			if (data[from].getType() == LexTypes.STATEMENT && data[from].getKeyword() == Keywords.END) {
 				from++;
 			}
@@ -538,13 +572,16 @@ loop:	for (;;) {
 		return from;
 	}
 
-	private static <T> int buildFunction(final Lexema[] data, int from, final SyntaxTreeInterface<T> names, final SyntaxNode<SyntaxNodeType, SyntaxNode<SyntaxNodeType, ?>> root) throws SyntaxException {
+	private static int buildFunction(final Lexema[] data, int from, final SyntaxTreeInterface<EntityDescriptor> names, final SyntaxNode<SyntaxNodeType, SyntaxNode<SyntaxNodeType, ?>> root) throws SyntaxException {
 		// TODO Auto-generated method stub
 		if (data[from].getType() == LexTypes.STATEMENT && data[from].getKeyword() == Keywords.VAR) {
 			from = buildDeclarations(data, from + 1, names, root);
 		}
 		if (data[from].getType() == LexTypes.STATEMENT && data[from].getKeyword() == Keywords.BEGIN) {
-			from = buildStatements(data, from + 1, names, root);
+			do {
+				from = buildStatement(data, from + 1, names, root);
+			} while (data[from].getType() == LexTypes.SEMICOLON);
+			
 			if (data[from].getType() == LexTypes.STATEMENT && data[from].getKeyword() == Keywords.END) {
 				from++;
 			}
@@ -555,30 +592,343 @@ loop:	for (;;) {
 		return from;
 	}
 
-	private static <T> int buildDeclarations(final Lexema[] data, int from, final SyntaxTreeInterface<T> names, final SyntaxNode<SyntaxNodeType, SyntaxNode<SyntaxNodeType, ?>> root) {
-		// TODO Auto-generated method stub
+	private static int buildDeclarations(final Lexema[] data, int from, final SyntaxTreeInterface<EntityDescriptor> names, final SyntaxNode<SyntaxNodeType, SyntaxNode<SyntaxNodeType, ?>> root) throws SyntaxException {
+		while (data[from].getType() == LexTypes.NAME) {
+			final long				nameId = data[from].getLongAssociated();
+			final DataTypes			nameType;
+			final CollectionType	nameCollection;
+			
+			if (data[from+1].getType() == LexTypes.COLON) {
+				if (data[from+2].getType() == LexTypes.TYPE) {
+					switch (data[from+2].getKeyword()) {
+						case ARRAY 	:
+							nameCollection = CollectionType.ARRAY;
+							if (data[from+3].getType() == LexTypes.OPTION && data[from+3].getKeyword() == Keywords.OF) {
+								if (data[from+4].getType() == LexTypes.TYPE) {
+									switch (data[from+4].getKeyword()) {
+										case INT : case REAL : case STR : case BOOL : case COLOR : case POINT : case RECT : case FONT : case STROKE : case TRANSFORM : case IMAGE :
+											nameType = data[from+4].getDataType();
+											from += 5;
+											break;
+										default :
+											throw new UnsupportedOperationException("Type ["+data[from+4].getKeyword()+"] is not supported yet");
+									}
+								}
+								else {
+									throw new SyntaxException(data[from+1].getRow(), data[from+1].getCol(), "Missing type keyword");
+								}
+							}
+							else {
+								throw new SyntaxException(data[from+1].getRow(), data[from+1].getCol(), "Missing 'of'");
+							}
+							break;
+						case MAP	:
+							nameCollection = CollectionType.MAP;
+							if (data[from+3].getType() == LexTypes.OPTION && data[from+3].getKeyword() == Keywords.OF) {
+								if (data[from+4].getType() == LexTypes.TYPE) {
+									switch (data[from+4].getKeyword()) {
+										case INT : case REAL : case STR : case BOOL : case COLOR : case POINT : case RECT : case FONT : case STROKE : case TRANSFORM : case IMAGE :
+											nameType = data[from+4].getDataType();
+											from += 5;
+											break;
+										default :
+											throw new UnsupportedOperationException("Type ["+data[from+4].getKeyword()+"] is not supported yet");
+									}
+								}
+								else {
+									throw new SyntaxException(data[from+1].getRow(), data[from+1].getCol(), "Missing type keyword");
+								}
+							}
+							else {
+								throw new SyntaxException(data[from+1].getRow(), data[from+1].getCol(), "Missing 'of'");
+							}
+							break;
+						case INT : case REAL : case STR : case BOOL : case COLOR : case POINT : case RECT : case FONT : case STROKE : case TRANSFORM : case IMAGE :
+							nameType = data[from+2].getDataType();
+							nameCollection = CollectionType.NONE;
+							from += 3;
+							break;
+						default :
+							throw new UnsupportedOperationException("Type ["+data[from+2].getKeyword()+"] is not supported yet");
+					}
+				}
+				else {
+					throw new SyntaxException(data[from+1].getRow(), data[from+1].getCol(), "Missing type keyword");
+				}
+			}
+			else {
+				throw new SyntaxException(data[from+1].getRow(), data[from+1].getCol(), "Missing ':'");
+			}
+			if (data[from].getType() == LexTypes.COMMA) {
+				from++;
+			}
+			if (names.getCargo(nameId) == null) {
+				names.setCargo(nameId, new EntityDescriptor(nameId, nameCollection, nameType));
+			}
+			else {
+				throw new SyntaxException(data[from+1].getRow(), data[from+1].getCol(), "Name already declared earlier");
+			}
+		}
 		return from;
 	}
 
-	private static <T> int buildStatements(final Lexema[] data, int from, final SyntaxTreeInterface<T> names, final SyntaxNode<SyntaxNodeType, SyntaxNode<SyntaxNodeType, ?>> root) {
+	private static int buildStatement(final Lexema[] data, int from, final SyntaxTreeInterface<EntityDescriptor> names, final SyntaxNode<SyntaxNodeType, SyntaxNode<SyntaxNodeType, ?>> root) throws SyntaxException {
 		// TODO Auto-generated method stub
-loop:	for (;;) {
-			switch (data[from].getType()) {
-				case OPENF		:
-					break;
-				case NAME		:
-					break;
-				case PREDEFINED_VAR:
-					break;
-				case SEMICOLON	:
+		root.row = data[from].getRow();
+		root.col = data[from].getCol();
+		
+		switch (data[from].getType()) {
+			case OPENF		:
+				final List<SyntaxNode<SyntaxNodeType, SyntaxNode<SyntaxNodeType, ?>>>	stmts = new ArrayList<>();
+				
+				do {final SyntaxNode<SyntaxNodeType, SyntaxNode<SyntaxNodeType, ?>>	child = (SyntaxNode<SyntaxNodeType, SyntaxNode<SyntaxNodeType, ?>>) root.clone();
+					
+					from = buildStatement(data, from + 1, names, child);
+					stmts.add(child);
+				} while (data[from].getType() == LexTypes.SEMICOLON);
+				
+				if (data[from].getType() == LexTypes.CLOSEF) {
+					root.type = SyntaxNodeType.SEQUENCE;
+					root.children = stmts.toArray(new SyntaxNode[stmts.size()]);
 					from++;
-					break;
-				case STATEMENT	:
-					break;
-				default :
-					break loop;
-			}
+				}
+				else {
+					throw new SyntaxException(data[from].getRow(), data[from].getCol(), "Missing '}'");
+				}
+				break;
+			case NAME		:
+				break;
+			case PREDEFINED_VAR	:
+				break;
+			case STATEMENT	:
+				switch (data[from].getKeyword()) {
+					case IF			:
+						final SyntaxNode<SyntaxNodeType, SyntaxNode<SyntaxNodeType, ?>>	ifCond = (SyntaxNode<SyntaxNodeType, SyntaxNode<SyntaxNodeType, ?>>) root.clone();
+						final SyntaxNode<SyntaxNodeType, SyntaxNode<SyntaxNodeType, ?>>	thenNode = (SyntaxNode<SyntaxNodeType, SyntaxNode<SyntaxNodeType, ?>>) root.clone();
+						
+						from = buildExpression(data, from+1, names, ifCond);
+						if (data[from].getType() == LexTypes.OPTION && data[from].getKeyword() == Keywords.THEN) {
+							from = buildStatement(data, from + 1, names, thenNode);
+						}
+						else {
+							throw new SyntaxException(data[from+1].getRow(), data[from+1].getCol(), "Missing 'then'");
+						}
+						
+						root.type = SyntaxNodeType.IF;
+						root.cargo = ifCond;
+						
+						if (data[from].getType() == LexTypes.OPTION && data[from].getKeyword() == Keywords.ELSE) {
+							final SyntaxNode<SyntaxNodeType, SyntaxNode<SyntaxNodeType, ?>>	elseNode = (SyntaxNode<SyntaxNodeType, SyntaxNode<SyntaxNodeType, ?>>) root.clone();
+							
+							from = buildStatement(data, from + 1, names, elseNode);
+							root.children = new SyntaxNode[] {thenNode, elseNode};
+						}
+						else {
+							root.children = new SyntaxNode[] {thenNode};
+						}
+						break;
+					case WHILE		:
+						final SyntaxNode<SyntaxNodeType, SyntaxNode<SyntaxNodeType, ?>>	whileCond = (SyntaxNode<SyntaxNodeType, SyntaxNode<SyntaxNodeType, ?>>) root.clone();
+						final SyntaxNode<SyntaxNodeType, SyntaxNode<SyntaxNodeType, ?>>	whileNode = (SyntaxNode<SyntaxNodeType, SyntaxNode<SyntaxNodeType, ?>>) root.clone();
+						
+						from = buildExpression(data, from+1, names, whileCond);
+						if (data[from].getType() == LexTypes.STATEMENT && data[from].getKeyword() == Keywords.DO) {
+							from = buildStatement(data, from + 1, names, whileNode);
+						}
+						else {
+							throw new SyntaxException(data[from+1].getRow(), data[from+1].getCol(), "Missing 'do'");
+						}
+						root.type = SyntaxNodeType.WHILE;
+						root.cargo = whileCond;
+						root.children = new SyntaxNode[] {whileNode};
+						break;
+					case DO			:
+						final SyntaxNode<SyntaxNodeType, SyntaxNode<SyntaxNodeType, ?>>	untilCond = (SyntaxNode<SyntaxNodeType, SyntaxNode<SyntaxNodeType, ?>>) root.clone();
+						final SyntaxNode<SyntaxNodeType, SyntaxNode<SyntaxNodeType, ?>>	untilNode = (SyntaxNode<SyntaxNodeType, SyntaxNode<SyntaxNodeType, ?>>) root.clone();
+						
+						from = buildStatement(data, from+1, names, untilNode);
+						if (data[from].getType() == LexTypes.STATEMENT && data[from].getKeyword() == Keywords.WHILE) {
+							from = buildExpression(data, from + 1, names, untilCond);
+						}
+						else {
+							throw new SyntaxException(data[from+1].getRow(), data[from+1].getCol(), "Missing 'while'");
+						}
+						root.type = SyntaxNodeType.UNTIL;
+						root.cargo = untilCond;
+						root.children = new SyntaxNode[] {untilNode};
+						break;
+					case FOR		:
+						if (data[from+1].getType() == LexTypes.NAME) {
+							final long	varId = data[from+1].getLongAssociated();
+							
+							if (names.getCargo(varId) == null) {
+								throw new SyntaxException(data[from+1].getRow(), data[from+1].getCol(), "Undeclared variable");
+							}
+							else if (data[from+2].getType() == LexTypes.OPERATOR) {
+								switch (data[from+2].getOperatorType()) {
+									case IN 		:
+										final SyntaxNode<SyntaxNodeType, SyntaxNode<SyntaxNodeType, ?>>	inExpr = (SyntaxNode<SyntaxNodeType, SyntaxNode<SyntaxNodeType, ?>>) root.clone();
+										final SyntaxNode<SyntaxNodeType, SyntaxNode<SyntaxNodeType, ?>>	inNode = (SyntaxNode<SyntaxNodeType, SyntaxNode<SyntaxNodeType, ?>>) root.clone();
+										
+										from = buildExpression(data, from + 4, names, inExpr);
+										if (data[from].getType() == LexTypes.STATEMENT && data[from].getKeyword() == Keywords.DO) {
+											from = buildExpression(data, from + 1, names, inNode);
+											root.type = SyntaxNodeType.FORALL;
+											root.value = varId;
+											root.cargo = inExpr;
+											root.children = new SyntaxNode[] {inNode};
+										}
+										else {
+											throw new SyntaxException(data[from+1].getRow(), data[from+1].getCol(), "Missing 'while'");
+										}
+										break;
+									case ASSIGNMENT	:
+										final SyntaxNode<SyntaxNodeType, SyntaxNode<SyntaxNodeType, ?>>	forInitial = (SyntaxNode<SyntaxNodeType, SyntaxNode<SyntaxNodeType, ?>>) root.clone();
+										final SyntaxNode<SyntaxNodeType, SyntaxNode<SyntaxNodeType, ?>>	forTerminal = (SyntaxNode<SyntaxNodeType, SyntaxNode<SyntaxNodeType, ?>>) root.clone();
+										final SyntaxNode<SyntaxNodeType, SyntaxNode<SyntaxNodeType, ?>>	forNode = (SyntaxNode<SyntaxNodeType, SyntaxNode<SyntaxNodeType, ?>>) root.clone();
+										
+										from = buildExpression(data, from + 3, names, forInitial);
+										if (data[from].getType() == LexTypes.OPTION && data[from].getKeyword() == Keywords.TO) {
+											from = buildExpression(data, from + 1, names, forTerminal);
+											
+											if (data[from].getType() == LexTypes.OPTION && data[from].getKeyword() == Keywords.STEP) {
+												final SyntaxNode<SyntaxNodeType, SyntaxNode<SyntaxNodeType, ?>>	forStep = (SyntaxNode<SyntaxNodeType, SyntaxNode<SyntaxNodeType, ?>>) root.clone();
+
+												from = buildExpression(data, from + 1, names, forStep);
+												root.type = SyntaxNodeType.FOR;
+												root.value = varId;
+												root.children = new SyntaxNode[] {forInitial, forTerminal, forStep, forNode};
+											}											
+											else {
+												root.type = SyntaxNodeType.FOR1;
+												root.value = varId;
+												root.children = new SyntaxNode[] {forInitial, forTerminal, forNode};
+											}
+										}
+										else {
+											throw new SyntaxException(data[from+1].getRow(), data[from+1].getCol(), "Missing 'while'");
+										}
+										break;
+									default :
+										throw new SyntaxException(data[from+1].getRow(), data[from+1].getCol(), "Illegal operator. Only ':=' or 'in' is avilable");
+								}
+							}
+						}
+						else {
+							throw new SyntaxException(data[from+1].getRow(), data[from+1].getCol(), "Missing var name");
+						}
+						break;
+					case CASE		:
+						final SyntaxNode<SyntaxNodeType, SyntaxNode<SyntaxNodeType, ?>>			caseExpr = (SyntaxNode<SyntaxNodeType, SyntaxNode<SyntaxNodeType, ?>>) root.clone();
+						final List<SyntaxNode<SyntaxNodeType, SyntaxNode<SyntaxNodeType, ?>>> 	ofList = new ArrayList<SyntaxNode<SyntaxNodeType,SyntaxNode<SyntaxNodeType,?>>>();
+						
+						from = buildExpression(data, from + 1, names, caseExpr);
+						while (data[from].getType() == LexTypes.OPTION && data[from].getKeyword() == Keywords.OF) {
+							final SyntaxNode<SyntaxNodeType, SyntaxNode<SyntaxNodeType, ?>>		ofCond = (SyntaxNode<SyntaxNodeType, SyntaxNode<SyntaxNodeType, ?>>) root.clone();
+							final SyntaxNode<SyntaxNodeType, SyntaxNode<SyntaxNodeType, ?>>		ofNode = (SyntaxNode<SyntaxNodeType, SyntaxNode<SyntaxNodeType, ?>>) root.clone();
+							
+							from = buildListExpression(data, from + 1, names, ofCond);
+							if (data[from].getType() == LexTypes.COLON) {
+								from = buildStatement(data, from+1, names, ofNode);
+							}
+							else {
+								throw new SyntaxException(data[from+1].getRow(), data[from+1].getCol(), "Missing ':'");
+							}
+							ofList.add(ofCond);
+							ofList.add(ofNode);
+						}
+						if (data[from].getType() == LexTypes.OPTION && data[from].getKeyword() == Keywords.ELSE) {
+							final SyntaxNode<SyntaxNodeType, SyntaxNode<SyntaxNodeType, ?>>		elseNode = (SyntaxNode<SyntaxNodeType, SyntaxNode<SyntaxNodeType, ?>>) root.clone();
+							
+							from = buildStatement(data, from + 1, names, elseNode);
+							if (data[from].getType() == LexTypes.STATEMENT && data[from].getKeyword() == Keywords.END) {
+								ofList.add(elseNode);
+								root.type = SyntaxNodeType.CASEDEF;
+								root.cargo = caseExpr;
+								root.children = ofList.toArray(new SyntaxNode[ofList.size()]);
+							}
+							else {
+								throw new SyntaxException(data[from+1].getRow(), data[from+1].getCol(), "Missing 'end'");
+							}
+						}
+						else if (data[from].getType() == LexTypes.STATEMENT && data[from].getKeyword() == Keywords.END) {
+							root.type = SyntaxNodeType.CASE;
+							root.cargo = caseExpr;
+							root.children = ofList.toArray(new SyntaxNode[ofList.size()]);
+						}
+						else {
+							throw new SyntaxException(data[from+1].getRow(), data[from+1].getCol(), "Missing 'end'");
+						}
+						break;
+					case CONTINUE	:
+						if (data[from+1].getType() == LexTypes.CONSTANT && data[from+1].getDataType() == DataTypes.INT) {
+							root.type = SyntaxNodeType.CONTINUE;
+							root.value = data[from+1].getLongAssociated();
+							from++;
+						}
+						else {
+							root.type = SyntaxNodeType.CONTINUE;
+							root.value = 1;
+						}
+						break;
+					case BREAK		:
+						if (data[from+1].getType() == LexTypes.CONSTANT && data[from+1].getDataType() == DataTypes.INT) {
+							root.type = SyntaxNodeType.BREAK;
+							root.value = data[from+1].getLongAssociated();
+							from++;
+						}
+						else {
+							root.type = SyntaxNodeType.BREAK;
+							root.value = 1;
+						}
+						break;
+					case RETURN		:
+						if (data[from+1].getType() != LexTypes.SEMICOLON && data[from+1].getType() != LexTypes.EOF) {
+							final SyntaxNode<SyntaxNodeType, SyntaxNode<SyntaxNodeType, ?>>	returnExpr = (SyntaxNode<SyntaxNodeType, SyntaxNode<SyntaxNodeType, ?>>) root.clone();
+							
+							from = buildExpression(data, from + 1, names, returnExpr);
+							root.type = SyntaxNodeType.RETURN1;
+							root.cargo = returnExpr;
+						}
+						else {
+							root.type = SyntaxNodeType.RETURN;
+						}
+						break;
+					default :
+						throw new UnsupportedOperationException("Statement ["+data[from].getKeyword()+"] is not supported yet"); 
+				}
+				break;
+			default :
+				break;
 		}
+		return from+1;
+	}
+
+	private static <T> int buildListExpression(final Lexema[] data, int from, final SyntaxTreeInterface<T> names, final SyntaxNode<SyntaxNodeType, SyntaxNode<SyntaxNodeType, ?>> root) {
+		final List<SyntaxNode<SyntaxNodeType, SyntaxNode<SyntaxNodeType, ?>>> list = new ArrayList<>();
+		
+		from--;
+		root.row = data[from].getRow();
+		root.col = data[from].getCol();
+		do {final SyntaxNode<SyntaxNodeType, SyntaxNode<SyntaxNodeType, ?>>	expr = (SyntaxNode<SyntaxNodeType, SyntaxNode<SyntaxNodeType, ?>>) root.clone();
+		
+			from = buildExpression(data, from+1, names, expr);
+			if (data[from].getType() == LexTypes.RANGE) {
+				final SyntaxNode<SyntaxNodeType, SyntaxNode<SyntaxNodeType, ?>>		rangeExpr = (SyntaxNode<SyntaxNodeType, SyntaxNode<SyntaxNodeType, ?>>) root.clone();
+				final SyntaxNode<SyntaxNodeType, SyntaxNode<SyntaxNodeType, ?>>		nextExpr = (SyntaxNode<SyntaxNodeType, SyntaxNode<SyntaxNodeType, ?>>) root.clone();
+								
+				from = buildExpression(data, from+1, names, nextExpr);
+				rangeExpr.type = SyntaxNodeType.RANGE;
+				rangeExpr.children = new SyntaxNode[] {expr, nextExpr}; 
+				list.add(rangeExpr);
+			}
+			else {
+				list.add(expr);
+			}
+		} while(data[from].getType() == LexTypes.COMMA);
+		
+		root.type = SyntaxNodeType.LIST;
+		root.children = list.toArray(new SyntaxNode[list.size()]);
 		return from;
 	}
 
@@ -586,7 +936,7 @@ loop:	for (;;) {
 		// TODO Auto-generated method stub
 		return from;
 	}
-
+	
 	public static class Lexema {
 		private final int			row;
 		private final int			col;
@@ -715,6 +1065,33 @@ loop:	for (;;) {
 		
 		public <T> T getObjectAssociated(final Class<T> awaited) {
 			return awaited.cast(associatedObject);
+		}
+	}
+	
+	private static class EntityDescriptor {
+		final EntityType			type;
+		final long					id;
+		final CollectionType		collType;
+		final DataTypes				dataType;
+		final EntityDescriptor[]	parameters;
+		final EntityDescriptor		returns;
+
+		public EntityDescriptor(long id, CollectionType collType, DataTypes dataType) {
+			this(EntityType.VAR, id, collType, dataType, null, null);
+		}
+		
+		private EntityDescriptor(EntityType type, long id, CollectionType collType, DataTypes dataType, EntityDescriptor[] parameters, EntityDescriptor returns) {
+			this.type = type;
+			this.id = id;
+			this.collType = collType;
+			this.dataType = dataType;
+			this.parameters = parameters;
+			this.returns = returns;
+		}
+
+		@Override
+		public String toString() {
+			return "EntityDescriptor [type=" + type + ", id=" + id + ", collType=" + collType + ", dataType=" + dataType + ", parameters=" + Arrays.toString(parameters) + ", returns=" + returns + "]";
 		}
 	}
 }
