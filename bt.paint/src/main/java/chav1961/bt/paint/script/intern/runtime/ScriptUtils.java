@@ -1,4 +1,4 @@
-package chav1961.bt.paint.script.runtime;
+package chav1961.bt.paint.script.intern.runtime;
 
 import java.io.Reader;
 

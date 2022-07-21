@@ -37,7 +37,7 @@ import chav1961.bt.paint.control.ImageUtils;
 import chav1961.bt.paint.control.ImageUtils.ProcessType;
 import chav1961.bt.paint.dialogs.AskImageSize;
 import chav1961.bt.paint.script.ScriptNodeType;
-import chav1961.bt.paint.script.runtime.ScriptUtils;
+import chav1961.bt.paint.script.intern.runtime.ScriptUtils;
 import chav1961.bt.paint.utils.ApplicationUtils;
 import chav1961.purelib.basic.ArgParser;
 import chav1961.purelib.basic.PureLibSettings;

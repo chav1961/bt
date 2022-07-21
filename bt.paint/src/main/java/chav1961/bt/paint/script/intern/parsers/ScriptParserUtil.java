@@ -1,4 +1,4 @@
-package chav1961.bt.paint.script.parsers;
+package chav1961.bt.paint.script.intern.parsers;
 
 import java.io.IOException;
 import java.io.Reader;
@@ -102,6 +102,7 @@ public class ScriptParserUtil {
 		COLOR,
 		POINT,
 		RECT,
+		SIZE,
 		FONT,
 		STROKE,
 		TRANSFORM,
