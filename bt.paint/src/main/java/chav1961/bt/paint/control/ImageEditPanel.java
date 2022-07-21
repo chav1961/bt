@@ -10,6 +10,8 @@ import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.GridLayout;
 import java.awt.Image;
+import java.awt.Point;
+import java.awt.Rectangle;
 import java.awt.Stroke;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseMotionListener;
@@ -31,6 +33,7 @@ import javax.swing.JSeparator;
 import javax.swing.JTextField;
 import javax.swing.JToggleButton;
 import javax.swing.JToolBar;
+import javax.swing.SwingUtilities;
 import javax.swing.border.EtchedBorder;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
@@ -52,12 +55,14 @@ import chav1961.purelib.i18n.interfaces.Localizer.LocaleChangeListener;
 import chav1961.purelib.i18n.interfaces.LocalizerOwner;
 import chav1961.purelib.model.ContentModelFactory;
 import chav1961.purelib.model.interfaces.ContentMetadataInterface;
+import chav1961.purelib.ui.ColorPair;
 import chav1961.purelib.ui.swing.SwingUtils;
 import chav1961.purelib.ui.swing.interfaces.FunctionalMouseListener;
 import chav1961.purelib.ui.swing.interfaces.FunctionalMouseListener.EventType;
 import chav1961.purelib.ui.swing.interfaces.OnAction;
 import chav1961.purelib.ui.swing.useful.JFontSelectionDialog;
 import chav1961.purelib.ui.swing.useful.JLocalizedOptionPane;
+import chav1961.purelib.ui.swing.useful.interfaces.SelectionFrameListener.SelectionStyle;
 
 public class ImageEditPanel extends JPanel implements LocalizerOwner, LocaleChangeListener {
 	private static final long 				serialVersionUID = -8630893532191028731L;
@@ -96,7 +101,9 @@ public class ImageEditPanel extends JPanel implements LocalizerOwner, LocaleChan
 	private final JPanel			leftPanel = new JPanel();
 	private final ImageEditCanvas	canvas;
 	private final EditStateString	state;
+	private DrawingType				drawingType = DrawingType.UNKNOWN;
 	private boolean 				foregroundNow = true;
+	private boolean 				fillingOn = false;
 	private boolean 				waitColorExtraction = false;
 	
 	public ImageEditPanel(final Localizer localizer) throws NullPointerException {
@@ -139,6 +146,7 @@ public class ImageEditPanel extends JPanel implements LocalizerOwner, LocaleChan
 	        		waitColorExtraction = false;
 	        	}
 	        });
+	        canvas.getSelectionManager().addSelectionFrameListener((style, start, end, parameters)->processSelection(style, start, end, parameters));
 	        
         	state.refreshSettings(canvas);
 	        fillLocalizedStrings();
@@ -224,7 +232,31 @@ public class ImageEditPanel extends JPanel implements LocalizerOwner, LocaleChan
 	
 	@OnAction("action:/chooseMode")
     public void chooseMode(final Hashtable<String,String[]> modes) throws IOException {
-		canvas.setCurrentDrawMode(DrawingType.valueOf(modes.get("mode")[0]));
+		switch (drawingType = DrawingType.valueOf(modes.get("mode")[0])) {
+			case BRUSH		:
+				break;
+			case ELLIPSE	:
+				break;
+			case FILL		:
+				break;
+			case LINE		:
+				break;
+			case PEN		:
+				break;
+			case RECT		:
+				canvas.getSelectionManager().setSelectionStyle(SelectionStyle.RECTANGLE);
+				canvas.getSelectionManager().enableSelection(true);
+				canvas.getSelectionManager().setVisible(true);
+				break;
+			case SELECT		:
+				break;
+			case TEXT		:
+				break;
+			case UNKNOWN	:
+				break;
+			default :
+				throw new UnsupportedOperationException("Drawing type ["+drawingType+"] is not supported yet"); 
+		}
     }
 	
 	@OnAction("action:/crop")
@@ -326,6 +358,7 @@ public class ImageEditPanel extends JPanel implements LocalizerOwner, LocaleChan
 
 	@OnAction("action:/settings.filling")
 	public void setFilling(final Hashtable<String,String[]> modes) {
+		fillingOn = !fillingOn;
 	}
 
 	@OnAction("action:/player.recording")
@@ -354,7 +387,7 @@ public class ImageEditPanel extends JPanel implements LocalizerOwner, LocaleChan
 	}
 	
 	public DrawingType getCurrentDrawingMode() {
-		return canvas.getCurrentDrawMode();
+		return drawingType;
 	}
 	
 	public boolean isImageAreaSelected() {
@@ -367,6 +400,44 @@ public class ImageEditPanel extends JPanel implements LocalizerOwner, LocaleChan
 	
 	public void pasteImage(final Image image) {
 		
+	}
+
+	private void processSelection(final SelectionStyle style, final Point start, final Point end, final Object... parameters) {
+		// TODO Auto-generated method stub
+		switch (getCurrentDrawingMode()) {
+			case BRUSH	:
+				break;
+			case ELLIPSE:
+				break;
+			case FILL	:
+				break;
+			case LINE	:
+				break;
+			case PEN	:
+				break;
+			case RECT	:
+				if (fillingOn) {
+					ImageUtils.rectDraw((BufferedImage)canvas.getBackgroundImage(), (Rectangle)parameters[0], new ColorPair(canvas.getForeground(), canvas.getBackground())
+							, buildStroke(canvas.getLineThickness(), canvas.getLineStroke()), null);
+				}
+				else {
+					ImageUtils.rectDraw((BufferedImage)canvas.getBackgroundImage(), (Rectangle)parameters[0], canvas.getForeground()
+							, buildStroke(canvas.getLineThickness(), canvas.getLineStroke()), null);
+				}
+				SwingUtilities.invokeLater(()->{
+					canvas.getSelectionManager().setSelectionStyle(SelectionStyle.RECTANGLE);
+					canvas.getSelectionManager().enableSelection(true);
+				});
+				break;
+			case SELECT	:
+				break;
+			case TEXT	:
+				break;
+			case UNKNOWN:
+				break;
+			default:
+				break;
+		}
 	}
 	
 	private void chooseColor() {
@@ -448,6 +519,20 @@ public class ImageEditPanel extends JPanel implements LocalizerOwner, LocaleChan
 		
 		undoListeners.fireEvent((l)->l.undoableEditHappened(ee));
 	}
+
+	private static Stroke buildStroke(final int lineThickness, final LineStroke lineStroke) {
+		switch (lineStroke) {
+			case DASHED	:
+				return new BasicStroke(lineThickness, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND, lineThickness, new float[] {3 * lineThickness}, 0);
+			case DOTTED	:
+				return new BasicStroke(lineThickness, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND, lineThickness, new float[] {lineThickness}, 0);
+			case SOLID	: 
+				return new BasicStroke(lineThickness); 		
+			default:
+				throw new UnsupportedOperationException("LineStroke style ["+lineStroke+"] is not supported yet");
+		}
+	}
+
 	
 	private static class EditStateString extends JPanel implements LocaleChangeListener {
 		private static final long serialVersionUID = 1L;

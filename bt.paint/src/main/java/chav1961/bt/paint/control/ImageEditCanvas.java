@@ -28,7 +28,7 @@ public class ImageEditCanvas extends JBackgroundComponent {
 	private final LightWeightListenerList<ChangeListener>	listeners = new LightWeightListenerList<>(ChangeListener.class);
 	private final SelectionFrameManager	smgr = new SelectionFrameManager(this, false);
 	private final ChangeEvent			ce = new ChangeEvent(this);
-	private DrawingType					currentDrawMode = DrawingType.UNKNOWN;
+//	private DrawingType					currentDrawMode = DrawingType.UNKNOWN;
 	private int							lineThickness = 1;
 	private LineStroke					lineStroke = LineStroke.SOLID;
 	private boolean						fillContours = false;
@@ -41,95 +41,100 @@ public class ImageEditCanvas extends JBackgroundComponent {
 	
 	public ImageEditCanvas(final Localizer localizer) {
 		super(localizer);
-		smgr.addSelectionFrameListener((style, start, end, parameters)->processSelection(start, end, (Rectangle)parameters[0]));
+//		smgr.addSelectionFrameListener((style, start, end, parameters)->processSelection(start, end, (Rectangle)parameters[0]));
 		setBackground(Color.black);
 		setForeground(Color.white);
 		super.setFillMode(FillMode.ORIGINAL);
 	}
 
-	public void setCurrentDrawMode(final DrawingType mode) throws IOException {
-		if (mode == null) {
-			throw new NullPointerException("Drawmode can't be null");
-		}
-		else {
-			switch (getCurrentDrawMode()) {
-				case SELECT		:
-					prevComment = "add selection";
-					break;
-				case BRUSH		:
-					prevComment = "add brush(es)";
-					break;
-				case ELLIPSE	:
-					prevComment = "add ellipse(s)";
-					break;
-				case FILL		:
-					prevComment = "fill";
-					break;
-				case LINE		:
-					prevComment = "add line(s)";
-					break;
-				case PEN		:
-					prevComment = "add curve(s)";
-					break;
-				case RECT		:
-					prevComment = "add rectangle(s)";
-					break;
-				case TEXT		:
-					prevComment = "add text(s)";
-					break;
-				case UNKNOWN	:
-					prevComment = null;
-					break;
-				default :
-					throw new UnsupportedOperationException("Old drawing mode ["+getCurrentDrawMode()+"] is not supported yet");
-			}
-			currentDrawMode = mode;
-			selection = null;
-			switch (getCurrentDrawMode()) {
-				case SELECT		:
-					smgr.setSelectionStyle(SelectionStyle.RECTANGLE);
-					smgr.enableSelection(true);
-					currentComment = "remove selection(s)";
-					break;
-				case ELLIPSE	:
-					currentComment = "remove ellipse(s)";
-					break;
-				case FILL		:
-					currentComment = "revert filling";
-					break;
-				case LINE		:
-					currentComment = "remove line(s)";
-					break;
-				case PEN		:
-					currentComment = "remove curve(s)";
-					break;
-				case RECT		:
-					currentComment = "remove rectangle(s)";
-					smgr.setSelectionStyle(SelectionStyle.RECTANGLE);
-					smgr.enableSelection(true);
-					break;
-				case TEXT		:
-					currentComment = "remove text(s)";
-					break;
-				case UNKNOWN	:
-					currentComment = null;
-					break;
-				default :
-					throw new UnsupportedOperationException("New drawing mode ["+getCurrentDrawMode()+"] is not supported yet");
-			}
-//			if (currentComment == null) {
-//				getUndoManager().addEdit(new ImageUndoEdit(currentComment, prevComment, getBackgroundImage(), (i)->super.setBackgroundImage(i)));
-//			}
-//			else {
-//				getUndoManager().discardAllEdits();
-//			}
-			listeners.fireEvent((l)->l.stateChanged(ce));
-		}
+	public SelectionFrameManager getSelectionManager() {
+		return smgr;
 	}
 	
-	public DrawingType getCurrentDrawMode() {
-		return currentDrawMode;
-	}
+	
+//	public void setCurrentDrawMode(final DrawingType mode) throws IOException {
+//		if (mode == null) {
+//			throw new NullPointerException("Drawmode can't be null");
+//		}
+//		else {
+//			switch (getCurrentDrawMode()) {
+//				case SELECT		:
+//					prevComment = "add selection";
+//					break;
+//				case BRUSH		:
+//					prevComment = "add brush(es)";
+//					break;
+//				case ELLIPSE	:
+//					prevComment = "add ellipse(s)";
+//					break;
+//				case FILL		:
+//					prevComment = "fill";
+//					break;
+//				case LINE		:
+//					prevComment = "add line(s)";
+//					break;
+//				case PEN		:
+//					prevComment = "add curve(s)";
+//					break;
+//				case RECT		:
+//					prevComment = "add rectangle(s)";
+//					break;
+//				case TEXT		:
+//					prevComment = "add text(s)";
+//					break;
+//				case UNKNOWN	:
+//					prevComment = null;
+//					break;
+//				default :
+//					throw new UnsupportedOperationException("Old drawing mode ["+getCurrentDrawMode()+"] is not supported yet");
+//			}
+//			currentDrawMode = mode;
+//			selection = null;
+//			switch (getCurrentDrawMode()) {
+//				case SELECT		:
+//					smgr.setSelectionStyle(SelectionStyle.RECTANGLE);
+//					smgr.enableSelection(true);
+//					currentComment = "remove selection(s)";
+//					break;
+//				case ELLIPSE	:
+//					currentComment = "remove ellipse(s)";
+//					break;
+//				case FILL		:
+//					currentComment = "revert filling";
+//					break;
+//				case LINE		:
+//					currentComment = "remove line(s)";
+//					break;
+//				case PEN		:
+//					currentComment = "remove curve(s)";
+//					break;
+//				case RECT		:
+//					currentComment = "remove rectangle(s)";
+//					smgr.setSelectionStyle(SelectionStyle.RECTANGLE);
+//					smgr.enableSelection(true);
+//					break;
+//				case TEXT		:
+//					currentComment = "remove text(s)";
+//					break;
+//				case UNKNOWN	:
+//					currentComment = null;
+//					break;
+//				default :
+//					throw new UnsupportedOperationException("New drawing mode ["+getCurrentDrawMode()+"] is not supported yet");
+//			}
+////			if (currentComment == null) {
+////				getUndoManager().addEdit(new ImageUndoEdit(currentComment, prevComment, getBackgroundImage(), (i)->super.setBackgroundImage(i)));
+////			}
+////			else {
+////				getUndoManager().discardAllEdits();
+////			}
+//			listeners.fireEvent((l)->l.stateChanged(ce));
+//		}
+//	}
+//	
+//	public DrawingType getCurrentDrawMode() {
+//		return currentDrawMode;
+//	}
 	
 	@Override
 	public void setForeground(final Color color) {
@@ -223,39 +228,39 @@ public class ImageEditCanvas extends JBackgroundComponent {
 		}
 	}
 	
-	protected void processSelection(final Point start, final Point end, final Rectangle rect) {
-		final Graphics2D	g2d = (Graphics2D)getBackgroundImage().getGraphics();
-		final Color			oldColor = g2d.getColor(); 
-		
-		g2d.setColor(getForeground());
-		switch (getCurrentDrawMode()) {
-			case BRUSH		:
-				break;
-			case ELLIPSE	:
-				g2d.drawOval(rect.x, rect.y, rect.width, rect.height);
-				break;
-			case FILL		:
-				break;
-			case LINE		:
-				g2d.drawLine(start.x, start.y, end.x, end.y);
-				break;
-			case PEN		:
-				break;
-			case RECT		:
-				g2d.drawRect(rect.x, rect.y, rect.width, rect.height);
-				break;
-			case TEXT		:
-				break;
-			case SELECT		:
-				break;
-			case UNKNOWN	:
-				break;
-			default :
-				throw new UnsupportedOperationException("Drawing mode ["+getCurrentDrawMode()+"] is not supported yet");
-		}
-		g2d.setColor(oldColor);
-		repaint();
-	}
+//	protected void processSelection(final Point start, final Point end, final Rectangle rect) {
+//		final Graphics2D	g2d = (Graphics2D)getBackgroundImage().getGraphics();
+//		final Color			oldColor = g2d.getColor(); 
+//		
+//		g2d.setColor(getForeground());
+//		switch (getCurrentDrawMode()) {
+//			case BRUSH		:
+//				break;
+//			case ELLIPSE	:
+//				g2d.drawOval(rect.x, rect.y, rect.width, rect.height);
+//				break;
+//			case FILL		:
+//				break;
+//			case LINE		:
+//				g2d.drawLine(start.x, start.y, end.x, end.y);
+//				break;
+//			case PEN		:
+//				break;
+//			case RECT		:
+//				g2d.drawRect(rect.x, rect.y, rect.width, rect.height);
+//				break;
+//			case TEXT		:
+//				break;
+//			case SELECT		:
+//				break;
+//			case UNKNOWN	:
+//				break;
+//			default :
+//				throw new UnsupportedOperationException("Drawing mode ["+getCurrentDrawMode()+"] is not supported yet");
+//		}
+//		g2d.setColor(oldColor);
+//		repaint();
+//	}
 
 	@Override
 	protected void paintComponent(final Graphics g) {
@@ -278,7 +283,7 @@ public class ImageEditCanvas extends JBackgroundComponent {
 			g2d.setColor(Color.BLACK);
 			g2d.drawRect(0, 0, getBackgroundImage().getWidth(null), getBackgroundImage().getHeight(null));
 			
-			if (getCurrentDrawMode() != DrawingType.UNKNOWN) {
+			if (smgr.isVisible()) {
 				g2d.setXORMode(Color.white);
 				smgr.paintSelection(g2d);
 				g2d.setPaintMode();
