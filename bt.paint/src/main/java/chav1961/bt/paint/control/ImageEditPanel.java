@@ -3,7 +3,6 @@ package chav1961.bt.paint.control;
 
 import java.awt.BasicStroke;
 import java.awt.BorderLayout;
-import java.awt.image.BufferedImage;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Graphics;
@@ -15,6 +14,8 @@ import java.awt.Rectangle;
 import java.awt.Stroke;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseMotionListener;
+import java.awt.geom.GeneralPath;
+import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
@@ -29,17 +30,17 @@ import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
-import javax.swing.JSeparator;
 import javax.swing.JTextField;
 import javax.swing.JToggleButton;
 import javax.swing.JToolBar;
 import javax.swing.SwingUtilities;
 import javax.swing.border.EtchedBorder;
-import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import javax.swing.event.UndoableEditEvent;
 import javax.swing.event.UndoableEditListener;
 
+import chav1961.bt.paint.control.ImageEditCanvas.LineCaps;
+import chav1961.bt.paint.control.ImageEditCanvas.LineJoin;
 import chav1961.bt.paint.control.ImageEditCanvas.LineStroke;
 import chav1961.bt.paint.control.ImageUtils.DrawingType;
 import chav1961.bt.paint.dialogs.AskImageResize;
@@ -57,8 +58,6 @@ import chav1961.purelib.model.ContentModelFactory;
 import chav1961.purelib.model.interfaces.ContentMetadataInterface;
 import chav1961.purelib.ui.ColorPair;
 import chav1961.purelib.ui.swing.SwingUtils;
-import chav1961.purelib.ui.swing.interfaces.FunctionalMouseListener;
-import chav1961.purelib.ui.swing.interfaces.FunctionalMouseListener.EventType;
 import chav1961.purelib.ui.swing.interfaces.OnAction;
 import chav1961.purelib.ui.swing.useful.JFontSelectionDialog;
 import chav1961.purelib.ui.swing.useful.JLocalizedOptionPane;
@@ -84,6 +83,14 @@ public class ImageEditPanel extends JPanel implements LocalizerOwner, LocaleChan
 	private static final String				KEY_REDO_GRAYSCALE = "chav1961.bt.mnemoed.editor.ImageEditPanel.redo.grayscale";
 	private static final String				KEY_UNDO_TRANSPARENCY = "chav1961.bt.mnemoed.editor.ImageEditPanel.undo.transparency";
 	private static final String				KEY_REDO_TRANSPARENCY = "chav1961.bt.mnemoed.editor.ImageEditPanel.redo.transparency";
+	private static final String				KEY_UNDO_DRAW_ELLIPSE = "chav1961.bt.mnemoed.editor.ImageEditPanel.undo.draw.ellipse";
+	private static final String				KEY_REDO_DRAW_ELLIPSE = "chav1961.bt.mnemoed.editor.ImageEditPanel.redo.draw.ellipse";
+	private static final String				KEY_UNDO_DRAW_LINE = "chav1961.bt.mnemoed.editor.ImageEditPanel.undo.draw.line";
+	private static final String				KEY_REDO_DRAW_LINE = "chav1961.bt.mnemoed.editor.ImageEditPanel.redo.draw.line";
+	private static final String				KEY_UNDO_DRAW_PATH = "chav1961.bt.mnemoed.editor.ImageEditPanel.undo.draw.path";
+	private static final String				KEY_REDO_DRAW_PATH = "chav1961.bt.mnemoed.editor.ImageEditPanel.redo.draw.path";
+	private static final String				KEY_UNDO_DRAW_RECT = "chav1961.bt.mnemoed.editor.ImageEditPanel.undo.draw.rect";
+	private static final String				KEY_REDO_DRAW_RECT = "chav1961.bt.mnemoed.editor.ImageEditPanel.redo.draw.rect";
 	
 	static {
 		try(final InputStream				is = ImageEditPanel.class.getResourceAsStream("imageeditpanel.xml")) {
@@ -136,16 +143,9 @@ public class ImageEditPanel extends JPanel implements LocalizerOwner, LocaleChan
 	        	state.refreshSettings(canvas);
 	        });
 	        canvas.addMouseMotionListener(new MouseMotionListener() {
-				@Override public void mouseMoved(MouseEvent e) {state.refreshCoordinates(e.getX(), e.getY());}
-				@Override public void mouseDragged(MouseEvent e) {state.refreshCoordinates(e.getX(), e.getY());}
+				@Override public void mouseMoved(MouseEvent e) {state.refreshCoordinates(canvas, e.getX(), e.getY());}
+				@Override public void mouseDragged(MouseEvent e) {state.refreshCoordinates(canvas, e.getX(), e.getY());}
 			});
-	        canvas.addMouseListener((FunctionalMouseListener)(ct, e)->{
-	        	if (ct == EventType.CLICKED && waitColorExtraction && getImage() != null) {
-	        		setColor(new Color(((BufferedImage)getImage()).getRGB(e.getX(), e.getY())));
-	        		turnOffExtractColorButton();
-	        		waitColorExtraction = false;
-	        	}
-	        });
 	        canvas.getSelectionManager().addSelectionFrameListener((style, start, end, parameters)->processSelection(style, start, end, parameters));
 	        
         	state.refreshSettings(canvas);
@@ -236,12 +236,21 @@ public class ImageEditPanel extends JPanel implements LocalizerOwner, LocaleChan
 			case BRUSH		:
 				break;
 			case ELLIPSE	:
+				canvas.getSelectionManager().setSelectionStyle(SelectionStyle.RECTANGLE);
+				canvas.getSelectionManager().enableSelection(true);
+				canvas.getSelectionManager().setVisible(true);
 				break;
 			case FILL		:
 				break;
 			case LINE		:
+				canvas.getSelectionManager().setSelectionStyle(SelectionStyle.LINE);
+				canvas.getSelectionManager().enableSelection(true);
+				canvas.getSelectionManager().setVisible(true);
 				break;
 			case PEN		:
+				canvas.getSelectionManager().setSelectionStyle(SelectionStyle.PATH);
+				canvas.getSelectionManager().enableSelection(true);
+				canvas.getSelectionManager().setVisible(true);
 				break;
 			case RECT		:
 				canvas.getSelectionManager().setSelectionStyle(SelectionStyle.RECTANGLE);
@@ -249,6 +258,9 @@ public class ImageEditPanel extends JPanel implements LocalizerOwner, LocaleChan
 				canvas.getSelectionManager().setVisible(true);
 				break;
 			case SELECT		:
+				canvas.getSelectionManager().setSelectionStyle(SelectionStyle.RECTANGLE);
+				canvas.getSelectionManager().enableSelection(true);
+				canvas.getSelectionManager().setVisible(true);
 				break;
 			case TEXT		:
 				break;
@@ -353,7 +365,15 @@ public class ImageEditPanel extends JPanel implements LocalizerOwner, LocaleChan
 
 	@OnAction("action:/settings.stroke")
 	public void setStroke(final Hashtable<String,String[]> modes) {
-		canvas.setLineStroke(LineStroke.valueOf(modes.get("style")[0]));
+		if (modes.containsKey("style")) {
+			canvas.setLineStroke(LineStroke.valueOf(modes.get("style")[0]));
+		}
+		else if (modes.containsKey("cap")) {
+			canvas.setLineCaps(LineCaps.valueOf(modes.get("caps")[0]));
+		}
+		else if (modes.containsKey("join")) {
+			canvas.setLineJoin(LineJoin.valueOf(modes.get("join")[0]));
+		}
 	}
 
 	@OnAction("action:/settings.filling")
@@ -403,40 +423,82 @@ public class ImageEditPanel extends JPanel implements LocalizerOwner, LocaleChan
 	}
 
 	private void processSelection(final SelectionStyle style, final Point start, final Point end, final Object... parameters) {
-		// TODO Auto-generated method stub
-		switch (getCurrentDrawingMode()) {
-			case BRUSH	:
-				break;
-			case ELLIPSE:
-				break;
-			case FILL	:
-				break;
-			case LINE	:
-				break;
-			case PEN	:
-				break;
-			case RECT	:
-				if (fillingOn) {
-					ImageUtils.rectDraw((BufferedImage)canvas.getBackgroundImage(), (Rectangle)parameters[0], new ColorPair(canvas.getForeground(), canvas.getBackground())
-							, buildStroke(canvas.getLineThickness(), canvas.getLineStroke()), null);
+		if (waitColorExtraction && style == SelectionStyle.POINT) {
+    		setColor(new Color(((BufferedImage)getImage()).getRGB(end.x, end.y)));
+    		canvas.getSelectionManager().popSelectionStyle();
+    		turnOffExtractColorButton();
+    		waitColorExtraction = false;
+		}
+		else {
+			try {
+				final Image		current = canvas.getBackgroundImage();
+				final byte[]	before = ImageUndoEdit.packImage(current);
+				
+				switch (getCurrentDrawingMode()) {
+					case BRUSH	:
+						break;
+					case ELLIPSE:
+						if (fillingOn) {
+							ImageUtils.ellipseDraw((BufferedImage)canvas.getBackgroundImage(), (Rectangle)parameters[0], new ColorPair(canvas.getForeground(), canvas.getBackground())
+								, buildStroke(canvas.getLineThickness(), canvas.getLineStroke(), canvas.getLineCaps(), canvas.getLineJoin()), null);
+						}
+						else {
+							ImageUtils.ellipseDraw((BufferedImage)canvas.getBackgroundImage(), (Rectangle)parameters[0], canvas.getForeground()
+								, buildStroke(canvas.getLineThickness(), canvas.getLineStroke(), canvas.getLineCaps(), canvas.getLineJoin()), null);
+						}
+						SwingUtilities.invokeLater(()->{
+								canvas.getSelectionManager().setSelectionStyle(SelectionStyle.RECTANGLE);
+								canvas.getSelectionManager().enableSelection(true);
+						});
+						fireUndo(new ImageUndoEdit(KEY_UNDO_DRAW_ELLIPSE, KEY_REDO_DRAW_ELLIPSE, before, ImageUndoEdit.packImage(canvas.getBackgroundImage()), (i)->canvas.setBackgroundImage(i)));
+						break;
+					case FILL	:
+						break;
+					case LINE	:
+						ImageUtils.lineDraw((BufferedImage)canvas.getBackgroundImage(), start,end, canvas.getForeground()
+								, buildStroke(canvas.getLineThickness(), canvas.getLineStroke(), canvas.getLineCaps(), canvas.getLineJoin()), null);
+						SwingUtilities.invokeLater(()->{
+								canvas.getSelectionManager().setSelectionStyle(SelectionStyle.LINE);
+								canvas.getSelectionManager().enableSelection(true);
+						});
+						fireUndo(new ImageUndoEdit(KEY_UNDO_DRAW_LINE, KEY_REDO_DRAW_LINE, before, ImageUndoEdit.packImage(canvas.getBackgroundImage()), (i)->canvas.setBackgroundImage(i)));
+						break;
+					case PEN	:
+						ImageUtils.pathDraw((BufferedImage)canvas.getBackgroundImage(), (GeneralPath)parameters[0], canvas.getForeground()
+								, buildStroke(canvas.getLineThickness(), canvas.getLineStroke(), canvas.getLineCaps(), canvas.getLineJoin()), null);
+						SwingUtilities.invokeLater(()->{
+								canvas.getSelectionManager().setSelectionStyle(SelectionStyle.PATH);
+								canvas.getSelectionManager().enableSelection(true);
+						});
+						fireUndo(new ImageUndoEdit(KEY_UNDO_DRAW_PATH, KEY_REDO_DRAW_PATH, before, ImageUndoEdit.packImage(canvas.getBackgroundImage()), (i)->canvas.setBackgroundImage(i)));
+						break;
+					case RECT	:
+						if (fillingOn) {
+							ImageUtils.rectDraw((BufferedImage)canvas.getBackgroundImage(), (Rectangle)parameters[0], new ColorPair(canvas.getForeground(), canvas.getBackground())
+								, buildStroke(canvas.getLineThickness(), canvas.getLineStroke(), canvas.getLineCaps(), canvas.getLineJoin()), null);
+						}
+						else {
+							ImageUtils.rectDraw((BufferedImage)canvas.getBackgroundImage(), (Rectangle)parameters[0], canvas.getForeground()
+								, buildStroke(canvas.getLineThickness(), canvas.getLineStroke(), canvas.getLineCaps(), canvas.getLineJoin()), null);
+						}
+						SwingUtilities.invokeLater(()->{
+								canvas.getSelectionManager().setSelectionStyle(SelectionStyle.RECTANGLE);
+								canvas.getSelectionManager().enableSelection(true);
+						});
+						fireUndo(new ImageUndoEdit(KEY_UNDO_DRAW_RECT, KEY_REDO_DRAW_RECT, before, ImageUndoEdit.packImage(canvas.getBackgroundImage()), (i)->canvas.setBackgroundImage(i)));
+						break;
+					case SELECT	:
+						break;
+					case TEXT	:
+						break;
+					case UNKNOWN:
+						break;
+					default:
+						break;
 				}
-				else {
-					ImageUtils.rectDraw((BufferedImage)canvas.getBackgroundImage(), (Rectangle)parameters[0], canvas.getForeground()
-							, buildStroke(canvas.getLineThickness(), canvas.getLineStroke()), null);
-				}
-				SwingUtilities.invokeLater(()->{
-					canvas.getSelectionManager().setSelectionStyle(SelectionStyle.RECTANGLE);
-					canvas.getSelectionManager().enableSelection(true);
-				});
-				break;
-			case SELECT	:
-				break;
-			case TEXT	:
-				break;
-			case UNKNOWN:
-				break;
-			default:
-				break;
+			} catch (IOException exc) {
+				SwingUtils.getNearestLogger(this).message(Severity.error, exc, exc.getLocalizedMessage());
+			}
 		}
 	}
 	
@@ -453,6 +515,7 @@ public class ImageEditPanel extends JPanel implements LocalizerOwner, LocaleChan
 	private void extractColor() {
 		if (getImage() != null) {
 			waitColorExtraction = true;
+			canvas.getSelectionManager().pushSelectionStyle(SelectionStyle.POINT);
 		}
 		else {
 			turnOffExtractColorButton();
@@ -520,19 +583,18 @@ public class ImageEditPanel extends JPanel implements LocalizerOwner, LocaleChan
 		undoListeners.fireEvent((l)->l.undoableEditHappened(ee));
 	}
 
-	private static Stroke buildStroke(final int lineThickness, final LineStroke lineStroke) {
+	private static Stroke buildStroke(final int lineThickness, final LineStroke lineStroke, final LineCaps caps, final LineJoin join) {
 		switch (lineStroke) {
 			case DASHED	:
-				return new BasicStroke(lineThickness, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND, lineThickness, new float[] {3 * lineThickness}, 0);
+				return new BasicStroke(lineThickness, caps.getCapsType(), join.getJoinType(), lineThickness, new float[] {3 * lineThickness}, 0);
 			case DOTTED	:
-				return new BasicStroke(lineThickness, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND, lineThickness, new float[] {lineThickness}, 0);
+				return new BasicStroke(lineThickness, caps.getCapsType(), join.getJoinType(), lineThickness, new float[] {lineThickness}, 0);
 			case SOLID	: 
 				return new BasicStroke(lineThickness); 		
 			default:
 				throw new UnsupportedOperationException("LineStroke style ["+lineStroke+"] is not supported yet");
 		}
 	}
-
 	
 	private static class EditStateString extends JPanel implements LocaleChangeListener {
 		private static final long serialVersionUID = 1L;
@@ -582,10 +644,17 @@ public class ImageEditPanel extends JPanel implements LocalizerOwner, LocaleChan
 			fillLocalizedStrings();
 		}
 
-		private void refreshCoordinates(final int x, final int y) {
+		private void refreshCoordinates(final ImageEditCanvas canvas, final int x, final int y) {
+			final Image		image = canvas.getBackgroundImage();
 			final String	text = x + " x " + y;
 			
 			coord.setText(text);
+			if (image == null || x >= image.getWidth(null) || y >= image.getHeight(null)) {
+				coord.setForeground(Color.LIGHT_GRAY);
+			}
+			else {
+				coord.setForeground(Color.BLACK);
+			}
 		}
 		
 		private void refreshSettings(final ImageEditCanvas canvas) {
@@ -613,6 +682,8 @@ public class ImageEditPanel extends JPanel implements LocalizerOwner, LocaleChan
 
 		private int			thickness = 1;
 		private LineStroke	stroke = LineStroke.SOLID;
+		private LineCaps	caps = LineCaps.BUTT;
+		private LineJoin	join = LineJoin.MITER;
 		
 		private SettingsVisual() {
 			setPreferredSize(new Dimension(48,16));
@@ -623,6 +694,8 @@ public class ImageEditPanel extends JPanel implements LocalizerOwner, LocaleChan
 			setBackground(canvas.getBackground());
 			thickness = canvas.getLineThickness();
 			stroke = canvas.getLineStroke();
+			caps = canvas.getLineCaps();
+			join = canvas.getLineJoin();
 			repaint();
 		}
 		
@@ -636,19 +709,7 @@ public class ImageEditPanel extends JPanel implements LocalizerOwner, LocaleChan
 			g2d.setBackground(getBackground());
 			g2d.fillRect(0, 0, getWidth(), getHeight());
 			g2d.setColor(getForeground());
-			switch (stroke) {
-				case DASHED	:
-					g2d.setStroke(new BasicStroke(thickness, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND, thickness, new float[] {3 * thickness}, 0));
-					break;
-				case DOTTED	:
-					g2d.setStroke(new BasicStroke(thickness, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND, thickness, new float[] {thickness}, 0));
-					break;
-				case SOLID	: 
-					g2d.setStroke(new BasicStroke(thickness)); 		
-					break;
-				default:
-					break;
-			}
+			g2d.setStroke(buildStroke(thickness, stroke, caps, join));
 			g2d.drawLine(0, getHeight()/2, getWidth(), getHeight()/2);
 			g2d.setStroke(oldStroke);
 			g2d.setColor(oldColor);

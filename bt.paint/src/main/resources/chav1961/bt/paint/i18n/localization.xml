@@ -144,6 +144,18 @@
 		<key name="toolbar.settingsbar.line.stroke.dashed.tt">Dashed line</key>
 		<key name="toolbar.settingsbar.line.stroke.dotted"></key>
 		<key name="toolbar.settingsbar.line.stroke.dotted.tt">Dotted line</key>
+		<key name="toolbar.settingsbar.line.stroke.cap.butt"></key>
+		<key name="toolbar.settingsbar.line.stroke.cap.butt.tt"></key>
+		<key name="toolbar.settingsbar.line.stroke.cap.round"></key>
+		<key name="toolbar.settingsbar.line.stroke.cap.round.tt"></key>
+		<key name="toolbar.settingsbar.line.stroke.cap.square"></key>
+		<key name="toolbar.settingsbar.line.stroke.cap.square.tt"></key>
+		<key name="toolbar.settingsbar.line.stroke.join.miter"></key>
+		<key name="toolbar.settingsbar.line.stroke.join.miter.tt"></key>
+		<key name="toolbar.settingsbar.line.stroke.join.round"></key>
+		<key name="toolbar.settingsbar.line.stroke.join.round.tt"></key>
+		<key name="toolbar.settingsbar.line.stroke.join.bevel"></key>
+		<key name="toolbar.settingsbar.line.stroke.join.bevel.tt"></key>
 		<key name="toolbar.settingsbar.filling">Fill contours</key>
 		<key name="toolbar.settingsbar.filling.tt">Weather fill figures and text background</key>
 
@@ -171,6 +183,14 @@
 		<key name="chav1961.bt.mnemoed.editor.ImageEditPanel.redo.grayscale">redo grayscale</key>
 		<key name="chav1961.bt.mnemoed.editor.ImageEditPanel.undo.transparency">undo transparency</key>
 		<key name="chav1961.bt.mnemoed.editor.ImageEditPanel.redo.transparency">redo transparency</key>
+		<key name="chav1961.bt.mnemoed.editor.ImageEditPanel.undo.draw.ellipse">undo ellipse</key>
+		<key name="chav1961.bt.mnemoed.editor.ImageEditPanel.redo.draw.ellipse">redo ellipse</key>
+		<key name="chav1961.bt.mnemoed.editor.ImageEditPanel.undo.draw.line">undo line</key>
+		<key name="chav1961.bt.mnemoed.editor.ImageEditPanel.redo.draw.line">redo line</key>
+		<key name="chav1961.bt.mnemoed.editor.ImageEditPanel.undo.draw.path">undo trace</key>
+		<key name="chav1961.bt.mnemoed.editor.ImageEditPanel.redo.draw.path">redo trace</key>
+		<key name="chav1961.bt.mnemoed.editor.ImageEditPanel.undo.draw.rect">undo rectangle</key>
+		<key name="chav1961.bt.mnemoed.editor.ImageEditPanel.redo.draw.rect">redo rectangle</key>
 				
 <!-- ImageEditPanel.EditStateString -->
 		<key name="chav1961.bt.mnemoed.bgeditor.ImageEditPanel.EditStateString.prompt">Type command</key>
@@ -352,6 +372,18 @@
 		<key name="toolbar.settingsbar.line.stroke.dashed.tt">Штриховая линия</key>
 		<key name="toolbar.settingsbar.line.stroke.dotted"></key>
 		<key name="toolbar.settingsbar.line.stroke.dotted.tt">Пунктирная линия</key>
+		<key name="toolbar.settingsbar.line.stroke.cap.butt"></key>
+		<key name="toolbar.settingsbar.line.stroke.cap.butt.tt"></key>
+		<key name="toolbar.settingsbar.line.stroke.cap.round"></key>
+		<key name="toolbar.settingsbar.line.stroke.cap.round.tt"></key>
+		<key name="toolbar.settingsbar.line.stroke.cap.square"></key>
+		<key name="toolbar.settingsbar.line.stroke.cap.square.tt"></key>
+		<key name="toolbar.settingsbar.line.stroke.join.miter"></key>
+		<key name="toolbar.settingsbar.line.stroke.join.miter.tt"></key>
+		<key name="toolbar.settingsbar.line.stroke.join.round"></key>
+		<key name="toolbar.settingsbar.line.stroke.join.round.tt"></key>
+		<key name="toolbar.settingsbar.line.stroke.join.bevel"></key>
+		<key name="toolbar.settingsbar.line.stroke.join.bevel.tt"></key>
 		<key name="toolbar.settingsbar.filling">Заливка фигур</key>
 		<key name="toolbar.settingsbar.filling.tt">Заливать или не заливатьь замкнутые контуры фигур</key>
 
@@ -388,6 +420,14 @@
 		<key name="chav1961.bt.mnemoed.editor.ImageEditPanel.redo.grayscale">redo grayscale</key>
 		<key name="chav1961.bt.mnemoed.editor.ImageEditPanel.undo.transparency">undo transparency</key>
 		<key name="chav1961.bt.mnemoed.editor.ImageEditPanel.redo.transparency">redo transparency</key>
+		<key name="chav1961.bt.mnemoed.editor.ImageEditPanel.undo.draw.ellipse">undo ellipse</key>
+		<key name="chav1961.bt.mnemoed.editor.ImageEditPanel.redo.draw.ellipse">redo ellipse</key>
+		<key name="chav1961.bt.mnemoed.editor.ImageEditPanel.undo.draw.line">undo line</key>
+		<key name="chav1961.bt.mnemoed.editor.ImageEditPanel.redo.draw.line">redo line</key>
+		<key name="chav1961.bt.mnemoed.editor.ImageEditPanel.undo.draw.path">undo trace</key>
+		<key name="chav1961.bt.mnemoed.editor.ImageEditPanel.redo.draw.path">redo trace</key>
+		<key name="chav1961.bt.mnemoed.editor.ImageEditPanel.undo.draw.rect">undo rectangle</key>
+		<key name="chav1961.bt.mnemoed.editor.ImageEditPanel.redo.draw.rect">redo rectangle</key>
 		
 <!-- Локализация класса AskImageSize -->
 		<key name="askimagesize.title">Задайте размер изображения</key>
