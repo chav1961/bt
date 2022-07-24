@@ -16,12 +16,40 @@ import chav1961.bt.paint.script.interfaces.PropertiesWrapper;
 import chav1961.bt.paint.script.interfaces.SystemWrapper;
 import chav1961.purelib.basic.SubstitutableProperties;
 import chav1961.purelib.basic.URIUtils;
+import chav1961.purelib.basic.interfaces.LoggerFacade;
+import chav1961.purelib.basic.interfaces.LoggerFacade.Severity;
 import chav1961.purelib.fsys.interfaces.FileSystemInterface;
 
 public class SystemWrapperImpl implements SystemWrapper {
 	private final SubstitutableProperties	props;
 	private final FileSystemInterface		fsi;
 	private final URI						home;
+	private final LoggerFacade				logger;
+
+	public SystemWrapperImpl(final LoggerFacade logger, final FileSystemInterface fs, final URI homeDir) {
+		this(logger, new SubstitutableProperties(System.getProperties()), fs, homeDir);
+	}
+
+	public SystemWrapperImpl(final LoggerFacade logger, final SubstitutableProperties settings, final FileSystemInterface fs, final URI homeDir) {
+		if (logger == null) {
+			throw new NullPointerException("Logger can't be null");
+		}
+		else if (settings == null) {
+			throw new NullPointerException("Settings can't be null");
+		}
+		else if (fs == null) {
+			throw new NullPointerException("File system interface can't be null");
+		}
+		else if (homeDir == null) {
+			throw new NullPointerException("Home directory can't be null");
+		}
+		else {
+			this.props = settings;
+			this.fsi = fs;
+			this.home = homeDir; 
+			this.logger = logger;
+		}
+	}
 	
 	public SystemWrapperImpl(final FileSystemInterface fs, final URI homeDir) {
 		this(new SubstitutableProperties(System.getProperties()), fs, homeDir);
@@ -41,6 +69,7 @@ public class SystemWrapperImpl implements SystemWrapper {
 			this.props = settings;
 			this.fsi = fs;
 			this.home = homeDir; 
+			this.logger = null;
 		}
 	}
 
@@ -321,14 +350,31 @@ public class SystemWrapperImpl implements SystemWrapper {
 	}
 
 	@Override
-	public void print(String message) throws PaintScriptException {
-		System.err.println(message);
+	public void print(final String message) throws PaintScriptException {
+		if (message == null) {
+			throw new NullPointerException("Message to print can't be null");
+		}
+		else if (logger != null) {
+			logger.message(Severity.info, message);
+		}
+		else {
+			System.err.println(message);
+		}
 	}
 
 	@Override
-	public String console(String command) throws PaintScriptException {
+	public String console(final String command) throws PaintScriptException {
 		// TODO Auto-generated method stub
-		return null;
+		if (command == null) {
+			throw new NullPointerException("Command can't be null");
+		}
+		else if (!command.isEmpty()) {
+			
+			return null;
+		}
+		else {
+			return "";
+		}
 	}
 	
 	private String toPath(final String file) {

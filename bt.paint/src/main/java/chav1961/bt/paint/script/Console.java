@@ -1,5 +1,6 @@
 package chav1961.bt.paint.script;
 
+import chav1961.purelib.basic.CharUtils;
 
 // path <path>
 // line (x,y) (x,y)
@@ -28,8 +29,12 @@ package chav1961.bt.paint.script;
 // save [<name>]
 // load <name>
 // new (x,y) {type}
-// quit
+// quit [!]
 // play <name>
-public class Console {
-
+class Console {
+	static String processCommand(final String command) {
+		final char[]	cmd = CharUtils.terminateAndConvert2CharArray(command, '\n');
+		
+		return null;
+	}
 }
