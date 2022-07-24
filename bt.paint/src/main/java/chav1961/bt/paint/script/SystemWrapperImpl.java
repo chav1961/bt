@@ -1,6 +1,5 @@
 package chav1961.bt.paint.script;
 
-import java.awt.Image;
 import java.awt.image.BufferedImage;
 import java.awt.image.RenderedImage;
 import java.io.IOException;
@@ -326,6 +325,12 @@ public class SystemWrapperImpl implements SystemWrapper {
 		System.err.println(message);
 	}
 
+	@Override
+	public String console(String command) throws PaintScriptException {
+		// TODO Auto-generated method stub
+		return null;
+	}
+	
 	private String toPath(final String file) {
 		final URI	path = URI.create(file);
 		

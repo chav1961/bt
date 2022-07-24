@@ -15,4 +15,5 @@ public interface SystemWrapper extends ImmutablePropertiesWrapper {
 	PropertiesWrapper loadProps(String file) throws PaintScriptException;
 	void storeProps(PropertiesWrapper props, final String file) throws PaintScriptException;
 	void print(String message) throws PaintScriptException;
+	String console(String command) throws PaintScriptException;
 }
