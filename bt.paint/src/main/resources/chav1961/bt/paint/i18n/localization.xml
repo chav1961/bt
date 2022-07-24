@@ -373,19 +373,19 @@
 		<key name="toolbar.settingsbar.line.stroke.dotted"></key>
 		<key name="toolbar.settingsbar.line.stroke.dotted.tt">Пунктирная линия</key>
 		<key name="toolbar.settingsbar.line.stroke.cap.butt"></key>
-		<key name="toolbar.settingsbar.line.stroke.cap.butt.tt"></key>
+		<key name="toolbar.settingsbar.line.stroke.cap.butt.tt">Концы не оформлены</key>
 		<key name="toolbar.settingsbar.line.stroke.cap.round"></key>
-		<key name="toolbar.settingsbar.line.stroke.cap.round.tt"></key>
+		<key name="toolbar.settingsbar.line.stroke.cap.round.tt">Концы скруглены</key>
 		<key name="toolbar.settingsbar.line.stroke.cap.square"></key>
-		<key name="toolbar.settingsbar.line.stroke.cap.square.tt"></key>
+		<key name="toolbar.settingsbar.line.stroke.cap.square.tt">Концы обрезаны</key>
 		<key name="toolbar.settingsbar.line.stroke.join.miter"></key>
-		<key name="toolbar.settingsbar.line.stroke.join.miter.tt"></key>
+		<key name="toolbar.settingsbar.line.stroke.join.miter.tt">Острые углы</key>
 		<key name="toolbar.settingsbar.line.stroke.join.round"></key>
-		<key name="toolbar.settingsbar.line.stroke.join.round.tt"></key>
+		<key name="toolbar.settingsbar.line.stroke.join.round.tt">Сглаженные углы</key>
 		<key name="toolbar.settingsbar.line.stroke.join.bevel"></key>
-		<key name="toolbar.settingsbar.line.stroke.join.bevel.tt"></key>
+		<key name="toolbar.settingsbar.line.stroke.join.bevel.tt">Углы не оформлены</key>
 		<key name="toolbar.settingsbar.filling">Заливка фигур</key>
-		<key name="toolbar.settingsbar.filling.tt">Заливать или не заливатьь замкнутые контуры фигур</key>
+		<key name="toolbar.settingsbar.filling.tt">Заливать или не заливать замкнутые контуры фигур</key>
 
 <!-- Toolbar PlayerBar -->
 		<key name="toolbar.playerbar.recording">Запись</key>
@@ -406,28 +406,28 @@
 		
 <!-- Локализация класса ImageEditPanel -->
 		<key name="chav1961.bt.mnemoed.editor.ImageEditPanel.selectColor">Выберите цвет</key>		
-		<key name="chav1961.bt.mnemoed.editor.ImageEditPanel.undo.crop">undo crop</key>
-		<key name="chav1961.bt.mnemoed.editor.ImageEditPanel.redo.crop">redo crop</key>
-		<key name="chav1961.bt.mnemoed.editor.ImageEditPanel.undo.resize">undo resize</key>
-		<key name="chav1961.bt.mnemoed.editor.ImageEditPanel.redo.resize">redo resize</key>
-		<key name="chav1961.bt.mnemoed.editor.ImageEditPanel.undo.rotate">undo rotate</key>
-		<key name="chav1961.bt.mnemoed.editor.ImageEditPanel.redo.rotate">redo rotate</key>
-		<key name="chav1961.bt.mnemoed.editor.ImageEditPanel.undo.reflect.vertical">undo vertical mirror</key>
-		<key name="chav1961.bt.mnemoed.editor.ImageEditPanel.redo.reflect.vertical">redo vertical mirror</key>
-		<key name="chav1961.bt.mnemoed.editor.ImageEditPanel.undo.reflect.horizontal">undo horizontal mirror</key>
-		<key name="chav1961.bt.mnemoed.editor.ImageEditPanel.redo.reflect.horizontal">redo horizontal mirror</key>
-		<key name="chav1961.bt.mnemoed.editor.ImageEditPanel.undo.grayscale">undo grayscale</key>
-		<key name="chav1961.bt.mnemoed.editor.ImageEditPanel.redo.grayscale">redo grayscale</key>
-		<key name="chav1961.bt.mnemoed.editor.ImageEditPanel.undo.transparency">undo transparency</key>
-		<key name="chav1961.bt.mnemoed.editor.ImageEditPanel.redo.transparency">redo transparency</key>
-		<key name="chav1961.bt.mnemoed.editor.ImageEditPanel.undo.draw.ellipse">undo ellipse</key>
-		<key name="chav1961.bt.mnemoed.editor.ImageEditPanel.redo.draw.ellipse">redo ellipse</key>
-		<key name="chav1961.bt.mnemoed.editor.ImageEditPanel.undo.draw.line">undo line</key>
-		<key name="chav1961.bt.mnemoed.editor.ImageEditPanel.redo.draw.line">redo line</key>
-		<key name="chav1961.bt.mnemoed.editor.ImageEditPanel.undo.draw.path">undo trace</key>
-		<key name="chav1961.bt.mnemoed.editor.ImageEditPanel.redo.draw.path">redo trace</key>
-		<key name="chav1961.bt.mnemoed.editor.ImageEditPanel.undo.draw.rect">undo rectangle</key>
-		<key name="chav1961.bt.mnemoed.editor.ImageEditPanel.redo.draw.rect">redo rectangle</key>
+		<key name="chav1961.bt.mnemoed.editor.ImageEditPanel.undo.crop">отменить обрезку</key>
+		<key name="chav1961.bt.mnemoed.editor.ImageEditPanel.redo.crop">восстановить обрезку</key>
+		<key name="chav1961.bt.mnemoed.editor.ImageEditPanel.undo.resize">отменить размеры</key>
+		<key name="chav1961.bt.mnemoed.editor.ImageEditPanel.redo.resize">восстановить размеры</key>
+		<key name="chav1961.bt.mnemoed.editor.ImageEditPanel.undo.rotate">отменить поворот</key>
+		<key name="chav1961.bt.mnemoed.editor.ImageEditPanel.redo.rotate">восстановить поворот</key>
+		<key name="chav1961.bt.mnemoed.editor.ImageEditPanel.undo.reflect.vertical">отменить отражение по вертикали</key>
+		<key name="chav1961.bt.mnemoed.editor.ImageEditPanel.redo.reflect.vertical">восстановить отражение по вертикали</key>
+		<key name="chav1961.bt.mnemoed.editor.ImageEditPanel.undo.reflect.horizontal">отменить отражение по горизогтали</key>
+		<key name="chav1961.bt.mnemoed.editor.ImageEditPanel.redo.reflect.horizontal">восстановить отражение по горизогтали</key>
+		<key name="chav1961.bt.mnemoed.editor.ImageEditPanel.undo.grayscale">отменить черно-белое</key>
+		<key name="chav1961.bt.mnemoed.editor.ImageEditPanel.redo.grayscale">восстановить черно-белое</key>
+		<key name="chav1961.bt.mnemoed.editor.ImageEditPanel.undo.transparency">отменить прозрачность</key>
+		<key name="chav1961.bt.mnemoed.editor.ImageEditPanel.redo.transparency">восстановить прозрачность</key>
+		<key name="chav1961.bt.mnemoed.editor.ImageEditPanel.undo.draw.ellipse">отменить эллипс</key>
+		<key name="chav1961.bt.mnemoed.editor.ImageEditPanel.redo.draw.ellipse">восстановить эллипс</key>
+		<key name="chav1961.bt.mnemoed.editor.ImageEditPanel.undo.draw.line">отменить прямую</key>
+		<key name="chav1961.bt.mnemoed.editor.ImageEditPanel.redo.draw.line">восстановить прямую</key>
+		<key name="chav1961.bt.mnemoed.editor.ImageEditPanel.undo.draw.path">отменить линию</key>
+		<key name="chav1961.bt.mnemoed.editor.ImageEditPanel.redo.draw.path">восстановить линию</key>
+		<key name="chav1961.bt.mnemoed.editor.ImageEditPanel.undo.draw.rect">отменить прямоугольник</key>
+		<key name="chav1961.bt.mnemoed.editor.ImageEditPanel.redo.draw.rect">восстановить прямоугольник</key>
 		
 <!-- Локализация класса AskImageSize -->
 		<key name="askimagesize.title">Задайте размер изображения</key>

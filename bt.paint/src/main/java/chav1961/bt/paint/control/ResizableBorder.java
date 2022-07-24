@@ -11,7 +11,7 @@ import java.awt.event.MouseEvent;
 import javax.swing.border.Border;
 
 public class ResizableBorder implements Border {
-	public static final int	DEFAULT_BORDER_WIDTH = 8;
+	public static final int	DEFAULT_BORDER_WIDTH = 6;
 
 	@FunctionalInterface
 	private static interface Calculator {
@@ -19,8 +19,6 @@ public class ResizableBorder implements Border {
 	}
 	
 	private static enum Location {
-		INSIDE(Cursor.MOVE_CURSOR, (int x, int y, int w, int h, int borderWidth) -> null),
-		OUTSIDE(Cursor.DEFAULT_CURSOR, (int x, int y, int w, int h, int borderWidth) -> null),
 		NORTH(Cursor.N_RESIZE_CURSOR, (int x, int y, int w, int h, int borderWidth) -> new Rectangle(x + w / 2 - borderWidth / 2, y, borderWidth, borderWidth)),
 		NORTH_EAST(Cursor.NE_RESIZE_CURSOR, (int x, int y, int w, int h, int borderWidth) -> new Rectangle(x + w - borderWidth, y, borderWidth, borderWidth)),
 		EAST(Cursor.E_RESIZE_CURSOR, (int x, int y, int w, int h, int borderWidth) -> new Rectangle(x + w - borderWidth, y + h / 2 - borderWidth / 2, borderWidth, borderWidth)),
@@ -28,7 +26,7 @@ public class ResizableBorder implements Border {
 		SOUTH(Cursor.S_RESIZE_CURSOR, (int x, int y, int w, int h, int borderWidth) -> new Rectangle(x + w / 2 - borderWidth / 2, y + h - borderWidth, borderWidth, borderWidth)),
 		SOUTH_WEST(Cursor.SW_RESIZE_CURSOR, (int x, int y, int w, int h, int borderWidth) -> new Rectangle(x, y + h - borderWidth, borderWidth, borderWidth)),
 		WEST(Cursor.W_RESIZE_CURSOR, (int x, int y, int w, int h, int borderWidth) -> new Rectangle(x, y + h / 2 - borderWidth / 2, borderWidth, borderWidth)),
-		NORTH_WEST(Cursor.NW_RESIZE_CURSOR, (int x, int y, int w, int h, int borderWidth) -> new Rectangle(x, y, borderWidth, borderWidth));
+		NORTH_WEST(Cursor.MOVE_CURSOR, (int x, int y, int w, int h, int borderWidth) -> new Rectangle(x, y, borderWidth, borderWidth));
 		
 		private final int			cursorType;
 		private final Calculator	calc;
@@ -101,6 +99,6 @@ public class ResizableBorder implements Border {
             	return location.getCursorType();
             }
         }
-        return Cursor.MOVE_CURSOR;
+        return Cursor.DEFAULT_CURSOR;
     }
 }

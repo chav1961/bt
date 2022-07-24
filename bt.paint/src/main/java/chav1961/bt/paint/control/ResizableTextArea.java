@@ -53,7 +53,6 @@ class ResizableTextArea extends JTextArea {
 	
 	@Override
 	public void setBorder(final Border border) {
-		throw new UnsupportedOperationException("THis control doesn't support custom borders");
 	}
 	
     private void resizeComponent() {
@@ -82,7 +81,6 @@ class ResizableTextArea extends JTextArea {
         public void mousePressed(MouseEvent me) {
             cursor = border.getCursor(me);
             startPos = me.getPoint();
-
             requestFocus();
             repaint();
         }
@@ -121,15 +119,10 @@ class ResizableTextArea extends JTextArea {
                         }
                         break;
                     case Cursor.NW_RESIZE_CURSOR :
-                        Rectangle bounds = getBounds();
-                        bounds.translate(dx, dy);
-                        setBounds(bounds);
-                        resizeComponent();
-//
-//                        if (!(w - dx < GUARD_DISTANCE) && !(h - dy < GUARD_DISTANCE)) {
-//                            setBounds(x + dx, y + dy, w - dx, h - dy);
-//                            resizeComponent();
-//                        }
+                        if (!(w - dx < GUARD_DISTANCE) && !(h - dy < GUARD_DISTANCE)) {
+                            setBounds(x + dx, y + dy, w - dx, h - dy);
+                            resizeComponent();
+                        }
                         break;
                     case Cursor.NE_RESIZE_CURSOR :
                         if (!(w + dx < GUARD_DISTANCE) && !(h - dy < GUARD_DISTANCE)) {
@@ -152,16 +145,16 @@ class ResizableTextArea extends JTextArea {
                             resizeComponent();
                         }
                         break;
+                    case Cursor.MOVE_CURSOR :
+						final Rectangle frame = getBounds();
+						  
+						frame.translate(dx, dy);
+						setBounds(frame);
+						resizeComponent();
+						break;
                     default :
-                        setCursor(defaultCursor);
-                        return;
-//                    case Cursor.MOVE_CURSOR : {
-//                        Rectangle bounds = getBounds();
-//                        bounds.translate(dx, dy);
-//                        setBounds(bounds);
-//                        resizeComponent();
-//                    }
-//                	break;
+	                    setCursor(defaultCursor);
+	                    return;
                 }
                 setCursor(Cursor.getPredefinedCursor(cursor));
             }

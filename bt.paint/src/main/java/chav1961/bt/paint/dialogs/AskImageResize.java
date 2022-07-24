@@ -25,7 +25,7 @@ public class AskImageResize implements FormManager<Object, AskImageResize>, Modu
 
 	@LocaleResource(value="askimageresize.proportional",tooltip="askimageresize.proportional.tt")
 	@Format("1s")
-	public boolean	proprtional = true;
+	public boolean	proportional = true;
 	
 	@LocaleResource(value="askimageresize.stretch",tooltip="askimageresize.stretch.tt")
 	@Format("1s")
@@ -47,7 +47,26 @@ public class AskImageResize implements FormManager<Object, AskImageResize>, Modu
 	@Override
 	public RefreshMode onField(final AskImageResize inst, final Object id, final String fieldName, final Object oldValue, final boolean beforeCommit) throws FlowException, LocalizationException {
 		// TODO Auto-generated method stub
-		return RefreshMode.DEFAULT;
+		switch (fieldName) {
+			case "width" 	:
+				if (proportional) {
+					height = (int) (1.0 * height * width / ((Number)oldValue).intValue());
+					return RefreshMode.RECORD_ONLY;
+				}
+				else {
+					return RefreshMode.DEFAULT;
+				}
+			case "height"	:
+				if (proportional) {
+					width = (int) (1.0 * width * height / ((Number)oldValue).intValue());
+					return RefreshMode.RECORD_ONLY;
+				}
+				else {
+					return RefreshMode.DEFAULT;
+				}
+			default :
+				return RefreshMode.DEFAULT;
+		}
 	}
 
 	@Override

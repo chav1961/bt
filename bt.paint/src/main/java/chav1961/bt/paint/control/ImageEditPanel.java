@@ -35,6 +35,7 @@ import javax.swing.JToggleButton;
 import javax.swing.JToolBar;
 import javax.swing.SwingUtilities;
 import javax.swing.border.EtchedBorder;
+import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import javax.swing.event.UndoableEditEvent;
 import javax.swing.event.UndoableEditListener;
@@ -108,7 +109,9 @@ public class ImageEditPanel extends JPanel implements LocalizerOwner, LocaleChan
 	private final JPanel			leftPanel = new JPanel();
 	private final ImageEditCanvas	canvas;
 	private final EditStateString	state;
+	private ResizableTextArea		rta = null;
 	private DrawingType				drawingType = DrawingType.UNKNOWN;
+	private Rectangle				lastSelection = null;
 	private boolean 				foregroundNow = true;
 	private boolean 				fillingOn = false;
 	private boolean 				waitColorExtraction = false;
@@ -232,6 +235,7 @@ public class ImageEditPanel extends JPanel implements LocalizerOwner, LocaleChan
 	
 	@OnAction("action:/chooseMode")
     public void chooseMode(final Hashtable<String,String[]> modes) throws IOException {
+		removeAnyChild();
 		switch (drawingType = DrawingType.valueOf(modes.get("mode")[0])) {
 			case BRUSH		:
 				break;
@@ -263,6 +267,9 @@ public class ImageEditPanel extends JPanel implements LocalizerOwner, LocaleChan
 				canvas.getSelectionManager().setVisible(true);
 				break;
 			case TEXT		:
+				canvas.getSelectionManager().setSelectionStyle(SelectionStyle.RECTANGLE);
+				canvas.getSelectionManager().enableSelection(true);
+				canvas.getSelectionManager().setVisible(true);
 				break;
 			case UNKNOWN	:
 				break;
@@ -273,12 +280,17 @@ public class ImageEditPanel extends JPanel implements LocalizerOwner, LocaleChan
 	
 	@OnAction("action:/crop")
 	public void crop() throws IOException {
-		if (canvas.getSelection() != null) {
+		if (lastSelection != null) {
 			final Image			current = canvas.getBackgroundImage();
 			final byte[]		before = ImageUndoEdit.packImage(current);
-			
-			canvas.setBackgroundImage(ImageUtils.cropImage((BufferedImage) current, canvas.getSelection(), null));
+
+			removeAnyChild();
+			canvas.getSelectionManager().setSelectionStyle(SelectionStyle.RECTANGLE);
+			canvas.getSelectionManager().enableSelection(true);
+			canvas.getSelectionManager().setVisible(true);
+			canvas.setBackgroundImage(ImageUtils.cropImage((BufferedImage) current, lastSelection, null));
 			fireUndo(new ImageUndoEdit(KEY_UNDO_CROP, KEY_REDO_CROP, before, ImageUndoEdit.packImage(canvas.getBackgroundImage()), (i)->canvas.setBackgroundImage(i)));
+			lastSelection = null; 
 		}
 	}
 	
@@ -290,6 +302,7 @@ public class ImageEditPanel extends JPanel implements LocalizerOwner, LocaleChan
 				final Image			current = canvas.getBackgroundImage();
 				final byte[]		before = ImageUndoEdit.packImage(current);
 				
+				removeAnyChild();
 				canvas.setBackgroundImage(ImageUtils.resizeImage((BufferedImage) current, air.width, air.height, canvas.getBackground(), air.stretchContent, air.fromCenter, null));
 				fireUndo(new ImageUndoEdit(KEY_UNDO_RESIZE, KEY_REDO_RESIZE, before, ImageUndoEdit.packImage(canvas.getBackgroundImage()), (i)->canvas.setBackgroundImage(i)));
 			}
@@ -303,6 +316,7 @@ public class ImageEditPanel extends JPanel implements LocalizerOwner, LocaleChan
 		final Image			current = canvas.getBackgroundImage();
 		final byte[]		before = ImageUndoEdit.packImage(current);
 		
+		removeAnyChild();
 		canvas.setBackgroundImage(ImageUtils.rotateImage((BufferedImage) current, false, null));
 		fireUndo(new ImageUndoEdit(KEY_UNDO_ROTATE, KEY_REDO_ROTATE, before, ImageUndoEdit.packImage(canvas.getBackgroundImage()), (i)->canvas.setBackgroundImage(i)));
 	}
@@ -312,6 +326,7 @@ public class ImageEditPanel extends JPanel implements LocalizerOwner, LocaleChan
 		final Image			current = canvas.getBackgroundImage();
 		final byte[]		before = ImageUndoEdit.packImage(current);
 
+		removeAnyChild();
 		canvas.setBackgroundImage(ImageUtils.mirrorImage((BufferedImage) current, false, null));
 		fireUndo(new ImageUndoEdit(KEY_UNDO_REFLECT_V, KEY_REDO_REFLECT_V, before, ImageUndoEdit.packImage(canvas.getBackgroundImage()), (i)->canvas.setBackgroundImage(i)));
 	}
@@ -321,6 +336,7 @@ public class ImageEditPanel extends JPanel implements LocalizerOwner, LocaleChan
 		final Image			current = canvas.getBackgroundImage();
 		final byte[]		before = ImageUndoEdit.packImage(current);
 		
+		removeAnyChild();
 		canvas.setBackgroundImage(ImageUtils.mirrorImage((BufferedImage) current, true, null));
 		fireUndo(new ImageUndoEdit(KEY_UNDO_REFLECT_H, KEY_REDO_REFLECT_H, before, ImageUndoEdit.packImage(canvas.getBackgroundImage()), (i)->canvas.setBackgroundImage(i)));
 	}
@@ -330,6 +346,7 @@ public class ImageEditPanel extends JPanel implements LocalizerOwner, LocaleChan
 		final Image			current = canvas.getBackgroundImage();
 		final byte[]		before = ImageUndoEdit.packImage(current);
 		
+		removeAnyChild();
 		canvas.setBackgroundImage(ImageUtils.grayScaleImage((BufferedImage) current, null));
 		fireUndo(new ImageUndoEdit(KEY_UNDO_GRAYSCALE, KEY_REDO_GRAYSCALE, before, ImageUndoEdit.packImage(canvas.getBackgroundImage()), (i)->canvas.setBackgroundImage(i)));
 	}
@@ -339,6 +356,7 @@ public class ImageEditPanel extends JPanel implements LocalizerOwner, LocaleChan
 		final Image			current = canvas.getBackgroundImage();
 		final byte[]		before = ImageUndoEdit.packImage(current);
 		
+		removeAnyChild();
 		if (foregroundNow) {
 			canvas.setBackgroundImage(ImageUtils.transparentImage((BufferedImage) current, canvas.getForeground(), false, null));
 		}
@@ -402,6 +420,7 @@ public class ImageEditPanel extends JPanel implements LocalizerOwner, LocaleChan
 			throw new NullPointerException("Image to set can't be null");
 		}
 		else {
+			removeAnyChild();
 			canvas.setBackgroundImage(image);
 		}
 	}
@@ -409,13 +428,30 @@ public class ImageEditPanel extends JPanel implements LocalizerOwner, LocaleChan
 	public DrawingType getCurrentDrawingMode() {
 		return drawingType;
 	}
-	
-	public boolean isImageAreaSelected() {
-		return false;
+
+	public boolean hasSelection() {
+		return lastSelection != null;
 	}
 	
 	public Image getSelectedImage() {
-		return null;
+		if (hasSelection()) {
+			return ImageUtils.cropImage((BufferedImage)canvas.getBackgroundImage(), lastSelection, null);
+		}
+		else {
+			return null;
+		}
+	}
+
+	public Image cutSelectedImage() {
+		if (hasSelection()) {
+			final Image	image = ImageUtils.cropImage((BufferedImage)canvas.getBackgroundImage(), lastSelection, null);
+			
+			ImageUtils.fillImage((BufferedImage)canvas.getBackgroundImage(), lastSelection, fillingOn ? canvas.getBackground() : new Color(0), null);
+			return image;
+		}
+		else {
+			return null;
+		}
 	}
 	
 	public void pasteImage(final Image image) {
@@ -488,8 +524,17 @@ public class ImageEditPanel extends JPanel implements LocalizerOwner, LocaleChan
 						fireUndo(new ImageUndoEdit(KEY_UNDO_DRAW_RECT, KEY_REDO_DRAW_RECT, before, ImageUndoEdit.packImage(canvas.getBackgroundImage()), (i)->canvas.setBackgroundImage(i)));
 						break;
 					case SELECT	:
+						lastSelection = new Rectangle((Rectangle)parameters[0]);
+						refreshMenuState();
 						break;
 					case TEXT	:
+						this.rta = new ResizableTextArea(canvas.getForeground(), canvas.getFont(), (Rectangle)parameters[0]);
+
+						canvas.add(rta);
+						SwingUtilities.invokeLater(()->{
+								canvas.getSelectionManager().setSelectionStyle(SelectionStyle.RECTANGLE);
+								canvas.getSelectionManager().enableSelection(true);
+						});
 						break;
 					case UNKNOWN:
 						break;
@@ -499,6 +544,20 @@ public class ImageEditPanel extends JPanel implements LocalizerOwner, LocaleChan
 			} catch (IOException exc) {
 				SwingUtils.getNearestLogger(this).message(Severity.error, exc, exc.getLocalizedMessage());
 			}
+		}
+	}
+	
+	private void refreshMenuState() {
+		// TODO Auto-generated method stub
+		final ChangeEvent	ce = new ChangeEvent(this);
+		
+		listeners.fireEvent((l)->l.stateChanged(ce));
+	}
+
+	private void removeAnyChild() {
+		if (rta != null) {
+			canvas.remove(rta);
+			rta = null;
 		}
 	}
 	
@@ -516,6 +575,8 @@ public class ImageEditPanel extends JPanel implements LocalizerOwner, LocaleChan
 		if (getImage() != null) {
 			waitColorExtraction = true;
 			canvas.getSelectionManager().pushSelectionStyle(SelectionStyle.POINT);
+			canvas.getSelectionManager().enableSelection(true);
+			canvas.getSelectionManager().setVisible(true);
 		}
 		else {
 			turnOffExtractColorButton();

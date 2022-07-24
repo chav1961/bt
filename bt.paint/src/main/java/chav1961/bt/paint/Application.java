@@ -36,7 +36,10 @@ import chav1961.bt.paint.control.ImageEditPanel;
 import chav1961.bt.paint.control.ImageUtils;
 import chav1961.bt.paint.control.ImageUtils.ProcessType;
 import chav1961.bt.paint.dialogs.AskImageSize;
+import chav1961.bt.paint.interfaces.PaintScriptException;
 import chav1961.bt.paint.script.ScriptNodeType;
+import chav1961.bt.paint.script.interfaces.ClipboardWrapper;
+import chav1961.bt.paint.script.interfaces.ImageWrapper;
 import chav1961.bt.paint.script.intern.runtime.ScriptUtils;
 import chav1961.bt.paint.utils.ApplicationUtils;
 import chav1961.purelib.basic.ArgParser;
@@ -134,6 +137,13 @@ public class Application extends JFrame implements NodeMetadataOwner, LocaleChan
 	        refreshMenuState();
 	        localizer.addLocaleChangeListener(this);
 	        
+	        ClipboardWrapper.singleton.addChangeListener((e)->{
+	    		try{((JMenuItem)SwingUtils.findComponentByName(menuBar, "menu.main.edit.paste")).setEnabled(ClipboardWrapper.singleton.hasImage());
+				} catch (PaintScriptException exc) {
+					getLogger().message(Severity.error, exc.getLocalizedMessage());
+				}
+	        });
+	        
 			SwingUtils.assignExitMethod4MainWindow(this,()->exit());
 			SwingUtils.centerMainWindow(this, 0.85f);
 			fillLocalizedStrings();
@@ -172,7 +182,7 @@ public class Application extends JFrame implements NodeMetadataOwner, LocaleChan
 			if (ask(ais,240,100)) {
 				final BufferedImage	img = new BufferedImage(ais.width, ais.height, BufferedImage.TYPE_INT_ARGB);
 				
-				if (ais.fillBackbroung) {
+				if (ais.fillBackgroung) {
 			    	panel.setImage(ImageUtils.process(ProcessType.FILL, img, null, new Rectangle(0, 0, ais.width, ais.height), panel.getBackground()));
 				}
 				else {
@@ -263,10 +273,18 @@ public class Application extends JFrame implements NodeMetadataOwner, LocaleChan
 
 	@OnAction("action:/cut")
     public void cut() {
+		try{ClipboardWrapper.singleton.setImage(ImageWrapper.of(panel.cutSelectedImage()));
+		} catch (PaintScriptException e) {
+			getLogger().message(Severity.error,e.getLocalizedMessage());
+		}
 	}	
 
 	@OnAction("action:/copy")
     public void copy() {
+		try{ClipboardWrapper.singleton.setImage(ImageWrapper.of(panel.getSelectedImage()));
+		} catch (PaintScriptException e) {
+			getLogger().message(Severity.error,e.getLocalizedMessage());
+		}
 	}	
 
 	@OnAction("action:/paste")
@@ -313,6 +331,17 @@ public class Application extends JFrame implements NodeMetadataOwner, LocaleChan
 		refreshUndoMenuState();
 	}
 
+	private void refreshClipboardMenuState() {
+		((JMenuItem)SwingUtils.findComponentByName(menuBar, "menu.main.edit.cut")).setEnabled(panel.hasSelection());
+		((JMenuItem)SwingUtils.findComponentByName(menuBar, "menu.main.edit.copy")).setEnabled(panel.hasSelection());
+		
+		try{
+			((JMenuItem)SwingUtils.findComponentByName(menuBar, "menu.main.edit.paste")).setEnabled(ClipboardWrapper.singleton.hasImage());
+		} catch (PaintScriptException e) {
+			getLogger().message(Severity.error,e.getLocalizedMessage());
+		}
+	}	
+	
 	private void refreshUndoMenuState() {
 		final JMenuItem	undo = ((JMenuItem)SwingUtils.findComponentByName(menuBar, "menu.main.edit.undo"));
 		final JMenuItem	redo = ((JMenuItem)SwingUtils.findComponentByName(menuBar, "menu.main.edit.redo"));
@@ -340,6 +369,7 @@ public class Application extends JFrame implements NodeMetadataOwner, LocaleChan
 		((JMenuItem)SwingUtils.findComponentByName(menuBar, "menu.main.file.saveAs")).setEnabled(panel.getImage() != null);
 		((JMenuItem)SwingUtils.findComponentByName(menuBar, "menu.main.edit")).setEnabled(panel.getImage() != null);
 		refreshUndoMenuState();
+		refreshClipboardMenuState();
 	}
 
 	private boolean checkUnsavedChanges() {

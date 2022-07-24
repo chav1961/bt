@@ -29,13 +29,11 @@ public class ImageEditCanvas extends JBackgroundComponent {
 	private final LightWeightListenerList<ChangeListener>	listeners = new LightWeightListenerList<>(ChangeListener.class);
 	private final SelectionFrameManager	smgr = new SelectionFrameManager(this, false);
 	private final ChangeEvent			ce = new ChangeEvent(this);
-//	private DrawingType					currentDrawMode = DrawingType.UNKNOWN;
 	private int							lineThickness = 1;
 	private LineStroke					lineStroke = LineStroke.SOLID;
 	private LineCaps					lineCaps = LineCaps.BUTT;
 	private LineJoin					lineJoin = LineJoin.MITER;
 	private boolean						fillContours = false;
-	private Rectangle					selection = null;
 	private String						prevComment = null, currentComment = "";
 	
 	public static enum LineStroke {
@@ -101,7 +99,6 @@ public class ImageEditCanvas extends JBackgroundComponent {
 	@Override
 	public void setBackgroundImage(final Image image) {
 		super.setBackgroundImage(image);
-		selection = null;
 		setPreferredSize(new Dimension(image.getWidth(null), image.getHeight(null)));
 		setSize(new Dimension(image.getWidth(null), image.getHeight(null)));
 		listeners.fireEvent((l)->l.stateChanged(ce));
@@ -184,10 +181,6 @@ public class ImageEditCanvas extends JBackgroundComponent {
 		listeners.fireEvent((l)->l.stateChanged(ce));
 	}
 
-	public Rectangle getSelection() {
-		return selection;
-	}
-	
 	public void addChangeListener(final ChangeListener l) {
 		if (l == null) {
 			throw new NullPointerException("Listener to add can't be null");
