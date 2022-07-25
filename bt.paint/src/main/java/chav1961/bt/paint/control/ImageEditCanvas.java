@@ -18,17 +18,19 @@ import javax.swing.event.ChangeListener;
 import chav1961.bt.paint.control.ImageUtils.DrawingType;
 import chav1961.purelib.concurrent.LightWeightListenerList;
 import chav1961.purelib.i18n.interfaces.Localizer;
+import chav1961.purelib.model.interfaces.ImageKeeper;
 import chav1961.purelib.ui.swing.useful.JBackgroundComponent;
 import chav1961.purelib.ui.swing.useful.SelectionFrameManager;
 import chav1961.purelib.ui.swing.useful.interfaces.SelectionFrameListener.SelectionStyle;
 
-public class ImageEditCanvas extends JBackgroundComponent {
+public class ImageEditCanvas extends JBackgroundComponent implements ImageKeeper {
 	private static final long 			serialVersionUID = 3367119258812876786L;
 	private static final String			NO_IMAGE = "NO IMAGE"; 
 	
 	private final LightWeightListenerList<ChangeListener>	listeners = new LightWeightListenerList<>(ChangeListener.class);
 	private final SelectionFrameManager	smgr = new SelectionFrameManager(this, false);
 	private final ChangeEvent			ce = new ChangeEvent(this);
+	private boolean						modified = false;
 	private int							lineThickness = 1;
 	private LineStroke					lineStroke = LineStroke.SOLID;
 	private LineCaps					lineCaps = LineCaps.BUTT;
@@ -82,7 +84,6 @@ public class ImageEditCanvas extends JBackgroundComponent {
 	public SelectionFrameManager getSelectionManager() {
 		return smgr;
 	}
-	
 	
 	@Override
 	public void setForeground(final Color color) {
@@ -263,4 +264,34 @@ public class ImageEditCanvas extends JBackgroundComponent {
 		}
 	}
 
+	@Override
+	public Image getImage() {
+		return getBackgroundImage();
+	}
+
+	@Override
+	public void setImage(final Image image) {
+		if (image == null) {
+			throw new NullPointerException("Image to set can't be null"); 
+		}
+		else {
+			this.modified = modified;
+			setBackgroundImage(image);
+		}
+	}
+
+	@Override
+	public boolean isModified() {
+		return modified;
+	}
+
+	@Override
+	public void setModified(final boolean modified) {
+		this.modified = modified;
+	}
+
+	@Override
+	public Object clone() throws CloneNotSupportedException {
+		throw new CloneNotSupportedException();
+	}
 }

@@ -77,7 +77,7 @@ class Console {
 	}
 	
 	
-	static String processCommand(final String command) throws SyntaxException {
+	static String processCommand(final String command, final Predefines predef) throws SyntaxException {
 		final char[]	cmd = CharUtils.terminateAndConvert2CharArray(command, '\n');
 		final int[]		bounds = new int[2];
 		final Object[]	parameters = new Object[100];
