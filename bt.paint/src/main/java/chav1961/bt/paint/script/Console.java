@@ -64,6 +64,16 @@ class Console {
 				ArgumentType.signedInt, ',', ArgumentType.signedInt, ArgumentType.signedInt, ',', ArgumentType.signedInt);
 		COMMANDS.placeName("ellipse", ci);
 		COMMANDS.placeName("ell", ci);
+
+		ci = new CommandItem("text", "text <xFrom::int>,<yFrom::int> <xTo::int>,<yTo::int> <content::any>", 
+				(a)->drawText((Integer)a[0],(Integer)a[1],(Integer)a[2],(Integer)a[3],(String)a[4]),
+				ArgumentType.signedInt, ',', ArgumentType.signedInt, ArgumentType.signedInt, ',', ArgumentType.signedInt, ArgumentType.raw);
+		COMMANDS.placeName("text", ci);
+		COMMANDS.placeName("t", ci);
+
+		ci = new CommandItem("path", "path <content::any>", (a)->drawPath((String)a[0]), ArgumentType.raw);
+		COMMANDS.placeName("path", ci);
+		COMMANDS.placeName("p", ci);
 	}
 	
 	
@@ -108,6 +118,17 @@ class Console {
 		return null;
 	}
 	
+	private static String drawText(final int xFrom, final int yFrom, final int xTo, final int yTo, final String text) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	private static String drawPath(final String path) { 
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+
 	private static class CommandItem {
 		final String	command;
 		final Object[]	lexemas;
