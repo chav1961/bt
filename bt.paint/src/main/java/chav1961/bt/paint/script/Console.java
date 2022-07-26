@@ -5,6 +5,7 @@ import java.awt.Rectangle;
 import java.util.Arrays;
 
 import chav1961.bt.paint.control.ImageUtils;
+import chav1961.bt.paint.control.Predefines;
 import chav1961.bt.paint.control.ImageUtils.DrawingType;
 import chav1961.bt.paint.interfaces.PaintScriptException;
 import chav1961.bt.paint.script.interfaces.CanvasWrapper;

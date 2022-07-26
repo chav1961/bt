@@ -34,10 +34,12 @@ import javax.swing.undo.UndoManager;
 
 import chav1961.bt.paint.control.ImageEditPanel;
 import chav1961.bt.paint.control.ImageUtils;
+import chav1961.bt.paint.control.Predefines;
 import chav1961.bt.paint.control.ImageUtils.ProcessType;
 import chav1961.bt.paint.dialogs.AskImageSize;
 import chav1961.bt.paint.interfaces.PaintScriptException;
 import chav1961.bt.paint.script.ScriptNodeType;
+import chav1961.bt.paint.script.SystemWrapperImpl;
 import chav1961.bt.paint.script.interfaces.ClipboardWrapper;
 import chav1961.bt.paint.script.interfaces.ImageWrapper;
 import chav1961.bt.paint.script.intern.runtime.ScriptUtils;
@@ -91,6 +93,7 @@ public class Application extends JFrame implements NodeMetadataOwner, LocaleChan
 	private final FileSystemInterface		fsi;
 	private final ContentMetadataInterface	xda;
 	private final Localizer					localizer;
+	private final Predefines				predef;
 	private final CountDownLatch			latch;
 	private final JMenuBar					menuBar;
 	private final ImageEditPanel			panel;
@@ -101,12 +104,15 @@ public class Application extends JFrame implements NodeMetadataOwner, LocaleChan
 		
 	private String							lastFile = null;
 	
-	public Application(final ContentMetadataInterface xda, final Localizer localizer, final CountDownLatch latch) throws IOException {
+	public Application(final ContentMetadataInterface xda, final Localizer localizer, final Predefines predef, final CountDownLatch latch) throws IOException {
 		if (xda == null) {
 			throw new NullPointerException("Metadata can't be null"); 
 		}
 		else if (localizer == null) {
 			throw new NullPointerException("Localizer can't be null"); 
+		}
+		else if (predef == null) {
+			throw new NullPointerException("Predefines can't be null"); 
 		}
 		else if (latch == null) {
 			throw new NullPointerException("Latch can't be null"); 
@@ -114,6 +120,7 @@ public class Application extends JFrame implements NodeMetadataOwner, LocaleChan
 		else {
 			this.xda = xda;
 			this.localizer = localizer;
+			this.predef = predef;
 			this.latch = latch;
 			this.fsi = FileSystemInterface.Factory.newInstance(URI.create("fsys:file:/"));
 			this.filterCallbackPNG = FilterCallback.of(localizer.getValue(KEY_PNG_FILES), "*.png");
@@ -137,8 +144,8 @@ public class Application extends JFrame implements NodeMetadataOwner, LocaleChan
 	        refreshMenuState();
 	        localizer.addLocaleChangeListener(this);
 	        
-	        ClipboardWrapper.singleton.addChangeListener((e)->{
-	    		try{((JMenuItem)SwingUtils.findComponentByName(menuBar, "menu.main.edit.paste")).setEnabled(ClipboardWrapper.singleton.hasImage());
+	        predef.getPredefined(Predefines.PREDEF_CLIPBOARD, ClipboardWrapper.class).addChangeListener((e)->{
+	    		try{((JMenuItem)SwingUtils.findComponentByName(menuBar, "menu.main.edit.paste")).setEnabled(predef.getPredefined(Predefines.PREDEF_CLIPBOARD, ClipboardWrapper.class).hasImage());
 				} catch (PaintScriptException exc) {
 					getLogger().message(Severity.error, exc.getLocalizedMessage());
 				}
@@ -407,14 +414,15 @@ public class Application extends JFrame implements NodeMetadataOwner, LocaleChan
 		final ArgParser					parser = new ApplicationArgParser();
 		
 		try{final ArgParser				parsed = parser.parse(args);
-			try(final InputStream				is = ImageEditPanel.class.getResourceAsStream("imageeditpanel.xml")) {
+			try(final InputStream				is = ImageEditPanel.class.getResourceAsStream("imageeditpanel.xml");
+				final Predefines				predef = new Predefines(args)) {
 				final ContentMetadataInterface	xda = ContentModelFactory.forXmlDescription(is);
 				final Localizer					localizer = Localizer.Factory.newInstance(xda.getRoot().getLocalizerAssociated());
 				
 				PureLibSettings.PURELIB_LOCALIZER.push(localizer);
 				
 				if (args.length == 0) {
-					startGUI(xda, localizer);
+					startGUI(xda, localizer, predef);
 				}
 				else if (!parsed.isTyped(ARG_COMMAND)) {
 					throw new CommandLineParametersException("Mandatory parameter ["+ARG_COMMAND+"] is missing");
@@ -422,30 +430,35 @@ public class Application extends JFrame implements NodeMetadataOwner, LocaleChan
 				else {
 					final SyntaxNode<ScriptNodeType, SyntaxNode<ScriptNodeType,?>>	root;
 					
-					try(final Reader	rdr = loadCommandScript(parsed.getValue(ARG_COMMAND, String.class))) {
-						root = ScriptUtils.compile(rdr); 
-					}
-
-					if (parsed.isTyped(ARG_INPUT_MASK)) {
-						final String	mask = parsed.getValue(ARG_INPUT_MASK, String.class);
-						final int		index = mask.lastIndexOf('/');
-
-						if (index > 0) {
-							walk(new File(mask.substring(0,index)), Pattern.compile(Utils.fileMask2Regex(mask.substring(index+1))), parsed.getValue(ARG_RECURSION_FLAG, boolean.class), root);
+					try(final FileSystemInterface	fsi = FileSystemInterface.Factory.newInstance(URI.create("fsys:file:/"))){
+						
+						predef.putPredefined(Predefines.PREDEF_SYSTEM, new SystemWrapperImpl(fsi, null));
+						
+						try(final Reader	rdr = loadCommandScript(parsed.getValue(ARG_COMMAND, String.class))) {
+							root = ScriptUtils.compile(rdr); 
+						}
+	
+						if (parsed.isTyped(ARG_INPUT_MASK)) {
+							final String	mask = parsed.getValue(ARG_INPUT_MASK, String.class);
+							final int		index = mask.lastIndexOf('/');
+	
+							if (index > 0) {
+								walk(new File(mask.substring(0,index)), Pattern.compile(Utils.fileMask2Regex(mask.substring(index+1))), parsed.getValue(ARG_RECURSION_FLAG, boolean.class), root);
+							}
+							else {
+								walk(new File("./"), Pattern.compile(Utils.fileMask2Regex(mask)), parsed.getValue(ARG_RECURSION_FLAG, boolean.class), root);
+							}
 						}
 						else {
-							walk(new File("./"), Pattern.compile(Utils.fileMask2Regex(mask)), parsed.getValue(ARG_RECURSION_FLAG, boolean.class), root);
-						}
-					}
-					else {
-						if (parsed.getValue(ARG_GUI_FLAG, boolean.class)) {
-							final Image	image = ImageIO.read(System.in);
-							
-							processImage(image, root);
-							startGUI(xda, localizer);
-						}
-						else {
-							processImage(System.in, root, System.out);
+							if (parsed.getValue(ARG_GUI_FLAG, boolean.class)) {
+								final Image	image = ImageIO.read(System.in);
+								
+								processImage(image, root);
+								startGUI(xda, localizer, predef);
+							}
+							else {
+								processImage(System.in, root, System.out);
+							}
 						}
 					}
 				}
@@ -524,7 +537,7 @@ public class Application extends JFrame implements NodeMetadataOwner, LocaleChan
 		gba.read(0, signature);
 		
 		try(final InputStream	tmp = gba.getInputStream()) {
-			image = ImageIO.read(gba.getInputStream());
+			image = ImageIO.read(tmp);
 		}
 		processImage(image, root);
 		ImageIO.write(image, defineImageFormat(signature), os);
@@ -552,9 +565,9 @@ public class Application extends JFrame implements NodeMetadataOwner, LocaleChan
 	private static void processImage(final Image image, final SyntaxNode<ScriptNodeType, SyntaxNode<ScriptNodeType,?>> root) throws IOException {
 	}	
 	
-	private static void startGUI(final ContentMetadataInterface xda, final Localizer localizer) throws InterruptedException, IOException {
+	private static void startGUI(final ContentMetadataInterface xda, final Localizer localizer, final Predefines predef) throws InterruptedException, IOException {
 		final CountDownLatch			latch = new CountDownLatch(1);
-		final Application				app = new Application(xda, localizer, latch);
+		final Application				app = new Application(xda, localizer, predef, latch);
 		
 		app.setVisible(true);
 		latch.await();

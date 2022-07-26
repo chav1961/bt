@@ -5,7 +5,11 @@ import java.awt.Image;
 import java.awt.Rectangle;
 import java.awt.geom.AffineTransform;
 import java.awt.image.BufferedImage;
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.Set;
+
+import javax.imageio.ImageIO;
 
 import chav1961.bt.paint.control.ImageUtils;
 import chav1961.bt.paint.control.ImageUtils.DrawingType;
@@ -15,6 +19,7 @@ import chav1961.bt.paint.script.interfaces.ColorWrapper;
 import chav1961.bt.paint.script.interfaces.ImageWrapper;
 import chav1961.bt.paint.script.interfaces.RectWrapper;
 import chav1961.purelib.basic.Utils;
+import chav1961.purelib.basic.growablearrays.GrowableByteArray;
 
 public class ImageWrapperImpl implements ImageWrapper {
 	private static final Set<String>	FORMATS_SUPPORTED = Set.of("png","jpeg");
@@ -25,6 +30,24 @@ public class ImageWrapperImpl implements ImageWrapper {
 	
 	public ImageWrapperImpl() {
 		this.image = new BufferedImage(1, 1, BufferedImage.TYPE_4BYTE_ABGR);
+	}
+	
+	public ImageWrapperImpl(final InputStream is) throws IOException {
+		if (is == null) {
+			throw new NullPointerException("Input stream can't be null"); 
+		}
+		else {
+			final GrowableByteArray	gba = new GrowableByteArray(false);
+			final byte[]			signature = new byte[4];
+			
+			gba.append(is);
+			gba.read(0, signature);
+			
+			try(final InputStream	tmp = gba.getInputStream()) {
+				image = ImageIO.read(tmp);
+			}
+			format = defineImageFormat(signature);
+		}
 	}
 	
 	public ImageWrapperImpl(final BufferedImage image) {
@@ -187,5 +210,23 @@ public class ImageWrapperImpl implements ImageWrapper {
 		
 		g2d.drawImage(fill, trans, null);
 		g2d.dispose();
+	}
+
+	private static String defineImageFormat(final byte[] signature) {
+		if (signature[0] == 0xFF && signature[1] == 0xD8 && signature[2] == 0xFF) {
+			return "jpeg";
+		}
+		else if (signature[0] == 0x42F && signature[1] == 0x4D) {
+			return "bmp";
+		}
+		else if (signature[0] == 0x47 && signature[1] == 0x49 && signature[2] == 0x46 && signature[3] == 0x38) {
+			return "gif";
+		}
+		else if (signature[0] == 0x89 && signature[1] == 0x50 && signature[2] == 0x4E && signature[3] == 0x47) {
+			return "png";
+		}
+		else {
+			return "webmp";
+		}
 	}
 }
