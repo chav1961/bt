@@ -1,9 +1,6 @@
 package chav1961.bt.paint.script;
 
-import java.awt.BasicStroke;
-
 import chav1961.bt.paint.control.ImageEditPanel;
-import chav1961.bt.paint.interfaces.PaintScriptException;
 import chav1961.bt.paint.script.interfaces.CanvasWrapper;
 import chav1961.bt.paint.script.interfaces.ColorWrapper;
 import chav1961.bt.paint.script.interfaces.FontWrapper;
@@ -22,6 +19,7 @@ public class CanvasWrapperImpl extends BufferWrapperImpl implements CanvasWrappe
 	}
 
 	public CanvasWrapperImpl(final ImageEditPanel delegate) {
+		super(delegate);
 		if (delegate == null) {
 			throw new NullPointerException("Delegate can't be null"); 
 		}

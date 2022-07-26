@@ -477,6 +477,10 @@ public class ImageEditPanel extends JPanel implements LocalizerOwner, LocaleChan
 		
 	}
 
+	public void refreshContent() {
+		canvas.repaint();
+	}
+	
 	private void processSelection(final SelectionStyle style, final Point start, final Point end, final Object... parameters) {
 		if (waitColorExtraction && style == SelectionStyle.POINT) {
     		setColor(new Color(((BufferedImage)getImage()).getRGB(end.x, end.y)));

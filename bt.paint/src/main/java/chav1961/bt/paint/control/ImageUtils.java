@@ -139,7 +139,7 @@ public class ImageUtils {
 						brushDraw((BufferedImage)source, (Rectangle)parameters[0], (ColorPair)parameters[1], (Boolean)parameters[2], observer);
 					}
 					else {
-						throw new IllegalArgumentException("[MIRROR_HORIZONTAL] mode must not have any content in the parameters list"); 
+						throw new IllegalArgumentException("[BRUSH] mode must not have any content in the parameters list"); 
 					}
 					break;
 				case ELLIPSE	:
@@ -150,7 +150,7 @@ public class ImageUtils {
 						ellipseDraw((BufferedImage)source, (Rectangle)parameters[0], (ColorPair)parameters[1], (Stroke)parameters[2], observer);
 					}
 					else {
-						throw new IllegalArgumentException("[MIRROR_HORIZONTAL] mode must not have any content in the parameters list"); 
+						throw new IllegalArgumentException("[ELLIPSE] mode must not have any content in the parameters list"); 
 					}
 					break;
 				case FILL		:
@@ -158,7 +158,7 @@ public class ImageUtils {
 						fillDraw((BufferedImage)source, (Point)parameters[0], (Color)parameters[1], (Color)parameters[2], observer);
 					}
 					else {
-						throw new IllegalArgumentException("[MIRROR_HORIZONTAL] mode must not have any content in the parameters list"); 
+						throw new IllegalArgumentException("[FILL] mode must not have any content in the parameters list"); 
 					}
 					break;
 				case LINE		:
@@ -166,7 +166,7 @@ public class ImageUtils {
 						lineDraw((BufferedImage)source, (Point)parameters[0], (Point)parameters[1], (Color)parameters[2], (Stroke)parameters[3], observer);
 					}
 					else {
-						throw new IllegalArgumentException("[MIRROR_HORIZONTAL] mode must not have any content in the parameters list"); 
+						throw new IllegalArgumentException("[LINE] mode must not have any content in the parameters list"); 
 					}
 					break;
 				case PEN		:
@@ -177,7 +177,7 @@ public class ImageUtils {
 						pathDraw((BufferedImage)source, (GeneralPath)parameters[0], (ColorPair)parameters[1], (Stroke)parameters[2], observer);
 					}
 					else {
-						throw new IllegalArgumentException("[MIRROR_HORIZONTAL] mode must not have any content in the parameters list"); 
+						throw new IllegalArgumentException("[PEN] mode must not have any content in the parameters list"); 
 					}
 					break;
 				case RECT		:
@@ -188,7 +188,7 @@ public class ImageUtils {
 						rectDraw((BufferedImage)source, (Rectangle)parameters[0], (ColorPair)parameters[1], (Stroke)parameters[2], observer);
 					}
 					else {
-						throw new IllegalArgumentException("[MIRROR_HORIZONTAL] mode must not have any content in the parameters list"); 
+						throw new IllegalArgumentException("[RECT] mode must not have any content in the parameters list"); 
 					}
 					break;
 				case TEXT		:
@@ -199,7 +199,7 @@ public class ImageUtils {
 						textDraw((BufferedImage)source, (String)parameters[0], (Rectangle)parameters[1], (ColorPair)parameters[2], (Font)parameters[3], observer);
 					}
 					else {
-						throw new IllegalArgumentException("[MIRROR_HORIZONTAL] mode must not have any content in the parameters list"); 
+						throw new IllegalArgumentException("[TEXT] mode must not have any content in the parameters list"); 
 					}
 					break;
 				case UNKNOWN	:

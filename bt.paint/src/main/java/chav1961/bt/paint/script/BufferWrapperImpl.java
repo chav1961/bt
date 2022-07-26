@@ -1,5 +1,6 @@
 package chav1961.bt.paint.script;
 
+import chav1961.bt.paint.control.ImageEditPanel;
 import chav1961.bt.paint.interfaces.PaintScriptException;
 import chav1961.bt.paint.script.interfaces.BufferWrapper;
 import chav1961.bt.paint.script.interfaces.ImageWrapper;
@@ -7,10 +8,16 @@ import chav1961.bt.paint.script.interfaces.ImageWrapper.SetOptions;
 import chav1961.bt.paint.script.interfaces.RectWrapper;
 
 public class BufferWrapperImpl implements BufferWrapper {
+	private final ImageEditPanel	delegate;
 	
 	public BufferWrapperImpl() {
+		this.delegate = null;
 	}
 
+	public BufferWrapperImpl(final ImageEditPanel delegate) {
+		this.delegate = delegate;
+	}
+	
 	@Override
 	public void open() throws PaintScriptException {
 		// TODO Auto-generated method stub
@@ -32,7 +39,7 @@ public class BufferWrapperImpl implements BufferWrapper {
 	@Override
 	public ImageWrapper getImage() throws PaintScriptException {
 		// TODO Auto-generated method stub
-		return null;
+		return ImageWrapper.of(delegate.getImage());
 	}
 
 	@Override

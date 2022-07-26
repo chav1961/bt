@@ -1,5 +1,7 @@
 package chav1961.bt.paint.script;
 
+import java.awt.BasicStroke;
+import java.awt.Color;
 import java.awt.Point;
 import java.awt.Rectangle;
 import java.util.Arrays;
@@ -112,7 +114,7 @@ class Console {
 	}
 	
 	private static String drawLine(final Predefines predef, final int xFrom, final int yFrom, final int xTo, final int yTo) throws PaintScriptException {
-		ImageUtils.draw(DrawingType.LINE, predef.getPredefined("canvas", CanvasWrapper.class).getImage().getImage(), null, new Point(xFrom, yFrom), new Point(xTo, yTo)); 
+		ImageUtils.draw(DrawingType.LINE, predef.getPredefined("canvas", CanvasWrapper.class).getImage().getImage(), null, new Point(xFrom, yFrom), new Point(xTo, yTo), Color.RED, new BasicStroke()); 
 		return OK;
 	}
 

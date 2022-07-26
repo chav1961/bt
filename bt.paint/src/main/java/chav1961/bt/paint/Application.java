@@ -40,6 +40,7 @@ import chav1961.bt.paint.control.Predefines;
 import chav1961.bt.paint.control.ImageUtils.ProcessType;
 import chav1961.bt.paint.dialogs.AskImageSize;
 import chav1961.bt.paint.interfaces.PaintScriptException;
+import chav1961.bt.paint.script.CanvasWrapperImpl;
 import chav1961.bt.paint.script.ScriptNodeType;
 import chav1961.bt.paint.script.SystemWrapperImpl;
 import chav1961.bt.paint.script.interfaces.ClipboardWrapper;
@@ -129,22 +130,24 @@ public class Application extends JFrame implements NodeMetadataOwner, LocaleChan
 			this.filterCallbackPNG = FilterCallback.of(localizer.getValue(KEY_PNG_FILES), "*.png");
 			this.filterCallbackJPG = FilterCallback.of(localizer.getValue(KEY_JPG_FILES), "*.jpg");
 
-			this.predef.putPredefined(Predefines.PREDEF_SYSTEM, new SystemWrapperImpl(this.fsi, new File("./").getAbsoluteFile().toURI()));
 			
 	        this.menuBar = SwingUtils.toJComponent(xda.byUIPath(URI.create("ui:/model/navigation.top.mainmenu")), JMenuBar.class); 
-	        SwingUtils.assignActionListeners(menuBar, this);
 			
 	        this.panel = new ImageEditPanel(localizer);
 	        this.state = new JStateString(localizer);
 	        
 	        this.panel.addUndoableEditListener((e)->processUndoEvents(e));
 	        this.panel.addActionListener((e)->processCommand(e));
+	        SwingUtils.assignActionListeners(menuBar, this);
 	        
 	        state.setBorder(BorderFactory.createEtchedBorder(EtchedBorder.LOWERED));
 
 	        getContentPane().add(menuBar, BorderLayout.NORTH);
 	        getContentPane().add(panel, BorderLayout.CENTER);
 	        getContentPane().add(state, BorderLayout.SOUTH);
+
+			this.predef.putPredefined(Predefines.PREDEF_SYSTEM, new SystemWrapperImpl(this.fsi, new File("./").getAbsoluteFile().toURI()));
+			this.predef.putPredefined(Predefines.PREDEF_CANVAS, new CanvasWrapperImpl(panel));
 	        
 	        panel.addChangeListener((e)->refreshMenuState());
 	        refreshMenuState();
@@ -351,6 +354,7 @@ public class Application extends JFrame implements NodeMetadataOwner, LocaleChan
 			SwingUtils.getNearestLogger(this).message(Severity.error, exc, exc.getLocalizedMessage());
 		} finally {
 			((JTextField)e.getSource()).setText("");
+			panel.refreshContent();
 		}
 	}
 
