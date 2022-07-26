@@ -7,6 +7,9 @@ import chav1961.bt.paint.script.interfaces.ImageWrapper.SetOptions;
 import chav1961.bt.paint.script.interfaces.RectWrapper;
 
 public class BufferWrapperImpl implements BufferWrapper {
+	
+	public BufferWrapperImpl() {
+	}
 
 	@Override
 	public void open() throws PaintScriptException {

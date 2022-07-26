@@ -1,6 +1,7 @@
 package chav1961.bt.paint.script.interfaces;
 
 import chav1961.bt.paint.interfaces.PaintScriptException;
+import chav1961.bt.paint.script.Predefines;
 
 public interface SystemWrapper extends ImmutablePropertiesWrapper {
 	boolean exists(String file) throws PaintScriptException;
@@ -15,5 +16,5 @@ public interface SystemWrapper extends ImmutablePropertiesWrapper {
 	PropertiesWrapper loadProps(String file) throws PaintScriptException;
 	void storeProps(PropertiesWrapper props, final String file) throws PaintScriptException;
 	void print(String message) throws PaintScriptException;
-	String console(String command) throws PaintScriptException;
+	String console(String command, final Predefines predef) throws PaintScriptException;
 }

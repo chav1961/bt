@@ -16,6 +16,7 @@ import chav1961.bt.paint.script.interfaces.PropertiesWrapper;
 import chav1961.bt.paint.script.interfaces.SystemWrapper;
 import chav1961.purelib.basic.SubstitutableProperties;
 import chav1961.purelib.basic.URIUtils;
+import chav1961.purelib.basic.exceptions.SyntaxException;
 import chav1961.purelib.basic.interfaces.LoggerFacade;
 import chav1961.purelib.basic.interfaces.LoggerFacade.Severity;
 import chav1961.purelib.fsys.interfaces.FileSystemInterface;
@@ -363,14 +364,21 @@ public class SystemWrapperImpl implements SystemWrapper {
 	}
 
 	@Override
-	public String console(final String command) throws PaintScriptException {
-		// TODO Auto-generated method stub
+	public String console(final String command, final Predefines predef) throws PaintScriptException {
 		if (command == null) {
 			throw new NullPointerException("Command can't be null");
 		}
+		else if (predef == null) {
+			throw new NullPointerException("Predefined map can't be null");
+		}
 		else if (!command.isEmpty()) {
-			
-			return null;
+			for (String line : command.split("\n")) {
+				try{Console.processCommand(line, predef);
+				} catch (SyntaxException  e) {
+					throw new PaintScriptException(e);
+				}
+			}
+			return "";
 		}
 		else {
 			return "";
