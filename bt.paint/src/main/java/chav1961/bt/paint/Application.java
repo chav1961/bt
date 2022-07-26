@@ -4,6 +4,7 @@ import java.awt.BorderLayout;
 import java.awt.Dimension;
 import java.awt.Image;
 import java.awt.Rectangle;
+import java.awt.event.ActionEvent;
 import java.awt.image.BufferedImage;
 import java.awt.image.RenderedImage;
 import java.io.File;
@@ -28,6 +29,7 @@ import javax.swing.JFrame;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
+import javax.swing.JTextField;
 import javax.swing.border.EtchedBorder;
 import javax.swing.event.UndoableEditEvent;
 import javax.swing.undo.UndoManager;
@@ -42,6 +44,7 @@ import chav1961.bt.paint.script.ScriptNodeType;
 import chav1961.bt.paint.script.SystemWrapperImpl;
 import chav1961.bt.paint.script.interfaces.ClipboardWrapper;
 import chav1961.bt.paint.script.interfaces.ImageWrapper;
+import chav1961.bt.paint.script.interfaces.SystemWrapper;
 import chav1961.bt.paint.script.intern.runtime.ScriptUtils;
 import chav1961.bt.paint.utils.ApplicationUtils;
 import chav1961.purelib.basic.ArgParser;
@@ -125,6 +128,8 @@ public class Application extends JFrame implements NodeMetadataOwner, LocaleChan
 			this.fsi = FileSystemInterface.Factory.newInstance(URI.create("fsys:file:/"));
 			this.filterCallbackPNG = FilterCallback.of(localizer.getValue(KEY_PNG_FILES), "*.png");
 			this.filterCallbackJPG = FilterCallback.of(localizer.getValue(KEY_JPG_FILES), "*.jpg");
+
+			this.predef.putPredefined(Predefines.PREDEF_SYSTEM, new SystemWrapperImpl(this.fsi, new File("./").getAbsoluteFile().toURI()));
 			
 	        this.menuBar = SwingUtils.toJComponent(xda.byUIPath(URI.create("ui:/model/navigation.top.mainmenu")), JMenuBar.class); 
 	        SwingUtils.assignActionListeners(menuBar, this);
@@ -133,6 +138,7 @@ public class Application extends JFrame implements NodeMetadataOwner, LocaleChan
 	        this.state = new JStateString(localizer);
 	        
 	        this.panel.addUndoableEditListener((e)->processUndoEvents(e));
+	        this.panel.addActionListener((e)->processCommand(e));
 	        
 	        state.setBorder(BorderFactory.createEtchedBorder(EtchedBorder.LOWERED));
 
@@ -338,6 +344,17 @@ public class Application extends JFrame implements NodeMetadataOwner, LocaleChan
 		refreshUndoMenuState();
 	}
 
+	private void processCommand(final ActionEvent e) {
+		try{
+			SwingUtils.getNearestLogger(this).message(Severity.info,predef.getPredefined(Predefines.PREDEF_SYSTEM, SystemWrapper.class).console(((JTextField)e.getSource()).getText(), predef));
+		} catch (PaintScriptException exc) {
+			SwingUtils.getNearestLogger(this).message(Severity.error, exc, exc.getLocalizedMessage());
+		} finally {
+			((JTextField)e.getSource()).setText("");
+		}
+	}
+
+	
 	private void refreshClipboardMenuState() {
 		((JMenuItem)SwingUtils.findComponentByName(menuBar, "menu.main.edit.cut")).setEnabled(panel.hasSelection());
 		((JMenuItem)SwingUtils.findComponentByName(menuBar, "menu.main.edit.copy")).setEnabled(panel.hasSelection());

@@ -91,7 +91,7 @@ class Console {
 		int				from = CharUtils.skipBlank(cmd, 0, true);
 		
 		from = CharUtils.parseName(cmd, from, bounds);
-		final long		cmdId = COMMANDS.seekName(cmd, bounds[0], bounds[1]);
+		final long		cmdId = COMMANDS.seekName(cmd, bounds[0], bounds[1]+1);
 		
 		if (cmdId < 0) {
 			throw new SyntaxException(0, from, "Unknown command");

@@ -12,6 +12,7 @@ import java.awt.Image;
 import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.Stroke;
+import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseMotionListener;
 import java.awt.geom.GeneralPath;
@@ -203,6 +204,24 @@ public class ImageEditPanel extends JPanel implements LocalizerOwner, LocaleChan
 		}
 		else {
 			undoListeners.removeListener(l);
+		}
+	}
+
+	public void addActionListener(final ActionListener l) {
+		if (l == null) {
+			throw new NullPointerException("Listener to add can't be null");
+		}
+		else {
+			state.forCommand.addActionListener(l);
+		}
+	}
+
+	public void removeActionListener(final ActionListener l) {
+		if (l == null) {
+			throw new NullPointerException("Listener to remove can't be null");
+		}
+		else {
+			state.forCommand.removeActionListener(l);
 		}
 	}
 	
@@ -669,7 +688,7 @@ public class ImageEditPanel extends JPanel implements LocalizerOwner, LocaleChan
 		
 		private final Localizer			localizer;
 		private final JLabel			forPrompt = new JLabel();
-		private final JTextField		forPath = new JTextField();
+		private final JTextField		forCommand = new JTextField();
 		private final JLabel			coord = new JLabel();
 		private final JLabel			size = new JLabel();
 		private final JLabel			fontSettings = new JLabel();
@@ -694,7 +713,7 @@ public class ImageEditPanel extends JPanel implements LocalizerOwner, LocaleChan
 			states.add(fontSettings, BorderLayout.CENTER);
 			states.add(settings, BorderLayout.EAST);
 			add(forPrompt, BorderLayout.WEST);
-			add(forPath, BorderLayout.CENTER);
+			add(forCommand, BorderLayout.CENTER);
 			add(states, BorderLayout.EAST);
 
 			fillLocalizedStrings();
@@ -730,7 +749,7 @@ public class ImageEditPanel extends JPanel implements LocalizerOwner, LocaleChan
 		
 		private void fillLocalizedStrings() {
 			forPrompt.setText(localizer.getValue(KEY_PROMPT));
-			forPath.setToolTipText(localizer.getValue(KEY_COMMAND_TT));
+			forCommand.setToolTipText(localizer.getValue(KEY_COMMAND_TT));
 			coord.setToolTipText(localizer.getValue(KEY_COORD_TT));
 			size.setToolTipText(localizer.getValue(KEY_SIZE_TT));
 			fontSettings.setToolTipText(localizer.getValue(KEY_FONT_TT));
