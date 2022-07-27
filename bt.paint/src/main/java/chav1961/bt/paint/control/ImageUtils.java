@@ -1,5 +1,7 @@
 package chav1961.bt.paint.control;
 
+
+import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Font;
 import java.awt.Graphics2D;
@@ -26,6 +28,10 @@ import java.text.AttributedString;
 import java.util.LinkedList;
 import java.util.List;
 
+import chav1961.bt.paint.control.ImageEditCanvas.LineCaps;
+import chav1961.bt.paint.control.ImageEditCanvas.LineJoin;
+import chav1961.bt.paint.control.ImageEditCanvas.LineStroke;
+import chav1961.purelib.basic.exceptions.SyntaxException;
 import chav1961.purelib.ui.ColorPair;
 
 public class ImageUtils {
@@ -216,6 +222,25 @@ public class ImageUtils {
 			}
 		}
 	}	
+	
+	public static Stroke buildStroke(final int lineThickness, final LineStroke lineStroke, final LineCaps caps, final LineJoin join) {
+		switch (lineStroke) {
+			case DASHED	:
+				return new BasicStroke(lineThickness, caps.getCapsType(), join.getJoinType(), lineThickness, new float[] {3 * lineThickness}, 0);
+			case DOTTED	:
+				return new BasicStroke(lineThickness, caps.getCapsType(), join.getJoinType(), lineThickness, new float[] {lineThickness}, 0);
+			case SOLID	: 
+				return new BasicStroke(lineThickness); 		
+			default:
+				throw new UnsupportedOperationException("LineStroke style ["+lineStroke+"] is not supported yet");
+		}
+	}
+
+	// [N] {solid|dashed|dotted} [{butt|round|square}] [{miter|round|bevel}]
+	public static Stroke buildStroke(final String stroke) throws SyntaxException {
+		// TODO:
+		return null;
+	}
 	
 	static Image fillImage(final BufferedImage source, final Rectangle rectangle, final Color color, final ImageObserver observer) {
 		final BufferedImage	result = new BufferedImage(rectangle.width, rectangle.height, source.getType());

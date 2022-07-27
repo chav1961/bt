@@ -1,14 +1,12 @@
 package chav1961.bt.paint.script;
 
-import java.awt.BasicStroke;
-import java.awt.Color;
 import java.awt.Point;
 import java.awt.Rectangle;
 import java.util.Arrays;
 
 import chav1961.bt.paint.control.ImageUtils;
-import chav1961.bt.paint.control.Predefines;
 import chav1961.bt.paint.control.ImageUtils.DrawingType;
+import chav1961.bt.paint.control.Predefines;
 import chav1961.bt.paint.interfaces.PaintScriptException;
 import chav1961.bt.paint.script.interfaces.CanvasWrapper;
 import chav1961.purelib.basic.AndOrTree;
@@ -16,18 +14,19 @@ import chav1961.purelib.basic.CharUtils;
 import chav1961.purelib.basic.CharUtils.ArgumentType;
 import chav1961.purelib.basic.exceptions.SyntaxException;
 import chav1961.purelib.basic.interfaces.SyntaxTreeInterface;
+import chav1961.purelib.ui.swing.useful.svg.SVGUtils;
 
-// line (x,y) (x,y)
-// rect (x,y) (x,y)
-// ellipse (x,y) (x,y)
+//* line (x,y) (x,y)
+//* rect (x,y) (x,y)
+//* ellipse (x,y) (x,y)
 // text (x,y) (x,y) <text>
-// path <path>
+//* path <path>
 // fill (x,y) {#nnn | <name> }
-// stroke N [{solid|dashed|dotted}] [{butt|}] [{|}]
-// fore {(x,y) | #nnn |<name> }
-// back {(x,y) | #nnn |<name> }
+//* stroke N [{solid|dashed|dotted}] [{butt|}] [{|}]
+//* fore {(x,y) | #nnn |<name> }
+//* back {(x,y) | #nnn |<name> }
 // filling {on|off}
-// font <name> N [{bold|italic}]
+//* font <name> N [{bold|italic}]
 // ? <request>
 // rotate
 // mirror {h|v}
@@ -49,6 +48,13 @@ import chav1961.purelib.basic.interfaces.SyntaxTreeInterface;
 class Console {
 	private static final SyntaxTreeInterface<CommandItem>	COMMANDS = new AndOrTree<>();
 	private static final String	OK = "ok";
+	
+	private static enum CanvasProperties {
+		FORE_COLOR,
+		BACK_COLOR,
+		STROKE,
+		FONT;
+	}
 	
 	@FunctionalInterface
 	private static interface Executor {
@@ -83,6 +89,21 @@ class Console {
 		ci = new CommandItem("path", "path <content::any>", (p,a)->drawPath(p,(String)a[0]), ArgumentType.raw);
 		COMMANDS.placeName("path", ci);
 		COMMANDS.placeName("p", ci);
+
+		ci = new CommandItem("foreground", "foreground <color>", (p,a)->setProperties(p,CanvasProperties.FORE_COLOR,(String)a[0]), ArgumentType.colorRepresentation);
+		COMMANDS.placeName("foreground", ci);
+		COMMANDS.placeName("fore", ci);
+
+		ci = new CommandItem("background", "background <color>", (p,a)->setProperties(p,CanvasProperties.BACK_COLOR,(String)a[0]), ArgumentType.colorRepresentation);
+		COMMANDS.placeName("background", ci);
+		COMMANDS.placeName("back", ci);
+
+		ci = new CommandItem("stroke", "stroke [<thickness>] {solid|dashed|dotted} [{butt|round|square}] [{miter|round|bevel}]", (p,a)->setProperties(p,CanvasProperties.STROKE,(String)a[0]), ArgumentType.raw);
+		COMMANDS.placeName("stroke", ci);
+		COMMANDS.placeName("str", ci);
+
+		ci = new CommandItem("font", "font <family> <size> [bold] [italic]", (p,a)->setProperties(p,CanvasProperties.FONT,(String)a[0]), ArgumentType.raw);
+		COMMANDS.placeName("font", ci);
 	}
 	
 	
@@ -113,17 +134,26 @@ class Console {
 	}
 	
 	private static String drawLine(final Predefines predef, final int xFrom, final int yFrom, final int xTo, final int yTo) throws PaintScriptException {
-		ImageUtils.draw(DrawingType.LINE, predef.getPredefined("canvas", CanvasWrapper.class).getImage().getImage(), null, new Point(xFrom, yFrom), new Point(xTo, yTo), Color.RED, new BasicStroke()); 
+		ImageUtils.draw(DrawingType.LINE, predef.getPredefined("canvas", CanvasWrapper.class).getImage().getImage(), null
+					, new Point(xFrom, yFrom), new Point(xTo, yTo)
+					, predef.getPredefined("canvas", CanvasWrapper.class).getCanvasForeground().getColor()
+					, predef.getPredefined("canvas", CanvasWrapper.class).getCanvasStroke().getStroke()); 
 		return OK;
 	}
 
 	private static String drawRect(final Predefines predef, final int xFrom, final int yFrom, final int xTo, final int yTo) throws PaintScriptException {
-		ImageUtils.draw(DrawingType.RECT, predef.getPredefined("canvas", CanvasWrapper.class).getImage().getImage(), null, new Rectangle(xFrom, yFrom, xTo-xFrom, yTo-yFrom)); 
+		ImageUtils.draw(DrawingType.RECT, predef.getPredefined("canvas", CanvasWrapper.class).getImage().getImage(), null
+				, new Rectangle(xFrom, yFrom, xTo-xFrom, yTo-yFrom) 
+				, predef.getPredefined("canvas", CanvasWrapper.class).getCanvasForeground().getColor()
+				, predef.getPredefined("canvas", CanvasWrapper.class).getCanvasStroke().getStroke()); 
 		return OK;
 	}
 
 	private static String drawEllipse(final Predefines predef, final int xFrom, final int yFrom, final int xTo, final int yTo) throws PaintScriptException {
-		ImageUtils.draw(DrawingType.ELLIPSE, predef.getPredefined("canvas", CanvasWrapper.class).getImage().getImage(), null, new Rectangle(xFrom, yFrom, xTo-xFrom, yTo-yFrom)); 
+		ImageUtils.draw(DrawingType.ELLIPSE, predef.getPredefined("canvas", CanvasWrapper.class).getImage().getImage(), null
+					, new Rectangle(xFrom, yFrom, xTo-xFrom, yTo-yFrom)
+					, predef.getPredefined("canvas", CanvasWrapper.class).getCanvasForeground().getColor()
+					, predef.getPredefined("canvas", CanvasWrapper.class).getCanvasStroke().getStroke()); 
 		return OK;
 	}
 	
@@ -133,10 +163,19 @@ class Console {
 	}
 
 	private static String drawPath(final Predefines predef, final String path) throws PaintScriptException { 
-		ImageUtils.draw(DrawingType.PEN, predef.getPredefined("canvas", CanvasWrapper.class).getImage().getImage(), null); 
-		return OK;
+		try{ImageUtils.draw(DrawingType.PEN, predef.getPredefined("canvas", CanvasWrapper.class).getImage().getImage(), null
+						, SVGUtils.extractCommands(path)
+						, predef.getPredefined("canvas", CanvasWrapper.class).getCanvasForeground().getColor()
+						, predef.getPredefined("canvas", CanvasWrapper.class).getCanvasStroke().getStroke());
+			return OK;
+		} catch (SyntaxException e) {
+			throw new PaintScriptException(e);
+		} 
 	}
 
+	private static String setProperties(final Predefines predef, final CanvasProperties props, final String content) throws PaintScriptException {
+		return OK;
+	}	
 
 	private static class CommandItem {
 		final String	command;

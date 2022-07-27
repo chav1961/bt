@@ -3,7 +3,10 @@ package chav1961.bt.paint.script.interfaces;
 import java.awt.BasicStroke;
 import java.awt.Stroke;
 
+import chav1961.bt.paint.control.ImageUtils;
 import chav1961.bt.paint.interfaces.PaintScriptException;
+import chav1961.bt.paint.script.StrokeWrapperImpl;
+import chav1961.purelib.basic.exceptions.SyntaxException;
 
 public interface StrokeWrapper {
 	public static enum LineStroke {
@@ -51,10 +54,19 @@ public interface StrokeWrapper {
 	StrokeWrapper setStroke(String stroke) throws PaintScriptException;
 
 	static StrokeWrapper of(final Stroke stroke) {
-		return null;
+		return new StrokeWrapperImpl(stroke);
 	}
 	
 	static StrokeWrapper of(final String stroke) throws PaintScriptException {
-		return null;
+		if (stroke == null || stroke.isEmpty()) {
+			throw new IllegalArgumentException("Stroke string can't be null or empty");
+		}
+		else {
+			try{
+				return new StrokeWrapperImpl(ImageUtils.buildStroke(stroke));
+			} catch (SyntaxException e) {
+				throw new PaintScriptException(e);
+			}
+		}
 	}
 }
