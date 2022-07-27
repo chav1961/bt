@@ -18,8 +18,8 @@ public interface ImageWrapper {
 	ImageWrapper setImage(RectWrapper wrapper, ImageWrapper image, ImageWrapper.SetOptions... options) throws PaintScriptException;
 	String getFormat() throws PaintScriptException;
 	ImageWrapper setFormat(String format) throws PaintScriptException;
-	String getName() throws PaintScriptException;
-	ImageWrapper setName(String name) throws PaintScriptException;
+	String getName();
+	ImageWrapper setName(String name);
 	int getType() throws PaintScriptException;
 	ImageWrapper setType(int type) throws PaintScriptException;
 	ImageWrapper cloneThis() throws PaintScriptException;

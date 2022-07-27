@@ -112,12 +112,12 @@ public class ImageWrapperImpl implements ImageWrapper {
 	}
 
 	@Override
-	public String getName() throws PaintScriptException {
+	public String getName() {
 		return name;
 	}
 
 	@Override
-	public ImageWrapper setName(final String name) throws PaintScriptException {
+	public ImageWrapper setName(final String name) {
 		if (name == null || name.isEmpty()) {
 			throw new IllegalArgumentException("Name to set is null or empty");
 		}

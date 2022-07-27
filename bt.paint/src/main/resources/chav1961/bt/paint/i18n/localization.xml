@@ -11,7 +11,11 @@
 		<key name="chav1961.bt.paint.Application.filter.bmpfiles">BMP images</key>		
 		<key name="chav1961.bt.paint.Application.unsavedChanges">You have some changes in the editor. Save it?</key>
 		<key name="chav1961.bt.paint.Application.unsavedChanges.title">Unsaved changes</key>
-		<key name="chav1961.bt.paint.Application.message.ready">Ready</key>		
+		<key name="chav1961.bt.paint.Application.message.ready">Ready</key>
+		<key name="chav1961.bt.paint.Application.message.new.name">(&lt;new&gt;)</key>		
+		<key name="chav1961.bt.paint.Application.message.new.image.created">New image created, %1$dx%2$dpx</key>		
+		<key name="chav1961.bt.paint.Application.message.image.loaded">Image loaded from %1$s, %2$dx%3$dpx</key>
+		<key name="chav1961.bt.paint.Application.message.image.stored">Image stored to %1$s</key>	
 		<key name="chav1961.bt.paint.Application.help.title">About...</key>
 		<key name="chav1961.bt.paint.Application.help.content">uri(aboutApplication.cre)</key>
 
@@ -245,6 +249,10 @@
 		<key name="chav1961.bt.paint.Application.unsavedChanges">Есть несохраненные изменения. Сохранить их?</key>
 		<key name="chav1961.bt.paint.Application.unsavedChanges.title">Несохраненные изменения</key>
 		<key name="chav1961.bt.paint.Application.message.ready">Готово</key>		
+		<key name="chav1961.bt.paint.Application.message.new.name">(&lt;новый&gt;)</key>		
+		<key name="chav1961.bt.paint.Application.message.new.image.created">Новая картинка создана, %1$dx%2$dтчк</key>		
+		<key name="chav1961.bt.paint.Application.message.image.loaded">Картинка загружена из файла %1$s, %2$dx%3$dтчк</key>
+		<key name="chav1961.bt.paint.Application.message.image.stored">Картинка сохранена в файл %1$s</key>	
 		<key name="chav1961.bt.paint.Application.help.title">О программе</key>
 		<key name="chav1961.bt.paint.Application.help.content">uri(aboutApplication.cre)</key>
 		
@@ -255,6 +263,8 @@
 		<key name="menu.main.file.new.tt">Создать новое изображение</key>
 		<key name="menu.main.file.load">Загрузить</key>
 		<key name="menu.main.file.load.tt">Загрузить изображение из файла</key>
+		<key name="menu.main.file.load.lru">Загрузить последние</key>
+		<key name="menu.main.file.load.lru.tt">Загрузить ранее использованные файлы</key>		
 		<key name="menu.main.file.save">Сохранить</key>
 		<key name="menu.main.file.save.tt">Сохранить изображение</key>
 		<key name="menu.main.file.saveAs">Сохранить как...</key>
@@ -279,8 +289,8 @@
 		<key name="menu.main.edit.replace.tt">Найти фрагмент(ы) на изображении и заменить их</key>
 		<key name="menu.main.tools">Инструменты</key>
 		<key name="menu.main.tools.tt">Управление приложением</key>
-		<key name="menu.main.tools.playerbar">Player</key>
-		<key name="menu.main.tools.playerbar.tt">Command player</key>		
+		<key name="menu.main.tools.playerbar">Скрипты</key>
+		<key name="menu.main.tools.playerbar.tt">Записать или выполнить скрипт</key>		
 		<key name="menu.main.tools.settings">Настройки</key>
 		<key name="menu.main.tools.settings.tt">Настройки приложения</key>
 		<key name="menu.main.tools.languages">Язык</key>

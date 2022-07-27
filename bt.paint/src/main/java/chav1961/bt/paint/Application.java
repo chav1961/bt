@@ -31,7 +31,6 @@ import javax.swing.JFrame;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
-import javax.swing.JOptionPane;
 import javax.swing.JTextField;
 import javax.swing.border.EtchedBorder;
 import javax.swing.event.UndoableEditEvent;
@@ -61,9 +60,12 @@ import chav1961.purelib.basic.exceptions.ContentException;
 import chav1961.purelib.basic.exceptions.EnvironmentException;
 import chav1961.purelib.basic.exceptions.LocalizationException;
 import chav1961.purelib.basic.exceptions.SyntaxException;
+import chav1961.purelib.basic.interfaces.InputStreamGetter;
 import chav1961.purelib.basic.interfaces.LoggerFacade;
 import chav1961.purelib.basic.interfaces.LoggerFacade.Severity;
 import chav1961.purelib.basic.interfaces.LoggerFacadeOwner;
+import chav1961.purelib.basic.interfaces.OutputStreamGetter;
+import chav1961.purelib.basic.interfaces.ProgressIndicator;
 import chav1961.purelib.cdb.SyntaxNode;
 import chav1961.purelib.fsys.interfaces.FileSystemInterface;
 import chav1961.purelib.i18n.interfaces.Localizer;
@@ -78,9 +80,7 @@ import chav1961.purelib.ui.interfaces.LRUPersistence;
 import chav1961.purelib.ui.swing.SwingUtils;
 import chav1961.purelib.ui.swing.interfaces.OnAction;
 import chav1961.purelib.ui.swing.useful.JFileContentManipulator;
-import chav1961.purelib.ui.swing.useful.JFileSelectionDialog;
 import chav1961.purelib.ui.swing.useful.JFileSelectionDialog.FilterCallback;
-import chav1961.purelib.ui.swing.useful.JLocalizedOptionPane;
 import chav1961.purelib.ui.swing.useful.JStateString;
 import chav1961.purelib.ui.swing.useful.interfaces.FileContentChangedEvent;
 
@@ -99,7 +99,13 @@ public class Application extends JFrame implements NodeMetadataOwner, LocaleChan
 	private static final String		KEY_UNSAVED_CHANGES = "chav1961.bt.paint.Application.unsavedChanges";
 	private static final String		KEY_UNSAVED_CHANGES_TITLE = "chav1961.bt.paint.Application.unsavedChanges.title";
 	private static final String		KEY_APPLICATION_TITLE = "chav1961.bt.paint.Application.title";
-	private static final String		KEY_APPLICAITON_MESSAGE_READY = "chav1961.bt.paint.Application.message.ready";
+	
+	private static final String		KEY_APPLICATION_MESSAGE_READY = "chav1961.bt.paint.Application.message.ready";
+	private static final String		KEY_APPLICATION_MESSAGE_NEW_NAME = "chav1961.bt.paint.Application.message.new.name";	
+	private static final String		KEY_APPLICATION_MESSAGE_NEW_IMAGE_CREATED = "chav1961.bt.paint.Application.message.new.image.created";	
+	private static final String		KEY_APPLICATION_MESSAGE_IMAGE_LOADED = "chav1961.bt.paint.Application.message.image.loaded";	
+	private static final String		KEY_APPLICATION_MESSAGE_IMAGE_STORED = "chav1961.bt.paint.Application.message.image.stored";	
+	
 	private static final String		KEY_APPLICATION_HELP_TITLE = "chav1961.bt.paint.Application.help.title";
 	private static final String		KEY_APPLICATION_HELP_CONTENT = "chav1961.bt.paint.Application.help.content";
 
@@ -113,7 +119,7 @@ public class Application extends JFrame implements NodeMetadataOwner, LocaleChan
 	private final JStateString				state;
 	private final UndoManager				undoMgr = new UndoManager();
 	private final StringBuilder				commands = new StringBuilder(); 
-	private final JFileContentManipulator	imageManipulator;
+	private final ImageManipulator			imageManipulator;
 	private final JFileContentManipulator	scriptManipulator;
 	private final Settings					settings = new Settings(new File("./.bt.paint"));
 		
@@ -141,21 +147,22 @@ public class Application extends JFrame implements NodeMetadataOwner, LocaleChan
 			this.fsi = FileSystemInterface.Factory.newInstance(URI.create("fsys:file:/"));
 			
 	        this.menuBar = SwingUtils.toJComponent(xda.byUIPath(URI.create("ui:/model/navigation.top.mainmenu")), JMenuBar.class); 
-			this.imageManipulator = new JFileContentManipulator("image", this.fsi, this.localizer
-										,()->{return new InputStream() {@Override public int read() throws IOException {return -1;}};}
-										,()->{return new OutputStream() {@Override public void write(int b) throws IOException {}};},
-										settings
-										);
-			this.imageManipulator.addFileContentChangeListener((e)->processImageChanges(e));
-			this.scriptManipulator = new JFileContentManipulator("script", this.fsi, this.localizer
-										,()->{return new InputStream() {@Override public int read() throws IOException {return -1;}};}
-										,()->{return new OutputStream() {@Override public void write(int b) throws IOException {}};},
-										settings
-										);
-			this.imageManipulator.addFileContentChangeListener((e)->processScriptChanges(e));
 	        
 	        this.panel = new ImageEditPanel(localizer);
 	        this.state = new JStateString(localizer);
+
+			this.imageManipulator = new ImageManipulator(this.state, this.fsi, this.localizer
+								,()->{return new InputStream() {@Override public int read() throws IOException {return -1;}};}
+								,()->{return new OutputStream() {@Override public void write(int b) throws IOException {}};},
+								settings
+								);
+			this.imageManipulator.addFileContentChangeListener((e)->processImageChanges(e));
+			this.scriptManipulator = new JFileContentManipulator("script", this.fsi, this.localizer
+								,()->{return new InputStream() {@Override public int read() throws IOException {return -1;}};}
+								,()->{return new OutputStream() {@Override public void write(int b) throws IOException {}};},
+								settings
+								);
+			this.imageManipulator.addFileContentChangeListener((e)->processScriptChanges(e));
 	        
 	        this.panel.addUndoableEditListener((e)->processUndoEvents(e));
 	        this.panel.addActionListener((e)->processCommand(e));
@@ -176,6 +183,7 @@ public class Application extends JFrame implements NodeMetadataOwner, LocaleChan
 	    			state.message(Severity.error, exc, exc.getLocalizedMessage());
 	        	}
 	        });
+			fillImageLRU(this.imageManipulator.getLastUsed());
 	        refreshMenuState();
 	        localizer.addLocaleChangeListener(this);
 	        
@@ -189,15 +197,14 @@ public class Application extends JFrame implements NodeMetadataOwner, LocaleChan
 			SwingUtils.assignExitMethod4MainWindow(this,()->exit());
 			SwingUtils.centerMainWindow(this, 0.85f);
 			fillLocalizedStrings();
-			state.message(Severity.info, KEY_APPLICAITON_MESSAGE_READY);
+			state.message(Severity.info, KEY_APPLICATION_MESSAGE_READY);
 		}
 	}
 
 	@Override
 	public void close() throws IOException {
 		// TODO Auto-generated method stub
-		scriptManipulator.close();
-		imageManipulator.close();
+		dispose();
 	}
 	
 	@Override
@@ -225,101 +232,102 @@ public class Application extends JFrame implements NodeMetadataOwner, LocaleChan
 
 	@OnAction("action:/newImage")
     public void newImage() {
-		if (checkUnsavedChanges()) {
-			final AskImageSize	ais = new AskImageSize(getLogger());
-			
-			if (ask(ais,240,100)) {
-				try {
-					final BufferedImage	img = new BufferedImage(ais.width, ais.height, BufferedImage.TYPE_INT_ARGB);
-					
-					if (ais.fillBackgroung) {
-				    	panel.setImage(ImageUtils.process(ProcessType.FILL, img, null, new Rectangle(0, 0, ais.width, ais.height), panel.getCanvasBackground()));
-					}
-					else {
-				    	panel.setImage(img);
-					}
-					undoMgr.discardAllEdits();
-			    	lastFile = null;
-					refreshMenuState();
-					fillTitle();
-				} catch (PaintScriptException exc) {
-					getLogger().message(Severity.error, exc, exc.getLocalizedMessage());
-				}
+		try{if (imageManipulator.newFile()) {
+				final BufferedImage	img = (BufferedImage)imageManipulator.image.getImage();
+						
+				getLogger().message(Severity.info, KEY_APPLICATION_MESSAGE_NEW_IMAGE_CREATED, img.getWidth(), img.getHeight());
 			}
+		} catch (IOException | PaintScriptException exc) {
+			getLogger().message(Severity.error, exc, exc.getLocalizedMessage());
 		}
     }
     
 	@OnAction("action:/loadImage")
     public void loadImage() {
-		if (checkUnsavedChanges()) {
-			try{for (String item : JFileSelectionDialog.select(this, getLocalizer(), fsi, JFileSelectionDialog.OPTIONS_CAN_SELECT_FILE | JFileSelectionDialog.OPTIONS_FILE_MUST_EXISTS | JFileSelectionDialog.OPTIONS_FOR_OPEN, 
-									FilterCallback.of(localizer.getValue(KEY_PNG_FILES), "*.png"), 
-									FilterCallback.of(localizer.getValue(KEY_JPG_FILES), "*.jpg"),
-									FilterCallback.of(localizer.getValue(KEY_GIF_FILES), "*.gif"),
-									FilterCallback.of(localizer.getValue(KEY_BMP_FILES), "*.bmp"))) {
-					try(final FileSystemInterface	temp = fsi.clone().open(item);
-						final InputStream			is = temp.read()) {
-						
-						panel.setImage(ImageIO.read(is));
-						undoMgr.discardAllEdits();
-						lastFile = item;
-						refreshMenuState();
-						fillTitle();
-						return;
-					}
-				}
-			} catch (IOException | PaintScriptException exc) {
-				getLogger().message(Severity.error, exc, exc.getLocalizedMessage());
+		imageManipulator.setFilters(	// Refresh every call because of possibly language changes
+				FilterCallback.of(localizer.getValue(KEY_PNG_FILES), "*.png"), 
+				FilterCallback.of(localizer.getValue(KEY_JPG_FILES), "*.jpg"),
+				FilterCallback.of(localizer.getValue(KEY_GIF_FILES), "*.gif"),
+				FilterCallback.of(localizer.getValue(KEY_BMP_FILES), "*.bmp")
+		);
+		
+		try{if (imageManipulator.openFile()) {
+				final BufferedImage	img = (BufferedImage)imageManipulator.image.getImage();
+				
+				getLogger().message(Severity.info, KEY_APPLICATION_MESSAGE_IMAGE_LOADED, imageManipulator.image.getName(), img.getWidth(), img.getHeight());
 			}
+		} catch (IOException | PaintScriptException exc) {
+			getLogger().message(Severity.error, exc, exc.getLocalizedMessage());
+		}
+    }
+
+    public void loadLRUImage(final String file) {
+		imageManipulator.setFilters(	// Refresh every call because of possibly language changes
+				FilterCallback.of(localizer.getValue(KEY_PNG_FILES), "*.png"), 
+				FilterCallback.of(localizer.getValue(KEY_JPG_FILES), "*.jpg"),
+				FilterCallback.of(localizer.getValue(KEY_GIF_FILES), "*.gif"),
+				FilterCallback.of(localizer.getValue(KEY_BMP_FILES), "*.bmp")
+		);
+		
+		try{if (imageManipulator.openLRUFile(file)) {
+				final BufferedImage	img = (BufferedImage)imageManipulator.image.getImage();
+				
+				getLogger().message(Severity.info, KEY_APPLICATION_MESSAGE_IMAGE_LOADED, imageManipulator.image.getName(), img.getWidth(), img.getHeight());
+			}
+		} catch (IOException | PaintScriptException exc) {
+			getLogger().message(Severity.error, exc, exc.getLocalizedMessage());
 		}
     }
     
 	@OnAction("action:/saveImage")
     public void saveImage() {
-		try(final FileSystemInterface	temp = fsi.clone().open(lastFile)) {
-			if (temp.exists() && temp.isFile()) {
-				try(final OutputStream	os = temp.write()) {
-					ImageIO.write((RenderedImage) panel.getImage().getImage(), lastFile.endsWith(".png") ? "png" : "jpeg", os);
-				}
-				undoMgr.discardAllEdits();
-				refreshMenuState();
+		imageManipulator.setFilters(	// Refresh every call because of possibly language changes
+				FilterCallback.of(localizer.getValue(KEY_PNG_FILES), "*.png"), 
+				FilterCallback.of(localizer.getValue(KEY_JPG_FILES), "*.jpg"),
+				FilterCallback.of(localizer.getValue(KEY_GIF_FILES), "*.gif"),
+				FilterCallback.of(localizer.getValue(KEY_BMP_FILES), "*.bmp")
+		);
+		
+		try{imageManipulator.image = panel.getImage();
+			
+			if (imageManipulator.saveFile()) {
+				getLogger().message(Severity.info, KEY_APPLICATION_MESSAGE_IMAGE_STORED, lastFile);
 			}
-		} catch (IOException| PaintScriptException  e) {
-			getLogger().message(Severity.error,e.getLocalizedMessage());
+		} catch (IOException | PaintScriptException  exc) {
+			getLogger().message(Severity.error, exc, exc.getLocalizedMessage());
 		}
     }
     
 	@OnAction("action:/saveImageAs")
     public void saveImageAs() {
-		try{for (String item : JFileSelectionDialog.select(this, getLocalizer(), fsi, JFileSelectionDialog.OPTIONS_CAN_SELECT_FILE | JFileSelectionDialog.OPTIONS_ALLOW_MKDIR | JFileSelectionDialog.OPTIONS_ALLOW_DELETE | JFileSelectionDialog.OPTIONS_CONFIRM_REPLACEMENT | JFileSelectionDialog.OPTIONS_FOR_SAVE, 
-								FilterCallback.of(localizer.getValue(KEY_PNG_FILES), "*.png"), 
-								FilterCallback.of(localizer.getValue(KEY_JPG_FILES), "*.jpg"),
-								FilterCallback.of(localizer.getValue(KEY_GIF_FILES), "*.gif"),
-								FilterCallback.of(localizer.getValue(KEY_BMP_FILES), "*.bmp"))) {
-				try(final FileSystemInterface	temp = fsi.clone().open(item)) {
-					if (!temp.exists()) {
-						temp.create();
-					}
-					try(final OutputStream	os = temp.write()) {
-						ImageIO.write((RenderedImage) panel.getImage().getImage(), item.endsWith(".png") ? "png" : "jpeg", os);
-					}
-					undoMgr.discardAllEdits();
-					lastFile = item;
-					refreshMenuState();
-					fillTitle();
-					return;
-				}
+		imageManipulator.setFilters(	// Refresh every call because of possibly language changes
+				FilterCallback.of(localizer.getValue(KEY_PNG_FILES), "*.png"), 
+				FilterCallback.of(localizer.getValue(KEY_JPG_FILES), "*.jpg"),
+				FilterCallback.of(localizer.getValue(KEY_GIF_FILES), "*.gif"),
+				FilterCallback.of(localizer.getValue(KEY_BMP_FILES), "*.bmp")
+		);
+		
+		try{imageManipulator.image = panel.getImage();
+			
+			if (imageManipulator.saveFileAs()) {
+				getLogger().message(Severity.info, KEY_APPLICATION_MESSAGE_IMAGE_STORED, lastFile);
 			}
-		} catch (IOException | PaintScriptException e) {
-			getLogger().message(Severity.error,e.getLocalizedMessage());
+		} catch (IOException | PaintScriptException  exc) {
+			getLogger().message(Severity.error, exc, exc.getLocalizedMessage());
 		}
     }
 
 	@OnAction("action:/exit")
     public void exit() {
-		if (checkUnsavedChanges()) {
+		try{imageManipulator.close();
+			scriptManipulator.close();
+			latch.countDown();
+		} catch (UnsupportedOperationException exc) {
+		} catch (IOException e) {
 			latch.countDown();
 		}
+//		if (checkUnsavedChanges()) {
+//		}
     }
 
 	@OnAction("action:/undo")
@@ -484,10 +492,12 @@ public class Application extends JFrame implements NodeMetadataOwner, LocaleChan
 		if (undoMgr.canUndo()) {
 			undo.setEnabled(true);
 			undo.setText(localizer.getValue(undoMgr.getUndoPresentationName()));
+			imageManipulator.setModificationFlag();
 		}
 		else {
 			undo.setEnabled(false);
 			undo.setText(localizer.getValue(((NodeMetadataOwner)undo).getNodeMetadata().getLabelId()));
+			imageManipulator.clearModificationFlag();
 		}
 		if (undoMgr.canRedo()) {
 			redo.setEnabled(true);
@@ -508,52 +518,98 @@ public class Application extends JFrame implements NodeMetadataOwner, LocaleChan
 		refreshPlayerMenuState();
 	}
 
-	private boolean checkUnsavedChanges() {
-		if (undoMgr.canUndoOrRedo()) {
-			switch (new JLocalizedOptionPane(localizer).confirm(this, KEY_UNSAVED_CHANGES, KEY_UNSAVED_CHANGES_TITLE, JOptionPane.QUESTION_MESSAGE, JOptionPane.YES_NO_CANCEL_OPTION)) {
-				case JOptionPane.YES_OPTION 	:
-					if (lastFile != null) {
-						saveImage();
-					}
-					else {
-						saveImageAs();
-					}
-				case JOptionPane.NO_OPTION		:
-					return true;
-				case JOptionPane.CANCEL_OPTION	:
-					return false;
-				default :
-					throw new UnsupportedOperationException(); 
-			}
+//	private boolean checkUnsavedChanges() {
+//		if (undoMgr.canUndoOrRedo()) {
+//			switch (new JLocalizedOptionPane(localizer).confirm(this, KEY_UNSAVED_CHANGES, KEY_UNSAVED_CHANGES_TITLE, JOptionPane.QUESTION_MESSAGE, JOptionPane.YES_NO_CANCEL_OPTION)) {
+//				case JOptionPane.YES_OPTION 	:
+//					if (lastFile != null) {
+//						saveImage();
+//					}
+//					else {
+//						saveImageAs();
+//					}
+//				case JOptionPane.NO_OPTION		:
+//					return true;
+//				case JOptionPane.CANCEL_OPTION	:
+//					return false;
+//				default :
+//					throw new UnsupportedOperationException(); 
+//			}
+//		}
+//		else {
+//			return true;
+//		}
+//	}
+	
+	private void fillTitle() throws LocalizationException, PaintScriptException {
+		setTitle(String.format(localizer.getValue(KEY_APPLICATION_TITLE), 
+				(imageManipulator.wasChanged() ? "*" : "") + 
+				(panel.hasImage() ? (lastFile == null ? localizer.getValue(KEY_APPLICATION_MESSAGE_NEW_NAME) : "("+lastFile+")"): "")));
+	}
+
+	private void fillImageLRU(final List<String> lastUsed) {
+		final JMenu	menu = ((JMenu)SwingUtils.findComponentByName(menuBar, "menu.main.file.load.lru"));
+		
+		if (lastUsed.isEmpty()) {
+			menu.setEnabled(false);
 		}
 		else {
-			return true;
+			menu.removeAll();
+			for (String file : lastUsed) {
+				final JMenuItem	item = new JMenuItem(file);
+				
+				item.addActionListener((e)->loadLRUImage(item.getText()));
+				menu.add(item);
+			}
+			menu.setEnabled(true);
 		}
 	}
 	
-	private void fillTitle() throws LocalizationException, PaintScriptException {
-		setTitle(String.format(localizer.getValue(KEY_APPLICATION_TITLE),panel.hasImage() ? (lastFile == null ? "(*)" : "("+lastFile+")"): ""));
-	}
-
 	private void processImageChanges(final FileContentChangedEvent<?> e) {
-		// TODO Auto-generated method stub
-		switch (e.getChangeType()) {
-			case FILE_LOADED			:
-				break;
-			case FILE_STORED			:
-				break;
-			case FILE_STORED_AS			:
-				break;
-			case LRU_LIST_REFRESHED		:
-				break;
-			case MODIFICATION_FLAG_CLEAR:
-				break;
-			case MODIFICATION_FLAG_SET	:
-				break;
-			case NEW_FILE_CREATED		:
-				break;
-			default :
-				throw new UnsupportedOperationException("Change type ["+e.getChangeType()+"] is not supported yet");
+		try{switch (e.getChangeType()) {
+				case FILE_LOADED			:
+					panel.setImage(imageManipulator.image);
+					undoMgr.discardAllEdits();
+					lastFile = imageManipulator.image.getName();
+					refreshMenuState();
+					fillTitle();
+					break;
+				case FILE_STORED			:
+					break;
+				case FILE_STORED_AS			:
+					undoMgr.discardAllEdits();
+					lastFile = imageManipulator.getCurrentNameOfTheFile();
+					refreshMenuState();
+					fillTitle();
+					break;
+				case LRU_LIST_REFRESHED		:
+					fillImageLRU(imageManipulator.getLastUsed());
+					break;
+				case MODIFICATION_FLAG_CLEAR:
+					fillTitle();
+					break;
+				case MODIFICATION_FLAG_SET	:
+					fillTitle();
+					break;
+				case NEW_FILE_CREATED		:
+					if (imageManipulator.fillRequired) {
+						final BufferedImage	img = (BufferedImage)imageManipulator.image.getImage();
+						
+				    	panel.setImage(ImageUtils.process(ProcessType.FILL, img, null, new Rectangle(0, 0, img.getWidth(), img.getHeight()), panel.getCanvasBackground().getColor()));
+					}
+					else {
+				    	panel.setImage(imageManipulator.image);
+					}
+					undoMgr.discardAllEdits();
+			    	lastFile = null;
+					refreshMenuState();
+					fillTitle();
+					break;
+				default :
+					throw new UnsupportedOperationException("Change type ["+e.getChangeType()+"] is not supported yet");
+			}
+		} catch (PaintScriptException exc) {
+			getLogger().message(Severity.error, exc, exc.getLocalizedMessage());
 		}
 	}
 
@@ -718,12 +774,12 @@ public class Application extends JFrame implements NodeMetadataOwner, LocaleChan
 	}	
 	
 	private static void startGUI(final ContentMetadataInterface xda, final Localizer localizer, final Predefines predef) throws InterruptedException, IOException, PaintScriptException {
-		final CountDownLatch			latch = new CountDownLatch(1);
-		final Application				app = new Application(xda, localizer, predef, latch);
+		final CountDownLatch	latch = new CountDownLatch(1);
 		
-		app.setVisible(true);
-		latch.await();
-		app.dispose();
+		try(final Application	app = new Application(xda, localizer, predef, latch)) {
+			app.setVisible(true);
+			latch.await();
+		}
 	}
 	
 	private static class ApplicationArgParser extends ArgParser {
@@ -780,6 +836,56 @@ public class Application extends JFrame implements NodeMetadataOwner, LocaleChan
 			try(final OutputStream	os = new FileOutputStream(file)) {
 				props.store(os, null);
 				os.flush();
+			}
+		}
+	}
+	
+	private static class ImageManipulator extends JFileContentManipulator implements LoggerFacadeOwner {
+		private final LoggerFacade	logger;
+		private ImageWrapper		image;
+		private boolean				fillRequired;
+		
+		public ImageManipulator(final LoggerFacade logger, FileSystemInterface fsi, Localizer localizer, InputStreamGetter getterIn, OutputStreamGetter getterOut, LRUPersistence persistence) throws NullPointerException {
+			super("image", fsi, localizer, getterIn, getterOut, persistence);
+			this.logger = logger;
+		}
+
+		@Override
+		public LoggerFacade getLogger() {
+			return logger;
+		}
+		
+		@Override
+		protected boolean processNew(final ProgressIndicator progress) throws IOException {
+			final AskImageSize	ais = new AskImageSize(getLogger());
+			
+			try{if (ApplicationUtils.ask(ais, getLocalizer(), 240,100)) {
+					image = ImageWrapper.of(new BufferedImage(ais.width, ais.height, BufferedImage.TYPE_INT_ARGB));
+					fillRequired = ais.fillBackgroung;
+					return true;
+				}
+				else {
+					return false;
+				}
+			} catch (ContentException exc) {
+				getLogger().message(Severity.error, exc, exc.getLocalizedMessage());
+				return false;
+			}
+		}
+
+		@Override
+		protected boolean processLoad(final String fileName, final InputStream source, final ProgressIndicator progress) throws IOException {
+			image = new ImageWrapperImpl(source);
+			image.setName(fileName);
+			return true;
+		}
+		
+		@Override
+		protected boolean processStore(final String fileName, final OutputStream target, final ProgressIndicator progress) throws IOException {
+			try{ImageIO.write((RenderedImage)image.getImage(), image.getFormat(), target);
+				return true;
+			} catch (PaintScriptException e) {
+				throw new IOException(e); 
 			}
 		}
 	}
