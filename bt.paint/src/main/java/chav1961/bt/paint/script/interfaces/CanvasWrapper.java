@@ -1,12 +1,12 @@
 package chav1961.bt.paint.script.interfaces;
 
 public interface CanvasWrapper extends BufferWrapper {
-	FontWrapper getFont();
-	void setFont(FontWrapper font);
-	ColorWrapper getForeground();
-	void setForeground(ColorWrapper color);
-	ColorWrapper getBackground();
-	void setBackground(ColorWrapper color);
-	StrokeWrapper getStroke();
-	void setStroke(StrokeWrapper stroke);
+	FontWrapper getCanvasFont();
+	void setCanvasFont(FontWrapper font);
+	ColorWrapper getCanvasForeground();
+	void setCanvasForeground(ColorWrapper color);
+	ColorWrapper getCanvasBackground();
+	void setCanvasBackground(ColorWrapper color);
+	StrokeWrapper getCanvasStroke();
+	void setCanvasStroke(StrokeWrapper stroke);
 }

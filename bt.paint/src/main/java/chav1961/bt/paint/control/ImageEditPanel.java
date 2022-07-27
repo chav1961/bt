@@ -5,6 +5,7 @@ import java.awt.BasicStroke;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Dimension;
+import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.GridLayout;
@@ -46,6 +47,14 @@ import chav1961.bt.paint.control.ImageEditCanvas.LineJoin;
 import chav1961.bt.paint.control.ImageEditCanvas.LineStroke;
 import chav1961.bt.paint.control.ImageUtils.DrawingType;
 import chav1961.bt.paint.dialogs.AskImageResize;
+import chav1961.bt.paint.interfaces.PaintScriptException;
+import chav1961.bt.paint.script.interfaces.CanvasWrapper;
+import chav1961.bt.paint.script.interfaces.ColorWrapper;
+import chav1961.bt.paint.script.interfaces.FontWrapper;
+import chav1961.bt.paint.script.interfaces.ImageWrapper;
+import chav1961.bt.paint.script.interfaces.ImageWrapper.SetOptions;
+import chav1961.bt.paint.script.interfaces.RectWrapper;
+import chav1961.bt.paint.script.interfaces.StrokeWrapper;
 import chav1961.bt.paint.utils.ApplicationUtils;
 import chav1961.purelib.basic.exceptions.ContentException;
 import chav1961.purelib.basic.exceptions.EnvironmentException;
@@ -65,7 +74,7 @@ import chav1961.purelib.ui.swing.useful.JFontSelectionDialog;
 import chav1961.purelib.ui.swing.useful.JLocalizedOptionPane;
 import chav1961.purelib.ui.swing.useful.interfaces.SelectionFrameListener.SelectionStyle;
 
-public class ImageEditPanel extends JPanel implements LocalizerOwner, LocaleChangeListener {
+public class ImageEditPanel extends JPanel implements LocalizerOwner, LocaleChangeListener, CanvasWrapper {
 	private static final long 				serialVersionUID = -8630893532191028731L;
 	private static final ContentMetadataInterface	xda;
 	
@@ -110,6 +119,7 @@ public class ImageEditPanel extends JPanel implements LocalizerOwner, LocaleChan
 	private final JPanel			leftPanel = new JPanel();
 	private final ImageEditCanvas	canvas;
 	private final EditStateString	state;
+	private RectWrapper				selection = null;
 	private ResizableTextArea		rta = null;
 	private DrawingType				drawingType = DrawingType.UNKNOWN;
 	private Rectangle				lastSelection = null;
@@ -135,7 +145,7 @@ public class ImageEditPanel extends JPanel implements LocalizerOwner, LocaleChan
 			
 			topPanel.add(prepareColorToolBar());
 			topPanel.add(prepareSettingsToolBar());
-			topPanel.add(preparePlayerToolBar());
+//			topPanel.add(preparePlayerToolBar());
 	        
 	        add(topPanel, BorderLayout.NORTH);
 	        add(leftPanel, BorderLayout.WEST);
@@ -171,6 +181,148 @@ public class ImageEditPanel extends JPanel implements LocalizerOwner, LocaleChan
         fillLocalizedStrings();
 	}
 
+	@Override
+	public void open() throws PaintScriptException {
+		// TODO Auto-generated method stub
+	}
+
+	@Override
+	public void clear() throws PaintScriptException {
+		// TODO Auto-generated method stub
+	}
+
+	@Override
+	public boolean hasImage() throws PaintScriptException {
+		return canvas.getBackgroundImage() != null;
+	}
+
+	@Override
+	public ImageWrapper getImage() throws PaintScriptException {
+		return ImageWrapper.of(canvas.getBackgroundImage());
+	}
+
+	@Override
+	public void setImage(final ImageWrapper image) throws PaintScriptException {
+		if (image == null) {
+			throw new NullPointerException("Image to set can't be null");
+		}
+		else {
+			canvas.setBackgroundImage(image.getImage());
+		}
+	}
+
+	@Override
+	public ImageWrapper getImage(final RectWrapper rect) throws PaintScriptException {
+		if (rect == null) {
+			throw new NullPointerException("Rectangle can't be null"); 
+		}
+		else if (!hasImage()) {
+			throw new IllegalStateException("Canvas doesn't have any image to use this method"); 
+		}
+		else {
+			return ImageWrapper.of(ImageUtils.cropImage((BufferedImage)canvas.getBackgroundImage(), rect.getRect(), null));
+		}
+	}
+
+	@Override
+	public void setImage(final RectWrapper rect, final ImageWrapper image, final SetOptions... options) throws PaintScriptException {
+		if (rect == null) {
+			throw new NullPointerException("Rectangle can't be null"); 
+		}
+		else if (image == null) {
+			throw new NullPointerException("Image can't be null"); 
+		}
+		else if (!hasImage()) {
+			throw new IllegalStateException("Canvas doesn't have any image to use this method"); 
+		}
+		else {
+			ImageUtils.insertImage((BufferedImage)canvas.getBackgroundImage(), rect.getRect(), (BufferedImage)image.getImage(), null);
+		}
+	}
+
+	@Override
+	public RectWrapper getSelection() throws PaintScriptException {
+		return selection;
+	}
+
+	@Override
+	public void setSelection(final RectWrapper rect) throws PaintScriptException {
+		selection = RectWrapper.of(rect.getRect());
+	}
+
+	@Override
+	public void clearSelection() throws PaintScriptException {
+		selection = null;
+	}
+
+	@Override
+	public void close() throws PaintScriptException {
+		// TODO Auto-generated method stub
+	}
+
+	@Override
+	public FontWrapper getCanvasFont() {
+		return FontWrapper.of(canvas.getFont());
+	}
+
+	@Override
+	public void setCanvasFont(final FontWrapper font) {
+		if (font == null) {
+			throw new NullPointerException("Font to set can't be null");
+		}
+		else {
+			canvas.setFont(font.getFont());
+		}
+	}
+
+	@Override
+	public ColorWrapper getCanvasForeground() {
+		return ColorWrapper.of(canvas.getForeground());
+	}
+
+	@Override
+	public void setCanvasForeground(final ColorWrapper color) {
+		if (color == null) {
+			throw new NullPointerException("Color to set can't be null");
+		}
+		else {
+			canvas.setForeground(color.getColor());
+		}
+	}
+
+	@Override
+	public ColorWrapper getCanvasBackground() {
+		return ColorWrapper.of(canvas.getBackground());
+	}
+
+	@Override
+	public void setCanvasBackground(final ColorWrapper color) {
+		if (color == null) {
+			throw new NullPointerException("Color to set can't be null");
+		}
+		else {
+			canvas.setBackground(color.getColor());
+		}
+	}
+
+	@Override
+	public StrokeWrapper getCanvasStroke() {
+		return StrokeWrapper.of(buildStroke(canvas.getLineThickness(), canvas.getLineStroke(), canvas.getLineCaps(), canvas.getLineJoin()));
+	}
+
+	@Override
+	public void setCanvasStroke(final StrokeWrapper stroke) {
+		if (stroke == null) {
+			throw new NullPointerException("Stroke to set can't be null");
+		}
+		else {
+			canvas.setLineThickness((int)((BasicStroke)stroke.getStroke()).getLineWidth());
+			canvas.setLineStroke(LineStroke.valueOf(((BasicStroke)stroke.getStroke()).getDashArray()));
+			canvas.setLineCaps(LineCaps.valueOf(((BasicStroke)stroke.getStroke()).getEndCap()));
+			canvas.setLineJoin(LineJoin.valueOf(((BasicStroke)stroke.getStroke()).getLineJoin()));
+		}
+	}
+	
 	public void addChangeListener(final ChangeListener l) {
 		if (l == null) {
 			throw new NullPointerException("Listener to add can't be null");
@@ -418,22 +570,6 @@ public class ImageEditPanel extends JPanel implements LocalizerOwner, LocaleChan
 		fillingOn = !fillingOn;
 	}
 
-	@OnAction("action:/player.recording")
-	public void recording(final Hashtable<String,String[]> modes) {
-	}	
-
-	@OnAction("action:/player.pause")
-	public void pause(final Hashtable<String,String[]> modes) {
-	}	
-
-	@OnAction("action:/player.play")
-	public void play(final Hashtable<String,String[]> modes) {
-	}	
-	
-	public Image getImage() {
-		return canvas.getBackgroundImage();
-	}
-	
 	public void setImage(final Image image) {
 		if (image == null) {
 			throw new NullPointerException("Image to set can't be null");
@@ -483,7 +619,7 @@ public class ImageEditPanel extends JPanel implements LocalizerOwner, LocaleChan
 	
 	private void processSelection(final SelectionStyle style, final Point start, final Point end, final Object... parameters) {
 		if (waitColorExtraction && style == SelectionStyle.POINT) {
-    		setColor(new Color(((BufferedImage)getImage()).getRGB(end.x, end.y)));
+    		setColor(new Color(((BufferedImage)canvas.getBackgroundImage()).getRGB(end.x, end.y)));
     		canvas.getSelectionManager().popSelectionStyle();
     		turnOffExtractColorButton();
     		waitColorExtraction = false;
@@ -595,7 +731,7 @@ public class ImageEditPanel extends JPanel implements LocalizerOwner, LocaleChan
 	}
 
 	private void extractColor() {
-		if (getImage() != null) {
+		if (canvas.getBackgroundImage() != null) {
 			waitColorExtraction = true;
 			canvas.getSelectionManager().pushSelectionStyle(SelectionStyle.POINT);
 			canvas.getSelectionManager().enableSelection(true);
@@ -652,14 +788,14 @@ public class ImageEditPanel extends JPanel implements LocalizerOwner, LocaleChan
 	    return result;
 	}
 
-	private JToolBar preparePlayerToolBar() {
-	    final JToolBar	result = SwingUtils.toJComponent(xda.byUIPath(URI.create("ui:/model/navigation.top.playerBar")), JToolBar.class);
-	
-	    result.setFloatable(false);
-	    result.setOrientation(JToolBar.HORIZONTAL);
-	    SwingUtils.assignActionListeners(result, this);
-	    return result;
-	}
+//	private JToolBar preparePlayerToolBar() {
+//	    final JToolBar	result = SwingUtils.toJComponent(xda.byUIPath(URI.create("ui:/model/navigation.top.playerBar")), JToolBar.class);
+//	
+//	    result.setFloatable(false);
+//	    result.setOrientation(JToolBar.HORIZONTAL);
+//	    SwingUtils.assignActionListeners(result, this);
+//	    return result;
+//	}
 	
 	private void fireUndo(final ImageUndoEdit edit) {
 		final UndoableEditEvent	ee = new UndoableEditEvent(this, edit);
@@ -807,4 +943,5 @@ public class ImageEditPanel extends JPanel implements LocalizerOwner, LocaleChan
 	private void fillLocalizedStrings() {
 		
 	}
+
 }

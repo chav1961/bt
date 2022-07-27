@@ -5,6 +5,8 @@
 		<app:submenu name="menu.main.file" caption="menu.main.file" tooltip="menu.main.file.tt">
 			<app:item name="menu.main.file.new" caption="menu.main.file.new" tooltip="menu.main.file.new.tt" action="newImage"/>
 			<app:item name="menu.main.file.load" caption="menu.main.file.load" tooltip="menu.main.file.load.tt" action="loadImage"/>
+			<app:submenu name="menu.main.file.load.lru" caption="menu.main.file.load.lru" tooltip="menu.main.file.load.lru.tt">
+			</app:submenu>
 			<app:separator/>
 			<app:item name="menu.main.file.save" caption="menu.main.file.save" tooltip="menu.main.file.save.tt" action="saveImage"/>
 			<app:item name="menu.main.file.saveAs" caption="menu.main.file.saveAs" tooltip="menu.main.file.saveAs.tt" action="saveImageAs"/>
@@ -23,6 +25,14 @@
 			<app:item name="menu.main.edit.replace" caption="menu.main.edit.replace" tooltip="menu.main.edit.replace.tt" action="replace"/>
 		</app:submenu>
 		<app:submenu name="menu.main.tools" caption="menu.main.tools" tooltip="menu.main.tools.tt">
+		 	<app:submenu id="menu.main.tools.playerBar" caption="menu.main.tools.playerbar" tooltip="menu.main.tools.playerbar.tt">
+				<app:item name="menu.main.tools.playerbar.recording" caption="toolbar.playerbar.recording" tooltip="toolbar.playerbar.recording.tt" icon="root://chav1961.bt.paint.control.ImageEditPanel/chav1961/bt/paint/images/recordingOff.png?toggled=recordingOn.png" checkable="true" action="player.recording"/>
+				<app:item name="menu.main.tools.playerbar.pause" caption="toolbar.playerbar.pause" tooltip="toolbar.playerbar.pause.tt" icon="root://chav1961.bt.paint.control.ImageEditPanel/chav1961/bt/paint/images/pauseOff.png" checkable="true" action="player.pause"/>
+				<app:submenu name="menu.main.tools.playerbar.play" caption="toolbar.playerbar.play" tooltip="toolbar.playerbar.play.tt">
+					<app:item name="menu.main.tools.playerbar.play" caption="toolbar.playerbar.play" tooltip="toolbar.playerbar.play.tt" action="player.play"/>
+				</app:submenu>
+			</app:submenu>
+			<app:separator/>
 			<app:item name="menu.main.tools.settings" caption="menu.main.tools.settings" tooltip="menu.main.tools.settings.tt" action="settings"/>
 			<app:builtinSubmenu name="builtin.languages" caption="menu.main.tools.languages" tooltip="menu.main.tools.languages.tt"/>
 		</app:submenu>
@@ -103,10 +113,5 @@
 			<app:item name="toolbar.settingsbar.line.stroke.join.bevel" caption="toolbar.settingsbar.line.stroke.join.bevel" tooltip="toolbar.settingsbar.line.stroke.join.bevel.tt" icon="root://chav1961.bt.paint.control.ImageEditPanel/chav1961/bt/paint/images/joinbevel.png" group="join" action="settings.stroke?join=BEVEL"/>
 		</app:submenu>
 		<app:item name="toolbar.settingsbar.filling" caption="toolbar.settingsbar.filling" tooltip="toolbar.settingsbar.filling.tt" icon="root://chav1961.bt.paint.control.ImageEditPanel/chav1961/bt/paint/images/fillOff.png?toggled=fillOn.png" checkable="true" action="settings.filling"/>
-	</app:menu>
- 	<app:menu id="playerBar">
-		<app:item name="toolbar.playerbar.recording" caption="toolbar.playerbar.recording" tooltip="toolbar.playerbar.recording.tt" icon="root://chav1961.bt.paint.control.ImageEditPanel/chav1961/bt/paint/images/recordingOff.png?toggled=recordingOn.png" checkable="true" action="player.recording"/>
-		<app:item name="toolbar.playerbar.pause" caption="toolbar.playerbar.pause" tooltip="toolbar.playerbar.pause.tt" icon="root://chav1961.bt.paint.control.ImageEditPanel/chav1961/bt/paint/images/pauseOff.png" checkable="true" action="player.pause"/>
-		<app:item name="toolbar.playerbar.play" caption="toolbar.playerbar.play" tooltip="toolbar.playerbar.play.tt" icon="root://chav1961.bt.paint.control.ImageEditPanel/chav1961/bt/paint/images/playOff.png?toggled=playOn.png" checkable="true" action="player.play"/>
 	</app:menu>
 </app:root>

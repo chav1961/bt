@@ -22,7 +22,7 @@ import chav1961.purelib.basic.Utils;
 import chav1961.purelib.basic.growablearrays.GrowableByteArray;
 
 public class ImageWrapperImpl implements ImageWrapper {
-	private static final Set<String>	FORMATS_SUPPORTED = Set.of("png","jpeg");
+	private static final Set<String>	FORMATS_SUPPORTED = Set.of("png","jpeg","gif","bmp");
 	
 	private BufferedImage	image;
 	private String			format = "png";
@@ -31,7 +31,7 @@ public class ImageWrapperImpl implements ImageWrapper {
 	public ImageWrapperImpl() {
 		this.image = new BufferedImage(1, 1, BufferedImage.TYPE_4BYTE_ABGR);
 	}
-	
+
 	public ImageWrapperImpl(final InputStream is) throws IOException {
 		if (is == null) {
 			throw new NullPointerException("Input stream can't be null"); 

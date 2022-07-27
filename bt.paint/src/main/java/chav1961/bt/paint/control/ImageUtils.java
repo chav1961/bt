@@ -30,7 +30,7 @@ import chav1961.purelib.ui.ColorPair;
 
 public class ImageUtils {
 	public static enum ProcessType {
-		FILL, CROP, RESIZE, SCALE, ROTATE_CLOCKWISE, ROTATE_COUNTERCLOCKWISE, MIRROR_HORIZONTAL, MIRROR_VERTICAL, TO_GRAYSCALE, TO_TRANSPARENT 
+		FILL, CROP, RESIZE, SCALE, ROTATE_CLOCKWISE, ROTATE_COUNTERCLOCKWISE, MIRROR_HORIZONTAL, MIRROR_VERTICAL, TO_GRAYSCALE, TO_TRANSPARENT, INSERT 
 	}
 
 	public static enum DrawingType {
@@ -112,6 +112,13 @@ public class ImageUtils {
 				case TO_TRANSPARENT		:
 					if (checkParameterTypes(parameters, Color.class, Boolean.class)) {
 						return transparentImage((BufferedImage)source, (Color)parameters[0], (Boolean)parameters[1], observer);
+					}
+					else {
+						throw new IllegalArgumentException("[TO_TRANSPARENT] mode must have transparent color intem in the parameters list"); 
+					}
+				case INSERT				:
+					if (checkParameterTypes(parameters, Rectangle.class, BufferedImage.class)) {
+						return insertImage((BufferedImage)source, (Rectangle)parameters[0], (BufferedImage)parameters[1], observer);
 					}
 					else {
 						throw new IllegalArgumentException("[TO_TRANSPARENT] mode must have transparent color intem in the parameters list"); 
@@ -326,7 +333,17 @@ public class ImageUtils {
 		g2d.dispose();
 		return result;		
 	}
-
+	
+	static Image insertImage(final BufferedImage source, final Rectangle rectangle, final BufferedImage insertion, final ImageObserver observer) {
+		final Graphics2D		g2d = (Graphics2D) source.getGraphics();
+		final Rectangle			rect = new Rectangle(rectangle);
+		
+		rect.intersects(0, 0, source.getWidth(), source.getHeight());
+		g2d.drawImage(insertion, rect.x, rect.y, rect.width, rect.height, 0, 0, insertion.getWidth(), insertion.getHeight(), observer);
+		g2d.dispose();
+		return source;
+	}
+	
 	static void rectDraw(final BufferedImage source, final Rectangle rect, final Color color, final Stroke stroke, final ImageObserver observer) {
 		final Graphics2D	g2d = (Graphics2D) source.getGraphics();
 		final Color			oldColor = g2d.getColor();

@@ -7,6 +7,8 @@
 		<key name="application.about.content">uri(about.cre)</key>
 		<key name="chav1961.bt.paint.Application.filter.pngfiles">PNG images</key>
 		<key name="chav1961.bt.paint.Application.filter.jpgfiles">JPEG images</key>
+		<key name="chav1961.bt.paint.Application.filter.giffiles">GIF images</key>
+		<key name="chav1961.bt.paint.Application.filter.bmpfiles">BMP images</key>		
 		<key name="chav1961.bt.paint.Application.unsavedChanges">You have some changes in the editor. Save it?</key>
 		<key name="chav1961.bt.paint.Application.unsavedChanges.title">Unsaved changes</key>
 		<key name="chav1961.bt.paint.Application.message.ready">Ready</key>		
@@ -20,6 +22,8 @@
 		<key name="menu.main.file.new.tt">Create new image</key>
 		<key name="menu.main.file.load">Load</key>
 		<key name="menu.main.file.load.tt">Load image</key>
+		<key name="menu.main.file.load.lru">Load last recent</key>
+		<key name="menu.main.file.load.lru.tt">Load last recent files</key>		
 		<key name="menu.main.file.save">Save</key>
 		<key name="menu.main.file.save.tt">Save image</key>
 		<key name="menu.main.file.saveAs">Save as...</key>
@@ -44,6 +48,8 @@
 		<key name="menu.main.edit.replace.tt">Find fragment(s) on the image and replace them</key>
 		<key name="menu.main.tools">Tools</key>
 		<key name="menu.main.tools.tt">Manage the application</key>
+		<key name="menu.main.tools.playerbar">Player</key>
+		<key name="menu.main.tools.playerbar.tt">Command player</key>		
 		<key name="menu.main.tools.settings">Settings</key>
 		<key name="menu.main.tools.settings.tt">Application settings</key>
 		<key name="menu.main.tools.languages">Language</key>
@@ -234,6 +240,8 @@
 		<key name="application.about.content">uri(about.cre)</key>
 		<key name="chav1961.bt.paint.Application.filter.pngfiles">PNG изображения</key>
 		<key name="chav1961.bt.paint.Application.filter.jpgfiles">JPEG изображения</key>
+		<key name="chav1961.bt.paint.Application.filter.giffiles">GIF изображения</key>
+		<key name="chav1961.bt.paint.Application.filter.bmpfiles">BMP изображения</key>		
 		<key name="chav1961.bt.paint.Application.unsavedChanges">Есть несохраненные изменения. Сохранить их?</key>
 		<key name="chav1961.bt.paint.Application.unsavedChanges.title">Несохраненные изменения</key>
 		<key name="chav1961.bt.paint.Application.message.ready">Готово</key>		
@@ -269,9 +277,10 @@
 		<key name="menu.main.edit.find.tt">Найти фрагмент(ы) на изображении</key>
 		<key name="menu.main.edit.replace">Найти и заменить</key>
 		<key name="menu.main.edit.replace.tt">Найти фрагмент(ы) на изображении и заменить их</key>
-		
 		<key name="menu.main.tools">Инструменты</key>
 		<key name="menu.main.tools.tt">Управление приложением</key>
+		<key name="menu.main.tools.playerbar">Player</key>
+		<key name="menu.main.tools.playerbar.tt">Command player</key>		
 		<key name="menu.main.tools.settings">Настройки</key>
 		<key name="menu.main.tools.settings.tt">Настройки приложения</key>
 		<key name="menu.main.tools.languages">Язык</key>

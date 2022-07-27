@@ -103,14 +103,13 @@ class Console {
 			
 			if (CharUtils.tryExtract(cmd, from, ci.lexemas) >= 0) {
 				from = CharUtils.extract(cmd, from, parameters, ci.lexemas);
-				ci.exec.process(predef, parameters);
+				return ci.exec.process(predef, parameters);
 			}
 			else {
-				throw new SyntaxException(0, from, "Illegal format for command ["+ci.command+"] : must be");
+				throw new SyntaxException(0, from, "Illegal format for command ["+ci.command+"] : must be <"+ci.help+">");
 			}
 		}
 		
-		return null;
 	}
 	
 	private static String drawLine(final Predefines predef, final int xFrom, final int yFrom, final int xTo, final int yTo) throws PaintScriptException {
