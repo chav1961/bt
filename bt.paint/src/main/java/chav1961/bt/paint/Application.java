@@ -450,7 +450,7 @@ public class Application extends JFrame implements NodeMetadataOwner, LocaleChan
 			if (recordingOn && !pauseOn) {
 				commands.append(command).append('\n');
 			}
-		} catch (PaintScriptException exc) {
+		} catch (PaintScriptException | SyntaxException exc) {
 			SwingUtils.getNearestLogger(this).message(Severity.error, exc, exc.getLocalizedMessage());
 		} finally {
 			((JTextField)e.getSource()).setText("");
@@ -659,7 +659,7 @@ public class Application extends JFrame implements NodeMetadataOwner, LocaleChan
 							for (String item : script.split("\n")) {
 								try{
 									predef.getPredefined(Predefines.PREDEF_SYSTEM, SystemWrapper.class).console(item, predef);
-								} catch (PaintScriptException exc) {
+								} catch (PaintScriptException | SyntaxException exc) {
 									getLogger().message(Severity.error, exc, exc.getLocalizedMessage());
 								}
 							}
@@ -675,7 +675,7 @@ public class Application extends JFrame implements NodeMetadataOwner, LocaleChan
 							for (String item : script.split("\n")) {
 								try{
 									predef.getPredefined(Predefines.PREDEF_SYSTEM, SystemWrapper.class).console(item, predef);
-								} catch (PaintScriptException exc) {
+								} catch (PaintScriptException | SyntaxException exc) {
 									getLogger().message(Severity.error, exc, exc.getLocalizedMessage());
 								}
 							}

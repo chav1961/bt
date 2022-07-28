@@ -50,11 +50,13 @@ import chav1961.bt.paint.dialogs.AskImageResize;
 import chav1961.bt.paint.interfaces.PaintScriptException;
 import chav1961.bt.paint.script.interfaces.CanvasWrapper;
 import chav1961.bt.paint.script.interfaces.ColorWrapper;
+import chav1961.bt.paint.script.interfaces.ConsoleInterface;
 import chav1961.bt.paint.script.interfaces.FontWrapper;
 import chav1961.bt.paint.script.interfaces.ImageWrapper;
 import chav1961.bt.paint.script.interfaces.ImageWrapper.SetOptions;
 import chav1961.bt.paint.script.interfaces.RectWrapper;
 import chav1961.bt.paint.script.interfaces.StrokeWrapper;
+import chav1961.bt.paint.script.intern.Console;
 import chav1961.bt.paint.utils.ApplicationUtils;
 import chav1961.purelib.basic.exceptions.ContentException;
 import chav1961.purelib.basic.exceptions.EnvironmentException;
@@ -126,8 +128,12 @@ public class ImageEditPanel extends JPanel implements LocalizerOwner, LocaleChan
 	private boolean 				foregroundNow = true;
 	private boolean 				fillingOn = false;
 	private boolean 				waitColorExtraction = false;
-	
+
 	public ImageEditPanel(final Localizer localizer) throws NullPointerException {
+		this(localizer, (c,p)->Console.processCommand(c, p));
+	}
+	
+	public ImageEditPanel(final Localizer localizer, final ConsoleInterface console) throws NullPointerException {
 		super(new BorderLayout());
 		if (localizer == null) {
 			throw new NullPointerException("Localizer can't be null");
@@ -844,7 +850,6 @@ public class ImageEditPanel extends JPanel implements LocalizerOwner, LocaleChan
 			add(states, BorderLayout.EAST);
 
 			fillLocalizedStrings();
-			forCommand.requestFocusInWindow();
 		}
 
 		@Override

@@ -15,6 +15,7 @@ import chav1961.bt.paint.interfaces.PaintScriptException;
 import chav1961.bt.paint.script.interfaces.ImageWrapper;
 import chav1961.bt.paint.script.interfaces.PropertiesWrapper;
 import chav1961.bt.paint.script.interfaces.SystemWrapper;
+import chav1961.bt.paint.script.intern.Console;
 import chav1961.purelib.basic.SubstitutableProperties;
 import chav1961.purelib.basic.URIUtils;
 import chav1961.purelib.basic.exceptions.SyntaxException;
