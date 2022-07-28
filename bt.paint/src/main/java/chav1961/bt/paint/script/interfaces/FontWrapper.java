@@ -54,7 +54,7 @@ public interface FontWrapper {
 			throw new IllegalArgumentException("String to get font for can't be null or empty");
 		}
 		else {
-			return new FontWrapperImpl().setFont(font);
+			return of(Font.decode(font));
 		}
 	}
 }

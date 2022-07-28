@@ -14,7 +14,9 @@ import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.OutputStream;
+import java.io.OutputStreamWriter;
 import java.io.Reader;
 import java.io.StringReader;
 import java.io.Writer;
@@ -41,7 +43,6 @@ import chav1961.bt.paint.control.ImageUtils;
 import chav1961.bt.paint.control.ImageUtils.ProcessType;
 import chav1961.bt.paint.control.Predefines;
 import chav1961.bt.paint.dialogs.AskImageSize;
-import chav1961.bt.paint.dialogs.AskScriptSave;
 import chav1961.bt.paint.interfaces.PaintScriptException;
 import chav1961.bt.paint.script.ImageWrapperImpl;
 import chav1961.bt.paint.script.ScriptNodeType;
@@ -96,8 +97,8 @@ public class Application extends JFrame implements NodeMetadataOwner, LocaleChan
 	private static final String		KEY_JPG_FILES = "chav1961.bt.paint.Application.filter.jpgfiles";
 	private static final String		KEY_GIF_FILES = "chav1961.bt.paint.Application.filter.giffiles";
 	private static final String		KEY_BMP_FILES = "chav1961.bt.paint.Application.filter.bmpfiles";
-	private static final String		KEY_UNSAVED_CHANGES = "chav1961.bt.paint.Application.unsavedChanges";
-	private static final String		KEY_UNSAVED_CHANGES_TITLE = "chav1961.bt.paint.Application.unsavedChanges.title";
+	private static final String		KEY_CMD_FILES = "chav1961.bt.paint.Application.filter.cmdfiles";
+	private static final String		KEY_PSC_FILES = "chav1961.bt.paint.Application.filter.pscfiles";
 	private static final String		KEY_APPLICATION_TITLE = "chav1961.bt.paint.Application.title";
 	
 	private static final String		KEY_APPLICATION_MESSAGE_READY = "chav1961.bt.paint.Application.message.ready";
@@ -120,10 +121,11 @@ public class Application extends JFrame implements NodeMetadataOwner, LocaleChan
 	private final UndoManager				undoMgr = new UndoManager();
 	private final StringBuilder				commands = new StringBuilder(); 
 	private final ImageManipulator			imageManipulator;
-	private final JFileContentManipulator	scriptManipulator;
+	private final ScriptManipulator			scriptManipulator;
 	private final Settings					settings = new Settings(new File("./.bt.paint"));
 		
 	private String							lastFile = null;
+	private String							lastScript = null;
 	private boolean							recordingOn = false, pauseOn = false;
 	
 	public Application(final ContentMetadataInterface xda, final Localizer localizer, final Predefines predef, final CountDownLatch latch) throws IOException, PaintScriptException {
@@ -157,7 +159,7 @@ public class Application extends JFrame implements NodeMetadataOwner, LocaleChan
 								settings
 								);
 			this.imageManipulator.addFileContentChangeListener((e)->processImageChanges(e));
-			this.scriptManipulator = new JFileContentManipulator("script", this.fsi, this.localizer
+			this.scriptManipulator = new ScriptManipulator(this.state, this.fsi, this.localizer
 								,()->{return new InputStream() {@Override public int read() throws IOException {return -1;}};}
 								,()->{return new OutputStream() {@Override public void write(int b) throws IOException {}};},
 								settings
@@ -184,6 +186,7 @@ public class Application extends JFrame implements NodeMetadataOwner, LocaleChan
 	        	}
 	        });
 			fillImageLRU(this.imageManipulator.getLastUsed());
+			fillScriptLRU(this.scriptManipulator.getLastUsed());
 	        refreshMenuState();
 	        localizer.addLocaleChangeListener(this);
 	        
@@ -326,8 +329,6 @@ public class Application extends JFrame implements NodeMetadataOwner, LocaleChan
 		} catch (IOException e) {
 			latch.countDown();
 		}
-//		if (checkUnsavedChanges()) {
-//		}
     }
 
 	@OnAction("action:/undo")
@@ -369,31 +370,24 @@ public class Application extends JFrame implements NodeMetadataOwner, LocaleChan
 	}
 
 	@OnAction("action:/player.recording")
-	public void recording(final Hashtable<String,String[]> modes) {
+	public void recording(final Hashtable<String,String[]> modes) throws IOException {
 		recordingOn = !recordingOn;
 		pauseOn = false;
 		refreshPlayerMenuState();
 		
-		if (!recordingOn && !commands.isEmpty()) {
-			final AskScriptSave	ascs = new AskScriptSave(state);
-			
-			try{if (ApplicationUtils.ask(ascs, localizer, 100, 200)) {
-					if (ascs.needSave) {
-						try(final FileSystemInterface	temp = fsi.clone().open(ascs.store.getAbsolutePath()).create()) {
-							try(final Writer	wr = temp.charWrite()) {
-								wr.write(commands.toString());
-								wr.flush();
-							}
-						}
-						getLogger().message(Severity.info, "stored");
-					}
-				}
-				
-			} catch (ContentException | IOException e) {
-				getLogger().message(Severity.error, e, e.getLocalizedMessage());
-			} finally {
+		if (!recordingOn) {
+			if (!commands.isEmpty()) {
+				scriptManipulator.sb.append(commands);
+				scriptManipulator.setFilters(	// Refresh every call because of possibly language changes
+						FilterCallback.of(localizer.getValue(KEY_CMD_FILES), "*.cmd"), 
+						FilterCallback.of(localizer.getValue(KEY_PSC_FILES), "*.psc")
+				);
+				scriptManipulator.saveFileAs();
 				commands.setLength(0);
 			}
+		}
+		else {
+			scriptManipulator.newFile();
 		}
 	}	
 
@@ -403,11 +397,27 @@ public class Application extends JFrame implements NodeMetadataOwner, LocaleChan
 	}	
 
 	@OnAction("action:/player.play")
-	public void play() {
+	public void play() throws IOException {
+		try{scriptManipulator.setFilters(	// Refresh every call because of possibly language changes
+					FilterCallback.of(localizer.getValue(KEY_CMD_FILES), "*.cmd"), 
+					FilterCallback.of(localizer.getValue(KEY_PSC_FILES), "*.psc")
+			);
+			
+			if (scriptManipulator.openFile()) {
+				processScript(scriptManipulator.file, scriptManipulator.sb.toString());
+			}
+		} catch (IOException exc) {
+			getLogger().message(Severity.error, exc, exc.getLocalizedMessage());
+		}
 	}	
 
-	@OnAction("action:/player.playRecent")
-	public void playRecent(final Hashtable<String,String[]> modes) {
+	public void playRecent(final String file) {
+		try{if (scriptManipulator.openLRUFile(file)) {
+				processScript(scriptManipulator.file, scriptManipulator.sb.toString());
+			}
+		} catch (IOException exc) {
+			getLogger().message(Severity.error, exc, exc.getLocalizedMessage());
+		}
 	}	
 	
 	@OnAction("action:/settings")
@@ -428,15 +438,6 @@ public class Application extends JFrame implements NodeMetadataOwner, LocaleChan
 		SwingUtils.showAboutScreen(this, localizer, KEY_APPLICATION_HELP_TITLE, KEY_APPLICATION_HELP_CONTENT, URI.create("root://chav1961.bt.paint.Application/chav1961/bt/paint/avatar.jpg"), new Dimension(300,300));
 	}
 	
-	private <T> boolean ask(final T instance, final int width, final int height) {
-		try{
-			return ApplicationUtils.ask(instance, localizer, width, height);
-		} catch (ContentException e) {
-			getLogger().message(Severity.error,e.getLocalizedMessage());
-			return false;
-		} 
-	}
-
 	private void processUndoEvents(final UndoableEditEvent e) {
 		undoMgr.undoableEditHappened(e);
 		refreshUndoMenuState();
@@ -518,29 +519,6 @@ public class Application extends JFrame implements NodeMetadataOwner, LocaleChan
 		refreshPlayerMenuState();
 	}
 
-//	private boolean checkUnsavedChanges() {
-//		if (undoMgr.canUndoOrRedo()) {
-//			switch (new JLocalizedOptionPane(localizer).confirm(this, KEY_UNSAVED_CHANGES, KEY_UNSAVED_CHANGES_TITLE, JOptionPane.QUESTION_MESSAGE, JOptionPane.YES_NO_CANCEL_OPTION)) {
-//				case JOptionPane.YES_OPTION 	:
-//					if (lastFile != null) {
-//						saveImage();
-//					}
-//					else {
-//						saveImageAs();
-//					}
-//				case JOptionPane.NO_OPTION		:
-//					return true;
-//				case JOptionPane.CANCEL_OPTION	:
-//					return false;
-//				default :
-//					throw new UnsupportedOperationException(); 
-//			}
-//		}
-//		else {
-//			return true;
-//		}
-//	}
-	
 	private void fillTitle() throws LocalizationException, PaintScriptException {
 		setTitle(String.format(localizer.getValue(KEY_APPLICATION_TITLE), 
 				(imageManipulator.wasChanged() ? "*" : "") + 
@@ -565,6 +543,24 @@ public class Application extends JFrame implements NodeMetadataOwner, LocaleChan
 		}
 	}
 	
+	private void fillScriptLRU(final List<String> lastUsed) {
+		final JMenu	menu = ((JMenu)SwingUtils.findComponentByName(menuBar, "menu.main.tools.playerbar.play"));
+		
+		if (!lastUsed.isEmpty()) {
+			for (int index = menu.getMenuComponentCount()-1; index > 1; index--) {
+				menu.remove(index);
+			}
+			menu.addSeparator();
+			for (String file : lastUsed) {
+				final JMenuItem	item = new JMenuItem(file);
+				
+				item.addActionListener((e)->playRecent(item.getText()));
+				menu.add(item);
+			}
+			menu.setEnabled(true);
+		}
+	}
+	
 	private void processImageChanges(final FileContentChangedEvent<?> e) {
 		try{switch (e.getChangeType()) {
 				case FILE_LOADED			:
@@ -575,6 +571,9 @@ public class Application extends JFrame implements NodeMetadataOwner, LocaleChan
 					fillTitle();
 					break;
 				case FILE_STORED			:
+					undoMgr.discardAllEdits();
+					refreshMenuState();
+					fillTitle();
 					break;
 				case FILE_STORED_AS			:
 					undoMgr.discardAllEdits();
@@ -612,27 +611,78 @@ public class Application extends JFrame implements NodeMetadataOwner, LocaleChan
 			getLogger().message(Severity.error, exc, exc.getLocalizedMessage());
 		}
 	}
-
+	
 	private void processScriptChanges(final FileContentChangedEvent<?> e) {
-		// TODO Auto-generated method stub
-		switch (e.getChangeType()) {
-			case FILE_LOADED			:
-				break;
-			case FILE_STORED			:
-				break;
-			case FILE_STORED_AS			:
-				break;
-			case LRU_LIST_REFRESHED		:
-				break;
-			case MODIFICATION_FLAG_CLEAR:
-				break;
-			case MODIFICATION_FLAG_SET	:
-				break;
-			case NEW_FILE_CREATED		:
-				break;
-			default :
-				throw new UnsupportedOperationException("Change type ["+e.getChangeType()+"] is not supported yet");
+		try{switch (e.getChangeType()) {
+				case FILE_LOADED			:
+					lastScript = scriptManipulator.getCurrentNameOfTheFile();
+					break;
+				case FILE_STORED			:
+					break;
+				case FILE_STORED_AS			:
+					lastScript = scriptManipulator.getCurrentNameOfTheFile();
+					refreshMenuState();
+					break;
+				case LRU_LIST_REFRESHED		:
+					fillScriptLRU(scriptManipulator.getLastUsed());
+					break;
+				case MODIFICATION_FLAG_CLEAR:
+					break;
+				case MODIFICATION_FLAG_SET	:
+					break;
+				case NEW_FILE_CREATED		:
+			    	lastScript = null;
+					refreshMenuState();
+					break;
+				default :
+					throw new UnsupportedOperationException("Change type ["+e.getChangeType()+"] is not supported yet");
+			}
+		} catch (PaintScriptException exc) {
+			getLogger().message(Severity.error, exc, exc.getLocalizedMessage());
 		}
+	}
+
+	private void processScript(final String fileName, final String script) {
+		if (fileName.endsWith(".cmd")) {
+			processConsoleScript(script);
+		}
+		else if (fileName.endsWith(".psc")) {
+			processPaintScript(script);
+		}
+		else {
+			getLogger().message(Severity.warning, "Unknown file extension");
+		}
+	}
+	
+	private void processConsoleScript(final String script) {
+		final Thread	t = new Thread(()->{
+							for (String item : script.split("\n")) {
+								try{
+									predef.getPredefined(Predefines.PREDEF_SYSTEM, SystemWrapper.class).console(item, predef);
+								} catch (PaintScriptException exc) {
+									getLogger().message(Severity.error, exc, exc.getLocalizedMessage());
+								}
+							}
+							panel.refreshContent();
+						});
+		t.setDaemon(true);
+		t.setName("script-executor");
+		t.start();
+	}
+
+	private void processPaintScript(final String script) {
+		final Thread	t = new Thread(()->{
+							for (String item : script.split("\n")) {
+								try{
+									predef.getPredefined(Predefines.PREDEF_SYSTEM, SystemWrapper.class).console(item, predef);
+								} catch (PaintScriptException exc) {
+									getLogger().message(Severity.error, exc, exc.getLocalizedMessage());
+								}
+							}
+						});
+		t.setDaemon(true);
+		t.setName("script-executor");
+		t.start();
 	}
 	
 	private void fillLocalizedStrings() {
@@ -887,6 +937,46 @@ public class Application extends JFrame implements NodeMetadataOwner, LocaleChan
 			} catch (PaintScriptException e) {
 				throw new IOException(e); 
 			}
+		}
+	}
+
+	private static class ScriptManipulator extends JFileContentManipulator implements LoggerFacadeOwner {
+		private final LoggerFacade	logger;
+		private final StringBuilder	sb = new StringBuilder();
+		private String				file;
+		
+		public ScriptManipulator(final LoggerFacade logger, FileSystemInterface fsi, Localizer localizer, InputStreamGetter getterIn, OutputStreamGetter getterOut, LRUPersistence persistence) throws NullPointerException {
+			super("script", fsi, localizer, getterIn, getterOut, persistence);
+			this.logger = logger;
+		}
+
+		@Override
+		public LoggerFacade getLogger() {
+			return logger;
+		}
+		
+		@Override
+		protected boolean processNew(final ProgressIndicator progress) throws IOException {
+			sb.setLength(0);
+			file = "";
+			return true;
+		}
+
+		@Override
+		protected boolean processLoad(final String fileName, final InputStream source, final ProgressIndicator progress) throws IOException {
+			sb.setLength(0);
+			sb.append(Utils.fromResource(new InputStreamReader(source, PureLibSettings.DEFAULT_CONTENT_ENCODING)));
+			file = fileName;
+			return true;
+		}
+		
+		@Override
+		protected boolean processStore(final String fileName, final OutputStream target, final ProgressIndicator progress) throws IOException {
+			final Writer	wr = new OutputStreamWriter(target, PureLibSettings.DEFAULT_CONTENT_ENCODING);
+			
+			wr.write(sb.toString());
+			wr.flush();
+			return true;
 		}
 	}
 }

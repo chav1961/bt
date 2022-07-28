@@ -815,7 +815,7 @@ public class ImageEditPanel extends JPanel implements LocalizerOwner, LocaleChan
 		
 		private final Localizer			localizer;
 		private final JLabel			forPrompt = new JLabel();
-		private final JTextField		forCommand = new JTextField();
+		private final JCommandField		forCommand = new JCommandField();
 		private final JLabel			coord = new JLabel();
 		private final JLabel			size = new JLabel();
 		private final JLabel			fontSettings = new JLabel();
@@ -844,6 +844,7 @@ public class ImageEditPanel extends JPanel implements LocalizerOwner, LocaleChan
 			add(states, BorderLayout.EAST);
 
 			fillLocalizedStrings();
+			forCommand.requestFocusInWindow();
 		}
 
 		@Override
@@ -928,7 +929,5 @@ public class ImageEditPanel extends JPanel implements LocalizerOwner, LocaleChan
 	}
 	
 	private void fillLocalizedStrings() {
-		
 	}
-
 }

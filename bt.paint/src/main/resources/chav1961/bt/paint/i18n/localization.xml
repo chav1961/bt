@@ -9,8 +9,8 @@
 		<key name="chav1961.bt.paint.Application.filter.jpgfiles">JPEG images</key>
 		<key name="chav1961.bt.paint.Application.filter.giffiles">GIF images</key>
 		<key name="chav1961.bt.paint.Application.filter.bmpfiles">BMP images</key>		
-		<key name="chav1961.bt.paint.Application.unsavedChanges">You have some changes in the editor. Save it?</key>
-		<key name="chav1961.bt.paint.Application.unsavedChanges.title">Unsaved changes</key>
+		<key name="chav1961.bt.paint.Application.filter.cmdfiles">Console commands</key>
+		<key name="chav1961.bt.paint.Application.filter.pscfiles">bt.paint script</key>				
 		<key name="chav1961.bt.paint.Application.message.ready">Ready</key>
 		<key name="chav1961.bt.paint.Application.message.new.name">(&lt;new&gt;)</key>		
 		<key name="chav1961.bt.paint.Application.message.new.image.created">New image created, %1$dx%2$dpx</key>		
@@ -204,7 +204,7 @@
 				
 <!-- ImageEditPanel.EditStateString -->
 		<key name="chav1961.bt.mnemoed.bgeditor.ImageEditPanel.EditStateString.prompt">Type command</key>
-		<key name="chav1961.bt.mnemoed.bgeditor.ImageEditPanel.EditStateString.path.tt">Type command in SVG tag style</key>
+		<key name="chav1961.bt.mnemoed.bgeditor.ImageEditPanel.EditStateString.path.tt">Type console command. Use up/down arrows to navigate history</key>
 		<key name="chav1961.bt.mnemoed.bgeditor.ImageEditPanel.EditStateString.coord.tt">Current mouse cursor</key>
 		<key name="chav1961.bt.mnemoed.bgeditor.ImageEditPanel.EditStateString.size.tt">Current image size</key>
 		<key name="chav1961.bt.mnemoed.bgeditor.ImageEditPanel.EditStateString.font.tt">Current font selected</key>
@@ -245,9 +245,9 @@
 		<key name="chav1961.bt.paint.Application.filter.pngfiles">PNG изображения</key>
 		<key name="chav1961.bt.paint.Application.filter.jpgfiles">JPEG изображения</key>
 		<key name="chav1961.bt.paint.Application.filter.giffiles">GIF изображения</key>
-		<key name="chav1961.bt.paint.Application.filter.bmpfiles">BMP изображения</key>		
-		<key name="chav1961.bt.paint.Application.unsavedChanges">Есть несохраненные изменения. Сохранить их?</key>
-		<key name="chav1961.bt.paint.Application.unsavedChanges.title">Несохраненные изменения</key>
+		<key name="chav1961.bt.paint.Application.filter.bmpfiles">BMP изображения</key>
+		<key name="chav1961.bt.paint.Application.filter.cmdfiles">Консольные команды</key>
+		<key name="chav1961.bt.paint.Application.filter.pscfiles">Скрипт bt.paint</key>				
 		<key name="chav1961.bt.paint.Application.message.ready">Готово</key>		
 		<key name="chav1961.bt.paint.Application.message.new.name">(&lt;новый&gt;)</key>		
 		<key name="chav1961.bt.paint.Application.message.new.image.created">Новая картинка создана, %1$dx%2$dтчк</key>		
@@ -417,7 +417,7 @@
 
 <!-- ImageEditPanel.EditStateString -->
 		<key name="chav1961.bt.mnemoed.bgeditor.ImageEditPanel.EditStateString.prompt">Введите команду</key>
-		<key name="chav1961.bt.mnemoed.bgeditor.ImageEditPanel.EditStateString.path.tt">В это поле можно ввести команду в стиле тега SVG</key>
+		<key name="chav1961.bt.mnemoed.bgeditor.ImageEditPanel.EditStateString.path.tt">В это поле можно ввести команду. Стрелки вверх/вниз позволяют просмотреть историю</key>
 		<key name="chav1961.bt.mnemoed.bgeditor.ImageEditPanel.EditStateString.coord.tt">Текущие координаты курсора мыши</key>
 		<key name="chav1961.bt.mnemoed.bgeditor.ImageEditPanel.EditStateString.size.tt">Размер текущего изображения</key>
 		<key name="chav1961.bt.mnemoed.bgeditor.ImageEditPanel.EditStateString.font.tt">Настройки текущего шрифтв</key>

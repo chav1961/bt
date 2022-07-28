@@ -31,6 +31,7 @@ import java.util.List;
 import chav1961.bt.paint.control.ImageEditCanvas.LineCaps;
 import chav1961.bt.paint.control.ImageEditCanvas.LineJoin;
 import chav1961.bt.paint.control.ImageEditCanvas.LineStroke;
+import chav1961.purelib.basic.CharUtils;
 import chav1961.purelib.basic.exceptions.SyntaxException;
 import chav1961.purelib.ui.ColorPair;
 
@@ -236,10 +237,66 @@ public class ImageUtils {
 		}
 	}
 
-	// [N] {solid|dashed|dotted} [{butt|round|square}] [{miter|round|bevel}]
+	// [N] {solid|dashed|dotted} [{butt|round|square} [{miter|round|bevel}]]
 	public static Stroke buildStroke(final String stroke) throws SyntaxException {
-		// TODO:
-		return null;
+		if (stroke == null || stroke.isEmpty()) {
+			throw new IllegalArgumentException("Stroke string can't be null or  empty");
+		}
+		else {
+			final char[]		content = CharUtils.terminateAndConvert2CharArray(stroke, '\n');
+			final int[]			forBounds = new int[2];
+			final LineStroke	lineStroke;
+			final LineCaps		lineCaps;
+			final LineJoin		lineJoin;
+			int					from = CharUtils.skipBlank(content, 0, true), thickness = 1;
+			
+			if (Character.isDigit(content[from])) {
+				from = CharUtils.skipBlank(content, CharUtils.parseInt(content, from, forBounds, true), true);
+				thickness = forBounds[0];
+			}
+			if (Character.isLetter(content[from])) {
+				from = CharUtils.skipBlank(content, CharUtils.parseName(content, from, forBounds), true);
+				
+				final String	strokeName = new String(content, forBounds[0], forBounds[1]-forBounds[0]); 
+						
+				try {lineStroke = LineStroke.valueOf(strokeName);
+				} catch (IllegalArgumentException exc) {
+					throw new SyntaxException(SyntaxException.toRow(content, from), SyntaxException.toCol(content, from), "Illegal stroke type");
+				}
+			}
+			else {
+				throw new SyntaxException(SyntaxException.toRow(content, from), SyntaxException.toCol(content, from), "Missing stroke type");
+			}
+			if (Character.isLetter(content[from])) {
+				from = CharUtils.skipBlank(content, CharUtils.parseName(content, from, forBounds), true);
+				
+				final String	capsName = new String(content, forBounds[0], forBounds[1]-forBounds[0]);
+				
+				try {lineCaps = LineCaps.valueOf(capsName);
+				} catch (IllegalArgumentException exc) {
+					throw new SyntaxException(SyntaxException.toRow(content, from), SyntaxException.toCol(content, from), "Illegal stroke caps");
+				}
+				
+				if (Character.isLetter(content[from])) {
+					from = CharUtils.skipBlank(content, CharUtils.parseName(content, from, forBounds), true);
+					
+					final String	joinName = new String(content, forBounds[0], forBounds[1]-forBounds[0]);
+					
+					try {lineJoin = LineJoin.valueOf(joinName);
+					} catch (IllegalArgumentException exc) {
+						throw new SyntaxException(SyntaxException.toRow(content, from), SyntaxException.toCol(content, from), "Illegal stroke join");
+					}
+				}
+				else {
+					lineJoin = LineJoin.BEVEL;
+				}
+			}
+			else {
+				lineCaps = LineCaps.BUTT;
+				lineJoin = LineJoin.BEVEL;
+			}
+			return buildStroke(thickness, lineStroke, lineCaps, lineJoin);
+		}
 	}
 	
 	static Image fillImage(final BufferedImage source, final Rectangle rectangle, final Color color, final ImageObserver observer) {
