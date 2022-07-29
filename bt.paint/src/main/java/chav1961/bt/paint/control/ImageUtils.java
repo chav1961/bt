@@ -107,7 +107,7 @@ public class ImageUtils {
 						return resizeImage((BufferedImage)source, ((Number)parameters[0]).intValue(), ((Number)parameters[1]).intValue(), Color.BLACK, true, true, observer);
 					}
 					else {
-						throw new IllegalArgumentException("[RESIZE] mode must have width anf height items in the parameters list"); 
+						throw new IllegalArgumentException("[RESIZE] mode must have width and height items in the parameters list"); 
 					}
 				case TO_GRAYSCALE		:
 					if (checkParameterTypes(parameters)) {

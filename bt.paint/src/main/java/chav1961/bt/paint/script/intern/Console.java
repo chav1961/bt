@@ -11,6 +11,7 @@ import chav1961.bt.paint.control.ImageUtils.DrawingType;
 import chav1961.bt.paint.control.ImageUtils.ProcessType;
 import chav1961.bt.paint.control.Predefines;
 import chav1961.bt.paint.interfaces.PaintScriptException;
+import chav1961.bt.paint.script.interfaces.AnchorPoint;
 import chav1961.bt.paint.script.interfaces.CanvasWrapper;
 import chav1961.bt.paint.script.interfaces.ColorWrapper;
 import chav1961.bt.paint.script.interfaces.FontWrapper;
@@ -36,7 +37,6 @@ import chav1961.purelib.ui.swing.useful.svg.SVGUtils;
 //* stroke N [{solid|dashed|dotted}] [{butt|}] [{|}]
 //* fore {(x,y) | #nnn |<name> }
 //* back {(x,y) | #nnn |<name> }
-//* filling {on|off}
 //* font <name> N [{bold|italic}]
 // ? <request>
 //* rotate angle
@@ -58,6 +58,30 @@ import chav1961.purelib.ui.swing.useful.svg.SVGUtils;
 //* quit
 //* qquit
 public class Console {
+	private static final String				KEY_UNDO_CROP = "chav1961.bt.mnemoed.editor.ImageEditPanel.undo.crop";
+	private static final String				KEY_REDO_CROP = "chav1961.bt.mnemoed.editor.ImageEditPanel.redo.crop";
+	private static final String				KEY_UNDO_RESIZE = "chav1961.bt.mnemoed.editor.ImageEditPanel.undo.resize";
+	private static final String				KEY_REDO_RESIZE = "chav1961.bt.mnemoed.editor.ImageEditPanel.redo.resize";
+	private static final String				KEY_UNDO_ROTATE = "chav1961.bt.mnemoed.editor.ImageEditPanel.undo.rotate";
+	private static final String				KEY_REDO_ROTATE = "chav1961.bt.mnemoed.editor.ImageEditPanel.redo.rotate";
+	private static final String				KEY_UNDO_REFLECT_V = "chav1961.bt.mnemoed.editor.ImageEditPanel.undo.reflect.vertical";
+	private static final String				KEY_REDO_REFLECT_V = "chav1961.bt.mnemoed.editor.ImageEditPanel.redo.reflect.vertical";
+	private static final String				KEY_UNDO_REFLECT_H = "chav1961.bt.mnemoed.editor.ImageEditPanel.undo.reflect.horizontal";
+	private static final String				KEY_REDO_REFLECT_H = "chav1961.bt.mnemoed.editor.ImageEditPanel.redo.reflect.horizontal";
+	private static final String				KEY_UNDO_GRAYSCALE = "chav1961.bt.mnemoed.editor.ImageEditPanel.undo.grayscale";
+	private static final String				KEY_REDO_GRAYSCALE = "chav1961.bt.mnemoed.editor.ImageEditPanel.redo.grayscale";
+	private static final String				KEY_UNDO_TRANSPARENCY = "chav1961.bt.mnemoed.editor.ImageEditPanel.undo.transparency";
+	private static final String				KEY_REDO_TRANSPARENCY = "chav1961.bt.mnemoed.editor.ImageEditPanel.redo.transparency";
+	private static final String				KEY_UNDO_DRAW_ELLIPSE = "chav1961.bt.mnemoed.editor.ImageEditPanel.undo.draw.ellipse";
+	private static final String				KEY_REDO_DRAW_ELLIPSE = "chav1961.bt.mnemoed.editor.ImageEditPanel.redo.draw.ellipse";
+	private static final String				KEY_UNDO_DRAW_LINE = "chav1961.bt.mnemoed.editor.ImageEditPanel.undo.draw.line";
+	private static final String				KEY_REDO_DRAW_LINE = "chav1961.bt.mnemoed.editor.ImageEditPanel.redo.draw.line";
+	private static final String				KEY_UNDO_DRAW_PATH = "chav1961.bt.mnemoed.editor.ImageEditPanel.undo.draw.path";
+	private static final String				KEY_REDO_DRAW_PATH = "chav1961.bt.mnemoed.editor.ImageEditPanel.redo.draw.path";
+	private static final String				KEY_UNDO_DRAW_RECT = "chav1961.bt.mnemoed.editor.ImageEditPanel.undo.draw.rect";
+	private static final String				KEY_REDO_DRAW_RECT = "chav1961.bt.mnemoed.editor.ImageEditPanel.redo.draw.rect";
+
+	
 	private static final SyntaxTreeInterface<CommandItem>	COMMANDS = new AndOrTree<>();
 	private static final String	OK = "ok";
 
@@ -75,118 +99,196 @@ public class Console {
 	}
 
 	static {
-		CommandItem	ci = new CommandItem("line", "line <xFrom::int>,<yFrom::int> <xTo::int>,<yTo::int>", 
-				(p,a)->drawLine(p,(Integer)a[0],(Integer)a[1],(Integer)a[2],(Integer)a[3]),
-				ArgumentType.signedInt, ',', ArgumentType.signedInt, ArgumentType.signedInt, ',', ArgumentType.signedInt);
+		CommandItem	ci = new CommandItem("line", CommandItem.CommandType.ImageAction
+				, KEY_UNDO_DRAW_LINE
+				, KEY_REDO_DRAW_LINE
+				, "line <xFrom::int>,<yFrom::int> <xTo::int>,<yTo::int>"
+				, (p,a)->drawLine(p,(Integer)a[0],(Integer)a[1],(Integer)a[2],(Integer)a[3])
+				, ArgumentType.signedInt, ',', ArgumentType.signedInt, ArgumentType.signedInt, ',', ArgumentType.signedInt);
 		COMMANDS.placeName("line", ci);
 		COMMANDS.placeName("l", ci);
 
-		ci = new CommandItem("rectangle", "rectangle <xFrom::int>,<yFrom::int> <xTo::int>,<yTo::int>", 
-				(p,a)->drawRect(p,(Integer)a[0],(Integer)a[1],(Integer)a[2],(Integer)a[3]),
-				ArgumentType.signedInt, ',', ArgumentType.signedInt, ArgumentType.signedInt, ',', ArgumentType.signedInt);
+		ci = new CommandItem("rectangle", CommandItem.CommandType.ImageAction
+				, KEY_UNDO_DRAW_RECT
+				, KEY_REDO_DRAW_RECT
+				, "rectangle <xFrom::int>,<yFrom::int> [to] <xTo::int>,<yTo::int> [on]"
+				, (p,a)->drawRect(p,(Integer)a[0],(Integer)a[1],(Integer)a[2],(Integer)a[3],(a[4] instanceof Boolean) && ((Boolean)a[4]))
+				, ArgumentType.signedInt, ',', ArgumentType.signedInt, new CharUtils.Optional("to"), ArgumentType.signedInt, ',', ArgumentType.signedInt, new CharUtils.Optional(ArgumentType.Boolean));
 		COMMANDS.placeName("rectangle", ci);
 		COMMANDS.placeName("rect", ci);
 
-		ci = new CommandItem("ellipse", "ellipse <xFrom::int>,<yFrom::int> [to] <xTo::int>,<yTo::int> [fill]", 
-				(p,a)->drawEllipse(p,(Integer)a[0],(Integer)a[1],(Integer)a[2],(Integer)a[3],a.length > 4 ? (String)a[4] : null),
-				ArgumentType.signedInt, ',', ArgumentType.signedInt, new CharUtils.Optional("to"), ArgumentType.signedInt, ',', ArgumentType.signedInt, new CharUtils.Optional(ArgumentType.name));
+		ci = new CommandItem("ellipse", CommandItem.CommandType.ImageAction
+				, KEY_UNDO_DRAW_ELLIPSE
+				, KEY_REDO_DRAW_ELLIPSE
+				, "ellipse <xFrom::int>,<yFrom::int> [to] <xTo::int>,<yTo::int> [on]"
+				, (p,a)->drawEllipse(p,(Integer)a[0],(Integer)a[1],(Integer)a[2],(Integer)a[3],(a[4] instanceof Boolean) && ((Boolean)a[4]))
+				, ArgumentType.signedInt, ',', ArgumentType.signedInt, new CharUtils.Optional("to"), ArgumentType.signedInt, ',', ArgumentType.signedInt, new CharUtils.Optional(ArgumentType.Boolean));
 		COMMANDS.placeName("ellipse", ci);
 		COMMANDS.placeName("ell", ci);
 
-		ci = new CommandItem("text", "text <xFrom::int>,<yFrom::int> <xTo::int>,<yTo::int> <content::any>", 
-				(p,a)->drawText(p,(Integer)a[0],(Integer)a[1],(Integer)a[2],(Integer)a[3],(String)a[4]),
-				ArgumentType.signedInt, ',', ArgumentType.signedInt, ArgumentType.signedInt, ',', ArgumentType.signedInt, ArgumentType.raw);
+		ci = new CommandItem("text", CommandItem.CommandType.ImageAction
+				, ""
+				, ""
+				, "text <xFrom::int>,<yFrom::int> <xTo::int>,<yTo::int> <content::any>"
+				, (p,a)->drawText(p,(Integer)a[0],(Integer)a[1],(Integer)a[2],(Integer)a[3],(String)a[4])
+				, ArgumentType.signedInt, ',', ArgumentType.signedInt, ArgumentType.signedInt, ',', ArgumentType.signedInt, ArgumentType.raw);
 		COMMANDS.placeName("text", ci);
 		COMMANDS.placeName("t", ci);
 
-		ci = new CommandItem("path", "path <content::any>", (p,a)->drawPath(p,(String)a[0]), ArgumentType.raw);
+		ci = new CommandItem("path", CommandItem.CommandType.ImageAction
+				, KEY_UNDO_DRAW_PATH
+				, KEY_REDO_DRAW_PATH
+				, "path [on] <content::any>"
+				, (p,a)->{
+					if (a[0] instanceof Boolean) {
+						return drawPath(p,(String)a[1],((Boolean)a[0]));	
+					}
+					else {
+						return drawPath(p,(String)a[0],false);	
+					}
+				}
+				, new CharUtils.Optional(ArgumentType.Boolean), ArgumentType.raw);
 		COMMANDS.placeName("path", ci);
 		COMMANDS.placeName("p", ci);
 
-		ci = new CommandItem("fill", "fill <x::int>,<y::int> <color::color>", (p,a)->drawPath(p,(String)a[0]), ArgumentType.signedInt, ',', ArgumentType.signedInt, ArgumentType.colorRepresentation);
-		COMMANDS.placeName("fill", ci);
-
-		ci = new CommandItem("rotate", "rotate {cw|ccw}", (p,a)->rotate(p,(RotateDirection)a[0]), RotateDirection.class);
+		ci = new CommandItem("rotate", CommandItem.CommandType.ImageAction
+				, KEY_UNDO_ROTATE
+				, KEY_REDO_ROTATE
+				, "rotate {cw|ccw}"
+				, (p,a)->rotate(p,(RotateDirection)a[0])
+				, RotateDirection.class);
 		COMMANDS.placeName("rotate", ci);
 		COMMANDS.placeName("rot", ci);
 		
-		ci = new CommandItem("mirror", "mirror {hor|vert}", (p,a)->mirror(p,(MirrorDirection)a[0]), MirrorDirection.class);
+		ci = new CommandItem("mirror", CommandItem.CommandType.ImageAction
+				, KEY_UNDO_REFLECT_H
+				, KEY_REDO_REFLECT_H
+				, "mirror {hor|vert}"
+				, (p,a)->mirror(p,(MirrorDirection)a[0])
+				, MirrorDirection.class);
 		COMMANDS.placeName("mirror", ci);
 		COMMANDS.placeName("mirror", ci);
 
-		ci = new CommandItem("scale", "scale <sx::int>[,<sy::int>]", (p,a)->drawPath(p,(String)a[0]), ArgumentType.signedInt, new CharUtils.Optional(',', ArgumentType.signedInt));
+		ci = new CommandItem("scale", CommandItem.CommandType.ImageAction
+				, KEY_UNDO_RESIZE
+				, KEY_REDO_RESIZE
+				, "scale <newX::int>[,<newY::int>]"
+				, (p,a)->scale(p,(Integer)a[0],a[1] instanceof Integer ? (Integer)a[1] : (Integer)a[0])
+				, ArgumentType.signedInt, new CharUtils.Optional(',', ArgumentType.signedInt));
 		COMMANDS.placeName("scale", ci);
 
-		ci = new CommandItem("resize", "resize <x::int>,<y::int>", (p,a)->drawPath(p,(String)a[0]), ArgumentType.signedInt, ',', ArgumentType.signedInt);
+		ci = new CommandItem("resize", CommandItem.CommandType.ImageAction
+				, KEY_UNDO_RESIZE
+				, KEY_REDO_RESIZE
+				, "resize <newX::int>,<newY::int> [center]"
+				, (p,a)->resize(p,(Integer)a[0],(Integer)a[1],a[2] instanceof AnchorPoint ? ((AnchorPoint)a[2]) : AnchorPoint.unknown)
+				, ArgumentType.signedInt, ',', ArgumentType.signedInt, new CharUtils.Optional(AnchorPoint.class));
 		COMMANDS.placeName("resize", ci);
 
-		ci = new CommandItem("gray", "gray", (p,a)->drawPath(p,(String)a[0]));
+		ci = new CommandItem("gray", CommandItem.CommandType.ImageAction
+				, KEY_UNDO_GRAYSCALE
+				, KEY_REDO_GRAYSCALE
+				, "gray"
+				, (p,a)->gray(p));
 		COMMANDS.placeName("gray", ci);
 
-		ci = new CommandItem("undo", "undo", (p,a)->drawPath(p,(String)a[0]));
-		COMMANDS.placeName("undo", ci);
-		COMMANDS.placeName("u", ci);
-
-		ci = new CommandItem("redo", "redo", (p,a)->drawPath(p,(String)a[0]));
-		COMMANDS.placeName("redo", ci);
-
-		ci = new CommandItem("transparent", "transparent <x::int>,<y::int> <color::color>", (p,a)->drawPath(p,(String)a[0]), ArgumentType.signedInt, ',', ArgumentType.signedInt, ArgumentType.colorRepresentation);
+		ci = new CommandItem("transparent", CommandItem.CommandType.ImageAction
+				, KEY_UNDO_TRANSPARENCY
+				, KEY_REDO_TRANSPARENCY
+				, "transparent [except] <color::color>"
+				, (p,a)->transparent(p,a[0] instanceof CharUtils.Mark ? (Color)a[1] : (Color)a[0], a[0] instanceof CharUtils.Mark)
+				, new CharUtils.Optional("except", new CharUtils.Mark(1)), ArgumentType.colorRepresentation);
 		COMMANDS.placeName("transparent", ci);
 		COMMANDS.placeName("trans", ci);
 
-		ci = new CommandItem("select", "select <xFrom::int>,<yFrom::int> [to] <xTo::int>,<yTo::int>", (p,a)->drawPath(p,(String)a[0]), ArgumentType.signedInt, ',', ArgumentType.signedInt, new CharUtils.Optional("to"), ArgumentType.signedInt, ',', ArgumentType.signedInt);
-		COMMANDS.placeName("select", ci);
-		COMMANDS.placeName("sel", ci);
-
-		ci = new CommandItem("copy", "copy", (p,a)->drawPath(p,(String)a[0]));
-		COMMANDS.placeName("copy", ci);
-		COMMANDS.placeName("cp", ci);
-
-		ci = new CommandItem("erase", "erase <color::color>", (p,a)->drawPath(p,(String)a[0]));
-		COMMANDS.placeName("erase", ci);
+		ci = new CommandItem("fill", CommandItem.CommandType.ImageAction 
+				, ""
+				, ""
+				, "fill <x::int>,<y::int> <color::color>"
+				, (p,a)->fill(p,(Integer)a[0],(Integer)a[1],(Color)a[2])
+				, ArgumentType.signedInt, ',', ArgumentType.signedInt, ArgumentType.colorRepresentation);
+		COMMANDS.placeName("fill", ci);
 		
-		ci = new CommandItem("paste", "paste <xFrom::int>,<yFrom::int> [<xTo::int>,<yTo::int>] [<name::string>]", (p,a)->drawPath(p,(String)a[0]), ArgumentType.signedInt, ArgumentType.signedInt, ArgumentType.signedInt, ArgumentType.signedInt, ArgumentType.raw);
-		COMMANDS.placeName("paste", ci);
+//		ci = new CommandItem("undo", "undo", (p,a)->drawPath(p,(String)a[0]));
+//		COMMANDS.placeName("undo", ci);
+//		COMMANDS.placeName("u", ci);
 
-		ci = new CommandItem("save", "save [<name::string>]", (p,a)->drawPath(p,(String)a[0]), new CharUtils.Optional(ArgumentType.raw));
-		COMMANDS.placeName("save", ci);
+//		ci = new CommandItem("redo", "redo", (p,a)->drawPath(p,(String)a[0]));
+//		COMMANDS.placeName("redo", ci);
 
-		ci = new CommandItem("load", "load <name::string>", (p,a)->drawPath(p,(String)a[0]), ArgumentType.raw);
-		COMMANDS.placeName("load", ci);
+//		ci = new CommandItem("select", "select <xFrom::int>,<yFrom::int> [to] <xTo::int>,<yTo::int>", (p,a)->drawPath(p,(String)a[0]), ArgumentType.signedInt, ',', ArgumentType.signedInt, new CharUtils.Optional("to"), ArgumentType.signedInt, ',', ArgumentType.signedInt);
+//		COMMANDS.placeName("select", ci);
+//		COMMANDS.placeName("sel", ci);
 
-		ci = new CommandItem("new", "new <width::int>,<height::int> <type::ImageType> [<color::color>] ", (p,a)->newImage(p,(Integer)a[0],(Integer)a[1],(ImageType)a[2],(Color)a[3]), ArgumentType.signedInt, ',', ArgumentType.signedInt, ImageType.class, new CharUtils.Optional(ArgumentType.colorRepresentation));
+//		ci = new CommandItem("copy", "copy", (p,a)->drawPath(p,(String)a[0]));
+//		COMMANDS.placeName("copy", ci);
+//		COMMANDS.placeName("cp", ci);
+
+//		ci = new CommandItem("erase", "erase <color::color>", (p,a)->drawPath(p,(String)a[0]));
+//		COMMANDS.placeName("erase", ci);
+		
+//		ci = new CommandItem("paste", "paste <xFrom::int>,<yFrom::int> [<xTo::int>,<yTo::int>] [<name::string>]", (p,a)->drawPath(p,(String)a[0]), ArgumentType.signedInt, ArgumentType.signedInt, ArgumentType.signedInt, ArgumentType.signedInt, ArgumentType.raw);
+//		COMMANDS.placeName("paste", ci);
+
+//		ci = new CommandItem("save", "save [<name::string>]", (p,a)->drawPath(p,(String)a[0]), new CharUtils.Optional(ArgumentType.raw));
+//		COMMANDS.placeName("save", ci);
+
+//		ci = new CommandItem("load", "load <name::string>", (p,a)->drawPath(p,(String)a[0]), ArgumentType.raw);
+//		COMMANDS.placeName("load", ci);
+
+		ci = new CommandItem("new", CommandItem.CommandType.ImageAction 
+				, ""
+				, ""
+				, "new <width::int>,<height::int> <type::ImageType> [<color::color>] "
+				, (p,a)->newImage(p,(Integer)a[0],(Integer)a[1],(ImageType)a[2],(Color)a[3])
+				, ArgumentType.signedInt, ',', ArgumentType.signedInt, ImageType.class, new CharUtils.Optional(ArgumentType.colorRepresentation));
 		COMMANDS.placeName("new", ci);
 
-		ci = new CommandItem("play", "play <name::string>", (p,a)->drawPath(p,(String)a[0]), ArgumentType.raw);
-		COMMANDS.placeName("play", ci);
+//		ci = new CommandItem("play", "play <name::string>", (p,a)->drawPath(p,(String)a[0]), ArgumentType.raw);
+//		COMMANDS.placeName("play", ci);
 
-		ci = new CommandItem("quit", "quit", (p,a)->drawPath(p,(String)a[0]));
-		COMMANDS.placeName("quit", ci);
-		COMMANDS.placeName("q", ci);
+//		ci = new CommandItem("quit", "quit", (p,a)->drawPath(p,(String)a[0]));
+//		COMMANDS.placeName("quit", ci);
+//		COMMANDS.placeName("q", ci);
 
-		ci = new CommandItem("qquit", "qquit", (p,a)->drawPath(p,(String)a[0]));
-		COMMANDS.placeName("qquit", ci);
-		COMMANDS.placeName("qq", ci);
+//		ci = new CommandItem("qquit", "qquit", (p,a)->drawPath(p,(String)a[0]));
+//		COMMANDS.placeName("qquit", ci);
+//		COMMANDS.placeName("qq", ci);
 		
-		ci = new CommandItem("foreground", "foreground {<color::color>|<x::int>,<y::int>}", (p,a)->setProperties(p,CanvasProperties.FORE_COLOR, a[0], a[1])
-								, new CharUtils.Choise(new Object[] {ArgumentType.colorRepresentation}, new Object[] {ArgumentType.signedInt, ',', ArgumentType.signedInt}));
+		ci = new CommandItem("foreground", CommandItem.CommandType.PropertyAction
+				, ""
+				, ""
+				, "foreground {<color::color>|<x::int>,<y::int>}"
+				, (p,a)->setProperties(p,CanvasProperties.FORE_COLOR, a[0], a[1])
+				, new CharUtils.Choise(new Object[] {ArgumentType.colorRepresentation}, new Object[] {ArgumentType.signedInt, ',', ArgumentType.signedInt}));
 		COMMANDS.placeName("foreground", ci);
 		COMMANDS.placeName("fore", ci);
 
-		ci = new CommandItem("background", "background {<color::color>|<x::int>,<y::int>}", (p,a)->setProperties(p,CanvasProperties.BACK_COLOR, a[0], a[1])
-								, new CharUtils.Choise(new Object[] {ArgumentType.colorRepresentation}, new Object[] {ArgumentType.signedInt, ',', ArgumentType.signedInt}));
+		ci = new CommandItem("background", CommandItem.CommandType.PropertyAction
+				, ""
+				, ""
+				, "background {<color::color>|<x::int>,<y::int>}"
+				, (p,a)->setProperties(p,CanvasProperties.BACK_COLOR, a[0], a[1])
+				, new CharUtils.Choise(new Object[] {ArgumentType.colorRepresentation}, new Object[] {ArgumentType.signedInt, ',', ArgumentType.signedInt}));
 		COMMANDS.placeName("background", ci);
 		COMMANDS.placeName("back", ci);
 
-		ci = new CommandItem("stroke", "stroke [<thickness::int>] {solid|dashed|dotted} [{butt|round|square}] [{miter|round|bevel}]", (p,a)->setProperties(p,CanvasProperties.STROKE,(String)a[0]), ArgumentType.raw);
+		ci = new CommandItem("stroke", CommandItem.CommandType.PropertyAction
+				, ""
+				, ""
+				, "stroke [<thickness::int>] {solid|dashed|dotted} [{butt|round|square}] [{miter|round|bevel}]"
+				, (p,a)->setProperties(p,CanvasProperties.STROKE,(String)a[0])
+				, ArgumentType.raw);
 		COMMANDS.placeName("stroke", ci);
 		COMMANDS.placeName("str", ci);
 
-		ci = new CommandItem("font", "font <family> <size::int> [bold] [italic]", (p,a)->setProperties(p,CanvasProperties.FONT,(String)a[0]), ArgumentType.raw);
+		ci = new CommandItem("font", CommandItem.CommandType.PropertyAction
+				, ""
+				, ""
+				, "font <family> <size::int> [bold] [italic]"
+				, (p,a)->setProperties(p,CanvasProperties.FONT,(String)a[0])
+				, ArgumentType.raw);
 		COMMANDS.placeName("font", ci);
-
-		ci = new CommandItem("filling", "filling {on|off}", (p,a)->setProperties(p,CanvasProperties.FONT,(String)a[0]), ArgumentType.name);
-		COMMANDS.placeName("filling", ci);
 	}
 		
 	public static String processCommand(final String command, final Predefines predef) throws SyntaxException, PaintScriptException {
@@ -207,8 +309,34 @@ public class Console {
 			
 			if (ci.lexemas.length > 0) {
 				if ((stopColumn = CharUtils.tryExtract(cmd, from, ci.lexemas)) >= 0) {
+					final CanvasWrapper	cw = predef.getPredefined(Predefines.PREDEF_CANVAS, CanvasWrapper.class);
+					
 					from = CharUtils.extract(cmd, from, parameters, ci.lexemas);
-					return ci.exec.process(predef, parameters);
+					
+					switch (ci.commandType) {
+						case ImageAction	:
+							cw.startImageAction(ci.undoDescriptor);
+							break;
+						case PropertyAction	:
+							cw.startPropertyAction(ci.undoDescriptor);
+							break;
+						default:
+							break;
+					}
+					
+					final String	result = ci.exec.process(predef, parameters);
+					
+					switch (ci.commandType) {
+						case ImageAction	:
+							cw.endImageAction(ci.redoDescriptor);
+							break;
+						case PropertyAction	:
+							cw.endPropertyAction(ci.redoDescriptor);
+							break;
+						default:
+							break;
+					}
+					return result;
 				}
 				else {
 					throw new SyntaxException(0, -stopColumn, "Illegal format for command ["+ci.command+"]: must be "+ci.help);
@@ -242,20 +370,22 @@ public class Console {
 		return OK;
 	}
 
-	private static String drawRect(final Predefines predef, final int xFrom, final int yFrom, final int xTo, final int yTo) throws PaintScriptException {
+	private static String drawRect(final Predefines predef, final int xFrom, final int yFrom, final int xTo, final int yTo, final boolean fill) throws PaintScriptException {
 		ImageUtils.draw(DrawingType.RECT, predef.getPredefined(Predefines.PREDEF_CANVAS, CanvasWrapper.class).getImage().getImage(), null
 				, new Rectangle(xFrom, yFrom, xTo-xFrom, yTo-yFrom) 
-				, predef.getPredefined(Predefines.PREDEF_CANVAS, CanvasWrapper.class).getCanvasForeground().getColor()
+				, fill 
+					? new ColorPair(predef.getPredefined(Predefines.PREDEF_CANVAS, CanvasWrapper.class).getCanvasForeground().getColor(), predef.getPredefined(Predefines.PREDEF_CANVAS, CanvasWrapper.class).getCanvasBackground().getColor())
+					: predef.getPredefined(Predefines.PREDEF_CANVAS, CanvasWrapper.class).getCanvasForeground().getColor()
 				, predef.getPredefined(Predefines.PREDEF_CANVAS, CanvasWrapper.class).getCanvasStroke().getStroke()); 
 		return OK;
 	}
 
-	private static String drawEllipse(final Predefines predef, final int xFrom, final int yFrom, final int xTo, final int yTo, final String fill) throws PaintScriptException {
+	private static String drawEllipse(final Predefines predef, final int xFrom, final int yFrom, final int xTo, final int yTo, final boolean fill) throws PaintScriptException {
 		ImageUtils.draw(DrawingType.ELLIPSE, predef.getPredefined(Predefines.PREDEF_CANVAS, CanvasWrapper.class).getImage().getImage(), null
 					, new Rectangle(xFrom, yFrom, xTo-xFrom, yTo-yFrom)
-					, "fill".equals(fill) 
-							? new ColorPair(predef.getPredefined(Predefines.PREDEF_CANVAS, CanvasWrapper.class).getCanvasForeground().getColor(), predef.getPredefined(Predefines.PREDEF_CANVAS, CanvasWrapper.class).getCanvasBackground().getColor())
-							: predef.getPredefined(Predefines.PREDEF_CANVAS, CanvasWrapper.class).getCanvasForeground().getColor()
+					, fill 
+						? new ColorPair(predef.getPredefined(Predefines.PREDEF_CANVAS, CanvasWrapper.class).getCanvasForeground().getColor(), predef.getPredefined(Predefines.PREDEF_CANVAS, CanvasWrapper.class).getCanvasBackground().getColor())
+						: predef.getPredefined(Predefines.PREDEF_CANVAS, CanvasWrapper.class).getCanvasForeground().getColor()
 					, predef.getPredefined(Predefines.PREDEF_CANVAS, CanvasWrapper.class).getCanvasStroke().getStroke()); 
 		return OK;
 	}
@@ -265,10 +395,12 @@ public class Console {
 		return null;
 	}
 
-	private static String drawPath(final Predefines predef, final String path) throws PaintScriptException { 
+	private static String drawPath(final Predefines predef, final String path, final boolean fill) throws PaintScriptException { 
 		try{ImageUtils.draw(DrawingType.PEN, predef.getPredefined(Predefines.PREDEF_CANVAS, CanvasWrapper.class).getImage().getImage(), null
 						, SVGUtils.extractCommands(path)
-						, predef.getPredefined(Predefines.PREDEF_CANVAS, CanvasWrapper.class).getCanvasForeground().getColor()
+						, fill 
+							? new ColorPair(predef.getPredefined(Predefines.PREDEF_CANVAS, CanvasWrapper.class).getCanvasForeground().getColor(), predef.getPredefined(Predefines.PREDEF_CANVAS, CanvasWrapper.class).getCanvasBackground().getColor())
+							: predef.getPredefined(Predefines.PREDEF_CANVAS, CanvasWrapper.class).getCanvasForeground().getColor()
 						, predef.getPredefined(Predefines.PREDEF_CANVAS, CanvasWrapper.class).getCanvasStroke().getStroke());
 			return OK;
 		} catch (SyntaxException e) {
@@ -311,6 +443,59 @@ public class Console {
 		predef.getPredefined(Predefines.PREDEF_CANVAS, CanvasWrapper.class).setImage(result);
 		return OK;
 	}
+
+	private static String scale(final Predefines predef, final int newWidth, final int newHeight) throws PaintScriptException {
+		final ImageWrapper	iw = predef.getPredefined(Predefines.PREDEF_CANVAS, CanvasWrapper.class).getImage();
+		final ImageWrapper	result = ImageWrapper.of(ImageUtils.process(ProcessType.SCALE, (BufferedImage)iw.getImage(), null, newWidth, newHeight));
+		
+		predef.getPredefined(Predefines.PREDEF_CANVAS, CanvasWrapper.class).setImage(result);
+		return OK;
+	}
+
+	private static String resize(final Predefines predef, final int newWidth, final int newHeight, final AnchorPoint anchor) throws PaintScriptException {
+		final ImageWrapper	iw = predef.getPredefined(Predefines.PREDEF_CANVAS, CanvasWrapper.class).getImage();
+		final ColorWrapper	cw = predef.getPredefined(Predefines.PREDEF_CANVAS, CanvasWrapper.class).getCanvasBackground();
+		final ImageWrapper	result;
+		
+		switch (anchor) {
+			case center		:
+				result = ImageWrapper.of(ImageUtils.process(ProcessType.RESIZE, (BufferedImage)iw.getImage(), null, newWidth, newHeight, cw.getColor(), true));
+				break;
+			case unknown	:
+				result = ImageWrapper.of(ImageUtils.process(ProcessType.RESIZE, (BufferedImage)iw.getImage(), null, newWidth, newHeight, cw.getColor(), false));
+				break;
+			default :
+				throw new PaintScriptException("Anchor type [] doesn't support, 'center' in available only"); 
+		
+		}
+		predef.getPredefined(Predefines.PREDEF_CANVAS, CanvasWrapper.class).setImage(result);
+		return OK;
+	}
+	
+	private static String gray(final Predefines predef) throws PaintScriptException {
+		final ImageWrapper	iw = predef.getPredefined(Predefines.PREDEF_CANVAS, CanvasWrapper.class).getImage();
+		final ImageWrapper	result = ImageWrapper.of(ImageUtils.process(ProcessType.TO_GRAYSCALE, (BufferedImage)iw.getImage(), null));
+		
+		predef.getPredefined(Predefines.PREDEF_CANVAS, CanvasWrapper.class).setImage(result);
+		return OK;
+	}
+
+	private static String transparent(final Predefines predef, final Color color, final boolean except) throws PaintScriptException {
+		final ImageWrapper	iw = predef.getPredefined(Predefines.PREDEF_CANVAS, CanvasWrapper.class).getImage();
+		final ImageWrapper	result = ImageWrapper.of(ImageUtils.process(ProcessType.TO_TRANSPARENT, (BufferedImage)iw.getImage(), null, color, except));
+		
+		predef.getPredefined(Predefines.PREDEF_CANVAS, CanvasWrapper.class).setImage(result);
+		return OK;
+	}
+
+	private static String fill(final Predefines predef, final int x, final int y, final Color color) {
+//		final ImageWrapper	iw = predef.getPredefined(Predefines.PREDEF_CANVAS, CanvasWrapper.class).getImage();
+//		final ImageWrapper	result = ImageWrapper.of(ImageUtils.process(ProcessType.FILL, (BufferedImage)iw.getImage(), null, color, except));
+//		
+//		predef.getPredefined(Predefines.PREDEF_CANVAS, CanvasWrapper.class).setImage(result);
+		return OK;
+	}
+
 	
 	private static String setProperties(final Predefines predef, final CanvasProperties props, final Object... content) throws PaintScriptException {
 		switch(props) {
@@ -365,25 +550,34 @@ public class Console {
 	}	
 
 	private static class CommandItem {
-		final String	command;
-		final Object[]	lexemas;
-		final String	help;
-		final String	undoDescriptor;
-		final String	redoDescriptor;
-		final Executor	exec;
+		private static enum CommandType {
+			ImageAction,
+			PropertyAction;
+		}
 		
-		public CommandItem(final String command, final String help, final Executor exec, final Object... lexemas) {
+		final String		command;
+		final CommandType	commandType;
+		final Object[]		lexemas;
+		final String		help;
+		final String		undoDescriptor;
+		final String		redoDescriptor;
+		final Executor		exec;
+		
+		public CommandItem(final String command, final CommandType commandType, final String undoDescriptor, final String redoDescriptor, final String help, final Executor exec, final Object... lexemas) {
 			this.command = command;
+			this.commandType = commandType;
+			this.undoDescriptor = undoDescriptor;
+			this.redoDescriptor = redoDescriptor;
 			this.lexemas = lexemas;
 			this.help = help;
-			this.undoDescriptor = null;
-			this.redoDescriptor = null;
 			this.exec = exec;
 		}
 
 		@Override
 		public String toString() {
-			return "CommandItem [command=" + command + ", lexemas=" + Arrays.toString(lexemas) + ", help=" + help + ", undoDescriptor=" + undoDescriptor + ", redoDescriptor=" + redoDescriptor + "]";
+			return "CommandItem [command=" + command + ", commandType=" + commandType + ", lexemas="
+					+ Arrays.toString(lexemas) + ", help=" + help + ", undoDescriptor=" + undoDescriptor
+					+ ", redoDescriptor=" + redoDescriptor + "]";
 		}
 	}
 }

@@ -128,6 +128,8 @@ public class ImageEditPanel extends JPanel implements LocalizerOwner, LocaleChan
 	private boolean 				foregroundNow = true;
 	private boolean 				fillingOn = false;
 	private boolean 				waitColorExtraction = false;
+	private byte[]					before;
+	private String					undoString;
 
 	public ImageEditPanel(final Localizer localizer) throws NullPointerException {
 		super(new BorderLayout());
@@ -342,6 +344,35 @@ public class ImageEditPanel extends JPanel implements LocalizerOwner, LocaleChan
 		else {
 			return Console.processCommand(command, predef);
 		}
+	}
+
+	@Override
+	public void startImageAction(final String actionType) {
+		try{
+			before = ImageUndoEdit.packImage(canvas.getBackgroundImage());
+			undoString = actionType;
+		} catch (IOException exc) {
+			SwingUtils.getNearestLogger(this).message(Severity.error, exc, exc.getLocalizedMessage());
+		}
+	}
+
+	@Override
+	public void endImageAction(final String actionType) {
+		try{
+			fireUndo(new ImageUndoEdit(undoString, actionType, before, ImageUndoEdit.packImage(canvas.getBackgroundImage()), (i)->canvas.setBackgroundImage(i)));
+		} catch (IOException exc) {
+			SwingUtils.getNearestLogger(this).message(Severity.error, exc, exc.getLocalizedMessage());
+		}
+	}
+
+	@Override
+	public void startPropertyAction(String actionType) {
+		// TODO Auto-generated method stub
+	}
+
+	@Override
+	public void endPropertyAction(String actionType) {
+		// TODO Auto-generated method stub
 	}
 	
 	public void addChangeListener(final ChangeListener l) {

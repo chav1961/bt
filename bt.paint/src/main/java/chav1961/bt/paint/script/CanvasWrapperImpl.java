@@ -76,4 +76,20 @@ public class CanvasWrapperImpl extends BufferWrapperImpl implements CanvasWrappe
 			stroke.setStroke(strokeWrapper.getStroke());
 		}
 	}
+
+	@Override
+	public void startImageAction(String actionType) {
+	}
+
+	@Override
+	public void endImageAction(String actionType) {
+	}
+
+	@Override
+	public void startPropertyAction(String actionType) {
+	}
+
+	@Override
+	public void endPropertyAction(String actionType) {
+	}
 }
