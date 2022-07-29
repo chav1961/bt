@@ -5,7 +5,6 @@ import java.awt.BasicStroke;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Dimension;
-import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.GridLayout;
@@ -32,7 +31,6 @@ import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
-import javax.swing.JTextField;
 import javax.swing.JToggleButton;
 import javax.swing.JToolBar;
 import javax.swing.SwingUtilities;
@@ -62,6 +60,7 @@ import chav1961.purelib.basic.exceptions.ContentException;
 import chav1961.purelib.basic.exceptions.EnvironmentException;
 import chav1961.purelib.basic.exceptions.LocalizationException;
 import chav1961.purelib.basic.exceptions.PreparationException;
+import chav1961.purelib.basic.exceptions.SyntaxException;
 import chav1961.purelib.basic.interfaces.LoggerFacade.Severity;
 import chav1961.purelib.concurrent.LightWeightListenerList;
 import chav1961.purelib.i18n.interfaces.Localizer;
@@ -76,7 +75,7 @@ import chav1961.purelib.ui.swing.useful.JFontSelectionDialog;
 import chav1961.purelib.ui.swing.useful.JLocalizedOptionPane;
 import chav1961.purelib.ui.swing.useful.interfaces.SelectionFrameListener.SelectionStyle;
 
-public class ImageEditPanel extends JPanel implements LocalizerOwner, LocaleChangeListener, CanvasWrapper {
+public class ImageEditPanel extends JPanel implements LocalizerOwner, LocaleChangeListener, CanvasWrapper, ConsoleInterface {
 	private static final long 				serialVersionUID = -8630893532191028731L;
 	private static final ContentMetadataInterface	xda;
 	
@@ -121,6 +120,7 @@ public class ImageEditPanel extends JPanel implements LocalizerOwner, LocaleChan
 	private final JPanel			leftPanel = new JPanel();
 	private final ImageEditCanvas	canvas;
 	private final EditStateString	state;
+	private final Predefines		predef = new Predefines(new String[0]);
 	private RectWrapper				selection = null;
 	private ResizableTextArea		rta = null;
 	private DrawingType				drawingType = DrawingType.UNKNOWN;
@@ -130,10 +130,6 @@ public class ImageEditPanel extends JPanel implements LocalizerOwner, LocaleChan
 	private boolean 				waitColorExtraction = false;
 
 	public ImageEditPanel(final Localizer localizer) throws NullPointerException {
-		this(localizer, (c,p)->Console.processCommand(c, p));
-	}
-	
-	public ImageEditPanel(final Localizer localizer, final ConsoleInterface console) throws NullPointerException {
 		super(new BorderLayout());
 		if (localizer == null) {
 			throw new NullPointerException("Localizer can't be null");
@@ -143,6 +139,8 @@ public class ImageEditPanel extends JPanel implements LocalizerOwner, LocaleChan
 			this.canvas = new ImageEditCanvas(localizer);
 			this.state = new EditStateString(localizer);
 
+			predef.putPredefined(Predefines.PREDEF_CANVAS, this);
+			
 			topPanel.setLayout(new BoxLayout(topPanel, BoxLayout.X_AXIS));
 			leftPanel.setLayout(new BoxLayout(leftPanel, BoxLayout.Y_AXIS));
 
@@ -151,7 +149,6 @@ public class ImageEditPanel extends JPanel implements LocalizerOwner, LocaleChan
 			
 			topPanel.add(prepareColorToolBar());
 			topPanel.add(prepareSettingsToolBar());
-//			topPanel.add(preparePlayerToolBar());
 	        
 	        add(topPanel, BorderLayout.NORTH);
 	        add(leftPanel, BorderLayout.WEST);
@@ -166,7 +163,12 @@ public class ImageEditPanel extends JPanel implements LocalizerOwner, LocaleChan
 				@Override public void mouseMoved(MouseEvent e) {state.refreshCoordinates(canvas, e.getX(), e.getY());}
 				@Override public void mouseDragged(MouseEvent e) {state.refreshCoordinates(canvas, e.getX(), e.getY());}
 			});
-	        canvas.getSelectionManager().addSelectionFrameListener((style, start, end, parameters)->processSelection(style, start, end, parameters));
+	        canvas.getSelectionManager().addSelectionFrameListener((style, start, end, parameters)->{
+	        	try{processSelection(style, start, end, parameters);
+				} catch (SyntaxException | PaintScriptException exc) {
+					SwingUtils.getNearestLogger(ImageEditPanel.this).message(Severity.error, exc, exc.getLocalizedMessage());
+				}
+	        });
 	        
         	state.refreshSettings(canvas);
 	        fillLocalizedStrings();
@@ -328,6 +330,19 @@ public class ImageEditPanel extends JPanel implements LocalizerOwner, LocaleChan
 			canvas.setLineJoin(LineJoin.valueOf(((BasicStroke)stroke.getStroke()).getLineJoin()));
 		}
 	}
+
+	@Override
+	public String console(final String command, final Predefines predef) throws SyntaxException, PaintScriptException {
+		if (command == null || command.isEmpty()) {
+			throw new IllegalArgumentException("Command to process can't be null or empty");
+		}
+		else if (predef == null) {
+			throw new NullPointerException("Predefines can't be null");
+		}
+		else {
+			return Console.processCommand(command, predef);
+		}
+	}
 	
 	public void addChangeListener(final ChangeListener l) {
 		if (l == null) {
@@ -385,23 +400,26 @@ public class ImageEditPanel extends JPanel implements LocalizerOwner, LocaleChan
 	
 	@OnAction("action:/chooseColor")
     public void chooseColor(final Hashtable<String,String[]> colors) {
-		switch (colors.get("color")[0]) {
-			case "black"	: setColor(Color.BLACK);		break;
-			case "blue"		: setColor(Color.BLUE);			break;
-			case "cyan"		: setColor(Color.CYAN);			break;
-			case "darkgray"	: setColor(Color.DARK_GRAY);	break;
-			case "gray"		: setColor(Color.GRAY);			break;
-			case "green"	: setColor(Color.GREEN);		break;
-			case "lightgray": setColor(Color.LIGHT_GRAY);	break;
-			case "magenta"	: setColor(Color.MAGENTA);		break;
-			case "orange"	: setColor(Color.ORANGE);		break;
-			case "pink"		: setColor(Color.PINK);			break;
-			case "red"		: setColor(Color.RED);			break;
-			case "white"	: setColor(Color.WHITE);		break;
-			case "yellow"	: setColor(Color.YELLOW);		break;
-			case "choose"	: chooseColor();				break;
-			case "extract"	: extractColor();				break;
-			default : throw new UnsupportedOperationException("Color type ["+colors.get("color")[0]+"] is not supported yet"); 
+		try{switch (colors.get("color")[0]) {
+				case "black"	: setColor(Color.BLACK);		break;
+				case "blue"		: setColor(Color.BLUE);			break;
+				case "cyan"		: setColor(Color.CYAN);			break;
+				case "darkgray"	: setColor(Color.DARK_GRAY);	break;
+				case "gray"		: setColor(Color.GRAY);			break;
+				case "green"	: setColor(Color.GREEN);		break;
+				case "lightgray": setColor(Color.LIGHT_GRAY);	break;
+				case "magenta"	: setColor(Color.MAGENTA);		break;
+				case "orange"	: setColor(Color.ORANGE);		break;
+				case "pink"		: setColor(Color.PINK);			break;
+				case "red"		: setColor(Color.RED);			break;
+				case "white"	: setColor(Color.WHITE);		break;
+				case "yellow"	: setColor(Color.YELLOW);		break;
+				case "choose"	: chooseColor();				break;
+				case "extract"	: extractColor();				break;
+				default : throw new UnsupportedOperationException("Color type ["+colors.get("color")[0]+"] is not supported yet"); 
+			}
+		} catch (PaintScriptException | SyntaxException exc) {
+			SwingUtils.getNearestLogger(this).message(Severity.error, exc, exc.getLocalizedMessage());
 		}
     }
 
@@ -623,9 +641,14 @@ public class ImageEditPanel extends JPanel implements LocalizerOwner, LocaleChan
 		canvas.repaint();
 	}
 	
-	private void processSelection(final SelectionStyle style, final Point start, final Point end, final Object... parameters) {
+	private void processSelection(final SelectionStyle style, final Point start, final Point end, final Object... parameters) throws SyntaxException, PaintScriptException {
 		if (waitColorExtraction && style == SelectionStyle.POINT) {
-    		setColor(new Color(((BufferedImage)canvas.getBackgroundImage()).getRGB(end.x, end.y)));
+			if (foregroundNow) {
+				console("fore "+end.x+","+end.y, predef);
+			}
+			else {
+				console("back "+end.x+","+end.y, predef);
+			}
     		canvas.getSelectionManager().popSelectionStyle();
     		turnOffExtractColorButton();
     		waitColorExtraction = false;
@@ -726,7 +749,7 @@ public class ImageEditPanel extends JPanel implements LocalizerOwner, LocaleChan
 		}
 	}
 	
-	private void chooseColor() {
+	private void chooseColor() throws SyntaxException, PaintScriptException {
         final JColorChooser	chooser = new  JColorChooser(canvas.getForeground());
         final Color[]		temp = new Color[] {canvas.getForeground()}; 
         
@@ -749,12 +772,12 @@ public class ImageEditPanel extends JPanel implements LocalizerOwner, LocaleChan
 		}
 	}
 	
-	private void setColor(final Color color) {
+	private void setColor(final Color color) throws SyntaxException, PaintScriptException {
 		if (foregroundNow) {
-			canvas.setForeground(color);
+			console("fore #"+Integer.toHexString(color.getRGB() & 0xFFFFFF), predef);
 		}
 		else {
-			canvas.setBackground(color);
+			console("back #"+Integer.toHexString(color.getRGB() & 0xFFFFFF), predef);
 		}
 	}
 	
@@ -794,15 +817,6 @@ public class ImageEditPanel extends JPanel implements LocalizerOwner, LocaleChan
 	    return result;
 	}
 
-//	private JToolBar preparePlayerToolBar() {
-//	    final JToolBar	result = SwingUtils.toJComponent(xda.byUIPath(URI.create("ui:/model/navigation.top.playerBar")), JToolBar.class);
-//	
-//	    result.setFloatable(false);
-//	    result.setOrientation(JToolBar.HORIZONTAL);
-//	    SwingUtils.assignActionListeners(result, this);
-//	    return result;
-//	}
-	
 	private void fireUndo(final ImageUndoEdit edit) {
 		final UndoableEditEvent	ee = new UndoableEditEvent(this, edit);
 		

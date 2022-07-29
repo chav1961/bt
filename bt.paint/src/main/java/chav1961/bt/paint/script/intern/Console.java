@@ -24,6 +24,7 @@ import chav1961.purelib.basic.CharUtils;
 import chav1961.purelib.basic.CharUtils.ArgumentType;
 import chav1961.purelib.basic.exceptions.SyntaxException;
 import chav1961.purelib.basic.interfaces.SyntaxTreeInterface;
+import chav1961.purelib.ui.ColorPair;
 import chav1961.purelib.ui.swing.useful.svg.SVGUtils;
 
 //* line (x,y) (x,y)
@@ -86,9 +87,9 @@ public class Console {
 		COMMANDS.placeName("rectangle", ci);
 		COMMANDS.placeName("rect", ci);
 
-		ci = new CommandItem("ellipse", "ellipse <xFrom::int>,<yFrom::int> <xTo::int>,<yTo::int>", 
-				(p,a)->drawEllipse(p,(Integer)a[0],(Integer)a[1],(Integer)a[2],(Integer)a[3]),
-				ArgumentType.signedInt, ',', ArgumentType.signedInt, ArgumentType.signedInt, ',', ArgumentType.signedInt);
+		ci = new CommandItem("ellipse", "ellipse <xFrom::int>,<yFrom::int> [to] <xTo::int>,<yTo::int> [fill]", 
+				(p,a)->drawEllipse(p,(Integer)a[0],(Integer)a[1],(Integer)a[2],(Integer)a[3],a.length > 4 ? (String)a[4] : null),
+				ArgumentType.signedInt, ',', ArgumentType.signedInt, new CharUtils.Optional("to"), ArgumentType.signedInt, ',', ArgumentType.signedInt, new CharUtils.Optional(ArgumentType.name));
 		COMMANDS.placeName("ellipse", ci);
 		COMMANDS.placeName("ell", ci);
 
@@ -167,11 +168,13 @@ public class Console {
 		COMMANDS.placeName("qquit", ci);
 		COMMANDS.placeName("qq", ci);
 		
-		ci = new CommandItem("foreground", "foreground <color::color>", (p,a)->setProperties(p,CanvasProperties.FORE_COLOR,(Color)a[0]), ArgumentType.colorRepresentation);
+		ci = new CommandItem("foreground", "foreground {<color::color>|<x::int>,<y::int>}", (p,a)->setProperties(p,CanvasProperties.FORE_COLOR, a[0], a[1])
+								, new CharUtils.Choise(new Object[] {ArgumentType.colorRepresentation}, new Object[] {ArgumentType.signedInt, ',', ArgumentType.signedInt}));
 		COMMANDS.placeName("foreground", ci);
 		COMMANDS.placeName("fore", ci);
 
-		ci = new CommandItem("background", "background <color::colot>", (p,a)->setProperties(p,CanvasProperties.BACK_COLOR,(Color)a[0]), ArgumentType.colorRepresentation);
+		ci = new CommandItem("background", "background {<color::color>|<x::int>,<y::int>}", (p,a)->setProperties(p,CanvasProperties.BACK_COLOR, a[0], a[1])
+								, new CharUtils.Choise(new Object[] {ArgumentType.colorRepresentation}, new Object[] {ArgumentType.signedInt, ',', ArgumentType.signedInt}));
 		COMMANDS.placeName("background", ci);
 		COMMANDS.placeName("back", ci);
 
@@ -247,10 +250,12 @@ public class Console {
 		return OK;
 	}
 
-	private static String drawEllipse(final Predefines predef, final int xFrom, final int yFrom, final int xTo, final int yTo) throws PaintScriptException {
+	private static String drawEllipse(final Predefines predef, final int xFrom, final int yFrom, final int xTo, final int yTo, final String fill) throws PaintScriptException {
 		ImageUtils.draw(DrawingType.ELLIPSE, predef.getPredefined(Predefines.PREDEF_CANVAS, CanvasWrapper.class).getImage().getImage(), null
 					, new Rectangle(xFrom, yFrom, xTo-xFrom, yTo-yFrom)
-					, predef.getPredefined(Predefines.PREDEF_CANVAS, CanvasWrapper.class).getCanvasForeground().getColor()
+					, "fill".equals(fill) 
+							? new ColorPair(predef.getPredefined(Predefines.PREDEF_CANVAS, CanvasWrapper.class).getCanvasForeground().getColor(), predef.getPredefined(Predefines.PREDEF_CANVAS, CanvasWrapper.class).getCanvasBackground().getColor())
+							: predef.getPredefined(Predefines.PREDEF_CANVAS, CanvasWrapper.class).getCanvasForeground().getColor()
 					, predef.getPredefined(Predefines.PREDEF_CANVAS, CanvasWrapper.class).getCanvasStroke().getStroke()); 
 		return OK;
 	}
@@ -307,19 +312,51 @@ public class Console {
 		return OK;
 	}
 	
-	private static String setProperties(final Predefines predef, final CanvasProperties props, final Object content) throws PaintScriptException {
+	private static String setProperties(final Predefines predef, final CanvasProperties props, final Object... content) throws PaintScriptException {
 		switch(props) {
 			case BACK_COLOR	:
-				predef.getPredefined(Predefines.PREDEF_CANVAS, CanvasWrapper.class).setCanvasBackground(ColorWrapper.of((Color)content));
+				if (content.length > 0 && (content[0] instanceof Color)) {
+					predef.getPredefined(Predefines.PREDEF_CANVAS, CanvasWrapper.class).setCanvasBackground(ColorWrapper.of((Color)content[0]));
+				}
+				else if (content.length > 1 && (content[0] instanceof Integer) && (content[1] instanceof Integer)) {
+					final BufferedImage	image = (BufferedImage)predef.getPredefined(Predefines.PREDEF_CANVAS, CanvasWrapper.class).getImage().getImage();
+					final int			x = (Integer)content[0], y = (Integer)content[1]; 
+					
+					if (x < 0 || x >= image.getWidth()) {
+						throw new PaintScriptException("Point coordinates to get color ("+x+","+y+") outside current image dimension ("+image.getWidth()+","+image.getHeight()+")");
+					}
+					else {
+						predef.getPredefined(Predefines.PREDEF_CANVAS, CanvasWrapper.class).setCanvasBackground(ColorWrapper.of(new Color(image.getRGB(x, y))));
+					}
+				}
+				else {
+					throw new IllegalArgumentException("Neither Color nor Integer,Integer in the content parameter"); 
+				}
 				break;
 			case FORE_COLOR	:
-				predef.getPredefined(Predefines.PREDEF_CANVAS, CanvasWrapper.class).setCanvasForeground(ColorWrapper.of((Color)content));
+				if (content.length > 0 && (content[0] instanceof Color)) {
+					predef.getPredefined(Predefines.PREDEF_CANVAS, CanvasWrapper.class).setCanvasForeground(ColorWrapper.of((Color)content[0]));
+				}
+				else if (content.length > 1 && (content[0] instanceof Integer) && (content[1] instanceof Integer)) {
+					final BufferedImage	image = (BufferedImage)predef.getPredefined(Predefines.PREDEF_CANVAS, CanvasWrapper.class).getImage().getImage();
+					final int			x = (Integer)content[0], y = (Integer)content[1]; 
+					
+					if (x < 0 || x >= image.getWidth()) {
+						throw new PaintScriptException("Point coordinates to get color ("+x+","+y+") outside current image dimension ("+image.getWidth()+","+image.getHeight()+")");
+					}
+					else {
+						predef.getPredefined(Predefines.PREDEF_CANVAS, CanvasWrapper.class).setCanvasForeground(ColorWrapper.of(new Color(image.getRGB(x, y))));
+					}
+				}
+				else {
+					throw new IllegalArgumentException("Neither Color nor Integer,Integer in the content parameter"); 
+				}
 				break;
 			case FONT		:
-				predef.getPredefined(Predefines.PREDEF_CANVAS, CanvasWrapper.class).setCanvasFont(FontWrapper.of((String)content));
+				predef.getPredefined(Predefines.PREDEF_CANVAS, CanvasWrapper.class).setCanvasFont(FontWrapper.of((String)content[0]));
 				break;
 			case STROKE		:
-				predef.getPredefined(Predefines.PREDEF_CANVAS, CanvasWrapper.class).setCanvasStroke(StrokeWrapper.of((String)content));
+				predef.getPredefined(Predefines.PREDEF_CANVAS, CanvasWrapper.class).setCanvasStroke(StrokeWrapper.of((String)content[0]));
 				break;
 			default:
 				throw new UnsupportedOperationException("Canvas property ["+props+"] is not supported yet");
