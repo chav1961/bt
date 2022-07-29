@@ -196,6 +196,8 @@
 		<key name="chav1961.bt.paint.editor.ImageEditPanel.redo.grayscale">redo grayscale</key>
 		<key name="chav1961.bt.paint.editor.ImageEditPanel.undo.transparency">undo transparency</key>
 		<key name="chav1961.bt.paint.editor.ImageEditPanel.redo.transparency">redo transparency</key>
+		<key name="chav1961.bt.paint.editor.ImageEditPanel.undo.paste">undo paste</key>
+		<key name="chav1961.bt.paint.editor.ImageEditPanel.redo.paste">redo paste</key>
 		<key name="chav1961.bt.paint.editor.ImageEditPanel.undo.draw.ellipse">undo ellipse</key>
 		<key name="chav1961.bt.paint.editor.ImageEditPanel.redo.draw.ellipse">redo ellipse</key>
 		<key name="chav1961.bt.paint.editor.ImageEditPanel.undo.draw.line">undo line</key>
@@ -453,6 +455,8 @@
 		<key name="chav1961.bt.paint.editor.ImageEditPanel.redo.grayscale">восстановить черно-белое</key>
 		<key name="chav1961.bt.paint.editor.ImageEditPanel.undo.transparency">отменить прозрачность</key>
 		<key name="chav1961.bt.paint.editor.ImageEditPanel.redo.transparency">восстановить прозрачность</key>
+		<key name="chav1961.bt.paint.editor.ImageEditPanel.undo.paste">отменить вставку</key>
+		<key name="chav1961.bt.paint.editor.ImageEditPanel.redo.paste">восстановить вставку</key>
 		<key name="chav1961.bt.paint.editor.ImageEditPanel.undo.draw.ellipse">отменить эллипс</key>
 		<key name="chav1961.bt.paint.editor.ImageEditPanel.redo.draw.ellipse">восстановить эллипс</key>
 		<key name="chav1961.bt.paint.editor.ImageEditPanel.undo.draw.line">отменить прямую</key>
@@ -496,8 +500,5 @@
 		<key name="askimageresize.stretch.tt">Масштабировать существующее изображение под новый размер</key>
 		<key name="askimageresize.atcenter">Отцентровать</key>
 		<key name="askimageresize.atcenter.tt">Отцентровать существующее изображение перед выполнением операции</key>
-		
-		
-		
 	</lang>
 </localization>

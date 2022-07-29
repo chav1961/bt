@@ -13,13 +13,16 @@ import chav1961.bt.paint.control.Predefines;
 import chav1961.bt.paint.interfaces.PaintScriptException;
 import chav1961.bt.paint.script.interfaces.AnchorPoint;
 import chav1961.bt.paint.script.interfaces.CanvasWrapper;
+import chav1961.bt.paint.script.interfaces.ClipboardWrapper;
 import chav1961.bt.paint.script.interfaces.ColorWrapper;
 import chav1961.bt.paint.script.interfaces.FontWrapper;
 import chav1961.bt.paint.script.interfaces.ImageType;
 import chav1961.bt.paint.script.interfaces.ImageWrapper;
 import chav1961.bt.paint.script.interfaces.MirrorDirection;
+import chav1961.bt.paint.script.interfaces.RectWrapper;
 import chav1961.bt.paint.script.interfaces.RotateDirection;
 import chav1961.bt.paint.script.interfaces.StrokeWrapper;
+import chav1961.bt.paint.script.interfaces.SystemWrapper;
 import chav1961.purelib.basic.AndOrTree;
 import chav1961.purelib.basic.CharUtils;
 import chav1961.purelib.basic.CharUtils.ArgumentType;
@@ -71,6 +74,8 @@ public class Console {
 	private static final String	KEY_REDO_GRAYSCALE = "chav1961.bt.paint.editor.ImageEditPanel.redo.grayscale";
 	private static final String	KEY_UNDO_TRANSPARENCY = "chav1961.bt.paint.editor.ImageEditPanel.undo.transparency";
 	private static final String	KEY_REDO_TRANSPARENCY = "chav1961.bt.paint.editor.ImageEditPanel.redo.transparency";
+	private static final String	KEY_UNDO_PASTE = "chav1961.bt.paint.editor.ImageEditPanel.undo.paste";
+	private static final String	KEY_REDO_PASTE = "chav1961.bt.paint.editor.ImageEditPanel.redo.paste";
 	private static final String	KEY_UNDO_DRAW_ELLIPSE = "chav1961.bt.paint.editor.ImageEditPanel.undo.draw.ellipse";
 	private static final String	KEY_REDO_DRAW_ELLIPSE = "chav1961.bt.paint.editor.ImageEditPanel.redo.draw.ellipse";
 	private static final String	KEY_UNDO_DRAW_LINE = "chav1961.bt.paint.editor.ImageEditPanel.undo.draw.line";
@@ -223,6 +228,54 @@ public class Console {
 				, (p,a)->fill(p,(Integer)a[0],(Integer)a[1],(Color)a[2])
 				, ArgumentType.signedInt, ',', ArgumentType.signedInt, ArgumentType.colorRepresentation);
 		COMMANDS.placeName("fill", ci);
+
+		ci = new CommandItem("copy", CommandItem.CommandType.Silent
+				, ""
+				, ""
+				, "copy [<xFrom::int>,<yFrom:int> {size <width::int>,<height::int>|[to] <xTo::int>,<yTo::int>}]"
+				, (p,a)->a[0] instanceof Integer 
+						? copyRange(p, (Integer)a[0], (Integer)a[1], a[2] instanceof CharUtils.Mark ? (Integer)a[3] : (Integer)a[2], a[2] instanceof CharUtils.Mark ? (Integer)a[4] : (Integer)a[3], a[2] instanceof CharUtils.Mark)
+						: copyAll(p)
+				, new CharUtils.Optional(ArgumentType.signedInt, ',', ArgumentType.signedInt, new CharUtils.Choise(new Object[] {"size", new CharUtils.Mark(1), ArgumentType.signedInt, ',', ArgumentType.signedInt}, new Object[] {new CharUtils.Optional("to"), ArgumentType.signedInt, ',', ArgumentType.signedInt}))
+				);
+		COMMANDS.placeName("copy", ci);
+		COMMANDS.placeName("cp", ci);
+
+		ci = new CommandItem("paste", CommandItem.CommandType.ImageAction 
+				, KEY_UNDO_PASTE
+				, KEY_REDO_PASTE
+				, "paste <xFrom::int>,<yFrom::int> [{size <width::int>,<height::int>|[to] <xTo::int>,<yTo::int>}] [from <name::string>]"
+				, (p,a)->{
+					if (a[2] instanceof CharUtils.Mark) {
+						if (((CharUtils.Mark)a[2]).getMark() == 1) {
+							if (a[5] instanceof CharUtils.Mark) {
+								return pasteFileScaled(p, (Integer)a[0], (Integer)a[1], (Integer)a[3], (Integer)a[4], true, (String)a[6]);
+							}
+							else {
+								return pasteClipboardScaled(p, (Integer)a[0], (Integer)a[1], (Integer)a[3], (Integer)a[4], true);
+							}
+						}
+						else if (((CharUtils.Mark)a[2]).getMark() == 2) {
+							return pasteFile(p, (Integer)a[0], (Integer)a[1], (String)a[3]);
+						}
+						else {
+							if (a[4] instanceof CharUtils.Mark) {
+								return pasteFileScaled(p, (Integer)a[0], (Integer)a[1], (Integer)a[2], (Integer)a[3], false, (String)a[5]);
+							}
+							else {
+								return pasteClipboardScaled(p, (Integer)a[0], (Integer)a[1], (Integer)a[2], (Integer)a[3], false);
+							}
+						}
+					}
+					else if (a[4] instanceof CharUtils.Mark) {
+						return pasteFileScaled(p, (Integer)a[0], (Integer)a[1], (Integer)a[2], (Integer)a[3], false, (String)a[5]);
+					}
+					else {
+						return pasteClipboard(p, (Integer)a[0], (Integer)a[1]);
+					}
+				}
+				, ArgumentType.signedInt, ',', ArgumentType.signedInt, new CharUtils.Optional(new CharUtils.Choise(new Object[] {"size", new CharUtils.Mark(2), ArgumentType.signedInt, ',', ArgumentType.signedInt}, new Object[] {new CharUtils.Optional("to"), ArgumentType.signedInt, ',', ArgumentType.signedInt})), new CharUtils.Optional("from", new CharUtils.Mark(2), ArgumentType.raw));
+		COMMANDS.placeName("paste", ci);
 		
 //		ci = new CommandItem("undo", "undo", (p,a)->drawPath(p,(String)a[0]));
 //		COMMANDS.placeName("undo", ci);
@@ -235,15 +288,10 @@ public class Console {
 //		COMMANDS.placeName("select", ci);
 //		COMMANDS.placeName("sel", ci);
 
-//		ci = new CommandItem("copy", "copy", (p,a)->drawPath(p,(String)a[0]));
-//		COMMANDS.placeName("copy", ci);
-//		COMMANDS.placeName("cp", ci);
 
 //		ci = new CommandItem("erase", "erase <color::color>", (p,a)->drawPath(p,(String)a[0]));
 //		COMMANDS.placeName("erase", ci);
 		
-//		ci = new CommandItem("paste", "paste <xFrom::int>,<yFrom::int> [<xTo::int>,<yTo::int>] [<name::string>]", (p,a)->drawPath(p,(String)a[0]), ArgumentType.signedInt, ArgumentType.signedInt, ArgumentType.signedInt, ArgumentType.signedInt, ArgumentType.raw);
-//		COMMANDS.placeName("paste", ci);
 
 //		ci = new CommandItem("save", "save [<name::string>]", (p,a)->drawPath(p,(String)a[0]), new CharUtils.Optional(ArgumentType.raw));
 //		COMMANDS.placeName("save", ci);
@@ -259,6 +307,14 @@ public class Console {
 				, ArgumentType.signedInt, ',', ArgumentType.signedInt, ImageType.class, new CharUtils.Optional(ArgumentType.colorRepresentation));
 		COMMANDS.placeName("new", ci);
 
+		ci = new CommandItem("load", CommandItem.CommandType.ImageAction
+				, ""
+				, ""
+				, "load <name::string>"
+				, (p,a)->""
+				, ArgumentType.raw);
+		COMMANDS.placeName("load", ci);
+		
 		ci = new CommandItem("foreground", CommandItem.CommandType.PropertyAction
 				, KEY_UNDO_CHANGE_FOREGROUND
 				, KEY_REDO_CHANGE_FOREGROUND
@@ -456,7 +512,6 @@ public class Console {
 		return OK;
 	}
 
-	
 	private static String scale(final Predefines predef, final int newWidth, final int newHeight) throws PaintScriptException {
 		final ImageWrapper	iw = predef.getPredefined(Predefines.PREDEF_CANVAS, CanvasWrapper.class).getImage();
 		final ImageWrapper	result = ImageWrapper.of(ImageUtils.process(ProcessType.SCALE, (BufferedImage)iw.getImage(), null, newWidth, newHeight));
@@ -509,6 +564,66 @@ public class Console {
 		return OK;
 	}
 
+	private static String copyRange(final Predefines predef, final int xFrom, final int yFrom, final int xToOrWidth, final int yToOrHeight, final boolean useAsSize) throws PaintScriptException {
+		final Rectangle			rect = new Rectangle(xFrom, yFrom, useAsSize ? xToOrWidth : xToOrWidth - xFrom, useAsSize ? yToOrHeight : yToOrHeight - yFrom);	
+		final ImageWrapper		iw = predef.getPredefined(Predefines.PREDEF_CANVAS, CanvasWrapper.class).getImage(RectWrapper.of(rect));
+		final ClipboardWrapper	cbw = predef.getPredefined(Predefines.PREDEF_CLIPBOARD, ClipboardWrapper.class);
+		
+		cbw.setImage(iw);
+		return OK;
+	}
+
+	private static String copyAll(final Predefines predef) throws PaintScriptException {
+		final ImageWrapper		iw = predef.getPredefined(Predefines.PREDEF_CANVAS, CanvasWrapper.class).getImage();
+		final ClipboardWrapper	cbw = predef.getPredefined(Predefines.PREDEF_CLIPBOARD, ClipboardWrapper.class);
+		
+		cbw.setImage(iw);
+		return OK;
+	}
+
+	private static String pasteClipboard(final Predefines predef, final int xTo, final int yTo) throws PaintScriptException {
+		if (!predef.getPredefined(Predefines.PREDEF_CLIPBOARD, ClipboardWrapper.class).hasImage()) {
+			throw new PaintScriptException("Clipboard doesn't contain any image to paste");
+		}
+		else {
+			return pasteImage(predef, predef.getPredefined(Predefines.PREDEF_CLIPBOARD, ClipboardWrapper.class).getImage(), xTo, yTo);
+		}
+	}
+
+	private static String pasteClipboardScaled(final Predefines predef, final int xFrom, final int yFrom, final int xToOrWidth, final int yToOrHeight, final boolean useAsSize) throws PaintScriptException {
+		if (!predef.getPredefined(Predefines.PREDEF_CLIPBOARD, ClipboardWrapper.class).hasImage()) {
+			throw new PaintScriptException("Clipboard doesn't contain any image to paste");
+		}
+		else {
+			return pasteImageScaled(predef, predef.getPredefined(Predefines.PREDEF_CLIPBOARD, ClipboardWrapper.class).getImage(), xFrom, yFrom, xToOrWidth, yToOrHeight, useAsSize);
+		}
+	}
+	
+	private static String pasteFile(final Predefines predef, final int xTo, final int yTo, final String file) throws PaintScriptException {
+		return pasteImage(predef, predef.getPredefined(Predefines.PREDEF_SYSTEM, SystemWrapper.class).loadImage(file), xTo, yTo);
+	}
+
+	private static String pasteFileScaled(final Predefines predef, final int xFrom, final int yFrom, final int xToOrWidth, final int yToOrHeight, final boolean useAsSize, final String file) throws PaintScriptException {
+		return pasteImageScaled(predef, predef.getPredefined(Predefines.PREDEF_SYSTEM, SystemWrapper.class).loadImage(file), xFrom, yFrom, xToOrWidth, yToOrHeight, useAsSize);
+	}
+
+	private static String pasteImage(final Predefines predef, final ImageWrapper iwFrom, final int xTo, final int yTo) throws PaintScriptException {
+		final ImageWrapper	iwTo = predef.getPredefined(Predefines.PREDEF_CANVAS, CanvasWrapper.class).getImage();
+		final Rectangle		rect = new Rectangle(xTo, yTo, iwFrom.getImage().getWidth(null), iwFrom.getImage().getHeight(null));
+		final ImageWrapper	result = ImageWrapper.of(ImageUtils.process(ProcessType.INSERT, iwTo.getImage(), null, iwFrom.getImage(), rect));
+		
+		predef.getPredefined(Predefines.PREDEF_CANVAS, CanvasWrapper.class).setImage(result);
+		return OK;
+	}
+
+	private static String pasteImageScaled(final Predefines predef, final ImageWrapper iwFrom, final int xFrom, final int yFrom, final int xToOrWidth, final int yToOrHeight, final boolean useAsSize) throws PaintScriptException {
+		final ImageWrapper	iwTo = predef.getPredefined(Predefines.PREDEF_CANVAS, CanvasWrapper.class).getImage();
+		final Rectangle		rect = new Rectangle(xFrom, yFrom, useAsSize ? xToOrWidth : xToOrWidth - xFrom, useAsSize ? yToOrHeight : yToOrHeight - yFrom);
+		final ImageWrapper	result = ImageWrapper.of(ImageUtils.process(ProcessType.INSERT, iwTo.getImage(), null, iwFrom.getImage(), rect));
+		
+		predef.getPredefined(Predefines.PREDEF_CANVAS, CanvasWrapper.class).setImage(result);
+		return OK;
+	}
 	
 	private static String setProperties(final Predefines predef, final CanvasProperties props, final Object... content) throws PaintScriptException {
 		switch(props) {
@@ -565,7 +680,8 @@ public class Console {
 	private static class CommandItem {
 		private static enum CommandType {
 			ImageAction,
-			PropertyAction;
+			PropertyAction,
+			Silent;
 		}
 		
 		final String		command;
