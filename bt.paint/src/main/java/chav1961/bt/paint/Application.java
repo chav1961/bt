@@ -25,6 +25,7 @@ import java.util.Hashtable;
 import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Exchanger;
 import java.util.regex.Pattern;
 
 import javax.imageio.ImageIO;
@@ -33,6 +34,7 @@ import javax.swing.JFrame;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
+import javax.swing.JOptionPane;
 import javax.swing.JTextField;
 import javax.swing.border.EtchedBorder;
 import javax.swing.event.UndoableEditEvent;
@@ -82,6 +84,7 @@ import chav1961.purelib.ui.swing.SwingUtils;
 import chav1961.purelib.ui.swing.interfaces.OnAction;
 import chav1961.purelib.ui.swing.useful.JFileContentManipulator;
 import chav1961.purelib.ui.swing.useful.JFileSelectionDialog.FilterCallback;
+import chav1961.purelib.ui.swing.useful.JLocalizedOptionPane;
 import chav1961.purelib.ui.swing.useful.JStateString;
 import chav1961.purelib.ui.swing.useful.interfaces.FileContentChangedEvent;
 
@@ -104,18 +107,27 @@ public class Application extends JFrame implements NodeMetadataOwner, LocaleChan
 	private static final String		KEY_APPLICATION_MESSAGE_READY = "chav1961.bt.paint.Application.message.ready";
 	private static final String		KEY_APPLICATION_MESSAGE_NEW_NAME = "chav1961.bt.paint.Application.message.new.name";	
 	private static final String		KEY_APPLICATION_MESSAGE_NEW_IMAGE_CREATED = "chav1961.bt.paint.Application.message.new.image.created";	
+	private static final String		KEY_APPLICATION_MESSAGE_IMAGE_LOADING = "chav1961.bt.paint.Application.message.image.loading";	
 	private static final String		KEY_APPLICATION_MESSAGE_IMAGE_LOADED = "chav1961.bt.paint.Application.message.image.loaded";	
 	private static final String		KEY_APPLICATION_MESSAGE_IMAGE_STORED = "chav1961.bt.paint.Application.message.image.stored";	
 	
 	private static final String		KEY_APPLICATION_HELP_TITLE = "chav1961.bt.paint.Application.help.title";
 	private static final String		KEY_APPLICATION_HELP_CONTENT = "chav1961.bt.paint.Application.help.content";
+	private static final String		KEY_APPLICATION_END_BATCH_TITLE = "chav1961.bt.paint.Application.endbatch.title";
+	private static final String		KEY_APPLICATION_END_BATCH_CONTENT = "chav1961.bt.paint.Application.endbatch.content";
 
+	public static enum ApplicationMode {
+		IN_OUT,
+		BATCH,
+		GUI
+	}
+	
+	private final ApplicationMode			appMode;
 	private final FileSystemInterface		fsi;
 	private final ContentMetadataInterface	xda;
 	private final Localizer					localizer;
 	private final Predefines				predef;
 	private final CountDownLatch			latch;
-	private final JMenuBar					menuBar;
 	private final ImageEditPanel			panel;
 	private final JStateString				state;
 	private final UndoManager				undoMgr = new UndoManager();
@@ -123,13 +135,18 @@ public class Application extends JFrame implements NodeMetadataOwner, LocaleChan
 	private final ImageManipulator			imageManipulator;
 	private final ScriptManipulator			scriptManipulator;
 	private final Settings					settings = new Settings(new File("./.bt.paint"));
-		
+
+	private volatile Exchanger<Object>		batchSource = null;
+	private volatile JMenuBar				menuBar;
 	private String							lastFile = null;
 	private String							lastScript = null;
 	private boolean							recordingOn = false, pauseOn = false;
 	
-	public Application(final ContentMetadataInterface xda, final Localizer localizer, final Predefines predef, final CountDownLatch latch) throws IOException, PaintScriptException {
-		if (xda == null) {
+	public Application(final ApplicationMode mode, final ContentMetadataInterface xda, final Localizer localizer, final Predefines predef, final CountDownLatch latch) throws IOException, PaintScriptException {
+		if (mode == null) {
+			throw new NullPointerException("Application mode can't be null"); 
+		}
+		else if (xda == null) {
 			throw new NullPointerException("Metadata can't be null"); 
 		}
 		else if (localizer == null) {
@@ -142,13 +159,26 @@ public class Application extends JFrame implements NodeMetadataOwner, LocaleChan
 			throw new NullPointerException("Latch can't be null"); 
 		}
 		else {
+			this.appMode = mode;
 			this.xda = xda;
 			this.localizer = localizer;
 			this.predef = predef;
 			this.latch = latch;
 			this.fsi = FileSystemInterface.Factory.newInstance(URI.create("fsys:file:/"));
 			
-	        this.menuBar = SwingUtils.toJComponent(xda.byUIPath(URI.create("ui:/model/navigation.top.mainmenu")), JMenuBar.class); 
+			switch (appMode) {
+				case IN_OUT	:
+			        this.menuBar = SwingUtils.toJComponent(xda.byUIPath(URI.create("ui:/model/navigation.top.inoutmenu")), JMenuBar.class); 
+					break;
+				case BATCH	:
+			        this.menuBar = SwingUtils.toJComponent(xda.byUIPath(URI.create("ui:/model/navigation.top.batchmenu")), JMenuBar.class); 
+					break;
+				case GUI	:
+			        this.menuBar = SwingUtils.toJComponent(xda.byUIPath(URI.create("ui:/model/navigation.top.mainmenu")), JMenuBar.class); 
+					break;
+				default :
+					throw new UnsupportedOperationException("Application mode ["+appMode+"] is not supported yet");
+			}
 	        
 	        this.panel = new ImageEditPanel(localizer);
 	        this.state = new JStateString(localizer);
@@ -244,7 +274,46 @@ public class Application extends JFrame implements NodeMetadataOwner, LocaleChan
 			getLogger().message(Severity.error, exc, exc.getLocalizedMessage());
 		}
     }
-    
+
+	@OnAction("action:/nextBatch")
+    public void nextBatch() throws IOException {
+		if (batchSource == null) {
+			throw new IllegalStateException("Batch source is not assigned yet"); 
+		}
+		else {
+			try{getLogger().message(Severity.warning, KEY_APPLICATION_MESSAGE_IMAGE_LOADING);
+				final ImageWrapper	iw = (ImageWrapper) batchSource.exchange(null);
+				
+				if (iw != null) {
+					try{panel.setImage(iw);
+						getLogger().message(Severity.info, KEY_APPLICATION_MESSAGE_IMAGE_LOADED, iw.getName());
+					} catch (PaintScriptException e) {
+						getLogger().message(Severity.error, e, e.getLocalizedMessage());
+					}
+				}
+				else {
+					switch (new JLocalizedOptionPane(localizer).confirm(this, KEY_APPLICATION_END_BATCH_CONTENT, KEY_APPLICATION_END_BATCH_TITLE, JOptionPane.QUESTION_MESSAGE, JOptionPane.YES_NO_OPTION)) {
+						case JOptionPane.YES_OPTION :
+							latch.countDown();
+							close();
+							break;
+						case JOptionPane.NO_OPTION :
+							getContentPane().remove(menuBar);
+					        menuBar = SwingUtils.toJComponent(xda.byUIPath(URI.create("ui:/model/navigation.top.mainmenu")), JMenuBar.class); 
+					        getContentPane().add(menuBar, BorderLayout.NORTH);
+					        SwingUtils.assignActionListeners(menuBar, this);
+					        batchSource = null;
+					        refreshMenuState();
+					        break;
+					}
+				}
+			} catch (InterruptedException | PaintScriptException e) {
+				latch.countDown();
+				close();
+			}
+		}
+	}	
+	
 	@OnAction("action:/loadImage")
     public void loadImage() {
 		imageManipulator.setFilters(	// Refresh every call because of possibly language changes
@@ -300,7 +369,15 @@ public class Application extends JFrame implements NodeMetadataOwner, LocaleChan
 			getLogger().message(Severity.error, exc, exc.getLocalizedMessage());
 		}
     }
-    
+
+	@OnAction("action:/saveBatch")
+    public void saveBatch() {
+	}	
+
+	@OnAction("action:/saveBatch")
+    public void saveOut() {
+	}	
+	
 	@OnAction("action:/saveImageAs")
     public void saveImageAs() {
 		imageManipulator.setFilters(	// Refresh every call because of possibly language changes
@@ -322,12 +399,22 @@ public class Application extends JFrame implements NodeMetadataOwner, LocaleChan
 
 	@OnAction("action:/exit")
     public void exit() {
-		try{imageManipulator.close();
-			scriptManipulator.close();
-			latch.countDown();
-		} catch (UnsupportedOperationException exc) {
-		} catch (IOException e) {
-			latch.countDown();
+		switch (appMode) {
+			case IN_OUT	:
+				break;
+			case BATCH	:
+				break;
+			case GUI	:
+				try{imageManipulator.close();
+					scriptManipulator.close();
+					latch.countDown();
+				} catch (UnsupportedOperationException exc) {
+				} catch (IOException e) {
+					latch.countDown();
+				}
+				break;
+			default :
+				throw new UnsupportedOperationException("Application mode ["+appMode+"] is not supported yet"); 
 		}
     }
 
@@ -684,6 +771,10 @@ public class Application extends JFrame implements NodeMetadataOwner, LocaleChan
 		t.setName("script-executor");
 		t.start();
 	}
+
+	private void assignBatchSource(final Exchanger<Object> ex) {
+		this.batchSource = ex;
+	}
 	
 	private void fillLocalizedStrings() {
 		try{
@@ -706,7 +797,7 @@ public class Application extends JFrame implements NodeMetadataOwner, LocaleChan
 				PureLibSettings.PURELIB_LOCALIZER.push(localizer);
 				
 				if (args.length == 0) {
-					startGUI(xda, localizer, predef);
+					startGUI(ApplicationMode.GUI, xda, localizer, predef);
 				}
 				else if (!parsed.isTyped(ARG_COMMAND)) {
 					throw new CommandLineParametersException("Mandatory parameter ["+ARG_COMMAND+"] is missing");
@@ -723,14 +814,47 @@ public class Application extends JFrame implements NodeMetadataOwner, LocaleChan
 						}
 	
 						if (parsed.isTyped(ARG_INPUT_MASK)) {
-							final String	mask = parsed.getValue(ARG_INPUT_MASK, String.class);
-							final int		index = mask.lastIndexOf('/');
-	
-							if (index > 0) {
-								walk(new File(mask.substring(0,index)), Pattern.compile(Utils.fileMask2Regex(mask.substring(index+1))), parsed.getValue(ARG_RECURSION_FLAG, boolean.class), root);
+							final String			mask = parsed.getValue(ARG_INPUT_MASK, String.class);
+							final int				index = mask.lastIndexOf('/');
+							final Exchanger<Object>	ex = new Exchanger<>();
+							final Thread			t, current = Thread.currentThread();
+							
+
+							if (parsed.getValue(ARG_GUI_FLAG, boolean.class)) {
+								//startGUI(ApplicationMode.BATCH, xda, localizer, predef);
+								t = null;
+								
 							}
 							else {
-								walk(new File("./"), Pattern.compile(Utils.fileMask2Regex(mask)), parsed.getValue(ARG_RECURSION_FLAG, boolean.class), root);
+								t = new Thread(()->{
+									try{
+										for(;;) {
+											final ImageWrapper iw = (ImageWrapper) ex.exchange(null);
+											
+											try(final FileOutputStream	fos = new FileOutputStream(iw.getName())) {
+												ImageIO.write((RenderedImage) iw.getImage(), iw.getFormat(), fos);
+												fos.flush();
+											} catch (IOException | PaintScriptException exc) {
+												System.err.println("Error saving ["+iw.getName()+"]: "+exc.getLocalizedMessage());
+											}
+										}
+									} catch (InterruptedException e) {
+									} catch (Exception exc) {
+										current.interrupt();
+									}
+								});
+							}
+				
+							try {
+								if (index > 0) {
+									walk(new File(mask.substring(0,index)), Pattern.compile(Utils.fileMask2Regex(mask.substring(index+1))), parsed.getValue(ARG_RECURSION_FLAG, boolean.class), root, ex);
+								}
+								else {
+									walk(new File("./"), Pattern.compile(Utils.fileMask2Regex(mask)), parsed.getValue(ARG_RECURSION_FLAG, boolean.class), root, ex);
+								}
+								ex.exchange(null);
+								t.join();
+							} catch (InterruptedException exc) {
 							}
 						}
 						else {
@@ -738,7 +862,7 @@ public class Application extends JFrame implements NodeMetadataOwner, LocaleChan
 								final Image	image = ImageIO.read(System.in);
 								
 								processImage(ImageWrapper.of(image), root);
-								startGUI(xda, localizer, predef);
+								startGUI(ApplicationMode.IN_OUT, xda, localizer, predef);
 							}
 							else {
 								processImage(System.in, root, System.out);
@@ -784,12 +908,15 @@ public class Application extends JFrame implements NodeMetadataOwner, LocaleChan
 		}
 	}
 	
-	private static void walk(final File current, final Pattern mask, final boolean recursive, final SyntaxNode<ScriptNodeType, SyntaxNode<ScriptNodeType, ?>> root) throws IOException, PaintScriptException {
+	private static boolean walk(final File current, final Pattern mask, final boolean recursive, final SyntaxNode<ScriptNodeType, SyntaxNode<ScriptNodeType, ?>> root, final Exchanger<Object> ex) throws IOException, PaintScriptException, InterruptedException {
 		if (current.isFile()) {
-			try(final InputStream	is = new FileInputStream(current);
-				final OutputStream	os = new FileOutputStream(new File(current.getAbsolutePath()+".processed"))) {
+			try(final InputStream	is = new FileInputStream(current)) {
+				final ImageWrapper	iw = new ImageWrapperImpl(is);
 				
-				processImage(is, root, os);
+				processImage(iw, root);
+				final Object	answer = ex.exchange(iw);
+				
+				return answer == null;
 			}
 		}
 		else {
@@ -798,17 +925,22 @@ public class Application extends JFrame implements NodeMetadataOwner, LocaleChan
 			if (content != null) {
 				for (File item : content) {
 					if (item.isFile() && mask.matcher(item.getName()).matches()) {
-						walk(item, mask, recursive, root);
+						if (!walk(item, mask, recursive, root, ex)) {
+							return false;
+						}
 					}
 				}
 				if (recursive) {
 					for (File item : content) {
 						if (item.isDirectory()) {
-							walk(item, mask, recursive, root);
+							if (walk(item, mask, recursive, root, ex)) {
+								return false;
+							}
 						}
 					}
 				}
 			}
+			return true;
 		}
 	}
 
@@ -823,10 +955,10 @@ public class Application extends JFrame implements NodeMetadataOwner, LocaleChan
 	private static void processImage(final ImageWrapper image, final SyntaxNode<ScriptNodeType, SyntaxNode<ScriptNodeType,?>> root) throws IOException {
 	}	
 	
-	private static void startGUI(final ContentMetadataInterface xda, final Localizer localizer, final Predefines predef) throws InterruptedException, IOException, PaintScriptException {
+	private static void startGUI(final ApplicationMode mode, final ContentMetadataInterface xda, final Localizer localizer, final Predefines predef) throws InterruptedException, IOException, PaintScriptException {
 		final CountDownLatch	latch = new CountDownLatch(1);
 		
-		try(final Application	app = new Application(xda, localizer, predef, latch)) {
+		try(final Application	app = new Application(mode, xda, localizer, predef, latch)) {
 			app.setVisible(true);
 			latch.await();
 		}

@@ -13,9 +13,12 @@
 		<key name="chav1961.bt.paint.Application.filter.pscfiles">bt.paint script</key>				
 		<key name="chav1961.bt.paint.Application.message.ready">Ready</key>
 		<key name="chav1961.bt.paint.Application.message.new.name">(&lt;new&gt;)</key>		
-		<key name="chav1961.bt.paint.Application.message.new.image.created">New image created, %1$dx%2$dpx</key>		
+		<key name="chav1961.bt.paint.Application.message.new.image.created">New image created, %1$dx%2$dpx</key>
+		<key name="chav1961.bt.paint.Application.message.image.loading">Image loading...</key>
 		<key name="chav1961.bt.paint.Application.message.image.loaded">Image loaded from %1$s, %2$dx%3$dpx</key>
-		<key name="chav1961.bt.paint.Application.message.image.stored">Image stored to %1$s</key>	
+		<key name="chav1961.bt.paint.Application.message.image.stored">Image stored to %1$s</key>
+		<key name="chav1961.bt.paint.Application.endbatch.title">Batch processing completed</key>
+		<key name="chav1961.bt.paint.Application.endbatch.content">All files in the batch are processed. Quit from application?</key>
 		<key name="chav1961.bt.paint.Application.help.title">About...</key>
 		<key name="chav1961.bt.paint.Application.help.content">uri(aboutApplication.cre)</key>
 
@@ -24,6 +27,8 @@
 		<key name="menu.main.file.tt">File menu</key>
 		<key name="menu.main.file.new">New</key>
 		<key name="menu.main.file.new.tt">Create new image</key>
+		<key name="menu.main.file.next">Next batch</key>
+		<key name="menu.main.file.next.tt">Get next batch file</key>
 		<key name="menu.main.file.load">Load</key>
 		<key name="menu.main.file.load.tt">Load image</key>
 		<key name="menu.main.file.load.lru">Load last recent</key>
@@ -257,8 +262,11 @@
 		<key name="chav1961.bt.paint.Application.message.ready">Готово</key>		
 		<key name="chav1961.bt.paint.Application.message.new.name">(&lt;новый&gt;)</key>		
 		<key name="chav1961.bt.paint.Application.message.new.image.created">Новая картинка создана, %1$dx%2$dтчк</key>		
+		<key name="chav1961.bt.paint.Application.message.image.loading">Загрузка картинки...</key>
 		<key name="chav1961.bt.paint.Application.message.image.loaded">Картинка загружена из файла %1$s, %2$dx%3$dтчк</key>
-		<key name="chav1961.bt.paint.Application.message.image.stored">Картинка сохранена в файл %1$s</key>	
+		<key name="chav1961.bt.paint.Application.message.image.stored">Картинка сохранена в файл %1$s</key>
+		<key name="chav1961.bt.paint.Application.endbatch.title">Пакетная обработка завершен</key>
+		<key name="chav1961.bt.paint.Application.endbatch.content">Все файлы из пакета обработаны. Завершить работу приложения?</key>
 		<key name="chav1961.bt.paint.Application.help.title">О программе</key>
 		<key name="chav1961.bt.paint.Application.help.content">uri(aboutApplication.cre)</key>
 		
@@ -267,6 +275,8 @@
 		<key name="menu.main.file.tt">Меню файлов</key>
 		<key name="menu.main.file.new">Новый</key>
 		<key name="menu.main.file.new.tt">Создать новое изображение</key>
+		<key name="menu.main.file.next">Следующий</key>
+		<key name="menu.main.file.next.tt">Прочитать следующий файл из обрабатываемого пакета</key>
 		<key name="menu.main.file.load">Загрузить</key>
 		<key name="menu.main.file.load.tt">Загрузить изображение из файла</key>
 		<key name="menu.main.file.load.lru">Загрузить последние</key>

@@ -55,6 +55,55 @@
 		<app:key code="H" ctrl="true" action="replace"/>
 		<app:key code="F1" action="overview"/>
 	</app:keyset>
+
+ 	<app:menu id="batchmenu">
+		<app:submenu name="menu.main.file" caption="menu.main.file" tooltip="menu.main.file.tt">
+			<app:item name="menu.main.file.next" caption="menu.main.file.next" tooltip="menu.main.file.next.tt" action="nextBatch"/>
+			<app:item name="menu.main.file.save" caption="menu.main.file.save" tooltip="menu.main.file.save.tt" action="saveBatch"/>
+			<app:separator/>
+			<app:item name="menu.main.file.exit" caption="menu.main.file.exit" tooltip="menu.main.file.exit.tt" action="exit"/>
+		</app:submenu>
+		<app:submenuref name="menu.main.edit" caption="menu.main.edit" tooltip="menu.main.edit.tt"/>
+		<app:submenuref name="menu.main.tools" caption="menu.main.tools" tooltip="menu.main.tools.tt"/>
+		<app:submenuref name="menu.main.help" caption="menu.main.help" tooltip="menu.main.help.tt"/>
+	</app:menu>
+	<app:keyset id="batchmenu.keyset">
+		<app:key code="N" ctrl="true" action="nextBatch"/>
+		<app:key code="S" ctrl="true" action="saveBatch"/>
+		<app:key code="Q" ctrl="true" action="exit"/>
+		<app:key code="Z" ctrl="true" action="undo"/>
+		<app:key code="Y" ctrl="true" action="redo"/>
+		<app:key code="X" ctrl="true" action="cut"/>
+		<app:key code="C" ctrl="true" action="copy"/>
+		<app:key code="V" ctrl="true" action="paste"/>
+		<app:key code="F" ctrl="true" action="find"/>
+		<app:key code="H" ctrl="true" action="replace"/>
+		<app:key code="F1" action="overview"/>
+	</app:keyset>
+
+ 	<app:menu id="inoutmenu">
+		<app:submenu name="menu.main.file" caption="menu.main.file" tooltip="menu.main.file.tt">
+			<app:item name="menu.main.file.save" caption="menu.main.file.save" tooltip="menu.main.file.save.tt" action="saveOut"/>
+			<app:separator/>
+			<app:item name="menu.main.file.exit" caption="menu.main.file.exit" tooltip="menu.main.file.exit.tt" action="exit"/>
+		</app:submenu>
+		<app:submenuref name="menu.main.edit" caption="menu.main.edit" tooltip="menu.main.edit.tt"/>
+		<app:submenuref name="menu.main.tools" caption="menu.main.tools" tooltip="menu.main.tools.tt"/>
+		<app:submenuref name="menu.main.help" caption="menu.main.help" tooltip="menu.main.help.tt"/>
+	</app:menu>
+	<app:keyset id="inoutmenu.keyset">
+		<app:key code="S" ctrl="true" action="saveOut"/>
+		<app:key code="Q" ctrl="true" action="exit"/>
+		<app:key code="Z" ctrl="true" action="undo"/>
+		<app:key code="Y" ctrl="true" action="redo"/>
+		<app:key code="X" ctrl="true" action="cut"/>
+		<app:key code="C" ctrl="true" action="copy"/>
+		<app:key code="V" ctrl="true" action="paste"/>
+		<app:key code="F" ctrl="true" action="find"/>
+		<app:key code="H" ctrl="true" action="replace"/>
+		<app:key code="F1" action="overview"/>
+	</app:keyset>
+
  	<app:menu id="colorBar">
 		<app:item name="toolbar.colorbar.black" caption="toolbar.colorbar.black" tooltip="toolbar.colorbar.black.tt" icon="root://chav1961.bt.paint.control.ImageEditPanel/chav1961/bt/paint/images/color_black.png" action="chooseColor?color=black"/>
 		<app:item name="toolbar.colorbar.blue" caption="toolbar.colorbar.blue" tooltip="toolbar.colorbar.blue.tt" icon="root://chav1961.bt.paint.control.ImageEditPanel/chav1961/bt/paint/images/color_blue.png" action="chooseColor?color=blue"/>
@@ -73,6 +122,7 @@
 		<app:item name="toolbar.colorbar.extract" caption="toolbar.colorbar.extract" tooltip="toolbar.colorbar.extract.tt" icon="root://chav1961.bt.paint.control.ImageEditPanel/chav1961/bt/paint/images/color_extract.png" checkable="true" action="chooseColor?color=extract"/>
 		<app:item name="toolbar.colorbar.colorswitch" caption="toolbar.colorbar.colorswitch" tooltip="toolbar.colorbar.colorswitch.tt" icon="root://chav1961.bt.paint.control.ImageEditPanel/chav1961/bt/paint/images/foreground.png?toggled=background.png" checkable="true" action="switchColor"/>
 	</app:menu>
+
  	<app:menu id="modeBar">
 		<app:item name="toolbar.modebar.selection" caption="toolbar.modebar.selection" tooltip="toolbar.modebar.selection.tt" icon="root://chav1961.bt.paint.control.ImageEditPanel/chav1961/bt/paint/images/selection.png" group="drawing" action="chooseMode?mode=SELECT"/>
 		<app:item name="toolbar.modebar.pen" caption="toolbar.modebar.pen" tooltip="toolbar.modebar.pen.tt" icon="root://chav1961.bt.paint.control.ImageEditPanel/chav1961/bt/paint/images/pen.png" group="drawing" action="chooseMode?mode=PEN"/>
@@ -83,6 +133,7 @@
 		<app:item name="toolbar.modebar.ellipse" caption="toolbar.modebar.ellipse" tooltip="toolbar.modebar.ellipse.tt" icon="root://chav1961.bt.paint.control.ImageEditPanel/chav1961/bt/paint/images/ellipse.png" group="drawing" action="chooseMode?mode=ELLIPSE"/>
 		<app:item name="toolbar.modebar.rect" caption="toolbar.modebar.rect" tooltip="toolbar.modebar.rect.tt" icon="root://chav1961.bt.paint.control.ImageEditPanel/chav1961/bt/paint/images/rect.png" group="drawing" action="chooseMode?mode=RECT"/>
 	</app:menu>
+
  	<app:menu id="actionBar">
 		<app:item name="toolbar.actionbar.crop" caption="toolbar.actionbar.crop" tooltip="toolbar.actionbar.crop.tt" icon="root://chav1961.bt.paint.control.ImageEditPanel/chav1961/bt/paint/images/crop.png" action="crop"/>
 		<app:item name="toolbar.actionbar.resize" caption="toolbar.actionbar.resize" tooltip="toolbar.actionbar.resize.tt" icon="root://chav1961.bt.paint.control.ImageEditPanel/chav1961/bt/paint/images/resize.png" action="resize"/>
@@ -92,6 +143,7 @@
 		<app:item name="toolbar.actionbar.tograyscale" caption="toolbar.actionbar.tograyscale" tooltip="toolbar.actionbar.tograyscale.tt" icon="root://chav1961.bt.paint.control.ImageEditPanel/chav1961/bt/paint/images/rgb2gs.png" action="toGrayScale"/>
 		<app:item name="toolbar.actionbar.transparency" caption="toolbar.actionbar.transparency" tooltip="toolbar.actionbar.transparency.tt" icon="root://chav1961.bt.paint.control.ImageEditPanel/chav1961/bt/paint/images/transparency.png" action="transparency"/>
 	</app:menu>
+
  	<app:menu id="settingsBar">
 		<app:item name="toolbar.settingsbar.font" caption="toolbar.settingsbar.font" tooltip="toolbar.settingsbar.font.tt" icon="root://chav1961.bt.paint.control.ImageEditPanel/chav1961/bt/paint/images/fontSettings.png" action="settings.font"/>
 		<app:submenu name="toolbar.settingsbar.line.thickness" caption="toolbar.settingsbar.line.thickness" tooltip="toolbar.settingsbar.line.thickness.tt" icon="root://chav1961.bt.paint.control.ImageEditPanel/chav1961/bt/paint/images/lineThickness.png" >
