@@ -30,6 +30,7 @@ import java.util.regex.Pattern;
 
 import javax.imageio.ImageIO;
 import javax.swing.BorderFactory;
+import javax.swing.JComponent;
 import javax.swing.JFrame;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
@@ -228,6 +229,7 @@ public class Application extends JFrame implements NodeMetadataOwner, LocaleChan
 	        });
 	        
 			SwingUtils.assignExitMethod4MainWindow(this,()->exit());
+			SwingUtils.assignActionKey((JComponent)getContentPane(), JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT, SwingUtils.KS_EXIT, (e)->panel.clearCommandString(), SwingUtils.ACTION_EXIT); 
 			SwingUtils.centerMainWindow(this, 0.85f);
 			fillLocalizedStrings();
 			state.message(Severity.info, KEY_APPLICATION_MESSAGE_READY);
@@ -522,7 +524,7 @@ public class Application extends JFrame implements NodeMetadataOwner, LocaleChan
 	
 	@OnAction("action:/about")
 	public void about() {
-		SwingUtils.showAboutScreen(this, localizer, KEY_APPLICATION_HELP_TITLE, KEY_APPLICATION_HELP_CONTENT, URI.create("root://chav1961.bt.paint.Application/chav1961/bt/paint/avatar.jpg"), new Dimension(300,300));
+		SwingUtils.showAboutScreen(this, localizer, KEY_APPLICATION_HELP_TITLE, KEY_APPLICATION_HELP_CONTENT, URI.create("root://chav1961.bt.paint.Application/chav1961/bt/paint/avatar.jpg"), new Dimension(640, 400));
 	}
 	
 	private void processUndoEvents(final UndoableEditEvent e) {
@@ -537,10 +539,20 @@ public class Application extends JFrame implements NodeMetadataOwner, LocaleChan
 			if (recordingOn && !pauseOn) {
 				commands.append(command).append('\n');
 			}
-		} catch (PaintScriptException | SyntaxException exc) {
+			((JTextField)e.getSource()).setText("");
+		} catch (PaintScriptException exc) {
+			if (exc.getCause() instanceof SyntaxException) {
+				((JTextField)e.getSource()).setCaretPosition((int)((SyntaxException)exc.getCause()).getCol()-1);
+				SwingUtils.getNearestLogger(this).message(Severity.error, exc.getCause(), exc.getCause().getLocalizedMessage());
+			}
+			else {
+				((JTextField)e.getSource()).setCaretPosition(0);
+				SwingUtils.getNearestLogger(this).message(Severity.error, exc, exc.getLocalizedMessage());
+			}
+		} catch (SyntaxException exc) {
+			((JTextField)e.getSource()).setCaretPosition((int)exc.getCol()-1);
 			SwingUtils.getNearestLogger(this).message(Severity.error, exc, exc.getLocalizedMessage());
 		} finally {
-			((JTextField)e.getSource()).setText("");
 			panel.refreshContent();
 		}
 	}

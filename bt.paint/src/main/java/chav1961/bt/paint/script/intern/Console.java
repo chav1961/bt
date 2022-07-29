@@ -270,11 +270,14 @@ public class Console {
 					else if (a[4] instanceof CharUtils.Mark) {
 						return pasteFileScaled(p, (Integer)a[0], (Integer)a[1], (Integer)a[2], (Integer)a[3], false, (String)a[5]);
 					}
+					else if (a[2] instanceof Integer) {
+						return pasteClipboardScaled(p, (Integer)a[0], (Integer)a[1], (Integer)a[2], (Integer)a[3], false);
+					}
 					else {
 						return pasteClipboard(p, (Integer)a[0], (Integer)a[1]);
 					}
 				}
-				, ArgumentType.signedInt, ',', ArgumentType.signedInt, new CharUtils.Optional(new CharUtils.Choise(new Object[] {"size", new CharUtils.Mark(2), ArgumentType.signedInt, ',', ArgumentType.signedInt}, new Object[] {new CharUtils.Optional("to"), ArgumentType.signedInt, ',', ArgumentType.signedInt})), new CharUtils.Optional("from", new CharUtils.Mark(2), ArgumentType.raw));
+				, ArgumentType.signedInt, ',', ArgumentType.signedInt, new CharUtils.Optional(new CharUtils.Choise(new Object[] {"size", new CharUtils.Mark(1), ArgumentType.signedInt, ',', ArgumentType.signedInt}, new Object[] {new CharUtils.Optional("to"), ArgumentType.signedInt, ',', ArgumentType.signedInt})), new CharUtils.Optional("from", new CharUtils.Mark(2), ArgumentType.raw));
 		COMMANDS.placeName("paste", ci);
 		
 //		ci = new CommandItem("undo", "undo", (p,a)->drawPath(p,(String)a[0]));
@@ -352,7 +355,7 @@ public class Console {
 	}
 		
 	public static String processCommand(final String command, final Predefines predef) throws SyntaxException, PaintScriptException {
-		final char[]	cmd = CharUtils.terminateAndConvert2CharArray(command, '\n');
+		final char[]	cmd = CharUtils.terminateAndConvert2CharArray(command.trim(), '\n');
 		final int[]		bounds = new int[2];
 		final Object[]	parameters = new Object[100];
 		int				from = CharUtils.skipBlank(cmd, 0, true);
@@ -369,34 +372,39 @@ public class Console {
 			
 			if (ci.lexemas.length > 0) {
 				if ((stopColumn = CharUtils.tryExtract(cmd, from, ci.lexemas)) >= 0) {
-					final CanvasWrapper	cw = predef.getPredefined(Predefines.PREDEF_CANVAS, CanvasWrapper.class);
-					
-					from = CharUtils.extract(cmd, from, parameters, ci.lexemas);
-					
-					switch (ci.commandType) {
-						case ImageAction	:
-							cw.startImageAction(ci.undoDescriptor);
-							break;
-						case PropertyAction	:
-							cw.startPropertyAction(ci.undoDescriptor);
-							break;
-						default:
-							break;
+					if (stopColumn < command.length()-1) {
+						throw new SyntaxException(0, stopColumn, "Unparsed tail for command ["+ci.command+"]: must be "+ci.help);
 					}
-					
-					final String	result = ci.exec.process(predef, parameters);
-					
-					switch (ci.commandType) {
-						case ImageAction	:
-							cw.endImageAction(ci.redoDescriptor);
-							break;
-						case PropertyAction	:
-							cw.endPropertyAction(ci.redoDescriptor);
-							break;
-						default:
-							break;
+					else {
+						final CanvasWrapper	cw = predef.getPredefined(Predefines.PREDEF_CANVAS, CanvasWrapper.class);
+						
+						from = CharUtils.extract(cmd, from, parameters, ci.lexemas);
+						
+						switch (ci.commandType) {
+							case ImageAction	:
+								cw.startImageAction(ci.undoDescriptor);
+								break;
+							case PropertyAction	:
+								cw.startPropertyAction(ci.undoDescriptor);
+								break;
+							default:
+								break;
+						}
+						
+						final String	result = ci.exec.process(predef, parameters);
+						
+						switch (ci.commandType) {
+							case ImageAction	:
+								cw.endImageAction(ci.redoDescriptor);
+								break;
+							case PropertyAction	:
+								cw.endPropertyAction(ci.redoDescriptor);
+								break;
+							default:
+								break;
+						}
+						return result;
 					}
-					return result;
 				}
 				else {
 					throw new SyntaxException(0, -stopColumn, "Illegal format for command ["+ci.command+"]: must be "+ci.help);
@@ -610,7 +618,7 @@ public class Console {
 	private static String pasteImage(final Predefines predef, final ImageWrapper iwFrom, final int xTo, final int yTo) throws PaintScriptException {
 		final ImageWrapper	iwTo = predef.getPredefined(Predefines.PREDEF_CANVAS, CanvasWrapper.class).getImage();
 		final Rectangle		rect = new Rectangle(xTo, yTo, iwFrom.getImage().getWidth(null), iwFrom.getImage().getHeight(null));
-		final ImageWrapper	result = ImageWrapper.of(ImageUtils.process(ProcessType.INSERT, iwTo.getImage(), null, iwFrom.getImage(), rect));
+		final ImageWrapper	result = ImageWrapper.of(ImageUtils.process(ProcessType.INSERT, iwTo.getImage(), null, rect, iwFrom.getImage()));
 		
 		predef.getPredefined(Predefines.PREDEF_CANVAS, CanvasWrapper.class).setImage(result);
 		return OK;
@@ -619,7 +627,7 @@ public class Console {
 	private static String pasteImageScaled(final Predefines predef, final ImageWrapper iwFrom, final int xFrom, final int yFrom, final int xToOrWidth, final int yToOrHeight, final boolean useAsSize) throws PaintScriptException {
 		final ImageWrapper	iwTo = predef.getPredefined(Predefines.PREDEF_CANVAS, CanvasWrapper.class).getImage();
 		final Rectangle		rect = new Rectangle(xFrom, yFrom, useAsSize ? xToOrWidth : xToOrWidth - xFrom, useAsSize ? yToOrHeight : yToOrHeight - yFrom);
-		final ImageWrapper	result = ImageWrapper.of(ImageUtils.process(ProcessType.INSERT, iwTo.getImage(), null, iwFrom.getImage(), rect));
+		final ImageWrapper	result = ImageWrapper.of(ImageUtils.process(ProcessType.INSERT, iwTo.getImage(), null, rect, iwFrom.getImage()));
 		
 		predef.getPredefined(Predefines.PREDEF_CANVAS, CanvasWrapper.class).setImage(result);
 		return OK;

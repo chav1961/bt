@@ -179,8 +179,10 @@
 		<key name="toolbar.playerbar.recording.tt">Recording commands</key>
 		<key name="toolbar.playerbar.pause">Pause</key>
 		<key name="toolbar.playerbar.pause.tt">Pause play/recording</key>
-		<key name="toolbar.playerbar.play">Play</key>
+		<key name="toolbar.playerbar.play">Play...</key>
 		<key name="toolbar.playerbar.play.tt">Play commands</key>
+		<key name="toolbar.playerbar.play.file">...from file</key>
+		<key name="toolbar.playerbar.play.file.tt">Play console command (*.cmd) or PaintScript file (*.psc)</key>
 
 <!-- ImageEditPanel class localization -->
 		<key name="chav1961.bt.paint.editor.ImageEditPanel.selectColor">Select color</key>
@@ -431,7 +433,8 @@
 		<key name="toolbar.playerbar.pause.tt">Пауза записи/воспроизведения</key>
 		<key name="toolbar.playerbar.play">Воспроизведение</key>
 		<key name="toolbar.playerbar.play.tt">Воспроизвести команды</key>
-
+		<key name="toolbar.playerbar.play.file">...из файла</key>
+		<key name="toolbar.playerbar.play.file.tt">Воспроизвести консольные команды (*.cmd) или файлы PaintScript (*.psc)</key>
 
 <!-- ImageEditPanel.EditStateString -->
 		<key name="chav1961.bt.paint.bgeditor.ImageEditPanel.EditStateString.prompt">Введите команду</key>

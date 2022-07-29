@@ -1,6 +1,7 @@
 package chav1961.bt.paint.control;
 
 
+
 import java.awt.BasicStroke;
 import java.awt.BorderLayout;
 import java.awt.Color;
@@ -40,9 +41,6 @@ import javax.swing.event.ChangeListener;
 import javax.swing.event.UndoableEditEvent;
 import javax.swing.event.UndoableEditListener;
 
-import chav1961.bt.paint.control.ImageEditCanvas.LineCaps;
-import chav1961.bt.paint.control.ImageEditCanvas.LineJoin;
-import chav1961.bt.paint.control.ImageEditCanvas.LineStroke;
 import chav1961.bt.paint.control.ImageUtils.DrawingType;
 import chav1961.bt.paint.dialogs.AskImageResize;
 import chav1961.bt.paint.interfaces.PaintScriptException;
@@ -79,28 +77,28 @@ public class ImageEditPanel extends JPanel implements LocalizerOwner, LocaleChan
 	private static final long 				serialVersionUID = -8630893532191028731L;
 	private static final ContentMetadataInterface	xda;
 	
-	private static final String				KEY_SELECT_COLOR = "chav1961.bt.mnemoed.editor.ImageEditPanel.selectColor";
+	private static final String				KEY_SELECT_COLOR = "chav1961.bt.paint.editor.ImageEditPanel.selectColor";
 
-	private static final String				KEY_UNDO_CROP = "chav1961.bt.mnemoed.editor.ImageEditPanel.undo.crop";
-	private static final String				KEY_REDO_CROP = "chav1961.bt.mnemoed.editor.ImageEditPanel.redo.crop";
-	private static final String				KEY_UNDO_RESIZE = "chav1961.bt.mnemoed.editor.ImageEditPanel.undo.resize";
-	private static final String				KEY_REDO_RESIZE = "chav1961.bt.mnemoed.editor.ImageEditPanel.redo.resize";
-	private static final String				KEY_UNDO_ROTATE = "chav1961.bt.mnemoed.editor.ImageEditPanel.undo.rotate";
-	private static final String				KEY_REDO_ROTATE = "chav1961.bt.mnemoed.editor.ImageEditPanel.redo.rotate";
-	private static final String				KEY_UNDO_REFLECT = "chav1961.bt.mnemoed.editor.ImageEditPanel.undo.reflect";
-	private static final String				KEY_REDO_REFLECT = "chav1961.bt.mnemoed.editor.ImageEditPanel.redo.reflect";
-	private static final String				KEY_UNDO_GRAYSCALE = "chav1961.bt.mnemoed.editor.ImageEditPanel.undo.grayscale";
-	private static final String				KEY_REDO_GRAYSCALE = "chav1961.bt.mnemoed.editor.ImageEditPanel.redo.grayscale";
-	private static final String				KEY_UNDO_TRANSPARENCY = "chav1961.bt.mnemoed.editor.ImageEditPanel.undo.transparency";
-	private static final String				KEY_REDO_TRANSPARENCY = "chav1961.bt.mnemoed.editor.ImageEditPanel.redo.transparency";
-	private static final String				KEY_UNDO_DRAW_ELLIPSE = "chav1961.bt.mnemoed.editor.ImageEditPanel.undo.draw.ellipse";
-	private static final String				KEY_REDO_DRAW_ELLIPSE = "chav1961.bt.mnemoed.editor.ImageEditPanel.redo.draw.ellipse";
-	private static final String				KEY_UNDO_DRAW_LINE = "chav1961.bt.mnemoed.editor.ImageEditPanel.undo.draw.line";
-	private static final String				KEY_REDO_DRAW_LINE = "chav1961.bt.mnemoed.editor.ImageEditPanel.redo.draw.line";
-	private static final String				KEY_UNDO_DRAW_PATH = "chav1961.bt.mnemoed.editor.ImageEditPanel.undo.draw.path";
-	private static final String				KEY_REDO_DRAW_PATH = "chav1961.bt.mnemoed.editor.ImageEditPanel.redo.draw.path";
-	private static final String				KEY_UNDO_DRAW_RECT = "chav1961.bt.mnemoed.editor.ImageEditPanel.undo.draw.rect";
-	private static final String				KEY_REDO_DRAW_RECT = "chav1961.bt.mnemoed.editor.ImageEditPanel.redo.draw.rect";
+	private static final String				KEY_UNDO_CROP = "chav1961.bt.paint.editor.ImageEditPanel.undo.crop";
+	private static final String				KEY_REDO_CROP = "chav1961.bt.paint.editor.ImageEditPanel.redo.crop";
+	private static final String				KEY_UNDO_RESIZE = "chav1961.bt.paint.editor.ImageEditPanel.undo.resize";
+	private static final String				KEY_REDO_RESIZE = "chav1961.bt.paint.editor.ImageEditPanel.redo.resize";
+	private static final String				KEY_UNDO_ROTATE = "chav1961.bt.paint.editor.ImageEditPanel.undo.rotate";
+	private static final String				KEY_REDO_ROTATE = "chav1961.bt.paint.editor.ImageEditPanel.redo.rotate";
+	private static final String				KEY_UNDO_REFLECT = "chav1961.bt.paint.editor.ImageEditPanel.undo.reflect";
+	private static final String				KEY_REDO_REFLECT = "chav1961.bt.paint.editor.ImageEditPanel.redo.reflect";
+	private static final String				KEY_UNDO_GRAYSCALE = "chav1961.bt.paint.editor.ImageEditPanel.undo.grayscale";
+	private static final String				KEY_REDO_GRAYSCALE = "chav1961.bt.paint.editor.ImageEditPanel.redo.grayscale";
+	private static final String				KEY_UNDO_TRANSPARENCY = "chav1961.bt.paint.editor.ImageEditPanel.undo.transparency";
+	private static final String				KEY_REDO_TRANSPARENCY = "chav1961.bt.paint.editor.ImageEditPanel.redo.transparency";
+	private static final String				KEY_UNDO_DRAW_ELLIPSE = "chav1961.bt.paint.editor.ImageEditPanel.undo.draw.ellipse";
+	private static final String				KEY_REDO_DRAW_ELLIPSE = "chav1961.bt.paint.editor.ImageEditPanel.redo.draw.ellipse";
+	private static final String				KEY_UNDO_DRAW_LINE = "chav1961.bt.paint.editor.ImageEditPanel.undo.draw.line";
+	private static final String				KEY_REDO_DRAW_LINE = "chav1961.bt.paint.editor.ImageEditPanel.redo.draw.line";
+	private static final String				KEY_UNDO_DRAW_PATH = "chav1961.bt.paint.editor.ImageEditPanel.undo.draw.path";
+	private static final String				KEY_REDO_DRAW_PATH = "chav1961.bt.paint.editor.ImageEditPanel.redo.draw.path";
+	private static final String				KEY_UNDO_DRAW_RECT = "chav1961.bt.paint.editor.ImageEditPanel.undo.draw.rect";
+	private static final String				KEY_REDO_DRAW_RECT = "chav1961.bt.paint.editor.ImageEditPanel.redo.draw.rect";
 	
 	static {
 		try(final InputStream				is = ImageEditPanel.class.getResourceAsStream("imageeditpanel.xml")) {
@@ -189,6 +187,10 @@ public class ImageEditPanel extends JPanel implements LocalizerOwner, LocaleChan
         fillLocalizedStrings();
 	}
 
+	public void clearCommandString() {
+		state.clearCommandString();
+	}
+	
 	@Override
 	public void open() throws PaintScriptException {
 		// TODO Auto-generated method stub
@@ -325,9 +327,9 @@ public class ImageEditPanel extends JPanel implements LocalizerOwner, LocaleChan
 		}
 		else {
 			canvas.setLineThickness((int)((BasicStroke)stroke.getStroke()).getLineWidth());
-			canvas.setLineStroke(LineStroke.valueOf(((BasicStroke)stroke.getStroke()).getDashArray()));
-			canvas.setLineCaps(LineCaps.valueOf(((BasicStroke)stroke.getStroke()).getEndCap()));
-			canvas.setLineJoin(LineJoin.valueOf(((BasicStroke)stroke.getStroke()).getLineJoin()));
+			canvas.setLineStroke(StrokeWrapper.LineStroke.valueOf(((BasicStroke)stroke.getStroke()).getDashArray()));
+			canvas.setLineCaps(StrokeWrapper.LineCaps.valueOf(((BasicStroke)stroke.getStroke()).getEndCap()));
+			canvas.setLineJoin(StrokeWrapper.LineJoin.valueOf(((BasicStroke)stroke.getStroke()).getLineJoin()));
 		}
 	}
 
@@ -346,8 +348,13 @@ public class ImageEditPanel extends JPanel implements LocalizerOwner, LocaleChan
 
 	@Override
 	public void startImageAction(final String actionType) {
-		try{
-			before = ImageUndoEdit.packImage(canvas.getBackgroundImage());
+		try{if (canvas.getBackgroundImage() != null) {
+				before = ImageUndoEdit.packImage(canvas.getBackgroundImage());
+			}
+			else {
+				before = new byte[0];
+			}
+			
 			undoString = actionType;
 		} catch (IOException exc) {
 			SwingUtils.getNearestLogger(this).message(Severity.error, exc, exc.getLocalizedMessage());
@@ -608,13 +615,13 @@ public class ImageEditPanel extends JPanel implements LocalizerOwner, LocaleChan
 	@OnAction("action:/settings.stroke")
 	public void setStroke(final Hashtable<String,String[]> modes) {
 		if (modes.containsKey("style")) {
-			canvas.setLineStroke(LineStroke.valueOf(modes.get("style")[0]));
+			canvas.setLineStroke(StrokeWrapper.LineStroke.valueOf(modes.get("style")[0]));
 		}
 		else if (modes.containsKey("cap")) {
-			canvas.setLineCaps(LineCaps.valueOf(modes.get("caps")[0]));
+			canvas.setLineCaps(StrokeWrapper.LineCaps.valueOf(modes.get("caps")[0]));
 		}
 		else if (modes.containsKey("join")) {
-			canvas.setLineJoin(LineJoin.valueOf(modes.get("join")[0]));
+			canvas.setLineJoin(StrokeWrapper.LineJoin.valueOf(modes.get("join")[0]));
 		}
 	}
 
@@ -855,12 +862,12 @@ public class ImageEditPanel extends JPanel implements LocalizerOwner, LocaleChan
 	private static class EditStateString extends JPanel implements LocaleChangeListener {
 		private static final long serialVersionUID = 1L;
 
-		private static final String		KEY_PROMPT = "chav1961.bt.mnemoed.bgeditor.ImageEditPanel.EditStateString.prompt";
-		private static final String		KEY_COMMAND_TT = "chav1961.bt.mnemoed.bgeditor.ImageEditPanel.EditStateString.path.tt"; 		
-		private static final String		KEY_COORD_TT = "chav1961.bt.mnemoed.bgeditor.ImageEditPanel.EditStateString.coord.tt"; 		
-		private static final String		KEY_SIZE_TT = "chav1961.bt.mnemoed.bgeditor.ImageEditPanel.EditStateString.size.tt"; 		
-		private static final String		KEY_FONT_TT = "chav1961.bt.mnemoed.bgeditor.ImageEditPanel.EditStateString.font.tt"; 		
-		private static final String		KEY_SETTINGS_TT = "chav1961.bt.mnemoed.bgeditor.ImageEditPanel.EditStateString.settings.tt"; 		
+		private static final String		KEY_PROMPT = "chav1961.bt.paint.bgeditor.ImageEditPanel.EditStateString.prompt";
+		private static final String		KEY_COMMAND_TT = "chav1961.bt.paint.bgeditor.ImageEditPanel.EditStateString.path.tt"; 		
+		private static final String		KEY_COORD_TT = "chav1961.bt.paint.bgeditor.ImageEditPanel.EditStateString.coord.tt"; 		
+		private static final String		KEY_SIZE_TT = "chav1961.bt.paint.bgeditor.ImageEditPanel.EditStateString.size.tt"; 		
+		private static final String		KEY_FONT_TT = "chav1961.bt.paint.bgeditor.ImageEditPanel.EditStateString.font.tt"; 		
+		private static final String		KEY_SETTINGS_TT = "chav1961.bt.paint.bgeditor.ImageEditPanel.EditStateString.settings.tt"; 		
 		
 		private final Localizer			localizer;
 		private final JLabel			forPrompt = new JLabel();
@@ -900,6 +907,11 @@ public class ImageEditPanel extends JPanel implements LocalizerOwner, LocaleChan
 			fillLocalizedStrings();
 		}
 
+		private void clearCommandString() {
+			forCommand.setText("");
+			forCommand.requestFocusInWindow();
+		}
+		
 		private void refreshCoordinates(final ImageEditCanvas canvas, final int x, final int y) {
 			final Image		image = canvas.getBackgroundImage();
 			final String	text = x + " x " + y;
@@ -936,10 +948,10 @@ public class ImageEditPanel extends JPanel implements LocalizerOwner, LocaleChan
 	private static class SettingsVisual extends JComponent {
 		private static final long serialVersionUID = 1L;
 
-		private int			thickness = 1;
-		private LineStroke	stroke = LineStroke.SOLID;
-		private LineCaps	caps = LineCaps.BUTT;
-		private LineJoin	join = LineJoin.MITER;
+		private int							thickness = 1;
+		private StrokeWrapper.LineStroke	stroke = StrokeWrapper.LineStroke.SOLID;
+		private StrokeWrapper.LineCaps		caps = StrokeWrapper.LineCaps.BUTT;
+		private StrokeWrapper.LineJoin		join = StrokeWrapper.LineJoin.MITER;
 		
 		private SettingsVisual() {
 			setPreferredSize(new Dimension(48,16));

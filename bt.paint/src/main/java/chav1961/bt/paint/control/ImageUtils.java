@@ -1,6 +1,7 @@
 package chav1961.bt.paint.control;
 
 
+
 import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Font;
@@ -28,9 +29,9 @@ import java.text.AttributedString;
 import java.util.LinkedList;
 import java.util.List;
 
-import chav1961.bt.paint.control.ImageEditCanvas.LineCaps;
-import chav1961.bt.paint.control.ImageEditCanvas.LineJoin;
-import chav1961.bt.paint.control.ImageEditCanvas.LineStroke;
+import chav1961.bt.paint.script.interfaces.StrokeWrapper.LineCaps;
+import chav1961.bt.paint.script.interfaces.StrokeWrapper.LineJoin;
+import chav1961.bt.paint.script.interfaces.StrokeWrapper.LineStroke;
 import chav1961.purelib.basic.CharUtils;
 import chav1961.purelib.basic.exceptions.SyntaxException;
 import chav1961.purelib.ui.ColorPair;
@@ -128,7 +129,7 @@ public class ImageUtils {
 						return insertImage((BufferedImage)source, (Rectangle)parameters[0], (BufferedImage)parameters[1], observer);
 					}
 					else {
-						throw new IllegalArgumentException("[TO_TRANSPARENT] mode must have transparent color intem in the parameters list"); 
+						throw new IllegalArgumentException("[INSERT] mode must have rectangle and image in the parameters list"); 
 					}
 				default	:
 					throw new UnsupportedOperationException("Process type ["+type+"] is not supported yet"); 
@@ -421,7 +422,7 @@ public class ImageUtils {
 		final Rectangle			rect = new Rectangle(rectangle);
 		
 		rect.intersects(0, 0, source.getWidth(), source.getHeight());
-		g2d.drawImage(insertion, rect.x, rect.y, rect.width, rect.height, 0, 0, insertion.getWidth(), insertion.getHeight(), observer);
+		g2d.drawImage(insertion, rect.x, rect.y, rect.x+rect.width, rect.y+rect.height, 0, 0, insertion.getWidth(), insertion.getHeight(), observer);
 		g2d.dispose();
 		return source;
 	}

@@ -29,21 +29,24 @@
 		 	<app:submenu name="menu.main.tools.playerBar" caption="menu.main.tools.playerbar" tooltip="menu.main.tools.playerbar.tt">
 				<app:item name="menu.main.tools.playerbar.recording" caption="toolbar.playerbar.recording" tooltip="toolbar.playerbar.recording.tt" checkable="true" action="player.recording"/>
 				<app:item name="menu.main.tools.playerbar.pause" caption="toolbar.playerbar.pause" tooltip="toolbar.playerbar.pause.tt" checkable="true" action="player.pause"/>
+				<app:separator/>
 				<app:submenu name="menu.main.tools.playerbar.play" caption="toolbar.playerbar.play" tooltip="toolbar.playerbar.play.tt">
-					<app:item name="menu.main.tools.playerbar.play.file" caption="toolbar.playerbar.play" tooltip="toolbar.playerbar.play.tt" action="player.play"/>
+					<app:item name="menu.main.tools.playerbar.play.file" caption="toolbar.playerbar.play.file" tooltip="toolbar.playerbar.play.file.tt" action="player.play"/>
 				</app:submenu>
 			</app:submenu>
 			<app:separator/>
-			<app:item name="menu.main.tools.settings" caption="menu.main.tools.settings" tooltip="menu.main.tools.settings.tt" action="settings"/>
 			<app:builtinSubmenu name="builtin.languages" caption="menu.main.tools.languages" tooltip="menu.main.tools.languages.tt"/>
+			<app:item name="menu.main.tools.settings" caption="menu.main.tools.settings" tooltip="menu.main.tools.settings.tt" action="settings"/>
 		</app:submenu>
 		<app:submenu name="menu.main.help" caption="menu.main.help" tooltip="menu.main.help.tt">
 			<app:item name="menu.main.help.overview" caption="menu.main.help.overview" tooltip="menu.main.help.overview.tt" action="overview"/>
+			<app:separator/>
 			<app:item name="menu.main.help.about" caption="menu.main.help.about" tooltip="menu.main.help.about.tt" action="about"/>
 		</app:submenu>
 	</app:menu>
 	<app:keyset id="mainmenu.keyset">
-		<app:key code="N" ctrl="true" action="loadImage"/>
+		<app:key code="N" ctrl="true" action="newImage"/>
+		<app:key code="O" ctrl="true" action="loadImage"/>
 		<app:key code="S" ctrl="true" action="saveImage"/>
 		<app:key code="Q" ctrl="true" action="exit"/>
 		<app:key code="Z" ctrl="true" action="undo"/>
@@ -63,9 +66,9 @@
 			<app:separator/>
 			<app:item name="menu.main.file.exit" caption="menu.main.file.exit" tooltip="menu.main.file.exit.tt" action="exit"/>
 		</app:submenu>
-		<app:submenuref name="menu.main.edit" caption="menu.main.edit" tooltip="menu.main.edit.tt"/>
-		<app:submenuref name="menu.main.tools" caption="menu.main.tools" tooltip="menu.main.tools.tt"/>
-		<app:submenuref name="menu.main.help" caption="menu.main.help" tooltip="menu.main.help.tt"/>
+		<app:submenuref name="menu.batch.edit" ref="menu.main.edit"/>
+		<app:submenuref name="menu.batch.tools" ref="menu.main.tools"/>
+		<app:submenuref name="menu.batch.help" ref="menu.main.help"/>
 	</app:menu>
 	<app:keyset id="batchmenu.keyset">
 		<app:key code="N" ctrl="true" action="nextBatch"/>
@@ -87,9 +90,9 @@
 			<app:separator/>
 			<app:item name="menu.main.file.exit" caption="menu.main.file.exit" tooltip="menu.main.file.exit.tt" action="exit"/>
 		</app:submenu>
-		<app:submenuref name="menu.main.edit" caption="menu.main.edit" tooltip="menu.main.edit.tt"/>
-		<app:submenuref name="menu.main.tools" caption="menu.main.tools" tooltip="menu.main.tools.tt"/>
-		<app:submenuref name="menu.main.help" caption="menu.main.help" tooltip="menu.main.help.tt"/>
+		<app:submenuref name="menu.inout.edit" ref="menu.main.edit"/>
+		<app:submenuref name="menu.inout.tools" ref="menu.main.tools"/>
+		<app:submenuref name="menu.inout.help" ref="menu.main.help"/>
 	</app:menu>
 	<app:keyset id="inoutmenu.keyset">
 		<app:key code="S" ctrl="true" action="saveOut"/>

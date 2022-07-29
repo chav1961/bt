@@ -1,27 +1,24 @@
 package chav1961.bt.paint.control;
 
-import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.Image;
-import java.awt.Point;
 import java.awt.Rectangle;
-import java.io.IOException;
 
-import javax.swing.border.LineBorder;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
-import chav1961.bt.paint.control.ImageUtils.DrawingType;
+import chav1961.bt.paint.script.interfaces.StrokeWrapper.LineCaps;
+import chav1961.bt.paint.script.interfaces.StrokeWrapper.LineJoin;
+import chav1961.bt.paint.script.interfaces.StrokeWrapper.LineStroke;
 import chav1961.purelib.concurrent.LightWeightListenerList;
 import chav1961.purelib.i18n.interfaces.Localizer;
 import chav1961.purelib.model.interfaces.ImageKeeper;
 import chav1961.purelib.ui.swing.useful.JBackgroundComponent;
 import chav1961.purelib.ui.swing.useful.SelectionFrameManager;
-import chav1961.purelib.ui.swing.useful.interfaces.SelectionFrameListener.SelectionStyle;
 
 public class ImageEditCanvas extends JBackgroundComponent implements ImageKeeper {
 	private static final long 			serialVersionUID = 3367119258812876786L;
@@ -36,78 +33,6 @@ public class ImageEditCanvas extends JBackgroundComponent implements ImageKeeper
 	private LineCaps					lineCaps = LineCaps.BUTT;
 	private LineJoin					lineJoin = LineJoin.MITER;
 	private boolean						fillContours = false;
-	private String						prevComment = null, currentComment = "";
-	
-	public static enum LineStroke {
-		SOLID, 
-		DASHED, 
-		DOTTED;
-		
-		public static LineStroke valueOf(final float[] dashArray) {
-			if (dashArray == null || dashArray.length == 0) {
-				return SOLID;
-			}
-			else {
-				float	minVal = dashArray[0], maxVal = minVal;
-				
-				for (float item : dashArray) {
-					minVal = Math.min(minVal, item);
-					maxVal = Math.max(minVal, item);
-				}
-				return maxVal / minVal > 2 ? DASHED : DOTTED;
-			}
-		}
-	}
-
-	public static enum LineCaps {
-		BUTT(BasicStroke.CAP_BUTT), 
-		ROUND(BasicStroke.CAP_ROUND), 
-		SQUARE(BasicStroke.CAP_SQUARE);
-		
-		private final int	capsType;
-		
-		private LineCaps(final int capsType) {
-			this.capsType = capsType;
-		}
-		
-		public int getCapsType() {
-			return capsType;
-		}
-
-		public static LineCaps valueOf(final int capsType) {
-			for (LineCaps item : values()) {
-				if (item.getCapsType() == capsType) {
-					return item;
-				}
-			}
-			throw new IllegalArgumentException("Caps type ["+capsType+"] is not found");
-		}
-	}
-
-	public static enum LineJoin {
-		MITER(BasicStroke.JOIN_MITER), 
-		ROUND(BasicStroke.JOIN_ROUND), 
-		BEVEL(BasicStroke.JOIN_BEVEL);
-
-		private final int	joinType;
-		
-		private LineJoin(final int joinType) {
-			this.joinType = joinType;
-		}
-		
-		public int getJoinType() {
-			return joinType;
-		}
-		
-		public static LineJoin valueOf(final int joinType) {
-			for (LineJoin item : values()) {
-				if (item.getJoinType() == joinType) {
-					return item;
-				}
-			}
-			throw new IllegalArgumentException("Join type ["+joinType+"] is not found");
-		}
-	}
 	
 	public ImageEditCanvas(final Localizer localizer) {
 		super(localizer);

@@ -10,7 +10,24 @@ import chav1961.purelib.basic.exceptions.SyntaxException;
 
 public interface StrokeWrapper {
 	public static enum LineStroke {
-		SOLID, DASHED, DOTTED;
+		SOLID, 
+		DASHED, 
+		DOTTED;
+		
+		public static LineStroke valueOf(final float[] dashArray) {
+			if (dashArray == null || dashArray.length == 0) {
+				return SOLID;
+			}
+			else {
+				float	minVal = dashArray[0], maxVal = minVal;
+				
+				for (float item : dashArray) {
+					minVal = Math.min(minVal, item);
+					maxVal = Math.max(minVal, item);
+				}
+				return maxVal / minVal > 2 ? DASHED : DOTTED;
+			}
+		}
 	}
 
 	public static enum LineCaps {
@@ -27,6 +44,15 @@ public interface StrokeWrapper {
 		public int getCapsType() {
 			return capsType;
 		}
+		
+		public static LineCaps valueOf(final int capsType) {
+			for (LineCaps item : values()) {
+				if (item.getCapsType() == capsType) {
+					return item;
+				}
+			}
+			throw new IllegalArgumentException("Caps type ["+capsType+"] is not found");
+		}
 	}
 
 	public static enum LineJoin {
@@ -42,6 +68,15 @@ public interface StrokeWrapper {
 		
 		public int getJoinType() {
 			return joinType;
+		}
+	
+		public static LineJoin valueOf(final int joinType) {
+			for (LineJoin item : values()) {
+				if (item.getJoinType() == joinType) {
+					return item;
+				}
+			}
+			throw new IllegalArgumentException("Join type ["+joinType+"] is not found");
 		}
 	}
 	

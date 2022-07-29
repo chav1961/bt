@@ -3,8 +3,10 @@ package chav1961.bt.paint.script;
 import java.awt.BasicStroke;
 import java.awt.Stroke;
 
+import chav1961.bt.paint.control.ImageUtils;
 import chav1961.bt.paint.interfaces.PaintScriptException;
 import chav1961.bt.paint.script.interfaces.StrokeWrapper;
+import chav1961.purelib.basic.exceptions.SyntaxException;
 
 public class StrokeWrapperImpl implements StrokeWrapper {
 	private Stroke		stroke;
@@ -38,6 +40,7 @@ public class StrokeWrapperImpl implements StrokeWrapper {
 		}
 		else {
 			this.width = width;
+			stroke = ImageUtils.buildStroke(width, style, caps, join);
 			return this;
 		}
 	}
@@ -88,8 +91,17 @@ public class StrokeWrapperImpl implements StrokeWrapper {
 
 	@Override
 	public StrokeWrapper setStroke(final String stroke) throws PaintScriptException {
-		// TODO Auto-generated method stub
-		return null;
+		if (stroke == null || stroke.isEmpty()) {
+			throw new IllegalArgumentException("Stroke to set can't be null or empty"); 
+		}
+		else {
+			try{
+				this.stroke = ImageUtils.buildStroke(stroke);
+				return this;
+			} catch (SyntaxException e) {
+				throw new PaintScriptException(e);
+			}
+		}
 	}
 
 	@Override
