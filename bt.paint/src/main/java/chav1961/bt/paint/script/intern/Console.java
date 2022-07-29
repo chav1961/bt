@@ -41,6 +41,7 @@ import chav1961.purelib.ui.swing.useful.svg.SVGUtils;
 // ? <request>
 //* rotate angle
 //* mirror {h|v}
+//* crop (x,y) (x,y) 
 //* scale {(x,y) | N} 
 //* resize {(x,y) | N}
 //* gray
@@ -58,28 +59,34 @@ import chav1961.purelib.ui.swing.useful.svg.SVGUtils;
 //* quit
 //* qquit
 public class Console {
-	private static final String				KEY_UNDO_CROP = "chav1961.bt.mnemoed.editor.ImageEditPanel.undo.crop";
-	private static final String				KEY_REDO_CROP = "chav1961.bt.mnemoed.editor.ImageEditPanel.redo.crop";
-	private static final String				KEY_UNDO_RESIZE = "chav1961.bt.mnemoed.editor.ImageEditPanel.undo.resize";
-	private static final String				KEY_REDO_RESIZE = "chav1961.bt.mnemoed.editor.ImageEditPanel.redo.resize";
-	private static final String				KEY_UNDO_ROTATE = "chav1961.bt.mnemoed.editor.ImageEditPanel.undo.rotate";
-	private static final String				KEY_REDO_ROTATE = "chav1961.bt.mnemoed.editor.ImageEditPanel.redo.rotate";
-	private static final String				KEY_UNDO_REFLECT_V = "chav1961.bt.mnemoed.editor.ImageEditPanel.undo.reflect.vertical";
-	private static final String				KEY_REDO_REFLECT_V = "chav1961.bt.mnemoed.editor.ImageEditPanel.redo.reflect.vertical";
-	private static final String				KEY_UNDO_REFLECT_H = "chav1961.bt.mnemoed.editor.ImageEditPanel.undo.reflect.horizontal";
-	private static final String				KEY_REDO_REFLECT_H = "chav1961.bt.mnemoed.editor.ImageEditPanel.redo.reflect.horizontal";
-	private static final String				KEY_UNDO_GRAYSCALE = "chav1961.bt.mnemoed.editor.ImageEditPanel.undo.grayscale";
-	private static final String				KEY_REDO_GRAYSCALE = "chav1961.bt.mnemoed.editor.ImageEditPanel.redo.grayscale";
-	private static final String				KEY_UNDO_TRANSPARENCY = "chav1961.bt.mnemoed.editor.ImageEditPanel.undo.transparency";
-	private static final String				KEY_REDO_TRANSPARENCY = "chav1961.bt.mnemoed.editor.ImageEditPanel.redo.transparency";
-	private static final String				KEY_UNDO_DRAW_ELLIPSE = "chav1961.bt.mnemoed.editor.ImageEditPanel.undo.draw.ellipse";
-	private static final String				KEY_REDO_DRAW_ELLIPSE = "chav1961.bt.mnemoed.editor.ImageEditPanel.redo.draw.ellipse";
-	private static final String				KEY_UNDO_DRAW_LINE = "chav1961.bt.mnemoed.editor.ImageEditPanel.undo.draw.line";
-	private static final String				KEY_REDO_DRAW_LINE = "chav1961.bt.mnemoed.editor.ImageEditPanel.redo.draw.line";
-	private static final String				KEY_UNDO_DRAW_PATH = "chav1961.bt.mnemoed.editor.ImageEditPanel.undo.draw.path";
-	private static final String				KEY_REDO_DRAW_PATH = "chav1961.bt.mnemoed.editor.ImageEditPanel.redo.draw.path";
-	private static final String				KEY_UNDO_DRAW_RECT = "chav1961.bt.mnemoed.editor.ImageEditPanel.undo.draw.rect";
-	private static final String				KEY_REDO_DRAW_RECT = "chav1961.bt.mnemoed.editor.ImageEditPanel.redo.draw.rect";
+	private static final String	KEY_UNDO_CROP = "chav1961.bt.paint.editor.ImageEditPanel.undo.crop";
+	private static final String	KEY_REDO_CROP = "chav1961.bt.paint.editor.ImageEditPanel.redo.crop";
+	private static final String	KEY_UNDO_RESIZE = "chav1961.bt.paint.editor.ImageEditPanel.undo.resize";
+	private static final String	KEY_REDO_RESIZE = "chav1961.bt.paint.editor.ImageEditPanel.redo.resize";
+	private static final String	KEY_UNDO_ROTATE = "chav1961.bt.paint.editor.ImageEditPanel.undo.rotate";
+	private static final String	KEY_REDO_ROTATE = "chav1961.bt.paint.editor.ImageEditPanel.redo.rotate";
+	private static final String	KEY_UNDO_REFLECT = "chav1961.bt.paint.editor.ImageEditPanel.undo.reflect.horizontal";
+	private static final String	KEY_REDO_REFLECT = "chav1961.bt.paint.editor.ImageEditPanel.redo.reflect.horizontal";
+	private static final String	KEY_UNDO_GRAYSCALE = "chav1961.bt.paint.editor.ImageEditPanel.undo.grayscale";
+	private static final String	KEY_REDO_GRAYSCALE = "chav1961.bt.paint.editor.ImageEditPanel.redo.grayscale";
+	private static final String	KEY_UNDO_TRANSPARENCY = "chav1961.bt.paint.editor.ImageEditPanel.undo.transparency";
+	private static final String	KEY_REDO_TRANSPARENCY = "chav1961.bt.paint.editor.ImageEditPanel.redo.transparency";
+	private static final String	KEY_UNDO_DRAW_ELLIPSE = "chav1961.bt.paint.editor.ImageEditPanel.undo.draw.ellipse";
+	private static final String	KEY_REDO_DRAW_ELLIPSE = "chav1961.bt.paint.editor.ImageEditPanel.redo.draw.ellipse";
+	private static final String	KEY_UNDO_DRAW_LINE = "chav1961.bt.paint.editor.ImageEditPanel.undo.draw.line";
+	private static final String	KEY_REDO_DRAW_LINE = "chav1961.bt.paint.editor.ImageEditPanel.redo.draw.line";
+	private static final String	KEY_UNDO_DRAW_PATH = "chav1961.bt.paint.editor.ImageEditPanel.undo.draw.path";
+	private static final String	KEY_REDO_DRAW_PATH = "chav1961.bt.paint.editor.ImageEditPanel.redo.draw.path";
+	private static final String	KEY_UNDO_DRAW_RECT = "chav1961.bt.paint.editor.ImageEditPanel.undo.draw.rect";
+	private static final String	KEY_REDO_DRAW_RECT = "chav1961.bt.paint.editor.ImageEditPanel.redo.draw.rect";
+	private static final String	KEY_UNDO_CHANGE_FOREGROUND = "chav1961.bt.paint.editor.ImageEditPanel.undo.change.foreground";
+	private static final String	KEY_REDO_CHANGE_FOREGROUND = "chav1961.bt.paint.editor.ImageEditPanel.redo.change.foreground";
+	private static final String	KEY_UNDO_CHANGE_BACKGROUND = "chav1961.bt.paint.editor.ImageEditPanel.undo.change.background";
+	private static final String	KEY_REDO_CHANGE_BACKGROUND = "chav1961.bt.paint.editor.ImageEditPanel.redo.change.background";
+	private static final String	KEY_UNDO_CHANGE_FONT = "chav1961.bt.paint.editor.ImageEditPanel.undo.change.font";
+	private static final String	KEY_REDO_CHANGE_FONT = "chav1961.bt.paint.editor.ImageEditPanel.redo.change.font";
+	private static final String	KEY_UNDO_CHANGE_STROKE = "chav1961.bt.paint.editor.ImageEditPanel.undo.change.stroke";
+	private static final String	KEY_REDO_CHANGE_STROKE = "chav1961.bt.paint.editor.ImageEditPanel.redo.change.stroke";
 
 	
 	private static final SyntaxTreeInterface<CommandItem>	COMMANDS = new AndOrTree<>();
@@ -161,8 +168,8 @@ public class Console {
 		COMMANDS.placeName("rot", ci);
 		
 		ci = new CommandItem("mirror", CommandItem.CommandType.ImageAction
-				, KEY_UNDO_REFLECT_H
-				, KEY_REDO_REFLECT_H
+				, KEY_UNDO_REFLECT
+				, KEY_REDO_REFLECT
 				, "mirror {hor|vert}"
 				, (p,a)->mirror(p,(MirrorDirection)a[0])
 				, MirrorDirection.class);
@@ -177,6 +184,14 @@ public class Console {
 				, ArgumentType.signedInt, new CharUtils.Optional(',', ArgumentType.signedInt));
 		COMMANDS.placeName("scale", ci);
 
+		ci = new CommandItem("crop", CommandItem.CommandType.ImageAction
+				, KEY_UNDO_CROP
+				, KEY_REDO_CROP
+				, "crop <xFrom::int>,<yFrom::int> {size <width::int>,<height::int>| [to] <xTo::int>,<yTo::int>}"
+				, (p,a)->crop(p,(Integer)a[0],(Integer)a[1],(Integer)a[2],(Integer)a[3],a[4] instanceof CharUtils.Mark)
+				, ArgumentType.signedInt, ',', ArgumentType.signedInt, new CharUtils.Optional(AnchorPoint.class));
+		COMMANDS.placeName("crop", ci);
+		
 		ci = new CommandItem("resize", CommandItem.CommandType.ImageAction
 				, KEY_UNDO_RESIZE
 				, KEY_REDO_RESIZE
@@ -244,20 +259,9 @@ public class Console {
 				, ArgumentType.signedInt, ',', ArgumentType.signedInt, ImageType.class, new CharUtils.Optional(ArgumentType.colorRepresentation));
 		COMMANDS.placeName("new", ci);
 
-//		ci = new CommandItem("play", "play <name::string>", (p,a)->drawPath(p,(String)a[0]), ArgumentType.raw);
-//		COMMANDS.placeName("play", ci);
-
-//		ci = new CommandItem("quit", "quit", (p,a)->drawPath(p,(String)a[0]));
-//		COMMANDS.placeName("quit", ci);
-//		COMMANDS.placeName("q", ci);
-
-//		ci = new CommandItem("qquit", "qquit", (p,a)->drawPath(p,(String)a[0]));
-//		COMMANDS.placeName("qquit", ci);
-//		COMMANDS.placeName("qq", ci);
-		
 		ci = new CommandItem("foreground", CommandItem.CommandType.PropertyAction
-				, ""
-				, ""
+				, KEY_UNDO_CHANGE_FOREGROUND
+				, KEY_REDO_CHANGE_FOREGROUND
 				, "foreground {<color::color>|<x::int>,<y::int>}"
 				, (p,a)->setProperties(p,CanvasProperties.FORE_COLOR, a[0], a[1])
 				, new CharUtils.Choise(new Object[] {ArgumentType.colorRepresentation}, new Object[] {ArgumentType.signedInt, ',', ArgumentType.signedInt}));
@@ -265,30 +269,30 @@ public class Console {
 		COMMANDS.placeName("fore", ci);
 
 		ci = new CommandItem("background", CommandItem.CommandType.PropertyAction
-				, ""
-				, ""
+				, KEY_UNDO_CHANGE_BACKGROUND
+				, KEY_REDO_CHANGE_BACKGROUND
 				, "background {<color::color>|<x::int>,<y::int>}"
 				, (p,a)->setProperties(p,CanvasProperties.BACK_COLOR, a[0], a[1])
 				, new CharUtils.Choise(new Object[] {ArgumentType.colorRepresentation}, new Object[] {ArgumentType.signedInt, ',', ArgumentType.signedInt}));
 		COMMANDS.placeName("background", ci);
 		COMMANDS.placeName("back", ci);
 
+		ci = new CommandItem("font", CommandItem.CommandType.PropertyAction
+				, KEY_UNDO_CHANGE_FONT
+				, KEY_REDO_CHANGE_FONT
+				, "font <family> <size::int> [bold] [italic]"
+				, (p,a)->setProperties(p,CanvasProperties.FONT,(String)a[0])
+				, ArgumentType.raw);
+		COMMANDS.placeName("font", ci);
+
 		ci = new CommandItem("stroke", CommandItem.CommandType.PropertyAction
-				, ""
-				, ""
+				, KEY_UNDO_CHANGE_STROKE
+				, KEY_REDO_CHANGE_STROKE
 				, "stroke [<thickness::int>] {solid|dashed|dotted} [{butt|round|square}] [{miter|round|bevel}]"
 				, (p,a)->setProperties(p,CanvasProperties.STROKE,(String)a[0])
 				, ArgumentType.raw);
 		COMMANDS.placeName("stroke", ci);
 		COMMANDS.placeName("str", ci);
-
-		ci = new CommandItem("font", CommandItem.CommandType.PropertyAction
-				, ""
-				, ""
-				, "font <family> <size::int> [bold] [italic]"
-				, (p,a)->setProperties(p,CanvasProperties.FONT,(String)a[0])
-				, ArgumentType.raw);
-		COMMANDS.placeName("font", ci);
 	}
 		
 	public static String processCommand(final String command, final Predefines predef) throws SyntaxException, PaintScriptException {
@@ -444,6 +448,15 @@ public class Console {
 		return OK;
 	}
 
+	private static String crop(final Predefines predef, final int xFrom, final int yFrom, final int xToOrWidth, final int yToOrHeight, final boolean useAsSize) throws PaintScriptException {
+		final ImageWrapper	iw = predef.getPredefined(Predefines.PREDEF_CANVAS, CanvasWrapper.class).getImage();
+		final ImageWrapper	result = ImageWrapper.of(ImageUtils.process(ProcessType.CROP, (BufferedImage)iw.getImage(), null, new Rectangle(xFrom,yFrom, useAsSize ? xToOrWidth : xToOrWidth - xFrom, useAsSize ? yToOrHeight : yToOrHeight - yFrom)));
+		
+		predef.getPredefined(Predefines.PREDEF_CANVAS, CanvasWrapper.class).setImage(result);
+		return OK;
+	}
+
+	
 	private static String scale(final Predefines predef, final int newWidth, final int newHeight) throws PaintScriptException {
 		final ImageWrapper	iw = predef.getPredefined(Predefines.PREDEF_CANVAS, CanvasWrapper.class).getImage();
 		final ImageWrapper	result = ImageWrapper.of(ImageUtils.process(ProcessType.SCALE, (BufferedImage)iw.getImage(), null, newWidth, newHeight));

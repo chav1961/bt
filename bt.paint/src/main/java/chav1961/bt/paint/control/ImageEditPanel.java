@@ -87,10 +87,8 @@ public class ImageEditPanel extends JPanel implements LocalizerOwner, LocaleChan
 	private static final String				KEY_REDO_RESIZE = "chav1961.bt.mnemoed.editor.ImageEditPanel.redo.resize";
 	private static final String				KEY_UNDO_ROTATE = "chav1961.bt.mnemoed.editor.ImageEditPanel.undo.rotate";
 	private static final String				KEY_REDO_ROTATE = "chav1961.bt.mnemoed.editor.ImageEditPanel.redo.rotate";
-	private static final String				KEY_UNDO_REFLECT_V = "chav1961.bt.mnemoed.editor.ImageEditPanel.undo.reflect.vertical";
-	private static final String				KEY_REDO_REFLECT_V = "chav1961.bt.mnemoed.editor.ImageEditPanel.redo.reflect.vertical";
-	private static final String				KEY_UNDO_REFLECT_H = "chav1961.bt.mnemoed.editor.ImageEditPanel.undo.reflect.horizontal";
-	private static final String				KEY_REDO_REFLECT_H = "chav1961.bt.mnemoed.editor.ImageEditPanel.redo.reflect.horizontal";
+	private static final String				KEY_UNDO_REFLECT = "chav1961.bt.mnemoed.editor.ImageEditPanel.undo.reflect";
+	private static final String				KEY_REDO_REFLECT = "chav1961.bt.mnemoed.editor.ImageEditPanel.redo.reflect";
 	private static final String				KEY_UNDO_GRAYSCALE = "chav1961.bt.mnemoed.editor.ImageEditPanel.undo.grayscale";
 	private static final String				KEY_REDO_GRAYSCALE = "chav1961.bt.mnemoed.editor.ImageEditPanel.redo.grayscale";
 	private static final String				KEY_UNDO_TRANSPARENCY = "chav1961.bt.mnemoed.editor.ImageEditPanel.undo.transparency";
@@ -554,7 +552,7 @@ public class ImageEditPanel extends JPanel implements LocalizerOwner, LocaleChan
 
 		removeAnyChild();
 		canvas.setBackgroundImage(ImageUtils.mirrorImage((BufferedImage) current, false, null));
-		fireUndo(new ImageUndoEdit(KEY_UNDO_REFLECT_V, KEY_REDO_REFLECT_V, before, ImageUndoEdit.packImage(canvas.getBackgroundImage()), (i)->canvas.setBackgroundImage(i)));
+		fireUndo(new ImageUndoEdit(KEY_UNDO_REFLECT, KEY_REDO_REFLECT, before, ImageUndoEdit.packImage(canvas.getBackgroundImage()), (i)->canvas.setBackgroundImage(i)));
 	}
 	
 	@OnAction("action:/reflectHor")
@@ -564,7 +562,7 @@ public class ImageEditPanel extends JPanel implements LocalizerOwner, LocaleChan
 		
 		removeAnyChild();
 		canvas.setBackgroundImage(ImageUtils.mirrorImage((BufferedImage) current, true, null));
-		fireUndo(new ImageUndoEdit(KEY_UNDO_REFLECT_H, KEY_REDO_REFLECT_H, before, ImageUndoEdit.packImage(canvas.getBackgroundImage()), (i)->canvas.setBackgroundImage(i)));
+		fireUndo(new ImageUndoEdit(KEY_UNDO_REFLECT, KEY_REDO_REFLECT, before, ImageUndoEdit.packImage(canvas.getBackgroundImage()), (i)->canvas.setBackgroundImage(i)));
 	}
 
 	@OnAction("action:/toGrayScale")

@@ -178,37 +178,43 @@
 		<key name="toolbar.playerbar.play.tt">Play commands</key>
 
 <!-- ImageEditPanel class localization -->
-		<key name="chav1961.bt.mnemoed.editor.ImageEditPanel.selectColor">Select color</key>
-		<key name="chav1961.bt.mnemoed.editor.ImageEditPanel.undo.crop">undo crop</key>
-		<key name="chav1961.bt.mnemoed.editor.ImageEditPanel.redo.crop">redo crop</key>
-		<key name="chav1961.bt.mnemoed.editor.ImageEditPanel.undo.resize">undo resize</key>
-		<key name="chav1961.bt.mnemoed.editor.ImageEditPanel.redo.resize">redo resize</key>
-		<key name="chav1961.bt.mnemoed.editor.ImageEditPanel.undo.rotate">undo rotate</key>
-		<key name="chav1961.bt.mnemoed.editor.ImageEditPanel.redo.rotate">redo rotate</key>
-		<key name="chav1961.bt.mnemoed.editor.ImageEditPanel.undo.reflect.vertical">undo vertical mirror</key>
-		<key name="chav1961.bt.mnemoed.editor.ImageEditPanel.redo.reflect.vertical">redo vertical mirror</key>
-		<key name="chav1961.bt.mnemoed.editor.ImageEditPanel.undo.reflect.horizontal">undo horizontal mirror</key>
-		<key name="chav1961.bt.mnemoed.editor.ImageEditPanel.redo.reflect.horizontal">redo horizontal mirror</key>
-		<key name="chav1961.bt.mnemoed.editor.ImageEditPanel.undo.grayscale">undo grayscale</key>
-		<key name="chav1961.bt.mnemoed.editor.ImageEditPanel.redo.grayscale">redo grayscale</key>
-		<key name="chav1961.bt.mnemoed.editor.ImageEditPanel.undo.transparency">undo transparency</key>
-		<key name="chav1961.bt.mnemoed.editor.ImageEditPanel.redo.transparency">redo transparency</key>
-		<key name="chav1961.bt.mnemoed.editor.ImageEditPanel.undo.draw.ellipse">undo ellipse</key>
-		<key name="chav1961.bt.mnemoed.editor.ImageEditPanel.redo.draw.ellipse">redo ellipse</key>
-		<key name="chav1961.bt.mnemoed.editor.ImageEditPanel.undo.draw.line">undo line</key>
-		<key name="chav1961.bt.mnemoed.editor.ImageEditPanel.redo.draw.line">redo line</key>
-		<key name="chav1961.bt.mnemoed.editor.ImageEditPanel.undo.draw.path">undo trace</key>
-		<key name="chav1961.bt.mnemoed.editor.ImageEditPanel.redo.draw.path">redo trace</key>
-		<key name="chav1961.bt.mnemoed.editor.ImageEditPanel.undo.draw.rect">undo rectangle</key>
-		<key name="chav1961.bt.mnemoed.editor.ImageEditPanel.redo.draw.rect">redo rectangle</key>
+		<key name="chav1961.bt.paint.editor.ImageEditPanel.selectColor">Select color</key>
+		<key name="chav1961.bt.paint.editor.ImageEditPanel.undo.crop">undo crop</key>
+		<key name="chav1961.bt.paint.editor.ImageEditPanel.redo.crop">redo crop</key>
+		<key name="chav1961.bt.paint.editor.ImageEditPanel.undo.resize">undo resize</key>
+		<key name="chav1961.bt.paint.editor.ImageEditPanel.redo.resize">redo resize</key>
+		<key name="chav1961.bt.paint.editor.ImageEditPanel.undo.rotate">undo rotate</key>
+		<key name="chav1961.bt.paint.editor.ImageEditPanel.redo.rotate">redo rotate</key>
+		<key name="chav1961.bt.paint.editor.ImageEditPanel.undo.reflect">undo mirror</key>
+		<key name="chav1961.bt.paint.editor.ImageEditPanel.redo.reflect">redo mirror</key>
+		<key name="chav1961.bt.paint.editor.ImageEditPanel.undo.grayscale">undo grayscale</key>
+		<key name="chav1961.bt.paint.editor.ImageEditPanel.redo.grayscale">redo grayscale</key>
+		<key name="chav1961.bt.paint.editor.ImageEditPanel.undo.transparency">undo transparency</key>
+		<key name="chav1961.bt.paint.editor.ImageEditPanel.redo.transparency">redo transparency</key>
+		<key name="chav1961.bt.paint.editor.ImageEditPanel.undo.draw.ellipse">undo ellipse</key>
+		<key name="chav1961.bt.paint.editor.ImageEditPanel.redo.draw.ellipse">redo ellipse</key>
+		<key name="chav1961.bt.paint.editor.ImageEditPanel.undo.draw.line">undo line</key>
+		<key name="chav1961.bt.paint.editor.ImageEditPanel.redo.draw.line">redo line</key>
+		<key name="chav1961.bt.paint.editor.ImageEditPanel.undo.draw.path">undo trace</key>
+		<key name="chav1961.bt.paint.editor.ImageEditPanel.redo.draw.path">redo trace</key>
+		<key name="chav1961.bt.paint.editor.ImageEditPanel.undo.draw.rect">undo rectangle</key>
+		<key name="chav1961.bt.paint.editor.ImageEditPanel.redo.draw.rect">redo rectangle</key>
+		<key name="chav1961.bt.paint.editor.ImageEditPanel.undo.change.foreground">undo foreground selection</key>
+		<key name="chav1961.bt.paint.editor.ImageEditPanel.redo.change.foreground">redo foreground selection</key>
+		<key name="chav1961.bt.paint.editor.ImageEditPanel.undo.change.background">undo background selection</key>
+		<key name="chav1961.bt.paint.editor.ImageEditPanel.redo.change.background">redo background selection</key>
+		<key name="chav1961.bt.paint.editor.ImageEditPanel.undo.change.font">undo font selection</key>
+		<key name="chav1961.bt.paint.editor.ImageEditPanel.redo.change.font">redo font selection</key>
+		<key name="chav1961.bt.paint.editor.ImageEditPanel.undo.change.stroke">undo line style selection</key>
+		<key name="chav1961.bt.paint.editor.ImageEditPanel.redo.change.stroke">redo line style selection</key>
 				
 <!-- ImageEditPanel.EditStateString -->
-		<key name="chav1961.bt.mnemoed.bgeditor.ImageEditPanel.EditStateString.prompt">Type command</key>
-		<key name="chav1961.bt.mnemoed.bgeditor.ImageEditPanel.EditStateString.path.tt">Type console command. Use up/down arrows to navigate history</key>
-		<key name="chav1961.bt.mnemoed.bgeditor.ImageEditPanel.EditStateString.coord.tt">Current mouse cursor</key>
-		<key name="chav1961.bt.mnemoed.bgeditor.ImageEditPanel.EditStateString.size.tt">Current image size</key>
-		<key name="chav1961.bt.mnemoed.bgeditor.ImageEditPanel.EditStateString.font.tt">Current font selected</key>
-		<key name="chav1961.bt.mnemoed.bgeditor.ImageEditPanel.EditStateString.settings.tt">Current foreground, background, line thickness and style</key>
+		<key name="chav1961.bt.paint.bgeditor.ImageEditPanel.EditStateString.prompt">Type command</key>
+		<key name="chav1961.bt.paint.bgeditor.ImageEditPanel.EditStateString.path.tt">Type console command. Use up/down arrows to navigate history</key>
+		<key name="chav1961.bt.paint.bgeditor.ImageEditPanel.EditStateString.coord.tt">Current mouse cursor</key>
+		<key name="chav1961.bt.paint.bgeditor.ImageEditPanel.EditStateString.size.tt">Current image size</key>
+		<key name="chav1961.bt.paint.bgeditor.ImageEditPanel.EditStateString.font.tt">Current font selected</key>
+		<key name="chav1961.bt.paint.bgeditor.ImageEditPanel.EditStateString.settings.tt">Current foreground, background, line thickness and style</key>
 
 <!-- AskImageSize class localization -->
 		<key name="askimagesize.title">Type image size</key>
@@ -416,37 +422,43 @@
 
 
 <!-- ImageEditPanel.EditStateString -->
-		<key name="chav1961.bt.mnemoed.bgeditor.ImageEditPanel.EditStateString.prompt">Введите команду</key>
-		<key name="chav1961.bt.mnemoed.bgeditor.ImageEditPanel.EditStateString.path.tt">В это поле можно ввести команду. Стрелки вверх/вниз позволяют просмотреть историю</key>
-		<key name="chav1961.bt.mnemoed.bgeditor.ImageEditPanel.EditStateString.coord.tt">Текущие координаты курсора мыши</key>
-		<key name="chav1961.bt.mnemoed.bgeditor.ImageEditPanel.EditStateString.size.tt">Размер текущего изображения</key>
-		<key name="chav1961.bt.mnemoed.bgeditor.ImageEditPanel.EditStateString.font.tt">Настройки текущего шрифтв</key>
-		<key name="chav1961.bt.mnemoed.bgeditor.ImageEditPanel.EditStateString.settings.tt">Цвет фона, переднего плата, стиль и толщина линии</key>
+		<key name="chav1961.bt.paint.bgeditor.ImageEditPanel.EditStateString.prompt">Введите команду</key>
+		<key name="chav1961.bt.paint.bgeditor.ImageEditPanel.EditStateString.path.tt">В это поле можно ввести команду. Стрелки вверх/вниз позволяют просмотреть историю</key>
+		<key name="chav1961.bt.paint.bgeditor.ImageEditPanel.EditStateString.coord.tt">Текущие координаты курсора мыши</key>
+		<key name="chav1961.bt.paint.bgeditor.ImageEditPanel.EditStateString.size.tt">Размер текущего изображения</key>
+		<key name="chav1961.bt.paint.bgeditor.ImageEditPanel.EditStateString.font.tt">Настройки текущего шрифтв</key>
+		<key name="chav1961.bt.paint.bgeditor.ImageEditPanel.EditStateString.settings.tt">Цвет фона, переднего плата, стиль и толщина линии</key>
 		
 <!-- Локализация класса ImageEditPanel -->
-		<key name="chav1961.bt.mnemoed.editor.ImageEditPanel.selectColor">Выберите цвет</key>		
-		<key name="chav1961.bt.mnemoed.editor.ImageEditPanel.undo.crop">отменить обрезку</key>
-		<key name="chav1961.bt.mnemoed.editor.ImageEditPanel.redo.crop">восстановить обрезку</key>
-		<key name="chav1961.bt.mnemoed.editor.ImageEditPanel.undo.resize">отменить размеры</key>
-		<key name="chav1961.bt.mnemoed.editor.ImageEditPanel.redo.resize">восстановить размеры</key>
-		<key name="chav1961.bt.mnemoed.editor.ImageEditPanel.undo.rotate">отменить поворот</key>
-		<key name="chav1961.bt.mnemoed.editor.ImageEditPanel.redo.rotate">восстановить поворот</key>
-		<key name="chav1961.bt.mnemoed.editor.ImageEditPanel.undo.reflect.vertical">отменить отражение по вертикали</key>
-		<key name="chav1961.bt.mnemoed.editor.ImageEditPanel.redo.reflect.vertical">восстановить отражение по вертикали</key>
-		<key name="chav1961.bt.mnemoed.editor.ImageEditPanel.undo.reflect.horizontal">отменить отражение по горизогтали</key>
-		<key name="chav1961.bt.mnemoed.editor.ImageEditPanel.redo.reflect.horizontal">восстановить отражение по горизогтали</key>
-		<key name="chav1961.bt.mnemoed.editor.ImageEditPanel.undo.grayscale">отменить черно-белое</key>
-		<key name="chav1961.bt.mnemoed.editor.ImageEditPanel.redo.grayscale">восстановить черно-белое</key>
-		<key name="chav1961.bt.mnemoed.editor.ImageEditPanel.undo.transparency">отменить прозрачность</key>
-		<key name="chav1961.bt.mnemoed.editor.ImageEditPanel.redo.transparency">восстановить прозрачность</key>
-		<key name="chav1961.bt.mnemoed.editor.ImageEditPanel.undo.draw.ellipse">отменить эллипс</key>
-		<key name="chav1961.bt.mnemoed.editor.ImageEditPanel.redo.draw.ellipse">восстановить эллипс</key>
-		<key name="chav1961.bt.mnemoed.editor.ImageEditPanel.undo.draw.line">отменить прямую</key>
-		<key name="chav1961.bt.mnemoed.editor.ImageEditPanel.redo.draw.line">восстановить прямую</key>
-		<key name="chav1961.bt.mnemoed.editor.ImageEditPanel.undo.draw.path">отменить линию</key>
-		<key name="chav1961.bt.mnemoed.editor.ImageEditPanel.redo.draw.path">восстановить линию</key>
-		<key name="chav1961.bt.mnemoed.editor.ImageEditPanel.undo.draw.rect">отменить прямоугольник</key>
-		<key name="chav1961.bt.mnemoed.editor.ImageEditPanel.redo.draw.rect">восстановить прямоугольник</key>
+		<key name="chav1961.bt.paint.editor.ImageEditPanel.selectColor">Выберите цвет</key>		
+		<key name="chav1961.bt.paint.editor.ImageEditPanel.undo.crop">отменить обрезку</key>
+		<key name="chav1961.bt.paint.editor.ImageEditPanel.redo.crop">восстановить обрезку</key>
+		<key name="chav1961.bt.paint.editor.ImageEditPanel.undo.resize">отменить размеры</key>
+		<key name="chav1961.bt.paint.editor.ImageEditPanel.redo.resize">восстановить размеры</key>
+		<key name="chav1961.bt.paint.editor.ImageEditPanel.undo.rotate">отменить поворот</key>
+		<key name="chav1961.bt.paint.editor.ImageEditPanel.redo.rotate">восстановить поворот</key>
+		<key name="chav1961.bt.paint.editor.ImageEditPanel.undo.reflect">отменить отражение</key>
+		<key name="chav1961.bt.paint.editor.ImageEditPanel.redo.reflect">восстановить отражение</key>
+		<key name="chav1961.bt.paint.editor.ImageEditPanel.undo.grayscale">отменить черно-белое</key>
+		<key name="chav1961.bt.paint.editor.ImageEditPanel.redo.grayscale">восстановить черно-белое</key>
+		<key name="chav1961.bt.paint.editor.ImageEditPanel.undo.transparency">отменить прозрачность</key>
+		<key name="chav1961.bt.paint.editor.ImageEditPanel.redo.transparency">восстановить прозрачность</key>
+		<key name="chav1961.bt.paint.editor.ImageEditPanel.undo.draw.ellipse">отменить эллипс</key>
+		<key name="chav1961.bt.paint.editor.ImageEditPanel.redo.draw.ellipse">восстановить эллипс</key>
+		<key name="chav1961.bt.paint.editor.ImageEditPanel.undo.draw.line">отменить прямую</key>
+		<key name="chav1961.bt.paint.editor.ImageEditPanel.redo.draw.line">восстановить прямую</key>
+		<key name="chav1961.bt.paint.editor.ImageEditPanel.undo.draw.path">отменить линию</key>
+		<key name="chav1961.bt.paint.editor.ImageEditPanel.redo.draw.path">восстановить линию</key>
+		<key name="chav1961.bt.paint.editor.ImageEditPanel.undo.draw.rect">отменить прямоугольник</key>
+		<key name="chav1961.bt.paint.editor.ImageEditPanel.redo.draw.rect">восстановить прямоугольник</key>
+		<key name="chav1961.bt.paint.editor.ImageEditPanel.undo.change.foreground">отменить выбор цвета рисунка</key>
+		<key name="chav1961.bt.paint.editor.ImageEditPanel.redo.change.foreground">восстановить выбор цвета рисунка</key>
+		<key name="chav1961.bt.paint.editor.ImageEditPanel.undo.change.background">отменить выбор цвета фона</key>
+		<key name="chav1961.bt.paint.editor.ImageEditPanel.redo.change.background">восстановить выбор цвета фона</key>
+		<key name="chav1961.bt.paint.editor.ImageEditPanel.undo.change.font">отменить выбор шрифта</key>
+		<key name="chav1961.bt.paint.editor.ImageEditPanel.redo.change.font">восстановить выбор шрифта</key>
+		<key name="chav1961.bt.paint.editor.ImageEditPanel.undo.change.stroke">отменить выбор стиля линий</key>
+		<key name="chav1961.bt.paint.editor.ImageEditPanel.redo.change.stroke">восстановить выбор стиля линий</key>
 		
 <!-- Локализация класса AskImageSize -->
 		<key name="askimagesize.title">Задайте размер изображения</key>
