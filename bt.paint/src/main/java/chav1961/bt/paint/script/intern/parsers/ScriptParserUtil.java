@@ -8,6 +8,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import chav1961.bt.paint.script.intern.interfaces.LexTypes;
 import chav1961.purelib.basic.AndOrTree;
 import chav1961.purelib.basic.CharUtils;
 import chav1961.purelib.basic.LineByLineProcessor;
@@ -62,30 +63,6 @@ import chav1961.purelib.cdb.SyntaxNode;
 public class ScriptParserUtil {
 	private static final SyntaxTreeInterface<Keywords>		KEYWORDS = new AndOrTree<>();
 	private static final Map<Keywords, EntityDescriptor>	PREDEFINED = new HashMap<>();
-
-	private static enum LexTypes {
-		PART,
-		STATEMENT,
-		TYPE,
-		OPTION,
-		NAME,
-		PREDEFINED_VAR,
-		CONSTANT,
-		OPERATOR,
-		OPEN,
-		CLOSE,
-		OPENB,
-		CLOSEB,
-		OPENF,
-		CLOSEF,
-		COMMA,
-		DOT,
-		RANGE,
-		COLON,
-		CAST,
-		SEMICOLON,
-		EOF
-	}
 
 	private static enum EntityType {
 		VAR,

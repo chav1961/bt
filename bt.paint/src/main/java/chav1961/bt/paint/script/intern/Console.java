@@ -84,6 +84,8 @@ public class Console {
 	private static final String	KEY_REDO_DRAW_PATH = "chav1961.bt.paint.editor.ImageEditPanel.redo.draw.path";
 	private static final String	KEY_UNDO_DRAW_RECT = "chav1961.bt.paint.editor.ImageEditPanel.undo.draw.rect";
 	private static final String	KEY_REDO_DRAW_RECT = "chav1961.bt.paint.editor.ImageEditPanel.redo.draw.rect";
+	private static final String	KEY_UNDO_DRAW_TEXT = "chav1961.bt.paint.editor.ImageEditPanel.undo.draw.text";
+	private static final String	KEY_REDO_DRAW_TEXT = "chav1961.bt.paint.editor.ImageEditPanel.redo.draw.text";
 	private static final String	KEY_UNDO_CHANGE_FOREGROUND = "chav1961.bt.paint.editor.ImageEditPanel.undo.change.foreground";
 	private static final String	KEY_REDO_CHANGE_FOREGROUND = "chav1961.bt.paint.editor.ImageEditPanel.redo.change.foreground";
 	private static final String	KEY_UNDO_CHANGE_BACKGROUND = "chav1961.bt.paint.editor.ImageEditPanel.undo.change.background";
@@ -139,11 +141,29 @@ public class Console {
 		COMMANDS.placeName("ell", ci);
 
 		ci = new CommandItem("text", CommandItem.CommandType.ImageAction
-				, ""
-				, ""
-				, "text <xFrom::int>,<yFrom::int> <xTo::int>,<yTo::int> <content::any>"
-				, (p,a)->drawText(p,(Integer)a[0],(Integer)a[1],(Integer)a[2],(Integer)a[3],(String)a[4])
-				, ArgumentType.signedInt, ',', ArgumentType.signedInt, ArgumentType.signedInt, ',', ArgumentType.signedInt, ArgumentType.raw);
+				, KEY_UNDO_DRAW_TEXT
+				, KEY_REDO_DRAW_TEXT
+				, "text <xFrom::int>,<yFrom::int> {size <width::int>,<height::int>| [to] <xTo::int>,<yTo::int>} <foreground::color>[/<background::color>] <content::any>"
+				, (p,a)->{
+					if (a[2] instanceof CharUtils.Mark) {
+						if (a[6] instanceof CharUtils.Mark) {
+							return drawText(p, (Integer)a[0], (Integer)a[1], (Integer)a[3], (Integer)a[4], true, (Color)a[5], (Color)a[7], (String)a[8]);
+						}
+						else {
+							return drawText(p, (Integer)a[0], (Integer)a[1], (Integer)a[3], (Integer)a[4], true, (Color)a[5], (String)a[6]);
+						}
+					}
+					else {
+						if (a[5] instanceof CharUtils.Mark) {
+							return drawText(p, (Integer)a[0], (Integer)a[1], (Integer)a[2], (Integer)a[3], false, (Color)a[4], (Color)a[6], (String)a[7]);
+						}
+						else {
+							return drawText(p, (Integer)a[0], (Integer)a[1], (Integer)a[2], (Integer)a[3], false, (Color)a[4], (String)a[5]);
+						}
+					}
+				}
+				, ArgumentType.signedInt, ',', ArgumentType.signedInt, new CharUtils.Choise(new Object[] {"size", new CharUtils.Mark(1), ArgumentType.signedInt, ',', ArgumentType.signedInt}, new Object[] {new CharUtils.Optional("to"), ArgumentType.signedInt, ',', ArgumentType.signedInt}),
+				  ArgumentType.colorRepresentation, new CharUtils.Optional('/', new CharUtils.Mark(1), ArgumentType.colorRepresentation), ArgumentType.raw);
 		COMMANDS.placeName("text", ci);
 		COMMANDS.placeName("t", ci);
 
@@ -347,7 +367,7 @@ public class Console {
 		ci = new CommandItem("stroke", CommandItem.CommandType.PropertyAction
 				, KEY_UNDO_CHANGE_STROKE
 				, KEY_REDO_CHANGE_STROKE
-				, "stroke [<thickness::int>] {solid|dashed|dotted} [{butt|round|square}] [{miter|round|bevel}]"
+				, "stroke [<thickness::int>] {solid|dashed|dotted} [{butt|round|square} [{miter|round|bevel}]]"
 				, (p,a)->setProperties(p,CanvasProperties.STROKE,(String)a[0])
 				, ArgumentType.raw);
 		COMMANDS.placeName("stroke", ci);
@@ -458,11 +478,18 @@ public class Console {
 		return OK;
 	}
 	
-	private static String drawText(final Predefines predef, final int xFrom, final int yFrom, final int xTo, final int yTo, final String text) {
+	private static String drawText(final Predefines predef, final int xFrom, final int yFrom, final int xToOrWidth, final int yToOrHeight, final boolean useAsSize, final Color color, final String text) {
+		final Rectangle	rect = buildRectangle(xFrom, yFrom, xToOrWidth, yToOrHeight, useAsSize);
 		// TODO Auto-generated method stub
-		return null;
+		return OK;
 	}
 
+
+	private static String drawText(final Predefines predef, final int xFrom, final int yFrom, final int xToOrWidth, final int yToOrHeight, final boolean useAsSize, final Color foreground, final Color background, final String text) {
+		// TODO Auto-generated method stub
+		return OK;
+	}
+	
 	private static String drawPath(final Predefines predef, final String path, final boolean fill) throws PaintScriptException { 
 		try{ImageUtils.draw(DrawingType.PEN, predef.getPredefined(Predefines.PREDEF_CANVAS, CanvasWrapper.class).getImage().getImage(), null
 						, SVGUtils.extractCommands(path)
@@ -685,6 +712,16 @@ public class Console {
 		return OK;
 	}	
 
+	private static Rectangle buildRectangle(final int xFrom, final int yFrom, final int xToOrWidth, final int yToOrHeight, final boolean useAsSize) {
+		if (useAsSize) {
+			return new Rectangle(xFrom, yFrom, xToOrWidth, yToOrHeight);
+		}
+		else {
+			return new Rectangle(xFrom, yFrom, xToOrWidth - xFrom, yToOrHeight - yFrom);
+		}
+	}
+	
+	
 	private static class CommandItem {
 		private static enum CommandType {
 			ImageAction,

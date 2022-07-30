@@ -208,6 +208,8 @@
 		<key name="chav1961.bt.paint.editor.ImageEditPanel.redo.draw.path">redo trace</key>
 		<key name="chav1961.bt.paint.editor.ImageEditPanel.undo.draw.rect">undo rectangle</key>
 		<key name="chav1961.bt.paint.editor.ImageEditPanel.redo.draw.rect">redo rectangle</key>
+		<key name="chav1961.bt.paint.editor.ImageEditPanel.undo.draw.text">undo text</key>
+		<key name="chav1961.bt.paint.editor.ImageEditPanel.redo.draw.text">redo text</key>
 		<key name="chav1961.bt.paint.editor.ImageEditPanel.undo.change.foreground">undo foreground selection</key>
 		<key name="chav1961.bt.paint.editor.ImageEditPanel.redo.change.foreground">redo foreground selection</key>
 		<key name="chav1961.bt.paint.editor.ImageEditPanel.undo.change.background">undo background selection</key>
@@ -468,6 +470,8 @@
 		<key name="chav1961.bt.paint.editor.ImageEditPanel.redo.draw.path">восстановить линию</key>
 		<key name="chav1961.bt.paint.editor.ImageEditPanel.undo.draw.rect">отменить прямоугольник</key>
 		<key name="chav1961.bt.paint.editor.ImageEditPanel.redo.draw.rect">восстановить прямоугольник</key>
+		<key name="chav1961.bt.paint.editor.ImageEditPanel.undo.draw.text">отменить текст</key>
+		<key name="chav1961.bt.paint.editor.ImageEditPanel.redo.draw.text">восстановить текст</key>
 		<key name="chav1961.bt.paint.editor.ImageEditPanel.undo.change.foreground">отменить выбор цвета рисунка</key>
 		<key name="chav1961.bt.paint.editor.ImageEditPanel.redo.change.foreground">восстановить выбор цвета рисунка</key>
 		<key name="chav1961.bt.paint.editor.ImageEditPanel.undo.change.background">отменить выбор цвета фона</key>
