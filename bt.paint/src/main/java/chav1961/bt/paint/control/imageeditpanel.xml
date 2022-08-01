@@ -170,4 +170,31 @@
 		</app:submenu>
 		<app:item name="toolbar.settingsbar.filling" caption="toolbar.settingsbar.filling" tooltip="toolbar.settingsbar.filling.tt" icon="root://chav1961.bt.paint.control.ImageEditPanel/chav1961/bt/paint/images/fillOff.png?toggled=fillOn.png" checkable="true" action="settings.filling"/>
 	</app:menu>
+
+ 	<app:menu id="debugBar">
+		<app:item name="debug.file.clean" caption="debug.file.clean" tooltip="debug.file.clean.tt" icon="root://chav1961.bt.paint.control.ImageEditPanel/chav1961/bt/paint/images/joinbevel.png" action="cleanScript"/>
+		<app:item name="debug.file.load" caption="debug.file.load" tooltip="debug.file.load.tt" icon="root://chav1961.bt.paint.control.ImageEditPanel/chav1961/bt/paint/images/joinbevel.png" action="loadScript"/>
+		<app:item name="debug.file.store" caption="debug.file.store" tooltip="debug.file.store.tt" icon="root://chav1961.bt.paint.control.ImageEditPanel/chav1961/bt/paint/images/joinbevel.png" action="storeScript"/>
+		<app:item name="debug.file.storeAs" caption="debug.file.storeAs" tooltip="debug.file.storeAs.tt" icon="root://chav1961.bt.paint.control.ImageEditPanel/chav1961/bt/paint/images/joinbevel.png" action="storeScriptAs"/>
+		<app:separator/>
+		<app:item name="debug.execute.start" caption="debug.execute.start" tooltip="debug.execute.start.tt" icon="root://chav1961.bt.paint.control.ImageEditPanel/chav1961/bt/paint/images/joinbevel.png" action="startScript"/>
+		<app:item name="debug.execute.pause" caption="debug.execute.pause" tooltip="debug.execute.pause.tt" icon="root://chav1961.bt.paint.control.ImageEditPanel/chav1961/bt/paint/images/fillOff.png?toggled=fillOn.png" checkable="true" action="pauseScript"/>
+		<app:item name="debug.execute.stop" caption="debug.execute.stop" tooltip="debug.execute.stop.tt" icon="root://chav1961.bt.paint.control.ImageEditPanel/chav1961/bt/paint/images/joinbevel.png" action="stopScript"/>
+		<app:separator/>
+		<app:item name="debug.execute.step.next" caption="debug.execute.step.next" tooltip="debug.execute.step.next.tt" icon="root://chav1961.bt.paint.control.ImageEditPanel/chav1961/bt/paint/images/joinbevel.png" action="nextStep"/>
+		<app:item name="debug.execute.step.into" caption="debug.execute.step.into" tooltip="debug.execute.step.into.tt" icon="root://chav1961.bt.paint.control.ImageEditPanel/chav1961/bt/paint/images/joinbevel.png" action="intoStep"/>
+		<app:item name="debug.execute.step.out" caption="debug.execute.step.out" tooltip="debug.execute.step.out.tt" icon="root://chav1961.bt.paint.control.ImageEditPanel/chav1961/bt/paint/images/joinbevel.png" action="outStep"/>
+		<app:item name="debug.execute.step.run" caption="debug.execute.step.run" tooltip="debug.execute.step.run.tt" icon="root://chav1961.bt.paint.control.ImageEditPanel/chav1961/bt/paint/images/joinbevel.png" action="runStep"/>
+	</app:menu>
+	<app:keyset id="debugBar.keyset">
+		<app:key code="N" ctrl="true" action="cleanScript"/>
+		<app:key code="O" ctrl="true" action="loadScript"/>
+		<app:key code="S" ctrl="true" action="storeScript"/>
+		<app:key code="F11" action="startScript"/>
+		<app:key code="F6" action="nextStep"/>
+		<app:key code="F5" action="intoStep"/>
+		<app:key code="F7" action="outStep"/>
+		<app:key code="F8" action="runStep"/>
+		<app:key code="F1" action="debugOverview"/>
+	</app:keyset>
 </app:root>

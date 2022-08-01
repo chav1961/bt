@@ -21,5 +21,6 @@ public enum LexTypes {
 	COLON,
 	CAST,
 	SEMICOLON,
+	ERROR,
 	EOF
 }

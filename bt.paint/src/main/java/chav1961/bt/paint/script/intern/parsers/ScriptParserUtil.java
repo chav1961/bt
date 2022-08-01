@@ -147,7 +147,7 @@ public class ScriptParserUtil {
 		}
 	}
 	
-	private static enum OperatorTypes {
+	public static enum OperatorTypes {
 		INC(OperatorPriorities.UNARY),
 		DEC(OperatorPriorities.UNARY),
 		BIT_INV(OperatorPriorities.UNARY),
@@ -270,7 +270,7 @@ public class ScriptParserUtil {
 		}
 	}
 
-	private static enum SyntaxNodeType {
+	public static enum SyntaxNodeType {
 		SEQUENCE,
 		IF,
 		WHILE, 
@@ -336,20 +336,20 @@ public class ScriptParserUtil {
 		KEYWORDS.placeName("forward", Keywords.FORWARD);
 	}
 	
-	public static <T> List<Lexema> parseLex(final Reader content, final SyntaxTreeInterface<T> names) throws SyntaxException {
+	public static <T> List<Lexema> parseLex(final Reader content, final SyntaxTreeInterface<T> names, final boolean ignoreErrors) throws SyntaxException {
 		final List<Lexema>	result = new ArrayList<>();
 		
-		try(final LineByLineProcessor	lblp = new LineByLineProcessor((displacement, lineNo, data, from, length)->parseLine(lineNo, data, from, length, names, result))){
+		try(final LineByLineProcessor	lblp = new LineByLineProcessor((displacement, lineNo, data, from, length)->parseLine((int)displacement, lineNo, data, from, length, names, result, ignoreErrors))){
 			lblp.write(content);
 			lblp.flush();
-			result.add(new Lexema(0, 0, LexTypes.EOF));
+			result.add(new Lexema(0, 0, 0, LexTypes.EOF));
 			return result;
 		} catch (IOException e) {
 			throw new SyntaxException(0, 0, e.getLocalizedMessage(), e);
 		}
 	}
 
-	private static <T> void parseLine(final int lineNo, final char[] data, int from, final int length, final SyntaxTreeInterface<T> names, final List<Lexema> result) throws SyntaxException {
+	private static <T> void parseLine(final int displacement, final int lineNo, final char[] data, int from, final int length, final SyntaxTreeInterface<T> names, final List<Lexema> result, final boolean ignoreErrors) throws SyntaxException {
 		final StringBuilder	sb = new StringBuilder();
 		final int[]			forNames = new int[2];
 		final long[]		forNumbers = new long[2];
@@ -362,139 +362,144 @@ public class ScriptParserUtil {
 				case '\n' : case '\r' :
 					return;
 				case '(' :
-					result.add(new Lexema(lineNo, from-start, LexTypes.OPEN));
+					result.add(new Lexema(displacement, lineNo, from-start, LexTypes.OPEN));
 					break;
 				case ')' :
-					result.add(new Lexema(lineNo, from-start, LexTypes.CLOSE));
+					result.add(new Lexema(displacement, lineNo, from-start, LexTypes.CLOSE));
 					break;
 				case '[' :
-					result.add(new Lexema(lineNo, from-start, LexTypes.OPENB));
+					result.add(new Lexema(displacement, lineNo, from-start, LexTypes.OPENB));
 					break;
 				case ']' :
-					result.add(new Lexema(lineNo, from-start, LexTypes.CLOSEB));
+					result.add(new Lexema(displacement, lineNo, from-start, LexTypes.CLOSEB));
 					break;
 				case '{' :
-					result.add(new Lexema(lineNo, from-start, LexTypes.OPENF));
+					result.add(new Lexema(displacement, lineNo, from-start, LexTypes.OPENF));
 					break;
 				case '}' :
-					result.add(new Lexema(lineNo, from-start, LexTypes.CLOSEF));
+					result.add(new Lexema(displacement, lineNo, from-start, LexTypes.CLOSEF));
 					break;
 				case ',' :
-					result.add(new Lexema(lineNo, from-start, LexTypes.COMMA));
+					result.add(new Lexema(displacement, lineNo, from-start, LexTypes.COMMA));
 					break;
 				case ';' :
-					result.add(new Lexema(lineNo, from-start, LexTypes.SEMICOLON));
+					result.add(new Lexema(displacement, lineNo, from-start, LexTypes.SEMICOLON));
 					break;
 				case '.' :
 					if (data[from + 1] == '.') {
-						result.add(new Lexema(lineNo, from-start, LexTypes.RANGE));
+						result.add(new Lexema(displacement, lineNo, from-start, LexTypes.RANGE));
 						from++;
 					}
 					else {
-						result.add(new Lexema(lineNo, from-start, LexTypes.DOT));
+						result.add(new Lexema(displacement, lineNo, from-start, LexTypes.DOT));
 					}
 					break;
 				case ':' :
 					if (data[from + 1] == ':') {
-						result.add(new Lexema(lineNo, from-start, LexTypes.CAST));
+						result.add(new Lexema(displacement, lineNo, from-start, LexTypes.CAST));
 						from++;
 					}
 					else if (data[from + 1] == '=') {
-						result.add(new Lexema(lineNo, from-start, OperatorTypes.ASSIGNMENT));
+						result.add(new Lexema(displacement, lineNo, from-start, OperatorTypes.ASSIGNMENT));
 						from++;
 					}
 					else {
-						result.add(new Lexema(lineNo, from-start, LexTypes.COLON));
+						result.add(new Lexema(displacement, lineNo, from-start, LexTypes.COLON));
 					}
 					break;
 				case '~' :
-					result.add(new Lexema(lineNo, from-start, OperatorTypes.BIT_INV));
+					result.add(new Lexema(displacement, lineNo, from-start, OperatorTypes.BIT_INV));
 					break;
 				case '^' :
-					result.add(new Lexema(lineNo, from-start, OperatorTypes.BIT_XOR));
+					result.add(new Lexema(displacement, lineNo, from-start, OperatorTypes.BIT_XOR));
 					break;
 				case '*' :
-					result.add(new Lexema(lineNo, from-start, OperatorTypes.MUL));
+					result.add(new Lexema(displacement, lineNo, from-start, OperatorTypes.MUL));
 					break;
 				case '%' :
-					result.add(new Lexema(lineNo, from-start, OperatorTypes.MOD));
+					result.add(new Lexema(displacement, lineNo, from-start, OperatorTypes.MOD));
 					break;
 				case '=' :
-					result.add(new Lexema(lineNo, from-start, OperatorTypes.EQ));
+					result.add(new Lexema(displacement, lineNo, from-start, OperatorTypes.EQ));
 					break;
 				case '/' :
 					if (data[from + 1] == '/') {
 						return;
 					}
 					else {
-						result.add(new Lexema(lineNo, from-start, OperatorTypes.DIV));
+						result.add(new Lexema(displacement, lineNo, from-start, OperatorTypes.DIV));
 					}
 					break;
 				case '+' :
 					if (data[from + 1] == '+') {
-						result.add(new Lexema(lineNo, from-start, OperatorTypes.INC));
+						result.add(new Lexema(displacement, lineNo, from-start, OperatorTypes.INC));
 						from++;
 					}
 					else {
-						result.add(new Lexema(lineNo, from-start, OperatorTypes.ADD));
+						result.add(new Lexema(displacement, lineNo, from-start, OperatorTypes.ADD));
 					}
 					break;
 				case '-' :
 					if (data[from + 1] == '|') {
-						result.add(new Lexema(lineNo, from-start, OperatorTypes.DEC));
+						result.add(new Lexema(displacement, lineNo, from-start, OperatorTypes.DEC));
 						from++;
 					}
 					else {
-						result.add(new Lexema(lineNo, from-start, OperatorTypes.SUB));
+						result.add(new Lexema(displacement, lineNo, from-start, OperatorTypes.SUB));
 					}
 					break;
 				case '&' :
 					if (data[from + 1] == '&') {
-						result.add(new Lexema(lineNo, from-start, OperatorTypes.BOOL_AND));
+						result.add(new Lexema(displacement, lineNo, from-start, OperatorTypes.BOOL_AND));
 						from++;
 					}
 					else {
-						result.add(new Lexema(lineNo, from-start, OperatorTypes.BIT_AND));
+						result.add(new Lexema(displacement, lineNo, from-start, OperatorTypes.BIT_AND));
 					}
 					break;
 				case '|' :
 					if (data[from + 1] == '|') {
-						result.add(new Lexema(lineNo, from-start, OperatorTypes.BOOL_OR));
+						result.add(new Lexema(displacement, lineNo, from-start, OperatorTypes.BOOL_OR));
 						from++;
 					}
 					else {
-						result.add(new Lexema(lineNo, from-start, OperatorTypes.BIT_OR));
+						result.add(new Lexema(displacement, lineNo, from-start, OperatorTypes.BIT_OR));
 					}
 					break;
 				case '>' :
 					if (data[from + 1] == '=') {
-						result.add(new Lexema(lineNo, from-start, OperatorTypes.GE));
+						result.add(new Lexema(displacement, lineNo, from-start, OperatorTypes.GE));
 						from++;
 					}
 					else {
-						result.add(new Lexema(lineNo, from-start, OperatorTypes.GT));
+						result.add(new Lexema(displacement, lineNo, from-start, OperatorTypes.GT));
 					}
 					break;
 				case '<' :
 					if (data[from + 1] == '=') {
-						result.add(new Lexema(lineNo, from-start, OperatorTypes.LE));
+						result.add(new Lexema(displacement, lineNo, from-start, OperatorTypes.LE));
 						from++;
 					}
 					else if (data[from + 1] == '>') {
-						result.add(new Lexema(lineNo, from-start, OperatorTypes.NE));
+						result.add(new Lexema(displacement, lineNo, from-start, OperatorTypes.NE));
 						from++;
 					}
 					else {
-						result.add(new Lexema(lineNo, from-start, OperatorTypes.LT));
+						result.add(new Lexema(displacement, lineNo, from-start, OperatorTypes.LT));
 					}
 					break;
 				case '\"' :
 					from = CharUtils.parseStringExtended(data, from, '\"', sb);
 					if (data[from] != '\"') {
-						throw new SyntaxException(lineNo, from-start, "Unterminated string");
+						if (ignoreErrors) {
+							result.add(new Lexema(displacement, lineNo, from-start, LexTypes.ERROR));
+						}
+						else {
+							throw new SyntaxException(lineNo, from-start, "Unterminated string");
+						}
 					}
 					else {
-						result.add(new Lexema(lineNo, from-start, sb.toString().toCharArray()));
+						result.add(new Lexema(displacement, lineNo, from-start, sb.toString().toCharArray()));
 						sb.setLength(0);
 					}
 					break;
@@ -502,13 +507,13 @@ public class ScriptParserUtil {
 					from = CharUtils.parseNumber(data, from, forNumbers, CharUtils.PREF_ANY, true);
 					switch ((int)forNumbers[1]) {
 						case CharUtils.PREF_INT : case CharUtils.PREF_LONG :
-							result.add(new Lexema(lineNo, from-start, forNumbers[0]));
+							result.add(new Lexema(displacement, lineNo, from-start, forNumbers[0]));
 							break;
 						case CharUtils.PREF_FLOAT	: 
-							result.add(new Lexema(lineNo, from-start, Float.intBitsToFloat((int)forNumbers[0])));
+							result.add(new Lexema(displacement, lineNo, from-start, Float.intBitsToFloat((int)forNumbers[0])));
 							break;
 						case CharUtils.PREF_DOUBLE 	:
-							result.add(new Lexema(lineNo, from-start, Double.longBitsToDouble(forNumbers[0])));
+							result.add(new Lexema(displacement, lineNo, from-start, Double.longBitsToDouble(forNumbers[0])));
 							break;
 					}
 					break;
@@ -522,19 +527,24 @@ public class ScriptParserUtil {
 							
 							switch (kw.type) {
 								case CONSTANT	:
-									result.add(new Lexema(lineNo, forNames[0]-start, kw == Keywords.TRUE));
+									result.add(new Lexema(displacement, lineNo, forNames[0]-start, kw == Keywords.TRUE));
 									break;
 								default :
-									result.add(new Lexema(lineNo, forNames[0]-start, kw));
+									result.add(new Lexema(displacement, lineNo, forNames[0]-start, kw));
 									break;
 							}
 						}
 						else {
-							result.add(new Lexema(lineNo, forNames[0]-start, LexTypes.NAME, names.placeName(data, forNames[0], forNames[1], null)));
+							result.add(new Lexema(displacement, lineNo, forNames[0]-start, LexTypes.NAME, names.placeName(data, forNames[0], forNames[1], null)));
 						}
 					}
 					else {
-						throw new SyntaxException(lineNo, from-start, "Unknown lexema");
+						if (ignoreErrors) {
+							result.add(new Lexema(displacement, lineNo, from-start, LexTypes.ERROR));
+						}
+						else {
+							throw new SyntaxException(lineNo, from-start, "Unknown lexema");
+						}
 					}
 					break;
 			}
@@ -1124,6 +1134,7 @@ loop:	for (;;) {
 	}
 		
 	public static class Lexema {
+		private final int			displ;
 		private final int			row;
 		private final int			col;
 		private final LexTypes		type;
@@ -1133,7 +1144,8 @@ loop:	for (;;) {
 		private final long			associatedLong;
 		private final Object		associatedObject;
 		
-		Lexema(final int row, final int col, final LexTypes type) {
+		Lexema(final int displ, final int row, final int col, final LexTypes type) {
+			this.displ = displ;
 			this.row = row;
 			this.col = col;
 			this.type = type;
@@ -1144,7 +1156,8 @@ loop:	for (;;) {
 			this.associatedObject = null;
 		}
 
-		Lexema(final int row, final int col, final OperatorTypes opType) {
+		Lexema(final int displ, final int row, final int col, final OperatorTypes opType) {
+			this.displ = displ;
 			this.row = row;
 			this.col = col;
 			this.type = LexTypes.OPERATOR;
@@ -1155,7 +1168,8 @@ loop:	for (;;) {
 			this.associatedObject = null;
 		}
 
-		Lexema(final int row, final int col, final char[] content) {
+		Lexema(final int displ, final int row, final int col, final char[] content) {
+			this.displ = displ;
 			this.row = row;
 			this.col = col;
 			this.type = LexTypes.CONSTANT;
@@ -1166,7 +1180,8 @@ loop:	for (;;) {
 			this.associatedObject = null;
 		}
 
-		Lexema(final int row, final int col, final long content) {
+		Lexema(final int displ, final int row, final int col, final long content) {
+			this.displ = displ;
 			this.row = row;
 			this.col = col;
 			this.type = LexTypes.CONSTANT;
@@ -1177,7 +1192,8 @@ loop:	for (;;) {
 			this.associatedObject = null;
 		}
 		
-		Lexema(final int row, final int col, final double content) {
+		Lexema(final int displ, final int row, final int col, final double content) {
+			this.displ = displ;
 			this.row = row;
 			this.col = col;
 			this.type = LexTypes.CONSTANT;
@@ -1188,7 +1204,8 @@ loop:	for (;;) {
 			this.associatedObject = null;
 		}
 
-		Lexema(final int row, final int col, final boolean content) {
+		Lexema(final int displ, final int row, final int col, final boolean content) {
+			this.displ = displ;
 			this.row = row;
 			this.col = col;
 			this.type = LexTypes.CONSTANT;
@@ -1199,7 +1216,8 @@ loop:	for (;;) {
 			this.associatedObject = null;
 		}
 
-		Lexema(final int row, final int col, final Keywords kw) {
+		Lexema(final int displ, final int row, final int col, final Keywords kw) {
+			this.displ = displ;
 			this.row = row;
 			this.col = col;
 			this.type = kw.getLexType();
@@ -1210,7 +1228,8 @@ loop:	for (;;) {
 			this.associatedObject = null;
 		}
 
-		Lexema(final int row, final int col, final LexTypes type, final long content) {
+		Lexema(final int displ, final int row, final int col, final LexTypes type, final long content) {
+			this.displ = displ;
 			this.row = row;
 			this.col = col;
 			this.type = type;
@@ -1219,6 +1238,10 @@ loop:	for (;;) {
 			this.kw = null;
 			this.associatedLong = content;
 			this.associatedObject = null;
+		}
+		
+		public int getDispl() {
+			return displ;
 		}
 		
 		public int getRow() {
