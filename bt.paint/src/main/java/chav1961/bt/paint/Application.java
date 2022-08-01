@@ -1,6 +1,7 @@
 package chav1961.bt.paint;
 
 import java.awt.BorderLayout;
+
 import java.awt.Dimension;
 import java.awt.Image;
 import java.awt.Rectangle;
@@ -37,6 +38,7 @@ import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
 import javax.swing.JTextField;
+import javax.swing.SwingUtilities;
 import javax.swing.border.EtchedBorder;
 import javax.swing.event.UndoableEditEvent;
 import javax.swing.undo.UndoManager;
@@ -88,6 +90,7 @@ import chav1961.purelib.ui.swing.useful.JFileSelectionDialog.FilterCallback;
 import chav1961.purelib.ui.swing.useful.JLocalizedOptionPane;
 import chav1961.purelib.ui.swing.useful.JStateString;
 import chav1961.purelib.ui.swing.useful.interfaces.FileContentChangedEvent;
+import chav1961.bt.paint.script.intern.DebuggerPanel;
 
 public class Application extends JFrame implements NodeMetadataOwner, LocaleChangeListener, LoggerFacadeOwner, LocalizerOwner, AutoCloseable {
 	private static final long 		serialVersionUID = 1083999598002477077L;
@@ -142,6 +145,7 @@ public class Application extends JFrame implements NodeMetadataOwner, LocaleChan
 	private String							lastFile = null;
 	private String							lastScript = null;
 	private boolean							recordingOn = false, pauseOn = false;
+	private DebuggerPanel					debugger = null;
 	
 	public Application(final ApplicationMode mode, final ContentMetadataInterface xda, final Localizer localizer, final Predefines predef, final CountDownLatch latch) throws IOException, PaintScriptException {
 		if (mode == null) {
@@ -468,8 +472,7 @@ public class Application extends JFrame implements NodeMetadataOwner, LocaleChan
 			if (!commands.isEmpty()) {
 				scriptManipulator.sb.append(commands);
 				scriptManipulator.setFilters(	// Refresh every call because of possibly language changes
-						FilterCallback.of(localizer.getValue(KEY_CMD_FILES), "*.cmd"), 
-						FilterCallback.of(localizer.getValue(KEY_PSC_FILES), "*.psc")
+					FilterCallback.of(localizer.getValue(KEY_CMD_FILES), "*.cmd")
 				);
 				scriptManipulator.saveFileAs();
 				commands.setLength(0);
@@ -508,11 +511,29 @@ public class Application extends JFrame implements NodeMetadataOwner, LocaleChan
 			getLogger().message(Severity.error, exc, exc.getLocalizedMessage());
 		}
 	}	
+
+	@OnAction("action:/debugger")
+	public void debugger() {
+		if (this.debugger == null) {
+			this.debugger = new DebuggerPanel(xda, localizer, predef, (p)->{
+												SwingUtilities.invokeLater(()->{
+													getContentPane().remove(debugger);
+													debugger = null;
+													pack();
+													((JMenuItem)SwingUtils.findComponentByName(menuBar, "menu.main.tools.debugger")).setEnabled(true);
+												});
+											});
+			getContentPane().add(debugger, BorderLayout.EAST);
+			pack();
+			((JMenuItem)SwingUtils.findComponentByName(menuBar, "menu.main.tools.debugger")).setEnabled(false);
+		}
+	}	
 	
 	@OnAction("action:/settings")
     public void settings() {
 	}	
 
+	
 	@OnAction("action:builtin:/builtin.languages")
     public void language(final Hashtable<String,String[]> langs) throws LocalizationException {
 		getLocalizer().setCurrentLocale(SupportedLanguages.valueOf(langs.get("lang")[0]).getLocale());

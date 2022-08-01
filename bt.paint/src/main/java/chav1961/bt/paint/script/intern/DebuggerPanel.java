@@ -1,11 +1,14 @@
 package chav1961.bt.paint.script.intern;
 
 import java.awt.BorderLayout;
+import java.awt.Dimension;
 import java.io.IOException;
 import java.io.StringReader;
 import java.net.URI;
+import java.util.Hashtable;
 import java.util.Locale;
 import java.util.concurrent.Exchanger;
+import java.util.function.Consumer;
 
 import javax.swing.JEditorPane;
 import javax.swing.JPanel;
@@ -33,13 +36,14 @@ public class DebuggerPanel extends JPanel implements LocaleChangeListener, Local
 	private final ContentMetadataInterface	xda;
 	private final Localizer					localizer;
 	private final Predefines				predef;
+	private final Consumer<DebuggerPanel>	onClose;	
 	private final JToolBar					toolBar;
 	private final JScriptPane				script = new JScriptPane();
 	private final JEditorPane				console = new JEditorPane();
 	private Thread							executor = null;
 	private final Exchanger<Object>			ex = new Exchanger<>();
 
-	public DebuggerPanel(final ContentMetadataInterface xda, final Localizer localizer, final Predefines predef) {
+	public DebuggerPanel(final ContentMetadataInterface xda, final Localizer localizer, final Predefines predef, final Consumer<DebuggerPanel> onClose) {
 		if (xda == null) {
 			throw new NullPointerException("Content metadata can't be null"); 
 		}
@@ -49,10 +53,14 @@ public class DebuggerPanel extends JPanel implements LocaleChangeListener, Local
 		else if (predef == null) {
 			throw new NullPointerException("Predefines can't be null"); 
 		}
+		else if (onClose == null) {
+			throw new NullPointerException("Consumer can't be null"); 
+		}
 		else {
 			this.xda = xda;
 			this.localizer = localizer;
 			this.predef = predef;
+			this.onClose = onClose;
 			this.toolBar = SwingUtils.toJComponent(xda.byUIPath(URI.create("ui:/model/navigation.top.debugBar")), JToolBar.class);
 			
 			toolBar.setFloatable(false);
@@ -62,8 +70,12 @@ public class DebuggerPanel extends JPanel implements LocaleChangeListener, Local
 			
 			setLayout(new BorderLayout(5,5));
 	
+			final JSplitPane	split = new JSplitPane(JSplitPane.VERTICAL_SPLIT, new JScrollPane(script), new JScrollPane(console)); 
+			
 			add(toolBar, BorderLayout.NORTH);
-			add(new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, new JScrollPane(script), new JScrollPane(console)), BorderLayout.CENTER);
+			add(split, BorderLayout.CENTER);
+			split.setDividerLocation(400);
+			setPreferredSize(new Dimension(500,200));
 		}
 	}
 	
@@ -109,10 +121,10 @@ public class DebuggerPanel extends JPanel implements LocaleChangeListener, Local
 	}	
 
 	@OnAction("action:/pauseScript")
-    public void pauseScript() throws IOException {
+    public void pauseScript(final Hashtable<String,String[]> modes) throws IOException {
 	}	
 
-	@OnAction("action:/startScript")
+	@OnAction("action:/stopScript")
     public void stopScript() throws IOException, InterruptedException {
 		if (executor != null) {
 			executor.interrupt();
@@ -137,6 +149,11 @@ public class DebuggerPanel extends JPanel implements LocaleChangeListener, Local
     public void runStep() throws IOException {
 	}
 
+	@OnAction("action:/exitScript")
+    public void exit() throws IOException {
+		onClose.accept(this);
+	}
+	
 	private void executeScript(final SyntaxNode<SyntaxNodeType, SyntaxNode<SyntaxNodeType, ?>> tree) {
 		// TODO:
 	}

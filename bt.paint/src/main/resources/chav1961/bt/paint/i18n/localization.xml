@@ -63,6 +63,8 @@
 		<key name="menu.main.tools.settings.tt">Application settings</key>
 		<key name="menu.main.tools.languages">Language</key>
 		<key name="menu.main.tools.languages.tt">Select interface language</key>
+		<key name="menu.main.tools.debugger">Debug window</key>
+		<key name="menu.main.tools.debugger.tt">Write and debug *.bpt scripts</key>
 		<key name="menu.main.help">Help</key>
 		<key name="menu.main.help.tt">Help system</key>
 		<key name="menu.main.help.overview">User manual</key>
@@ -218,6 +220,33 @@
 		<key name="chav1961.bt.paint.editor.ImageEditPanel.redo.change.font">redo font selection</key>
 		<key name="chav1961.bt.paint.editor.ImageEditPanel.undo.change.stroke">undo line style selection</key>
 		<key name="chav1961.bt.paint.editor.ImageEditPanel.redo.change.stroke">redo line style selection</key>
+
+<!-- DebuggerPanel class localization -->
+		<key name="debug.file.clean">Clean</key>
+		<key name="debug.file.clean.tt">Clean script content</key>
+		<key name="debug.file.load">Load</key>
+		<key name="debug.file.load.tt">Load script from file</key>
+		<key name="debug.file.store">Save</key>
+		<key name="debug.file.store.tt">Save script</key>
+		<key name="debug.file.storeAs">Save as...</key>
+		<key name="debug.file.storeAs.tt">Save script as...</key>
+		<key name="debug.execute.start">Start</key>
+		<key name="debug.execute.start.tt">Start script</key>
+		<key name="debug.execute.pause">Pause</key>
+		<key name="debug.execute.pause.tt">Pause/resume script</key>
+		<key name="debug.execute.stop">Stop</key>
+		<key name="debug.execute.stop.tt">Stop script</key>
+		<key name="debug.execute.step.next">Step next</key>
+		<key name="debug.execute.step.next.tt">Next step</key>
+		<key name="debug.execute.step.into">Step into</key>
+		<key name="debug.execute.step.into.tt">Enter into function/procedure</key>
+		<key name="debug.execute.step.out">Return</key>
+		<key name="debug.execute.step.out.tt">Return from function/procedure</key>
+		<key name="debug.execute.step.run">Continue</key>
+		<key name="debug.execute.step.run.tt">Continue to breakpoint</key>
+		<key name="debug.file.exit">Exit</key>
+		<key name="debug.file.exit.tt">Close debug window</key>
+		
 				
 <!-- ImageEditPanel.EditStateString -->
 		<key name="chav1961.bt.paint.bgeditor.ImageEditPanel.EditStateString.prompt">Type command</key>
@@ -317,6 +346,8 @@
 		<key name="menu.main.tools.settings.tt">Настройки приложения</key>
 		<key name="menu.main.tools.languages">Язык</key>
 		<key name="menu.main.tools.languages.tt">Выбрать язык интерфейса</key>
+		<key name="menu.main.tools.debugger">Окно отладки</key>
+		<key name="menu.main.tools.debugger.tt">Написание и отладка *.bpt скриптов</key>
 		<key name="menu.main.help">Справка</key>
 		<key name="menu.main.help.tt">Справочная система</key>
 		<key name="menu.main.help.overview">Руководство пользователя</key>
@@ -492,6 +523,31 @@
 		<key name="askimagesize.fillbackground">Залить фоном</key>
 		<key name="askimagesize.fillbackground.tt">Залить изображение фоновым цветом. Если не установлено - фон изображения будет прозрачным</key>
 		
+<!-- Локализация класса DebuggerPanel -->
+		<key name="debug.file.clean">Очистить</key>
+		<key name="debug.file.clean.tt">Очистка содержимого скрипта</key>
+		<key name="debug.file.load">Загрузить</key>
+		<key name="debug.file.load.tt">Загрузить скрипт из файла</key>
+		<key name="debug.file.store">Сохранить</key>
+		<key name="debug.file.store.tt">Сохранить скрипт</key>
+		<key name="debug.file.storeAs">Сохранить как...</key>
+		<key name="debug.file.storeAs.tt">Сохранить скрипт как...</key>
+		<key name="debug.execute.start">Пуск</key>
+		<key name="debug.execute.start.tt">Выполнить скрипт</key>
+		<key name="debug.execute.pause">Пауза</key>
+		<key name="debug.execute.pause.tt">Приостановить выполнение скрипта</key>
+		<key name="debug.execute.stop">Стоп</key>
+		<key name="debug.execute.stop.tt">ОСтановить выполнение скрипта</key>
+		<key name="debug.execute.step.next">Шаг</key>
+		<key name="debug.execute.step.next.tt">Переход к следуюшему шагу скрипта</key>
+		<key name="debug.execute.step.into">Войти</key>
+		<key name="debug.execute.step.into.tt">Войти в функцию/процедуру</key>
+		<key name="debug.execute.step.out">Выйти</key>
+		<key name="debug.execute.step.out.tt">Выйти из функции/процедуры</key>
+		<key name="debug.execute.step.run">Продолжить</key>
+		<key name="debug.execute.step.run.tt">Продолжить до точки останова</key>
+		<key name="debug.file.exit">Выход</key>
+		<key name="debug.file.exit.tt">Закрыть окно отладки</key>
 		
 <!-- Локализация класса AskImageResize -->
 		<key name="askimageresize.title">Задайте новый размер изображения</key>

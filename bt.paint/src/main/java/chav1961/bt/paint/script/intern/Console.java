@@ -125,63 +125,48 @@ public class Console {
 		ci = new CommandItem("rectangle", CommandItem.CommandType.ImageAction
 				, KEY_UNDO_DRAW_RECT
 				, KEY_REDO_DRAW_RECT
-				, "rectangle <xFrom::int>,<yFrom::int> {size <width::int>,<height::int>| [to] <xTo::int>,<yTo::int>} [on]"
+				, "rectangle <rect::Rectangle> [on]"
 				, (p,a)-> {
-					if (a[2] instanceof CharUtils.Mark) {
-						return drawRect(p,buildRectangle((Integer)a[0],(Integer)a[1],(Integer)a[3],(Integer)a[4],true),a[5] instanceof Boolean);
+					if (a[1] instanceof Boolean) {
+						return drawRect(p,(Rectangle)a[0],true);
 					}
 					else {
-						return drawRect(p,buildRectangle((Integer)a[0],(Integer)a[1],(Integer)a[2],(Integer)a[3],false),a[4] instanceof Boolean);
+						return drawRect(p,(Rectangle)a[0],false);
 					}
 				}
-				, ArgumentType.signedInt, ',', ArgumentType.signedInt, 
-					new CharUtils.Choise(new Object[] {"size", new CharUtils.Mark(1), ArgumentType.signedInt, ',', ArgumentType.signedInt}, new Object[] {new CharUtils.Optional("to"), ArgumentType.signedInt, ',', ArgumentType.signedInt}),
-					new CharUtils.Optional(ArgumentType.Boolean));
+				, ArgumentType.rectangleRepresentation, new CharUtils.Optional(ArgumentType.Boolean));
 		COMMANDS.placeName("rectangle", ci);
 		COMMANDS.placeName("rect", ci);
 
 		ci = new CommandItem("ellipse", CommandItem.CommandType.ImageAction
 				, KEY_UNDO_DRAW_ELLIPSE
 				, KEY_REDO_DRAW_ELLIPSE
-				, "ellipse <xFrom::int>,<yFrom::int> {size <width::int>,<height::int>|[to] <xTo::int>,<yTo::int>} [on]"
+				, "ellipse <rect::Rectangle> [on]"
 				, (p,a)-> {
-					if (a[2] instanceof CharUtils.Mark) {
-						return drawEllipse(p,buildRectangle((Integer)a[0],(Integer)a[1],(Integer)a[3],(Integer)a[4],true),a[5] instanceof Boolean);
+					if (a[1] instanceof Boolean) {
+						return drawEllipse(p,(Rectangle)a[0],true);
 					}
 					else {
-						return drawEllipse(p,buildRectangle((Integer)a[0],(Integer)a[1],(Integer)a[2],(Integer)a[3],false),a[4] instanceof Boolean);
+						return drawEllipse(p,(Rectangle)a[0],false);
 					}
 				}
-				, ArgumentType.signedInt, ',', ArgumentType.signedInt, 
-					new CharUtils.Choise(new Object[] {"size", new CharUtils.Mark(1), ArgumentType.signedInt, ',', ArgumentType.signedInt}, new Object[] {new CharUtils.Optional("to"), ArgumentType.signedInt, ',', ArgumentType.signedInt}),
-					new CharUtils.Optional(ArgumentType.Boolean));
+				, ArgumentType.rectangleRepresentation, new CharUtils.Optional(ArgumentType.Boolean));
 		COMMANDS.placeName("ellipse", ci);
 		COMMANDS.placeName("ell", ci);
 
 		ci = new CommandItem("text", CommandItem.CommandType.ImageAction
 				, KEY_UNDO_DRAW_TEXT
 				, KEY_REDO_DRAW_TEXT
-				, "text <xFrom::int>,<yFrom::int> {size <width::int>,<height::int>| [to] <xTo::int>,<yTo::int>} <foreground::color>[/<background::color>] <content::any>"
+				, "text <rect::Rectangle> <foreground::color>[/<background::color>] <content::any>"
 				, (p,a)->{
-					if (a[2] instanceof CharUtils.Mark) {
-						if (a[6] instanceof CharUtils.Mark) {
-							return drawText(p, buildRectangle((Integer)a[0], (Integer)a[1], (Integer)a[3], (Integer)a[4], true), (Color)a[5], (Color)a[7], (String)a[8]);
-						}
-						else {
-							return drawText(p, buildRectangle((Integer)a[0], (Integer)a[1], (Integer)a[3], (Integer)a[4], true), (Color)a[5], (String)a[6]);
-						}
+					if (a[2] instanceof Color) {
+						return drawText(p, (Rectangle)a[0], (Color)a[1], (Color)a[2], (String)a[3]);
 					}
 					else {
-						if (a[5] instanceof CharUtils.Mark) {
-							return drawText(p, buildRectangle((Integer)a[0], (Integer)a[1], (Integer)a[2], (Integer)a[3], false), (Color)a[4], (Color)a[6], (String)a[7]);
-						}
-						else {
-							return drawText(p, buildRectangle((Integer)a[0], (Integer)a[1], (Integer)a[2], (Integer)a[3], false), (Color)a[4], (String)a[5]);
-						}
+						return drawText(p, (Rectangle)a[0], (Color)a[1], (String)a[2]);
 					}
 				}
-				, ArgumentType.signedInt, ',', ArgumentType.signedInt, new CharUtils.Choise(new Object[] {"size", new CharUtils.Mark(1), ArgumentType.signedInt, ',', ArgumentType.signedInt}, new Object[] {new CharUtils.Optional("to"), ArgumentType.signedInt, ',', ArgumentType.signedInt}),
-				  ArgumentType.colorRepresentation, new CharUtils.Optional('/', new CharUtils.Mark(1), ArgumentType.colorRepresentation), ArgumentType.raw);
+				, ArgumentType.rectangleRepresentation, ArgumentType.colorRepresentation, new CharUtils.Optional('/', ArgumentType.colorRepresentation), ArgumentType.raw);
 		COMMANDS.placeName("text", ci);
 		COMMANDS.placeName("t", ci);
 
@@ -230,9 +215,9 @@ public class Console {
 		ci = new CommandItem("crop", CommandItem.CommandType.ImageAction
 				, KEY_UNDO_CROP
 				, KEY_REDO_CROP
-				, "crop <xFrom::int>,<yFrom::int> {size <width::int>,<height::int>| [to] <xTo::int>,<yTo::int>}"
-				, (p,a)->crop(p, buildRectangle((Integer)a[0],(Integer)a[1],(Integer)a[2],(Integer)a[3],a[4] instanceof CharUtils.Mark))
-				, ArgumentType.signedInt, ',', ArgumentType.signedInt, new CharUtils.Optional(AnchorPoint.class));
+				, "crop <rect::Rectangle>"
+				, (p,a)->crop(p, (Rectangle)a[0])
+				, ArgumentType.rectangleRepresentation);
 		COMMANDS.placeName("crop", ci);
 		
 		ci = new CommandItem("resize", CommandItem.CommandType.ImageAction
@@ -271,10 +256,8 @@ public class Console {
 				, ""
 				, ""
 				, "copy [<xFrom::int>,<yFrom:int> {size <width::int>,<height::int>|[to] <xTo::int>,<yTo::int>}]"
-				, (p,a)->a[0] instanceof Integer 
-						? copyRange(p, (Integer)a[0], (Integer)a[1], a[2] instanceof CharUtils.Mark ? (Integer)a[3] : (Integer)a[2], a[2] instanceof CharUtils.Mark ? (Integer)a[4] : (Integer)a[3], a[2] instanceof CharUtils.Mark)
-						: copyAll(p)
-				, new CharUtils.Optional(ArgumentType.signedInt, ',', ArgumentType.signedInt, new CharUtils.Choise(new Object[] {"size", new CharUtils.Mark(1), ArgumentType.signedInt, ',', ArgumentType.signedInt}, new Object[] {new CharUtils.Optional("to"), ArgumentType.signedInt, ',', ArgumentType.signedInt}))
+				, (p,a)->a[0] instanceof Rectangle ? copyRange(p, (Rectangle)a[0]) : copyAll(p)
+				, new CharUtils.Optional(ArgumentType.rectangleRepresentation)
 				);
 		COMMANDS.placeName("copy", ci);
 		COMMANDS.placeName("cp", ci);
@@ -284,38 +267,24 @@ public class Console {
 				, KEY_REDO_PASTE
 				, "paste <xFrom::int>,<yFrom::int> [{size <width::int>,<height::int>|[to] <xTo::int>,<yTo::int>}] [from <name::string>]"
 				, (p,a)->{
-					if (a[2] instanceof CharUtils.Mark) {
-						if (((CharUtils.Mark)a[2]).getMark() == 1) {
-							if (a[5] instanceof CharUtils.Mark) {
-								return pasteFileScaled(p, (Integer)a[0], (Integer)a[1], (Integer)a[3], (Integer)a[4], true, (String)a[6]);
-							}
-							else {
-								return pasteClipboardScaled(p, (Integer)a[0], (Integer)a[1], (Integer)a[3], (Integer)a[4], true);
-							}
-						}
-						else if (((CharUtils.Mark)a[2]).getMark() == 2) {
+					if (a[0] instanceof Integer) {
+						if (a[2] instanceof String) {
 							return pasteFile(p, (Integer)a[0], (Integer)a[1], (String)a[3]);
 						}
 						else {
-							if (a[4] instanceof CharUtils.Mark) {
-								return pasteFileScaled(p, (Integer)a[0], (Integer)a[1], (Integer)a[2], (Integer)a[3], false, (String)a[5]);
-							}
-							else {
-								return pasteClipboardScaled(p, (Integer)a[0], (Integer)a[1], (Integer)a[2], (Integer)a[3], false);
-							}
+							return pasteClipboard(p, (Integer)a[0], (Integer)a[1]);
 						}
 					}
-					else if (a[4] instanceof CharUtils.Mark) {
-						return pasteFileScaled(p, (Integer)a[0], (Integer)a[1], (Integer)a[2], (Integer)a[3], false, (String)a[5]);
-					}
-					else if (a[2] instanceof Integer) {
-						return pasteClipboardScaled(p, (Integer)a[0], (Integer)a[1], (Integer)a[2], (Integer)a[3], false);
-					}
 					else {
-						return pasteClipboard(p, (Integer)a[0], (Integer)a[1]);
+						if (a[1] instanceof String) {
+							return pasteFileScaled(p, (Integer)a[0], (Integer)a[1], (Integer)a[3], (Integer)a[4], true, (String)a[6]);
+						}
+						else {
+							return pasteClipboardScaled(p, (Integer)a[0], (Integer)a[1], (Integer)a[3], (Integer)a[4], true);
+						}
 					}
 				}
-				, ArgumentType.signedInt, ',', ArgumentType.signedInt, new CharUtils.Optional(new CharUtils.Choise(new Object[] {"size", new CharUtils.Mark(1), ArgumentType.signedInt, ',', ArgumentType.signedInt}, new Object[] {new CharUtils.Optional("to"), ArgumentType.signedInt, ',', ArgumentType.signedInt})), new CharUtils.Optional("from", new CharUtils.Mark(2), ArgumentType.raw));
+				, new CharUtils.Choise(new Object[] {ArgumentType.signedInt, ',', ArgumentType.signedInt}, new Object[] {ArgumentType.rectangleRepresentation}), new CharUtils.Optional("from", ArgumentType.raw));
 		COMMANDS.placeName("paste", ci);
 		
 //		ci = new CommandItem("undo", "undo", (p,a)->drawPath(p,(String)a[0]));
@@ -496,14 +465,15 @@ public class Console {
 		return OK;
 	}
 	
-	private static String drawText(final Predefines predef, final Rectangle rect, final Color color, final String text) {
-		// TODO Auto-generated method stub
+	private static String drawText(final Predefines predef, final Rectangle rect, final Color color, final String text) throws PaintScriptException {
+		ImageUtils.draw(DrawingType.TEXT, predef.getPredefined(Predefines.PREDEF_CANVAS, CanvasWrapper.class).getImage().getImage(), null, rect, color, text);
 		return OK;
 	}
 
 
-	private static String drawText(final Predefines predef, final Rectangle rect, final Color foreground, final Color background, final String text) {
-		// TODO Auto-generated method stub
+	private static String drawText(final Predefines predef, final Rectangle rect, final Color foreground, final Color background, final String text) throws PaintScriptException {
+		ImageUtils.draw(DrawingType.FILL, predef.getPredefined(Predefines.PREDEF_CANVAS, CanvasWrapper.class).getImage().getImage(), null, rect, background);
+		ImageUtils.draw(DrawingType.TEXT, predef.getPredefined(Predefines.PREDEF_CANVAS, CanvasWrapper.class).getImage().getImage(), null, rect, foreground, text);
 		return OK;
 	}
 	
@@ -616,8 +586,7 @@ public class Console {
 		return OK;
 	}
 
-	private static String copyRange(final Predefines predef, final int xFrom, final int yFrom, final int xToOrWidth, final int yToOrHeight, final boolean useAsSize) throws PaintScriptException {
-		final Rectangle			rect = new Rectangle(xFrom, yFrom, useAsSize ? xToOrWidth : xToOrWidth - xFrom, useAsSize ? yToOrHeight : yToOrHeight - yFrom);	
+	private static String copyRange(final Predefines predef, final Rectangle rect) throws PaintScriptException {
 		final ImageWrapper		iw = predef.getPredefined(Predefines.PREDEF_CANVAS, CanvasWrapper.class).getImage(RectWrapper.of(rect));
 		final ClipboardWrapper	cbw = predef.getPredefined(Predefines.PREDEF_CLIPBOARD, ClipboardWrapper.class);
 		
@@ -729,16 +698,6 @@ public class Console {
 		return OK;
 	}	
 
-	private static Rectangle buildRectangle(final int xFrom, final int yFrom, final int xToOrWidth, final int yToOrHeight, final boolean useAsSize) {
-		if (useAsSize) {
-			return new Rectangle(xFrom, yFrom, xToOrWidth, yToOrHeight);
-		}
-		else {
-			return new Rectangle(xFrom, yFrom, xToOrWidth - xFrom, yToOrHeight - yFrom);
-		}
-	}
-	
-	
 	private static class CommandItem {
 		private static enum CommandType {
 			ImageAction,
