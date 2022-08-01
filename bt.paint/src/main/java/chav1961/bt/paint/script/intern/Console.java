@@ -116,27 +116,45 @@ public class Console {
 		CommandItem	ci = new CommandItem("line", CommandItem.CommandType.ImageAction
 				, KEY_UNDO_DRAW_LINE
 				, KEY_REDO_DRAW_LINE
-				, "line <xFrom::int>,<yFrom::int> <xTo::int>,<yTo::int>"
+				, "line <xFrom::int>,<yFrom::int> [to] <xTo::int>,<yTo::int>"
 				, (p,a)->drawLine(p,(Integer)a[0],(Integer)a[1],(Integer)a[2],(Integer)a[3])
-				, ArgumentType.signedInt, ',', ArgumentType.signedInt, ArgumentType.signedInt, ',', ArgumentType.signedInt);
+				, ArgumentType.signedInt, ',', ArgumentType.signedInt, new CharUtils.Optional("to"), ArgumentType.signedInt, ',', ArgumentType.signedInt);
 		COMMANDS.placeName("line", ci);
 		COMMANDS.placeName("l", ci);
 
 		ci = new CommandItem("rectangle", CommandItem.CommandType.ImageAction
 				, KEY_UNDO_DRAW_RECT
 				, KEY_REDO_DRAW_RECT
-				, "rectangle <xFrom::int>,<yFrom::int> [to] <xTo::int>,<yTo::int> [on]"
-				, (p,a)->drawRect(p,(Integer)a[0],(Integer)a[1],(Integer)a[2],(Integer)a[3],(a[4] instanceof Boolean) && ((Boolean)a[4]))
-				, ArgumentType.signedInt, ',', ArgumentType.signedInt, new CharUtils.Optional("to"), ArgumentType.signedInt, ',', ArgumentType.signedInt, new CharUtils.Optional(ArgumentType.Boolean));
+				, "rectangle <xFrom::int>,<yFrom::int> {size <width::int>,<height::int>| [to] <xTo::int>,<yTo::int>} [on]"
+				, (p,a)-> {
+					if (a[2] instanceof CharUtils.Mark) {
+						return drawRect(p,buildRectangle((Integer)a[0],(Integer)a[1],(Integer)a[3],(Integer)a[4],true),a[5] instanceof Boolean);
+					}
+					else {
+						return drawRect(p,buildRectangle((Integer)a[0],(Integer)a[1],(Integer)a[2],(Integer)a[3],false),a[4] instanceof Boolean);
+					}
+				}
+				, ArgumentType.signedInt, ',', ArgumentType.signedInt, 
+					new CharUtils.Choise(new Object[] {"size", new CharUtils.Mark(1), ArgumentType.signedInt, ',', ArgumentType.signedInt}, new Object[] {new CharUtils.Optional("to"), ArgumentType.signedInt, ',', ArgumentType.signedInt}),
+					new CharUtils.Optional(ArgumentType.Boolean));
 		COMMANDS.placeName("rectangle", ci);
 		COMMANDS.placeName("rect", ci);
 
 		ci = new CommandItem("ellipse", CommandItem.CommandType.ImageAction
 				, KEY_UNDO_DRAW_ELLIPSE
 				, KEY_REDO_DRAW_ELLIPSE
-				, "ellipse <xFrom::int>,<yFrom::int> [to] <xTo::int>,<yTo::int> [on]"
-				, (p,a)->drawEllipse(p,(Integer)a[0],(Integer)a[1],(Integer)a[2],(Integer)a[3],(a[4] instanceof Boolean) && ((Boolean)a[4]))
-				, ArgumentType.signedInt, ',', ArgumentType.signedInt, new CharUtils.Optional("to"), ArgumentType.signedInt, ',', ArgumentType.signedInt, new CharUtils.Optional(ArgumentType.Boolean));
+				, "ellipse <xFrom::int>,<yFrom::int> {size <width::int>,<height::int>|[to] <xTo::int>,<yTo::int>} [on]"
+				, (p,a)-> {
+					if (a[2] instanceof CharUtils.Mark) {
+						return drawEllipse(p,buildRectangle((Integer)a[0],(Integer)a[1],(Integer)a[3],(Integer)a[4],true),a[5] instanceof Boolean);
+					}
+					else {
+						return drawEllipse(p,buildRectangle((Integer)a[0],(Integer)a[1],(Integer)a[2],(Integer)a[3],false),a[4] instanceof Boolean);
+					}
+				}
+				, ArgumentType.signedInt, ',', ArgumentType.signedInt, 
+					new CharUtils.Choise(new Object[] {"size", new CharUtils.Mark(1), ArgumentType.signedInt, ',', ArgumentType.signedInt}, new Object[] {new CharUtils.Optional("to"), ArgumentType.signedInt, ',', ArgumentType.signedInt}),
+					new CharUtils.Optional(ArgumentType.Boolean));
 		COMMANDS.placeName("ellipse", ci);
 		COMMANDS.placeName("ell", ci);
 
@@ -147,18 +165,18 @@ public class Console {
 				, (p,a)->{
 					if (a[2] instanceof CharUtils.Mark) {
 						if (a[6] instanceof CharUtils.Mark) {
-							return drawText(p, (Integer)a[0], (Integer)a[1], (Integer)a[3], (Integer)a[4], true, (Color)a[5], (Color)a[7], (String)a[8]);
+							return drawText(p, buildRectangle((Integer)a[0], (Integer)a[1], (Integer)a[3], (Integer)a[4], true), (Color)a[5], (Color)a[7], (String)a[8]);
 						}
 						else {
-							return drawText(p, (Integer)a[0], (Integer)a[1], (Integer)a[3], (Integer)a[4], true, (Color)a[5], (String)a[6]);
+							return drawText(p, buildRectangle((Integer)a[0], (Integer)a[1], (Integer)a[3], (Integer)a[4], true), (Color)a[5], (String)a[6]);
 						}
 					}
 					else {
 						if (a[5] instanceof CharUtils.Mark) {
-							return drawText(p, (Integer)a[0], (Integer)a[1], (Integer)a[2], (Integer)a[3], false, (Color)a[4], (Color)a[6], (String)a[7]);
+							return drawText(p, buildRectangle((Integer)a[0], (Integer)a[1], (Integer)a[2], (Integer)a[3], false), (Color)a[4], (Color)a[6], (String)a[7]);
 						}
 						else {
-							return drawText(p, (Integer)a[0], (Integer)a[1], (Integer)a[2], (Integer)a[3], false, (Color)a[4], (String)a[5]);
+							return drawText(p, buildRectangle((Integer)a[0], (Integer)a[1], (Integer)a[2], (Integer)a[3], false), (Color)a[4], (String)a[5]);
 						}
 					}
 				}
@@ -213,7 +231,7 @@ public class Console {
 				, KEY_UNDO_CROP
 				, KEY_REDO_CROP
 				, "crop <xFrom::int>,<yFrom::int> {size <width::int>,<height::int>| [to] <xTo::int>,<yTo::int>}"
-				, (p,a)->crop(p,(Integer)a[0],(Integer)a[1],(Integer)a[2],(Integer)a[3],a[4] instanceof CharUtils.Mark)
+				, (p,a)->crop(p, buildRectangle((Integer)a[0],(Integer)a[1],(Integer)a[2],(Integer)a[3],a[4] instanceof CharUtils.Mark))
 				, ArgumentType.signedInt, ',', ArgumentType.signedInt, new CharUtils.Optional(AnchorPoint.class));
 		COMMANDS.placeName("crop", ci);
 		
@@ -458,34 +476,33 @@ public class Console {
 		return OK;
 	}
 
-	private static String drawRect(final Predefines predef, final int xFrom, final int yFrom, final int xTo, final int yTo, final boolean fill) throws PaintScriptException {
+	private static String drawRect(final Predefines predef, final Rectangle rect, final boolean fill) throws PaintScriptException {
 		ImageUtils.draw(DrawingType.RECT, predef.getPredefined(Predefines.PREDEF_CANVAS, CanvasWrapper.class).getImage().getImage(), null
-				, new Rectangle(xFrom, yFrom, xTo-xFrom, yTo-yFrom) 
+				, rect
 				, fill 
 					? new ColorPair(predef.getPredefined(Predefines.PREDEF_CANVAS, CanvasWrapper.class).getCanvasForeground().getColor(), predef.getPredefined(Predefines.PREDEF_CANVAS, CanvasWrapper.class).getCanvasBackground().getColor())
 					: predef.getPredefined(Predefines.PREDEF_CANVAS, CanvasWrapper.class).getCanvasForeground().getColor()
 				, predef.getPredefined(Predefines.PREDEF_CANVAS, CanvasWrapper.class).getCanvasStroke().getStroke()); 
 		return OK;
 	}
-
-	private static String drawEllipse(final Predefines predef, final int xFrom, final int yFrom, final int xTo, final int yTo, final boolean fill) throws PaintScriptException {
+	
+	private static String drawEllipse(final Predefines predef, final Rectangle rect, final boolean fill) throws PaintScriptException {
 		ImageUtils.draw(DrawingType.ELLIPSE, predef.getPredefined(Predefines.PREDEF_CANVAS, CanvasWrapper.class).getImage().getImage(), null
-					, new Rectangle(xFrom, yFrom, xTo-xFrom, yTo-yFrom)
-					, fill 
-						? new ColorPair(predef.getPredefined(Predefines.PREDEF_CANVAS, CanvasWrapper.class).getCanvasForeground().getColor(), predef.getPredefined(Predefines.PREDEF_CANVAS, CanvasWrapper.class).getCanvasBackground().getColor())
-						: predef.getPredefined(Predefines.PREDEF_CANVAS, CanvasWrapper.class).getCanvasForeground().getColor()
-					, predef.getPredefined(Predefines.PREDEF_CANVAS, CanvasWrapper.class).getCanvasStroke().getStroke()); 
+				, rect
+				, fill 
+					? new ColorPair(predef.getPredefined(Predefines.PREDEF_CANVAS, CanvasWrapper.class).getCanvasForeground().getColor(), predef.getPredefined(Predefines.PREDEF_CANVAS, CanvasWrapper.class).getCanvasBackground().getColor())
+					: predef.getPredefined(Predefines.PREDEF_CANVAS, CanvasWrapper.class).getCanvasForeground().getColor()
+				, predef.getPredefined(Predefines.PREDEF_CANVAS, CanvasWrapper.class).getCanvasStroke().getStroke()); 
 		return OK;
 	}
 	
-	private static String drawText(final Predefines predef, final int xFrom, final int yFrom, final int xToOrWidth, final int yToOrHeight, final boolean useAsSize, final Color color, final String text) {
-		final Rectangle	rect = buildRectangle(xFrom, yFrom, xToOrWidth, yToOrHeight, useAsSize);
+	private static String drawText(final Predefines predef, final Rectangle rect, final Color color, final String text) {
 		// TODO Auto-generated method stub
 		return OK;
 	}
 
 
-	private static String drawText(final Predefines predef, final int xFrom, final int yFrom, final int xToOrWidth, final int yToOrHeight, final boolean useAsSize, final Color foreground, final Color background, final String text) {
+	private static String drawText(final Predefines predef, final Rectangle rect, final Color foreground, final Color background, final String text) {
 		// TODO Auto-generated method stub
 		return OK;
 	}
@@ -539,9 +556,9 @@ public class Console {
 		return OK;
 	}
 
-	private static String crop(final Predefines predef, final int xFrom, final int yFrom, final int xToOrWidth, final int yToOrHeight, final boolean useAsSize) throws PaintScriptException {
+	private static String crop(final Predefines predef, final Rectangle rect) throws PaintScriptException {
 		final ImageWrapper	iw = predef.getPredefined(Predefines.PREDEF_CANVAS, CanvasWrapper.class).getImage();
-		final ImageWrapper	result = ImageWrapper.of(ImageUtils.process(ProcessType.CROP, (BufferedImage)iw.getImage(), null, new Rectangle(xFrom,yFrom, useAsSize ? xToOrWidth : xToOrWidth - xFrom, useAsSize ? yToOrHeight : yToOrHeight - yFrom)));
+		final ImageWrapper	result = ImageWrapper.of(ImageUtils.process(ProcessType.CROP, (BufferedImage)iw.getImage(), null, rect));
 		
 		predef.getPredefined(Predefines.PREDEF_CANVAS, CanvasWrapper.class).setImage(result);
 		return OK;
