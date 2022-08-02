@@ -292,8 +292,97 @@ public class ScriptParserUtilTest {
 		ScriptParserUtil.buildStatement(buildLex("k := 10", names), 0, names, root);
 		Assert.assertEquals(SyntaxNodeType.STRONG_BINARY, root.getType());
 		
-		ScriptParserUtil.buildStatement(buildLex("", names), 0, names, root);
-		Assert.assertEquals(SyntaxNodeType.STRONG_BINARY, root.getType());
+		ScriptParserUtil.buildStatement(buildLex("if true then k := 10 else k := 20;", names), 0, names, root);
+		Assert.assertEquals(SyntaxNodeType.IF, root.getType());
+		Assert.assertEquals(SyntaxNodeType.CONSTANT, ((SyntaxNode)root.cargo).getType());
+		Assert.assertEquals(2, root.children.length);
+
+		ScriptParserUtil.buildStatement(buildLex("if true then k := 10;", names), 0, names, root);
+		Assert.assertEquals(SyntaxNodeType.IF, root.getType());
+		Assert.assertEquals(SyntaxNodeType.CONSTANT, ((SyntaxNode)root.cargo).getType());
+		Assert.assertEquals(1, root.children.length);
+
+		ScriptParserUtil.buildStatement(buildLex("while true do k := 10;", names), 0, names, root);
+		Assert.assertEquals(SyntaxNodeType.WHILE, root.getType());
+		Assert.assertEquals(SyntaxNodeType.CONSTANT, ((SyntaxNode)root.cargo).getType());
+		Assert.assertEquals(1, root.children.length);
+
+		ScriptParserUtil.buildStatement(buildLex("do k := 10 while true;", names), 0, names, root);
+		Assert.assertEquals(SyntaxNodeType.UNTIL, root.getType());
+		Assert.assertEquals(SyntaxNodeType.CONSTANT, ((SyntaxNode)root.cargo).getType());
+		Assert.assertEquals(1, root.children.length);
+
+		ScriptParserUtil.buildStatement(buildLex("for k := 1 to 10 do k := 10;", names), 0, names, root);
+		Assert.assertEquals(SyntaxNodeType.FOR1, root.getType());
+		Assert.assertEquals(SyntaxNodeType.CONSTANT, ((SyntaxNode)root.cargo).getType());
+		Assert.assertEquals(3, root.children.length);
+		
+		ScriptParserUtil.buildStatement(buildLex("for k := 1 to 10 step 1 do k := 10;", names), 0, names, root);
+		Assert.assertEquals(SyntaxNodeType.FOR, root.getType());
+		Assert.assertEquals(SyntaxNodeType.CONSTANT, ((SyntaxNode)root.cargo).getType());
+		Assert.assertEquals(4, root.children.length);
+
+		ScriptParserUtil.buildStatement(buildLex("for k in 10..20 do k := 10;", names), 0, names, root);
+		Assert.assertEquals(SyntaxNodeType.FORALL, root.getType());
+		Assert.assertEquals(SyntaxNodeType.RANGE, ((SyntaxNode)root.cargo).getType());
+		Assert.assertEquals(1, root.children.length);
+
+		ScriptParserUtil.buildStatement(buildLex("break;", names), 0, names, root);
+		Assert.assertEquals(SyntaxNodeType.BREAK, root.getType());
+		Assert.assertEquals(1, root.value);
+
+		ScriptParserUtil.buildStatement(buildLex("break 2;", names), 0, names, root);
+		Assert.assertEquals(SyntaxNodeType.BREAK, root.getType());
+		Assert.assertEquals(2, root.value);
+
+		// continue
+		ScriptParserUtil.buildStatement(buildLex("continue;", names), 0, names, root);
+		Assert.assertEquals(SyntaxNodeType.CONTINUE, root.getType());
+		Assert.assertEquals(1, root.value);
+
+		ScriptParserUtil.buildStatement(buildLex("continue 2;", names), 0, names, root);
+		Assert.assertEquals(SyntaxNodeType.CONTINUE, root.getType());
+		Assert.assertEquals(2, root.value);
+
+		// return
+		ScriptParserUtil.buildStatement(buildLex("return;", names), 0, names, root);
+		Assert.assertEquals(SyntaxNodeType.RETURN, root.getType());
+
+		ScriptParserUtil.buildStatement(buildLex("return 2;", names), 0, names, root);
+		Assert.assertEquals(SyntaxNodeType.RETURN1, root.getType());
+		Assert.assertEquals(SyntaxNodeType.CONSTANT, ((SyntaxNode)root.cargo).getType());
+		
+		// case
+		ScriptParserUtil.buildStatement(buildLex("case 2 of 2 : k := 10 else k:= 20 end;", names), 0, names, root);
+		Assert.assertEquals(SyntaxNodeType.CASEDEF, root.getType());
+		Assert.assertEquals(SyntaxNodeType.CONSTANT, ((SyntaxNode)root.cargo).getType());
+		Assert.assertEquals(3, root.children.length);
+		
+		ScriptParserUtil.buildStatement(buildLex("case 2 of 2 : k := 10 end;", names), 0, names, root);
+		Assert.assertEquals(SyntaxNodeType.CASE, root.getType());
+		Assert.assertEquals(SyntaxNodeType.CONSTANT, ((SyntaxNode)root.cargo).getType());
+		Assert.assertEquals(2, root.children.length);
+
+		try{ScriptParserUtil.buildStatement(buildLex("case 2 of 2 : k := 10;", names), 0, names, root);
+			Assert.fail("Mandatory exception was not detected (missing 'end')");
+		} catch (SyntaxException exc) {
+		}
+		
+		// Sequence
+		ScriptParserUtil.buildStatement(buildLex("{k := 10; k := 20}", names), 0, names, root);
+		Assert.assertEquals(SyntaxNodeType.SEQUENCE, root.getType());
+		Assert.assertEquals(2, root.children.length);
+		
+		try{ScriptParserUtil.buildStatement(buildLex("{k := 10; k := 20", names), 0, names, root);
+			Assert.fail("Mandatory exception was not detected (missing '}')");
+		} catch (SyntaxException exc) {
+		}
+
+		
+		try{ScriptParserUtil.buildStatement(buildLex("else", names), 0, names, root);
+			Assert.fail("Mandatory exception was not detected (missing statement)");
+		} catch (SyntaxException exc) {
+		}
 	}	
 	
 	private Lexema[] buildLex(final String string, final SyntaxTreeInterface<?> names) throws SyntaxException {

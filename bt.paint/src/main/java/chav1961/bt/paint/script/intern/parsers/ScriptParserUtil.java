@@ -2,6 +2,8 @@ package chav1961.bt.paint.script.intern.parsers;
 
 import java.io.IOException;
 import java.io.Reader;
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -12,7 +14,15 @@ import java.util.Set;
 
 import chav1961.bt.paint.script.interfaces.CanvasWrapper;
 import chav1961.bt.paint.script.interfaces.ClipboardWrapper;
+import chav1961.bt.paint.script.interfaces.ColorWrapper;
+import chav1961.bt.paint.script.interfaces.FontWrapper;
+import chav1961.bt.paint.script.interfaces.ImageWrapper;
+import chav1961.bt.paint.script.interfaces.PointWrapper;
+import chav1961.bt.paint.script.interfaces.RectWrapper;
+import chav1961.bt.paint.script.interfaces.SizeWrapper;
+import chav1961.bt.paint.script.interfaces.StrokeWrapper;
 import chav1961.bt.paint.script.interfaces.SystemWrapper;
+import chav1961.bt.paint.script.interfaces.TransformWrapper;
 import chav1961.bt.paint.script.intern.interfaces.LexTypes;
 import chav1961.purelib.basic.AndOrTree;
 import chav1961.purelib.basic.CharUtils;
@@ -76,19 +86,29 @@ public class ScriptParserUtil {
 	}
 	
 	static enum DataTypes {
-		UNKNOWN,
-		INT,
-		REAL,
-		STR,
-		BOOL,
-		COLOR,
-		POINT,
-		RECT,
-		SIZE,
-		FONT,
-		STROKE,
-		TRANSFORM,
-		IMAGE
+		UNKNOWN(Object.class),
+		INT(int[].class),
+		REAL(double[].class),
+		STR(char[].class),
+		BOOL(boolean[].class),
+		COLOR(ColorWrapper.class),
+		POINT(PointWrapper.class),
+		RECT(RectWrapper.class),
+		SIZE(SizeWrapper.class),
+		FONT(FontWrapper.class),
+		STROKE(StrokeWrapper.class),
+		TRANSFORM(TransformWrapper.class),
+		IMAGE(ImageWrapper.class);
+		
+		private final Class<?>	associated;
+		
+		private DataTypes(final Class<?> associated) {
+			this.associated = associated;
+		}
+		
+		public Class<?> getClassAssociated() {
+			return associated;
+		}
 	}
 
 	static enum CollectionType {
@@ -100,6 +120,12 @@ public class ScriptParserUtil {
 		PROC;
 	}
 
+	static enum AccessType {
+		GET_FIELD,
+		GET_ARRAY_INDEX,
+		GET_VAR_INDEX
+	}
+	
 	private static enum OperatorLevelTypes {
 		NONE,
 		BINARY,
@@ -351,7 +377,7 @@ public class ScriptParserUtil {
 		KEYWORDS.placeName("do", Keywords.DO);
 		KEYWORDS.placeName("for", Keywords.FOR);
 		KEYWORDS.placeName("to", Keywords.TO);
-		KEYWORDS.placeName("step", Keywords.TO);
+		KEYWORDS.placeName("step", Keywords.STEP);
 		KEYWORDS.placeName("case", Keywords.CASE);
 		KEYWORDS.placeName("continue", Keywords.CONTINUE);
 		KEYWORDS.placeName("break", Keywords.BREAK);
@@ -944,16 +970,16 @@ loop:	for (;;) {
 										final SyntaxNode<SyntaxNodeType, SyntaxNode<SyntaxNodeType, ?>>	inExpr = (SyntaxNode<SyntaxNodeType, SyntaxNode<SyntaxNodeType, ?>>) root.clone();
 										final SyntaxNode<SyntaxNodeType, SyntaxNode<SyntaxNodeType, ?>>	inNode = (SyntaxNode<SyntaxNodeType, SyntaxNode<SyntaxNodeType, ?>>) root.clone();
 										
-										from = buildExpression(data, from + 4, names, inExpr);
+										from = buildListExpression(data, from + 3, names, inExpr);
 										if (data[from].getType() == LexTypes.STATEMENT && data[from].getKeyword() == Keywords.DO) {
-											from = buildExpression(data, from + 1, names, inNode);
+											from = buildStatement(data, from + 1, names, inNode);
 											root.type = SyntaxNodeType.FORALL;
 											root.value = varId;
 											root.cargo = inExpr;
 											root.children = new SyntaxNode[] {inNode};
 										}
 										else {
-											throw new SyntaxException(data[from+1].getRow(), data[from+1].getCol(), "Missing 'while'");
+											throw new SyntaxException(data[from+1].getRow(), data[from+1].getCol(), "Missing 'do'");
 										}
 										break;
 									case ASSIGNMENT	:
@@ -1073,9 +1099,9 @@ loop:	for (;;) {
 				}
 				break;
 			default :
-				break;
+				throw new SyntaxException(data[from].getRow(), data[from].getCol(), "Missing statement");
 		}
-		return from+1;
+		return from;
 	}
 
 	static int buildListExpression(final Lexema[] data, int from, final SyntaxTreeInterface<EntityDescriptor> names, final SyntaxNode<SyntaxNodeType, SyntaxNode<SyntaxNodeType, ?>> root) throws SyntaxException {
@@ -1240,9 +1266,131 @@ loop:	for (;;) {
 	}
 		
 	private static int buildAccess(final Lexema[] data, int from, final EntityDescriptor desc, final SyntaxTreeInterface<EntityDescriptor> names, final SyntaxNode<SyntaxNodeType, SyntaxNode<SyntaxNodeType, ?>> root) throws SyntaxException {
-		return 0;
+		return buildAccess(data, from, desc, desc.dataType.getClassAssociated(), names, root);
 	}
+
+	private static int buildAccess(final Lexema[] data, int from, final EntityDescriptor desc, Class<?> current, final SyntaxTreeInterface<EntityDescriptor> names, final SyntaxNode<SyntaxNodeType, SyntaxNode<SyntaxNodeType, ?>> root) throws SyntaxException {
+		final List<SyntaxNode<SyntaxNodeType, SyntaxNode<SyntaxNodeType, ?>>>	items = new ArrayList<>();
+		boolean theSameFirstName = true;
 		
+		root.row = data[from].getRow();
+		root.col = data[from].getCol();
+		root.type = SyntaxNodeType.ACCESS;
+		root.value = data[from].getLongAssociated(); 
+		from--;
+		
+		do {from++;
+			if (data[from].getType() == LexTypes.NAME) {
+				if (data[from + 1].getType() == LexTypes.OPEN) {
+					final SyntaxNode<SyntaxNodeType, SyntaxNode<SyntaxNodeType, ?>>	methodAccess = (SyntaxNode<SyntaxNodeType, SyntaxNode<SyntaxNodeType, ?>>) root.clone();
+					final List<SyntaxNode<SyntaxNodeType, SyntaxNode<SyntaxNodeType, ?>>>	parameters = new ArrayList<>();
+					
+					methodAccess.row = data[from].getRow();
+					methodAccess.col = data[from].getCol();
+					methodAccess.type = SyntaxNodeType.CALL;
+					methodAccess.value = data[from].getLongAssociated();
+					
+					do {final SyntaxNode<SyntaxNodeType, SyntaxNode<SyntaxNodeType, ?>>	parameterValue = (SyntaxNode<SyntaxNodeType, SyntaxNode<SyntaxNodeType, ?>>) root.clone();
+						from = buildExpression(data, from + 1, names, parameterValue);
+						parameters.add(parameterValue);
+					} while (data[from].getType() == LexTypes.COLON);
+					
+					if (data[from].getType() != LexTypes.CLOSE) {
+						throw new SyntaxException(data[from].getRow(), data[from].getCol(), "Missing ')'"); 
+					}
+					else {
+						final SyntaxNode[]	children = parameters.toArray(new SyntaxNode[parameters.size()]);
+						final Class<?>[]	signature = buildSignature(children);
+						Class<?>			classFound = null;
+						boolean				found = false;
+						
+						for (Method m : current.getMethods()) {
+							if (names.seekName(m.getName()) == methodAccess.value && Arrays.equals(m.getParameterTypes(), signature)) {
+								methodAccess.cargo = m;
+								classFound = m.getReturnType();
+								found = true;
+							}
+						}
+						if (data[from].getType() != LexTypes.CLOSEB) {
+							throw new SyntaxException(data[from].getRow(), data[from].getCol(), "Missing ']'"); 
+						}
+						else {
+							methodAccess.children = children;
+							current = classFound;
+							from++;
+						}
+					}
+				}
+				else {
+					final SyntaxNode<SyntaxNodeType, SyntaxNode<SyntaxNodeType, ?>>	fieldAccess = (SyntaxNode<SyntaxNodeType, SyntaxNode<SyntaxNodeType, ?>>) root.clone();
+					Class<?>	classFound = null;
+					boolean		found = false;
+					
+					for (Field f : current.getFields()) {
+						if (names.seekName(f.getName()) == data[from].associatedLong) {
+							fieldAccess.row = data[from].getRow();
+							fieldAccess.col = data[from].getCol();
+							fieldAccess.type = SyntaxNodeType.SUFFIX;
+							fieldAccess.value = data[from].associatedLong;
+							classFound = f.getType();
+							found = true;
+							break;
+						}
+					}
+					if (!found && !theSameFirstName) {
+						throw new SyntaxException(data[from].getRow(), data[from].getCol(), "Unknown field"); 
+					}
+					else if (data[from + 1].getType() == LexTypes.OPENB) {
+						final List<SyntaxNode<SyntaxNodeType, SyntaxNode<SyntaxNodeType, ?>>>	indices = new ArrayList<>();
+						
+						do {final SyntaxNode<SyntaxNodeType, SyntaxNode<SyntaxNodeType, ?>>	indexValue = (SyntaxNode<SyntaxNodeType, SyntaxNode<SyntaxNodeType, ?>>) root.clone();
+							from = buildExpression(data, from + 1, names, indexValue);
+							indices.add(indexValue);
+						} while (data[from].getType() == LexTypes.COLON);
+						
+						if (data[from].getType() != LexTypes.CLOSEB) {
+							throw new SyntaxException(data[from].getRow(), data[from].getCol(), "Missing ']'"); 
+						}
+						else {
+							fieldAccess.cargo = theSameFirstName ? AccessType.GET_VAR_INDEX : AccessType.GET_ARRAY_INDEX;
+							fieldAccess.children = indices.toArray(new SyntaxNode[indices.size()]);
+							
+							for (int index = 0; index < indices.size(); index++) {
+								if (classFound.isArray()) {
+									classFound = classFound.getComponentType();
+								}
+								else {
+									throw new SyntaxException(data[from].getRow(), data[from].getCol(), "Too many indices for array"); 
+								}
+							}
+							current = classFound;
+							from++;
+						}
+						items.add(fieldAccess);
+					}
+					else if (!theSameFirstName) {
+						fieldAccess.cargo = AccessType.GET_FIELD;
+						current = classFound;
+						items.add(fieldAccess);
+						from++;
+					}
+					else {
+						from++;
+					}
+				}
+			}
+			theSameFirstName = false;
+		} while (data[from].getType() == LexTypes.DOT);
+
+		root.children = items.toArray(new SyntaxNode[items.size()]);
+		return from;
+	}	
+	
+	private static Class<?>[] buildSignature(final SyntaxNode[] children) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
 	public static class Lexema {
 		private final int			displ;
 		private final int			row;
