@@ -515,7 +515,7 @@ public class Application extends JFrame implements NodeMetadataOwner, LocaleChan
 	@OnAction("action:/debugger")
 	public void debugger() {
 		if (this.debugger == null) {
-			this.debugger = new DebuggerPanel(xda, localizer, predef, (p)->{
+			this.debugger = new DebuggerPanel(xda, localizer, predef, scriptManipulator, (p)->{
 												SwingUtilities.invokeLater(()->{
 													getContentPane().remove(debugger);
 													debugger = null;

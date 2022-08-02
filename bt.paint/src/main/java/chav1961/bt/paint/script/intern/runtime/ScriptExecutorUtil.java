@@ -253,7 +253,7 @@ class ScriptExecutorUtil {
 					default:
 						throw new UnsupportedOperationException("Operator type ["+node.cargo+"] is not supported here"); 
 				}
-			case UNARY			:
+			case PREFIX			:
 				switch ((OperatorTypes)node.cargo) {
 					case ADD		:
 						return calc((SyntaxNode)node.cargo, names, predef, callback);

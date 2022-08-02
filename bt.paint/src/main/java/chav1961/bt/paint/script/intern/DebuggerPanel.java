@@ -10,6 +10,7 @@ import java.util.Locale;
 import java.util.concurrent.Exchanger;
 import java.util.function.Consumer;
 
+import javax.swing.JButton;
 import javax.swing.JEditorPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
@@ -25,7 +26,9 @@ import chav1961.purelib.i18n.interfaces.Localizer;
 import chav1961.purelib.i18n.interfaces.Localizer.LocaleChangeListener;
 import chav1961.purelib.model.interfaces.ContentMetadataInterface;
 import chav1961.purelib.ui.swing.SwingUtils;
+import chav1961.purelib.ui.swing.interfaces.FunctionalDocumentListener;
 import chav1961.purelib.ui.swing.interfaces.OnAction;
+import chav1961.purelib.ui.swing.useful.JFileContentManipulator;
 import chav1961.purelib.i18n.interfaces.LocalizerOwner;
 import chav1961.bt.paint.script.intern.parsers.ScriptParserUtil;
 import chav1961.bt.paint.script.intern.parsers.ScriptParserUtil.SyntaxNodeType;
@@ -36,6 +39,7 @@ public class DebuggerPanel extends JPanel implements LocaleChangeListener, Local
 	private final ContentMetadataInterface	xda;
 	private final Localizer					localizer;
 	private final Predefines				predef;
+	private final JFileContentManipulator	manipulator;
 	private final Consumer<DebuggerPanel>	onClose;	
 	private final JToolBar					toolBar;
 	private final JScriptPane				script = new JScriptPane();
@@ -43,7 +47,7 @@ public class DebuggerPanel extends JPanel implements LocaleChangeListener, Local
 	private Thread							executor = null;
 	private final Exchanger<Object>			ex = new Exchanger<>();
 
-	public DebuggerPanel(final ContentMetadataInterface xda, final Localizer localizer, final Predefines predef, final Consumer<DebuggerPanel> onClose) {
+	public DebuggerPanel(final ContentMetadataInterface xda, final Localizer localizer, final Predefines predef, final JFileContentManipulator manipulator, final Consumer<DebuggerPanel> onClose) {
 		if (xda == null) {
 			throw new NullPointerException("Content metadata can't be null"); 
 		}
@@ -53,6 +57,9 @@ public class DebuggerPanel extends JPanel implements LocaleChangeListener, Local
 		else if (predef == null) {
 			throw new NullPointerException("Predefines can't be null"); 
 		}
+		else if (manipulator == null) {
+			throw new NullPointerException("Content manipulator can't be null"); 
+		}
 		else if (onClose == null) {
 			throw new NullPointerException("Consumer can't be null"); 
 		}
@@ -60,6 +67,7 @@ public class DebuggerPanel extends JPanel implements LocaleChangeListener, Local
 			this.xda = xda;
 			this.localizer = localizer;
 			this.predef = predef;
+			this.manipulator = manipulator;
 			this.onClose = onClose;
 			this.toolBar = SwingUtils.toJComponent(xda.byUIPath(URI.create("ui:/model/navigation.top.debugBar")), JToolBar.class);
 			
@@ -67,6 +75,11 @@ public class DebuggerPanel extends JPanel implements LocaleChangeListener, Local
 			toolBar.setOrientation(JToolBar.HORIZONTAL);
 		    SwingUtils.assignActionListeners(toolBar, this);
 			console.setEditable(false);
+
+			script.getDocument().addDocumentListener((FunctionalDocumentListener)(t,e)->{
+				manipulator.setModificationFlag();
+				refreshSaveToolBarState();
+			});
 			
 			setLayout(new BorderLayout(5,5));
 	
@@ -74,8 +87,9 @@ public class DebuggerPanel extends JPanel implements LocaleChangeListener, Local
 			
 			add(toolBar, BorderLayout.NORTH);
 			add(split, BorderLayout.CENTER);
-			split.setDividerLocation(400);
-			setPreferredSize(new Dimension(500,200));
+			split.setDividerLocation(500);
+			setPreferredSize(new Dimension(550,200));
+			refreshToolBarState();
 		}
 	}
 	
@@ -85,25 +99,37 @@ public class DebuggerPanel extends JPanel implements LocaleChangeListener, Local
 	}
 
 	@Override
-	public void localeChanged(Locale oldLocale, Locale newLocale) throws LocalizationException {
-		// TODO Auto-generated method stub
+	public void localeChanged(final Locale oldLocale, final Locale newLocale) throws LocalizationException {
+		SwingUtils.refreshLocale(toolBar, oldLocale, newLocale);
 		fillLocalizedStrings();
 	}
 
 	@OnAction("action:/cleanScript")
     public void cleanScript() throws IOException {
+		if (manipulator.newFile()) {
+			manipulator.clearModificationFlag();
+		}
 	}	
 
 	@OnAction("action:/loadScript")
     public void loadScript() throws IOException {
+		if (manipulator.openFile()) {
+			manipulator.clearModificationFlag();
+		}
 	}	
 
 	@OnAction("action:/storeScript")
     public void storeScript() throws IOException {
+		if (manipulator.saveFile()) {
+			manipulator.clearModificationFlag();
+		}
 	}	
 	
 	@OnAction("action:/storeScriptAs")
     public void storeScriptAs() throws IOException {
+		if (manipulator.saveFileAs()) {
+			manipulator.clearModificationFlag();
+		}
 	}	
 
 	@OnAction("action:/startScript")
@@ -117,11 +143,12 @@ public class DebuggerPanel extends JPanel implements LocaleChangeListener, Local
 		executor = new Thread(()->executeScript(tree));
 		executor.setName("script-executor");
 		executor.setDaemon(true);
-		refreshTooltBarState();
+		refreshDebugTooltBarState();
 	}	
 
 	@OnAction("action:/pauseScript")
     public void pauseScript(final Hashtable<String,String[]> modes) throws IOException {
+		refreshDebugTooltBarState();
 	}	
 
 	@OnAction("action:/stopScript")
@@ -130,6 +157,7 @@ public class DebuggerPanel extends JPanel implements LocaleChangeListener, Local
 			executor.interrupt();
 			executor.join(1000);
 			executor = null;
+			refreshDebugTooltBarState();
 		}
 	}	
 
@@ -151,19 +179,42 @@ public class DebuggerPanel extends JPanel implements LocaleChangeListener, Local
 
 	@OnAction("action:/exitScript")
     public void exit() throws IOException {
-		onClose.accept(this);
+		if (manipulator.wasChanged()) {
+			if (manipulator.saveFile()) {
+				onClose.accept(this);
+			}
+		}
+		else {
+			onClose.accept(this);
+		}
 	}
 	
 	private void executeScript(final SyntaxNode<SyntaxNodeType, SyntaxNode<SyntaxNodeType, ?>> tree) {
 		// TODO:
 	}
 
-	private void refreshTooltBarState() {
-		// TODO Auto-generated method stub
+	private void refreshDebugTooltBarState() {
+		final boolean	processing = executor != null && executor.isAlive();
 		
+		((JButton)SwingUtils.findComponentByName(toolBar, "debug.execute.start")).setEnabled(!processing);
+		((JButton)SwingUtils.findComponentByName(toolBar, "debug.execute.pause")).setEnabled(processing);
+		((JButton)SwingUtils.findComponentByName(toolBar, "debug.execute.stop")).setEnabled(processing);
+		((JButton)SwingUtils.findComponentByName(toolBar, "debug.execute.step.next")).setEnabled(processing);
+		((JButton)SwingUtils.findComponentByName(toolBar, "debug.execute.step.into")).setEnabled(processing);
+		((JButton)SwingUtils.findComponentByName(toolBar, "debug.execute.step.out")).setEnabled(processing);
+		((JButton)SwingUtils.findComponentByName(toolBar, "debug.execute.step.run")).setEnabled(processing);
+	}	
+	
+	private void refreshSaveToolBarState() {
+		((JButton)SwingUtils.findComponentByName(toolBar, "debug.file.store")).setEnabled(manipulator.wasChanged());
+		((JButton)SwingUtils.findComponentByName(toolBar, "debug.file.storeAs")).setEnabled(manipulator.wasChanged());
 	}
 
+	private void refreshToolBarState() {
+		refreshSaveToolBarState();
+		refreshDebugTooltBarState();
+	}	
+	
 	private void fillLocalizedStrings() throws LocalizationException {
-		
 	}
 }

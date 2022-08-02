@@ -8,6 +8,7 @@ public enum LexTypes {
 	NAME,
 	PREDEFINED_VAR,
 	CONSTANT,
+	SUBSTITUTION,
 	OPERATOR,
 	OPEN,
 	CLOSE,

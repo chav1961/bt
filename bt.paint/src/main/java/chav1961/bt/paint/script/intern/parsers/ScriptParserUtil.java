@@ -5,9 +5,14 @@ import java.io.Reader;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
+import chav1961.bt.paint.script.interfaces.CanvasWrapper;
+import chav1961.bt.paint.script.interfaces.ClipboardWrapper;
+import chav1961.bt.paint.script.interfaces.SystemWrapper;
 import chav1961.bt.paint.script.intern.interfaces.LexTypes;
 import chav1961.purelib.basic.AndOrTree;
 import chav1961.purelib.basic.CharUtils;
@@ -70,7 +75,7 @@ public class ScriptParserUtil {
 		PROC
 	}
 	
-	private static enum DataTypes {
+	static enum DataTypes {
 		UNKNOWN,
 		INT,
 		REAL,
@@ -86,7 +91,7 @@ public class ScriptParserUtil {
 		IMAGE
 	}
 
-	private static enum CollectionType {
+	static enum CollectionType {
 		ORDINAL,
 		STRUCTURE,
 		ARRAY,
@@ -148,44 +153,57 @@ public class ScriptParserUtil {
 	}
 	
 	public static enum OperatorTypes {
-		INC(OperatorPriorities.UNARY),
-		DEC(OperatorPriorities.UNARY),
-		BIT_INV(OperatorPriorities.UNARY),
-		BIT_AND(OperatorPriorities.BIT_AND),
-		BIT_OR(OperatorPriorities.BIT_OR),
-		BIT_XOR(OperatorPriorities.BIT_OR),
-		MUL(OperatorPriorities.MULTIPLICATION),
-		DIV(OperatorPriorities.MULTIPLICATION),
-		MOD(OperatorPriorities.MULTIPLICATION),
-		ADD(OperatorPriorities.ADDITION),
-		SUB(OperatorPriorities.ADDITION),
-		GT(OperatorPriorities.COMPARISON),
-		GE(OperatorPriorities.COMPARISON),
-		LT(OperatorPriorities.COMPARISON),
-		LE(OperatorPriorities.COMPARISON),
-		EQ(OperatorPriorities.COMPARISON),
-		NE(OperatorPriorities.COMPARISON),
-		IN(OperatorPriorities.COMPARISON, true),
-		BOOL_NOT(OperatorPriorities.BOOL_NOT),
-		BOOL_AND(OperatorPriorities.BOOL_AND),
-		BOOL_OR(OperatorPriorities.BOOL_OR),
-		ASSIGNMENT(OperatorPriorities.ASSIGNMENT),
-		UNKNOWN(OperatorPriorities.UNKNOWN);
+		INC(OperatorPriorities.UNKNOWN, OperatorPriorities.UNARY, OperatorPriorities.TYPE),
+		DEC(OperatorPriorities.UNKNOWN, OperatorPriorities.UNARY, OperatorPriorities.TYPE),
+		BIT_INV(OperatorPriorities.UNKNOWN, OperatorPriorities.UNARY, OperatorPriorities.UNKNOWN),
+		BIT_AND(OperatorPriorities.BIT_AND, OperatorPriorities.UNARY, OperatorPriorities.UNKNOWN),
+		BIT_OR(OperatorPriorities.BIT_OR, OperatorPriorities.UNKNOWN, OperatorPriorities.UNKNOWN),
+		BIT_XOR(OperatorPriorities.BIT_OR, OperatorPriorities.UNKNOWN, OperatorPriorities.UNKNOWN),
+		MUL(OperatorPriorities.MULTIPLICATION, OperatorPriorities.UNKNOWN, OperatorPriorities.UNKNOWN),
+		DIV(OperatorPriorities.MULTIPLICATION, OperatorPriorities.UNKNOWN, OperatorPriorities.UNKNOWN),
+		MOD(OperatorPriorities.MULTIPLICATION, OperatorPriorities.UNKNOWN, OperatorPriorities.UNKNOWN),
+		ADD(OperatorPriorities.ADDITION, OperatorPriorities.UNARY, OperatorPriorities.UNKNOWN),
+		SUB(OperatorPriorities.ADDITION, OperatorPriorities.UNARY, OperatorPriorities.UNKNOWN),
+		GT(OperatorPriorities.COMPARISON, OperatorPriorities.UNKNOWN, OperatorPriorities.UNKNOWN),
+		GE(OperatorPriorities.COMPARISON, OperatorPriorities.UNKNOWN, OperatorPriorities.UNKNOWN),
+		LT(OperatorPriorities.COMPARISON, OperatorPriorities.UNKNOWN, OperatorPriorities.UNKNOWN),
+		LE(OperatorPriorities.COMPARISON, OperatorPriorities.UNKNOWN, OperatorPriorities.UNKNOWN),
+		EQ(OperatorPriorities.COMPARISON, OperatorPriorities.UNKNOWN, OperatorPriorities.UNKNOWN),
+		NE(OperatorPriorities.COMPARISON, OperatorPriorities.UNKNOWN, OperatorPriorities.UNKNOWN),
+		IN(OperatorPriorities.COMPARISON, OperatorPriorities.UNKNOWN, OperatorPriorities.UNKNOWN, true),
+		BOOL_NOT(OperatorPriorities.UNKNOWN, OperatorPriorities.BOOL_NOT, OperatorPriorities.UNKNOWN),
+		BOOL_AND(OperatorPriorities.BOOL_AND, OperatorPriorities.UNKNOWN, OperatorPriorities.UNKNOWN),
+		BOOL_OR(OperatorPriorities.BOOL_OR, OperatorPriorities.UNKNOWN, OperatorPriorities.UNKNOWN),
+		ASSIGNMENT(OperatorPriorities.ASSIGNMENT, OperatorPriorities.UNKNOWN, OperatorPriorities.UNKNOWN),
+		UNKNOWN(OperatorPriorities.UNKNOWN, OperatorPriorities.UNKNOWN, OperatorPriorities.UNKNOWN);
 		
-		private final OperatorPriorities	prty;
+		private final OperatorPriorities	infix;
+		private final OperatorPriorities	prefix;
+		private final OperatorPriorities	suffix;
 		private final boolean				listSupported;
 
-		private OperatorTypes(final OperatorPriorities prty) {
-			this(prty,false);
+		
+		private OperatorTypes(final OperatorPriorities infix, final OperatorPriorities prefix, final OperatorPriorities suffix) {
+			this(infix, prefix, suffix, false);
 		}
 		
-		private OperatorTypes(final OperatorPriorities prty, final boolean listSupported) {
-			this.prty = prty;
+		private OperatorTypes(final OperatorPriorities infix, final OperatorPriorities prefix, final OperatorPriorities suffix, final boolean listSupported) {
+			this.infix = infix;
+			this.prefix = prefix;
+			this.suffix = suffix;
 			this.listSupported = listSupported;
 		}
 		
-		public OperatorPriorities getPriority() {
-			return prty;
+		public OperatorPriorities getInfixPriority() {
+			return infix;
+		}
+
+		public OperatorPriorities getPrefixPriority() {
+			return prefix;
+		}
+
+		public OperatorPriorities getSuffixPriority() {
+			return suffix;
 		}
 		
 		public boolean isListSupported() {
@@ -226,10 +244,10 @@ public class ScriptParserUtil {
 		IN(LexTypes.OPERATOR, OperatorTypes.IN),
 		TRUE(LexTypes.CONSTANT, DataTypes.BOOL),
 		FALSE(LexTypes.CONSTANT, DataTypes.BOOL),
-		SYSTEM(LexTypes.PREDEFINED_VAR),
-		CLIPBOARD(LexTypes.PREDEFINED_VAR),
-		CANVAS(LexTypes.PREDEFINED_VAR),
-		ARGS(LexTypes.PREDEFINED_VAR),
+		SYSTEM(LexTypes.PREDEFINED_VAR, SystemWrapper.class),
+		CLIPBOARD(LexTypes.PREDEFINED_VAR, ClipboardWrapper.class),
+		CANVAS(LexTypes.PREDEFINED_VAR, CanvasWrapper.class),
+		ARGS(LexTypes.PREDEFINED_VAR, char[].class),
 		FUNC(LexTypes.PART),
 		PROC(LexTypes.PART),
 		FORWARD(LexTypes.OPTION),
@@ -238,23 +256,34 @@ public class ScriptParserUtil {
 		private final LexTypes		type;
 		private final DataTypes		dataType;
 		private final OperatorTypes	opType;
+		private final Class<?>		association;
 		
 		Keywords(final LexTypes type) {
 			this.type = type;
 			this.dataType = DataTypes.UNKNOWN;
 			this.opType = OperatorTypes.UNKNOWN;
+			this.association = null;
 		}
 
 		Keywords(final LexTypes type, final DataTypes dataType) {
 			this.type = type;
 			this.dataType = dataType;
 			this.opType = OperatorTypes.UNKNOWN;
+			this.association = null;
 		}
 
 		Keywords(final LexTypes type, final OperatorTypes opType) {
 			this.type = type;
 			this.dataType = DataTypes.UNKNOWN;
 			this.opType = opType;
+			this.association = null;
+		}
+
+		Keywords(final LexTypes type, final Class<?> association) {
+			this.type = type;
+			this.dataType = DataTypes.UNKNOWN;
+			this.opType = null;
+			this.association = association;
 		}
 		
 		public LexTypes getLexType() {
@@ -271,6 +300,7 @@ public class ScriptParserUtil {
 	}
 
 	public static enum SyntaxNodeType {
+		ROOT,
 		SEQUENCE,
 		IF,
 		WHILE, 
@@ -288,8 +318,10 @@ public class ScriptParserUtil {
 		LIST,
 		BINARY,
 		STRONG_BINARY,
-		UNARY,
+		PREFIX,
+		SUFFIX,
 		CONSTANT,
+		SUBSTITUTION,
 		ACCESS,
 		CALL
 	}
@@ -341,12 +373,11 @@ public class ScriptParserUtil {
 		
 		try(final LineByLineProcessor	lblp = new LineByLineProcessor((displacement, lineNo, data, from, length)->parseLine((int)displacement, lineNo, data, from, length, names, result, ignoreErrors))){
 			lblp.write(content);
-			lblp.flush();
-			result.add(new Lexema(0, 0, 0, LexTypes.EOF));
-			return result;
 		} catch (IOException e) {
 			throw new SyntaxException(0, 0, e.getLocalizedMessage(), e);
 		}
+		result.add(new Lexema(0, 0, 0, LexTypes.EOF));
+		return result;
 	}
 
 	private static <T> void parseLine(final int displacement, final int lineNo, final char[] data, int from, final int length, final SyntaxTreeInterface<T> names, final List<Lexema> result, final boolean ignoreErrors) throws SyntaxException {
@@ -355,72 +386,90 @@ public class ScriptParserUtil {
 		final long[]		forNumbers = new long[2];
 		final int			start = from;
 		
-		from--;
-		for (;;) {
-			from = CharUtils.skipBlank(data, from + 1, false);
+		while (from < data.length) {
+			from = CharUtils.skipBlank(data, from, true);
 			switch (data[from]) {
 				case '\n' : case '\r' :
 					return;
 				case '(' :
 					result.add(new Lexema(displacement, lineNo, from-start, LexTypes.OPEN));
+					from++;
 					break;
 				case ')' :
 					result.add(new Lexema(displacement, lineNo, from-start, LexTypes.CLOSE));
+					from++;
 					break;
 				case '[' :
 					result.add(new Lexema(displacement, lineNo, from-start, LexTypes.OPENB));
+					from++;
 					break;
 				case ']' :
 					result.add(new Lexema(displacement, lineNo, from-start, LexTypes.CLOSEB));
+					from++;
 					break;
 				case '{' :
 					result.add(new Lexema(displacement, lineNo, from-start, LexTypes.OPENF));
+					from++;
 					break;
 				case '}' :
 					result.add(new Lexema(displacement, lineNo, from-start, LexTypes.CLOSEF));
+					from++;
 					break;
 				case ',' :
 					result.add(new Lexema(displacement, lineNo, from-start, LexTypes.COMMA));
+					from++;
 					break;
 				case ';' :
 					result.add(new Lexema(displacement, lineNo, from-start, LexTypes.SEMICOLON));
+					from++;
 					break;
 				case '.' :
 					if (data[from + 1] == '.') {
 						result.add(new Lexema(displacement, lineNo, from-start, LexTypes.RANGE));
-						from++;
+						from += 2;
 					}
 					else {
 						result.add(new Lexema(displacement, lineNo, from-start, LexTypes.DOT));
+						from++;
 					}
 					break;
 				case ':' :
 					if (data[from + 1] == ':') {
 						result.add(new Lexema(displacement, lineNo, from-start, LexTypes.CAST));
-						from++;
+						from += 2;
 					}
 					else if (data[from + 1] == '=') {
 						result.add(new Lexema(displacement, lineNo, from-start, OperatorTypes.ASSIGNMENT));
-						from++;
+						from += 2;
 					}
 					else {
 						result.add(new Lexema(displacement, lineNo, from-start, LexTypes.COLON));
+						from++;
 					}
 					break;
 				case '~' :
 					result.add(new Lexema(displacement, lineNo, from-start, OperatorTypes.BIT_INV));
+					from++;
 					break;
 				case '^' :
 					result.add(new Lexema(displacement, lineNo, from-start, OperatorTypes.BIT_XOR));
+					from++;
+					break;
+				case '!' :
+					result.add(new Lexema(displacement, lineNo, from-start, OperatorTypes.BOOL_NOT));
+					from++;
 					break;
 				case '*' :
 					result.add(new Lexema(displacement, lineNo, from-start, OperatorTypes.MUL));
+					from++;
 					break;
 				case '%' :
 					result.add(new Lexema(displacement, lineNo, from-start, OperatorTypes.MOD));
+					from++;
 					break;
 				case '=' :
 					result.add(new Lexema(displacement, lineNo, from-start, OperatorTypes.EQ));
+					from++;
 					break;
 				case '/' :
 					if (data[from + 1] == '/') {
@@ -428,83 +477,112 @@ public class ScriptParserUtil {
 					}
 					else {
 						result.add(new Lexema(displacement, lineNo, from-start, OperatorTypes.DIV));
+						from++;
 					}
 					break;
 				case '+' :
 					if (data[from + 1] == '+') {
 						result.add(new Lexema(displacement, lineNo, from-start, OperatorTypes.INC));
-						from++;
+						from += 2;
 					}
 					else {
 						result.add(new Lexema(displacement, lineNo, from-start, OperatorTypes.ADD));
+						from++;
 					}
 					break;
 				case '-' :
-					if (data[from + 1] == '|') {
+					if (data[from + 1] == '-') {
 						result.add(new Lexema(displacement, lineNo, from-start, OperatorTypes.DEC));
-						from++;
+						from += 2;
 					}
 					else {
 						result.add(new Lexema(displacement, lineNo, from-start, OperatorTypes.SUB));
+						from++;
 					}
 					break;
 				case '&' :
 					if (data[from + 1] == '&') {
 						result.add(new Lexema(displacement, lineNo, from-start, OperatorTypes.BOOL_AND));
-						from++;
+						from += 2;
 					}
 					else {
 						result.add(new Lexema(displacement, lineNo, from-start, OperatorTypes.BIT_AND));
+						from++;
 					}
 					break;
 				case '|' :
 					if (data[from + 1] == '|') {
 						result.add(new Lexema(displacement, lineNo, from-start, OperatorTypes.BOOL_OR));
-						from++;
+						from += 2;
 					}
 					else {
 						result.add(new Lexema(displacement, lineNo, from-start, OperatorTypes.BIT_OR));
+						from++;
 					}
 					break;
 				case '>' :
 					if (data[from + 1] == '=') {
 						result.add(new Lexema(displacement, lineNo, from-start, OperatorTypes.GE));
-						from++;
+						from += 2;
 					}
 					else {
 						result.add(new Lexema(displacement, lineNo, from-start, OperatorTypes.GT));
+						from++;
 					}
 					break;
 				case '<' :
 					if (data[from + 1] == '=') {
 						result.add(new Lexema(displacement, lineNo, from-start, OperatorTypes.LE));
-						from++;
+						from += 2;
 					}
 					else if (data[from + 1] == '>') {
 						result.add(new Lexema(displacement, lineNo, from-start, OperatorTypes.NE));
-						from++;
+						from += 2;
 					}
 					else {
 						result.add(new Lexema(displacement, lineNo, from-start, OperatorTypes.LT));
+						from++;
 					}
 					break;
 				case '\"' :
-					from = CharUtils.parseStringExtended(data, from, '\"', sb);
-					if (data[from] != '\"') {
+					try{from = CharUtils.parseStringExtended(data, from + 1, '\"', sb);
+						result.add(new Lexema(displacement, lineNo, from-start, sb.toString().toCharArray()));
+						sb.setLength(0);
+					} catch (IllegalArgumentException exc) {
 						if (ignoreErrors) {
 							result.add(new Lexema(displacement, lineNo, from-start, LexTypes.ERROR));
+							from++;
 						}
 						else {
 							throw new SyntaxException(lineNo, from-start, "Unterminated string");
 						}
 					}
-					else {
-						result.add(new Lexema(displacement, lineNo, from-start, sb.toString().toCharArray()));
+					break;
+				case '`' :
+					try{from = CharUtils.parseStringExtended(data, from + 1, '`', sb);
+						result.add(new Lexema(displacement, lineNo, from-start, LexTypes.SUBSTITUTION, sb.toString().toCharArray()));
 						sb.setLength(0);
+					} catch (IllegalArgumentException exc) {
+						if (ignoreErrors) {
+							result.add(new Lexema(displacement, lineNo, from-start, LexTypes.ERROR));
+							from++;
+						}
+						else {
+							throw new SyntaxException(lineNo, from-start, "Unterminated string");
+						}
 					}
 					break;
 				case '0' : case '1' : case '2' : case '3' : case '4' : case '5' : case '6' : case '7' : case '8' : case '9' :
-					from = CharUtils.parseNumber(data, from, forNumbers, CharUtils.PREF_ANY, true);
+					final int	beforeDigit = from;
+					
+					from = CharUtils.parseNumber(data, from, forNumbers, CharUtils.PREF_LONG, true);
+					if (!(data[from] == '.' && data[from + 1] == '.')) {	// Can be range!
+						from = CharUtils.parseNumber(data, beforeDigit, forNumbers, CharUtils.PREF_ANY, true);
+					}
+					else {
+						forNumbers[1] = CharUtils.PREF_LONG;
+					}
+					
 					switch ((int)forNumbers[1]) {
 						case CharUtils.PREF_INT : case CharUtils.PREF_LONG :
 							result.add(new Lexema(displacement, lineNo, from-start, forNumbers[0]));
@@ -520,7 +598,7 @@ public class ScriptParserUtil {
 				default :
 					if (Character.isJavaIdentifierStart(data[from])) {
 						from = CharUtils.parseName(data, from, forNames);
-						final long	id = KEYWORDS.seekName(data, forNames[0], forNames[1]);
+						final long	id = KEYWORDS.seekName(data, forNames[0], forNames[1] + 1);
 						
 						if (id >= 0) {
 							final Keywords	kw = KEYWORDS.getCargo(id);
@@ -535,12 +613,20 @@ public class ScriptParserUtil {
 							}
 						}
 						else {
-							result.add(new Lexema(displacement, lineNo, forNames[0]-start, LexTypes.NAME, names.placeName(data, forNames[0], forNames[1], null)));
+							final long	nameId = names.seekName(data, forNames[0], forNames[1] + 1);
+							
+							if (nameId < 0) {
+								result.add(new Lexema(displacement, lineNo, forNames[0]-start, LexTypes.NAME, names.placeName(data, forNames[0], forNames[1] + 1, null)));
+							}
+							else {
+								result.add(new Lexema(displacement, lineNo, forNames[0]-start, LexTypes.NAME, nameId));
+							}
 						}
 					}
 					else {
 						if (ignoreErrors) {
 							result.add(new Lexema(displacement, lineNo, from-start, LexTypes.ERROR));
+							from++;
 						}
 						else {
 							throw new SyntaxException(lineNo, from-start, "Unknown lexema");
@@ -555,7 +641,7 @@ public class ScriptParserUtil {
 		return null;
 	} 
 
-	private static int buildSyntaxTree(final Lexema[] data, int from, final SyntaxTreeInterface<EntityDescriptor> names, final SyntaxNode<SyntaxNodeType,SyntaxNode<SyntaxNodeType,?>> root) throws SyntaxException {
+	static int buildSyntaxTree(final Lexema[] data, int from, final SyntaxTreeInterface<EntityDescriptor> names, final SyntaxNode<SyntaxNodeType,SyntaxNode<SyntaxNodeType,?>> root) throws SyntaxException {
 loop:	for (;;) {
 			switch (data[from].getType()) {
 				case EOF 	:
@@ -640,11 +726,13 @@ loop:	for (;;) {
 		return from;
 	}
 
-	private static int buildDeclarations(final Lexema[] data, int from, final SyntaxTreeInterface<EntityDescriptor> names, final SyntaxNode<SyntaxNodeType, SyntaxNode<SyntaxNodeType, ?>> root) throws SyntaxException {
+	static int buildDeclarations(final Lexema[] data, int from, final SyntaxTreeInterface<EntityDescriptor> names, final SyntaxNode<SyntaxNodeType, SyntaxNode<SyntaxNodeType, ?>> root) throws SyntaxException {
 		while (data[from].getType() == LexTypes.NAME) {
 			final long				nameId = data[from].getLongAssociated();
 			final DataTypes			nameType;
 			final CollectionType	nameCollection;
+			final int				nameLex = from;
+			SyntaxNode				initials = null;
 			
 			if (data[from+1].getType() == LexTypes.COLON) {
 				if (data[from+2].getType() == LexTypes.TYPE) {
@@ -712,20 +800,25 @@ loop:	for (;;) {
 			else {
 				throw new SyntaxException(data[from+1].getRow(), data[from+1].getCol(), "Missing ':'");
 			}
-			if (data[from].getType() == LexTypes.COMMA) {
-				from++;
+			if (data[from].getType() == LexTypes.OPERATOR && data[from].opType == OperatorTypes.ASSIGNMENT) {
+				initials = (SyntaxNode) root.clone();
+				
+				from = buildExpression(data, from + 1, names, initials);
 			}
 			if (names.getCargo(nameId) == null) {
-				names.setCargo(nameId, new EntityDescriptor(nameId, nameCollection, nameType));
+				names.setCargo(nameId, new EntityDescriptor(nameId, nameCollection, nameType, initials));
 			}
 			else {
-				throw new SyntaxException(data[from+1].getRow(), data[from+1].getCol(), "Name already declared earlier");
+				throw new SyntaxException(data[nameLex].getRow(), data[nameLex].getCol(), "Name already declared earlier");
+			}
+			if (data[from].getType() == LexTypes.COMMA) {
+				from++;
 			}
 		}
 		return from;
 	}
 
-	private static int buildStatement(final Lexema[] data, int from, final SyntaxTreeInterface<EntityDescriptor> names, final SyntaxNode<SyntaxNodeType, SyntaxNode<SyntaxNodeType, ?>> root) throws SyntaxException {
+	static int buildStatement(final Lexema[] data, int from, final SyntaxTreeInterface<EntityDescriptor> names, final SyntaxNode<SyntaxNodeType, SyntaxNode<SyntaxNodeType, ?>> root) throws SyntaxException {
 		// TODO Auto-generated method stub
 		root.row = data[from].getRow();
 		root.col = data[from].getCol();
@@ -985,15 +1078,16 @@ loop:	for (;;) {
 		return from+1;
 	}
 
-	private static int buildListExpression(final Lexema[] data, int from, final SyntaxTreeInterface<EntityDescriptor> names, final SyntaxNode<SyntaxNodeType, SyntaxNode<SyntaxNodeType, ?>> root) throws SyntaxException {
+	static int buildListExpression(final Lexema[] data, int from, final SyntaxTreeInterface<EntityDescriptor> names, final SyntaxNode<SyntaxNodeType, SyntaxNode<SyntaxNodeType, ?>> root) throws SyntaxException {
 		final List<SyntaxNode<SyntaxNodeType, SyntaxNode<SyntaxNodeType, ?>>> list = new ArrayList<>();
 		
-		from--;
 		root.row = data[from].getRow();
 		root.col = data[from].getCol();
-		do {final SyntaxNode<SyntaxNodeType, SyntaxNode<SyntaxNodeType, ?>>	expr = (SyntaxNode<SyntaxNodeType, SyntaxNode<SyntaxNodeType, ?>>) root.clone();
+		from--;
 		
-			from = buildExpression(data, from+1, names, expr);
+		do {final SyntaxNode<SyntaxNodeType, SyntaxNode<SyntaxNodeType, ?>>	expr = (SyntaxNode<SyntaxNodeType, SyntaxNode<SyntaxNodeType, ?>>) root.clone();
+			
+			from = buildExpression(data, from + 1, names, expr);
 			if (data[from].getType() == LexTypes.RANGE) {
 				final SyntaxNode<SyntaxNodeType, SyntaxNode<SyntaxNodeType, ?>>		rangeExpr = (SyntaxNode<SyntaxNodeType, SyntaxNode<SyntaxNodeType, ?>>) root.clone();
 				final SyntaxNode<SyntaxNodeType, SyntaxNode<SyntaxNodeType, ?>>		nextExpr = (SyntaxNode<SyntaxNodeType, SyntaxNode<SyntaxNodeType, ?>>) root.clone();
@@ -1008,12 +1102,22 @@ loop:	for (;;) {
 			}
 		} while(data[from].getType() == LexTypes.COMMA);
 		
-		root.type = SyntaxNodeType.LIST;
-		root.children = list.toArray(new SyntaxNode[list.size()]);
+		if (list.size() == 1) {
+			final SyntaxNode<SyntaxNodeType, SyntaxNode<SyntaxNodeType, ?>>	content = list.get(0);
+			
+			root.type = content.type;
+			root.value = content.value;
+			root.cargo = content.cargo;
+			root.children = content.children;
+		}
+		else {
+			root.type = SyntaxNodeType.LIST;
+			root.children = list.toArray(new SyntaxNode[list.size()]);
+		}
 		return from;
 	}
 
-	private static int buildExpression(final Lexema[] data, int from, final SyntaxTreeInterface<EntityDescriptor> names, final SyntaxNode<SyntaxNodeType, SyntaxNode<SyntaxNodeType, ?>> root) throws SyntaxException {
+	static int buildExpression(final Lexema[] data, int from, final SyntaxTreeInterface<EntityDescriptor> names, final SyntaxNode<SyntaxNodeType, SyntaxNode<SyntaxNodeType, ?>> root) throws SyntaxException {
 		return buildExpression(OperatorPriorities.BOOL_OR, data, from, names, root);
 	}
 
@@ -1024,7 +1128,7 @@ loop:	for (;;) {
 		switch (prty.getLevelType()) {
 			case BINARY		:
 				from = buildExpression(prty.prev(), data, from, names, root);
-				if (data[from].getType() == LexTypes.OPERATOR && data[from].getOperatorType().getPriority() == prty) {
+				if (data[from].getType() == LexTypes.OPERATOR && data[from].getOperatorType().getInfixPriority() == prty) {
 					final List<SyntaxNode<SyntaxNodeType, SyntaxNode<SyntaxNodeType, ?>>>	args = new ArrayList<>();
 					final List<OperatorTypes>	ops = new ArrayList<>();
 					
@@ -1032,9 +1136,9 @@ loop:	for (;;) {
 					do {final SyntaxNode<SyntaxNodeType, SyntaxNode<SyntaxNodeType, ?>>		expr = (SyntaxNode<SyntaxNodeType, SyntaxNode<SyntaxNodeType, ?>>) root.clone();
 						
 						ops.add(data[from].getOperatorType());
-						from = buildExpression(prty.prev(), data, from, names, expr);
+						from = buildExpression(prty.prev(), data, from + 1, names, expr);
 						args.add(expr);
-					} while (data[from].getType() == LexTypes.OPERATOR && data[from].getOperatorType().getPriority() == prty);
+					} while (data[from].getType() == LexTypes.OPERATOR && data[from].getOperatorType().getInfixPriority() == prty);
 					root.type = SyntaxNodeType.BINARY; 
 					root.cargo = ops.toArray(new OperatorTypes[ops.size()]);
 					root.children = args.toArray(new SyntaxNode[args.size()]);
@@ -1044,12 +1148,12 @@ loop:	for (;;) {
 				from = buildTerminal(data, from, names, root);
 				break;
 			case PREFIX		:
-				if (data[from].getType() == LexTypes.OPERATOR && data[from].getOperatorType().getPriority() == prty) {
+				if (data[from].getType() == LexTypes.OPERATOR && data[from].getOperatorType().getPrefixPriority() == prty) {
 					final SyntaxNode<SyntaxNodeType, SyntaxNode<SyntaxNodeType, ?>>		expr = (SyntaxNode<SyntaxNodeType, SyntaxNode<SyntaxNodeType, ?>>) root.clone();
 					final OperatorTypes	op = data[from].getOperatorType();
 					
 					from = buildExpression(prty.prev(), data, from + 1, names, expr);
-					root.type = SyntaxNodeType.UNARY;
+					root.type = SyntaxNodeType.PREFIX;
 					root.cargo = op;
 					root.children = new SyntaxNode[] {expr};
 				}
@@ -1059,27 +1163,28 @@ loop:	for (;;) {
 				break;
 			case STRONG_BINARY	:
 				from = buildExpression(prty.prev(), data, from, names, root);
-				if (data[from].getType() == LexTypes.OPERATOR && data[from].getOperatorType().getPriority() == prty) {
-					final SyntaxNode<SyntaxNodeType, SyntaxNode<SyntaxNodeType, ?>>		leftExpr = (SyntaxNode<SyntaxNodeType, SyntaxNode<SyntaxNodeType, ?>>) root.clone();
-					final SyntaxNode<SyntaxNodeType, SyntaxNode<SyntaxNodeType, ?>>		rightExpr = (SyntaxNode<SyntaxNodeType, SyntaxNode<SyntaxNodeType, ?>>) root.clone();
+				if (data[from].getType() == LexTypes.OPERATOR && data[from].getOperatorType().getInfixPriority() == prty) {
+					final SyntaxNode<SyntaxNodeType, SyntaxNode<SyntaxNodeType, ?>>	leftExpr = (SyntaxNode<SyntaxNodeType, SyntaxNode<SyntaxNodeType, ?>>) root.clone();
+					final SyntaxNode<SyntaxNodeType, SyntaxNode<SyntaxNodeType, ?>>	rightExpr = (SyntaxNode<SyntaxNodeType, SyntaxNode<SyntaxNodeType, ?>>) root.clone();
+					final OperatorTypes												opType = data[from].getOperatorType(); 
 
 					if (data[from].getOperatorType().isListSupported()) {
 						from = buildListExpression(data, from + 1, names, rightExpr);
 					}
 					else {
-						from = buildExpression(prty.prev(), data, from, names, rightExpr);
+						from = buildExpression(prty.prev(), data, from + 1, names, rightExpr);
 					}
 					root.type = SyntaxNodeType.STRONG_BINARY;
-					root.cargo = data[from].getOperatorType();
+					root.cargo = opType;
 					root.children = new SyntaxNode[] {leftExpr, rightExpr};
 				}
 				break;
 			case SUFFIX		:
 				from = buildExpression(prty.prev(), data, from, names, root);
-				if (data[from].getType() == LexTypes.OPERATOR && data[from].getOperatorType().getPriority() == prty) {
+				if (data[from].getType() == LexTypes.OPERATOR && data[from].getOperatorType().getSuffixPriority() == prty) {
 					final SyntaxNode<SyntaxNodeType, SyntaxNode<SyntaxNodeType, ?>>		expr = (SyntaxNode<SyntaxNodeType, SyntaxNode<SyntaxNodeType, ?>>) root.clone();
 					
-					root.type = SyntaxNodeType.UNARY;
+					root.type = SyntaxNodeType.SUFFIX;
 					root.cargo = data[from].getOperatorType();
 					root.children = new SyntaxNode[] {expr};
 					from++;
@@ -1123,6 +1228,11 @@ loop:	for (;;) {
 				root.cargo = data[from];
 				from++;
 				break;
+			case SUBSTITUTION:
+				root.type = SyntaxNodeType.SUBSTITUTION;
+				root.cargo = data[from];
+				from++;
+				break;
 			default :
 				throw new SyntaxException(data[from].getRow(), data[from].getCol(), "Missing terminal");
 		}
@@ -1156,6 +1266,18 @@ loop:	for (;;) {
 			this.associatedObject = null;
 		}
 
+		Lexema(final int displ, final int row, final int col, final LexTypes type, final char[] associatedObject) {
+			this.displ = displ;
+			this.row = row;
+			this.col = col;
+			this.type = type;
+			this.opType = null;
+			this.dataType = null;
+			this.kw = null;
+			this.associatedLong = 0;
+			this.associatedObject = associatedObject;
+		}
+		
 		Lexema(final int displ, final int row, final int col, final OperatorTypes opType) {
 			this.displ = displ;
 			this.row = row;
@@ -1177,7 +1299,7 @@ loop:	for (;;) {
 			this.dataType = DataTypes.STR;
 			this.kw = null;
 			this.associatedLong = 0;
-			this.associatedObject = null;
+			this.associatedObject = content;
 		}
 
 		Lexema(final int displ, final int row, final int col, final long content) {
@@ -1221,8 +1343,8 @@ loop:	for (;;) {
 			this.row = row;
 			this.col = col;
 			this.type = kw.getLexType();
-			this.opType = null;
-			this.dataType = null;
+			this.opType = kw.opType;
+			this.dataType = kw.dataType;
 			this.kw = kw;
 			this.associatedLong = 0;
 			this.associatedObject = null;
@@ -1275,27 +1397,40 @@ loop:	for (;;) {
 		public <T> T getObjectAssociated(final Class<T> awaited) {
 			return awaited.cast(associatedObject);
 		}
+
+		@Override
+		public String toString() {
+			return "Lexema [row=" + row + ", col=" + col + ", type=" + type + ", opType=" + opType + ", dataType="
+					+ dataType + ", kw=" + kw + ", associatedLong=" + associatedLong + ", associatedObject="
+					+ associatedObject + "]";
+		}
 	}
 	
-	private static class EntityDescriptor {
+	static class EntityDescriptor {
 		final EntityType			type;
 		final long					id;
 		final CollectionType		collType;
 		final DataTypes				dataType;
 		final EntityDescriptor[]	parameters;
 		final EntityDescriptor		returns;
+		final SyntaxNode			initials;
 
 		public EntityDescriptor(long id, CollectionType collType, DataTypes dataType) {
-			this(EntityType.VAR, id, collType, dataType, null, null);
+			this(EntityType.VAR, id, collType, dataType, null, null, null);
+		}
+
+		public EntityDescriptor(long id, CollectionType collType, DataTypes dataType, SyntaxNode initials) {
+			this(EntityType.VAR, id, collType, dataType, null, null, initials);
 		}
 		
-		private EntityDescriptor(EntityType type, long id, CollectionType collType, DataTypes dataType, EntityDescriptor[] parameters, EntityDescriptor returns) {
+		private EntityDescriptor(EntityType type, long id, CollectionType collType, DataTypes dataType, EntityDescriptor[] parameters, EntityDescriptor returns, final SyntaxNode initials) {
 			this.type = type;
 			this.id = id;
 			this.collType = collType;
 			this.dataType = dataType;
 			this.parameters = parameters;
 			this.returns = returns;
+			this.initials = initials;					
 		}
 
 		@Override
