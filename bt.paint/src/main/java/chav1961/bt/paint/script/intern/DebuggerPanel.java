@@ -15,6 +15,7 @@ import javax.swing.JEditorPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JSplitPane;
+import javax.swing.JToggleButton;
 import javax.swing.JToolBar;
 
 import chav1961.bt.paint.control.Predefines;
@@ -195,9 +196,9 @@ public class DebuggerPanel extends JPanel implements LocaleChangeListener, Local
 
 	private void refreshDebugTooltBarState() {
 		final boolean	processing = executor != null && executor.isAlive();
-		
+
 		((JButton)SwingUtils.findComponentByName(toolBar, "debug.execute.start")).setEnabled(!processing);
-		((JButton)SwingUtils.findComponentByName(toolBar, "debug.execute.pause")).setEnabled(processing);
+		((JToggleButton)SwingUtils.findComponentByName(toolBar, "debug.execute.pause")).setEnabled(processing);
 		((JButton)SwingUtils.findComponentByName(toolBar, "debug.execute.stop")).setEnabled(processing);
 		((JButton)SwingUtils.findComponentByName(toolBar, "debug.execute.step.next")).setEnabled(processing);
 		((JButton)SwingUtils.findComponentByName(toolBar, "debug.execute.step.into")).setEnabled(processing);

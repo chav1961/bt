@@ -396,13 +396,17 @@ public class ScriptParserUtil {
 	
 	public static <T> List<Lexema> parseLex(final Reader content, final SyntaxTreeInterface<T> names, final boolean ignoreErrors) throws SyntaxException {
 		final List<Lexema>	result = new ArrayList<>();
+		final int[]			lastParameters = new int[2]; 
 		
-		try(final LineByLineProcessor	lblp = new LineByLineProcessor((displacement, lineNo, data, from, length)->parseLine((int)displacement, lineNo, data, from, length, names, result, ignoreErrors))){
+		try(final LineByLineProcessor	lblp = new LineByLineProcessor((displacement, lineNo, data, from, length)->{
+												lastParameters[0] = (int)displacement + length;
+												lastParameters[1] = lineNo;
+												parseLine((int)displacement, lineNo, data, from, length, names, result, ignoreErrors);})){
 			lblp.write(content);
 		} catch (IOException e) {
 			throw new SyntaxException(0, 0, e.getLocalizedMessage(), e);
 		}
-		result.add(new Lexema(0, 0, 0, LexTypes.EOF));
+		result.add(new Lexema(lastParameters[0], lastParameters[1], 0, LexTypes.EOF));
 		return result;
 	}
 
@@ -571,8 +575,10 @@ public class ScriptParserUtil {
 					}
 					break;
 				case '\"' :
-					try{from = CharUtils.parseStringExtended(data, from + 1, '\"', sb);
-						result.add(new Lexema(displacement, lineNo, from-start, sb.toString().toCharArray()));
+					try{final int	beforeConst = from;
+						
+						from = CharUtils.parseStringExtended(data, from + 1, '\"', sb);
+						result.add(new Lexema(displacement, lineNo, beforeConst-start, sb.toString().toCharArray()));
 						sb.setLength(0);
 					} catch (IllegalArgumentException exc) {
 						if (ignoreErrors) {
@@ -585,8 +591,10 @@ public class ScriptParserUtil {
 					}
 					break;
 				case '`' :
-					try{from = CharUtils.parseStringExtended(data, from + 1, '`', sb);
-						result.add(new Lexema(displacement, lineNo, from-start, LexTypes.SUBSTITUTION, sb.toString().toCharArray()));
+					try{final int	beforeSubst = from;
+					
+						from = CharUtils.parseStringExtended(data, from + 1, '`', sb);
+						result.add(new Lexema(displacement, lineNo, beforeSubst-start, LexTypes.SUBSTITUTION, sb.toString().toCharArray()));
 						sb.setLength(0);
 					} catch (IllegalArgumentException exc) {
 						if (ignoreErrors) {
@@ -611,18 +619,20 @@ public class ScriptParserUtil {
 					
 					switch ((int)forNumbers[1]) {
 						case CharUtils.PREF_INT : case CharUtils.PREF_LONG :
-							result.add(new Lexema(displacement, lineNo, from-start, forNumbers[0]));
+							result.add(new Lexema(displacement, lineNo, beforeDigit-start, forNumbers[0]));
 							break;
 						case CharUtils.PREF_FLOAT	: 
-							result.add(new Lexema(displacement, lineNo, from-start, Float.intBitsToFloat((int)forNumbers[0])));
+							result.add(new Lexema(displacement, lineNo, beforeDigit-start, Float.intBitsToFloat((int)forNumbers[0])));
 							break;
 						case CharUtils.PREF_DOUBLE 	:
-							result.add(new Lexema(displacement, lineNo, from-start, Double.longBitsToDouble(forNumbers[0])));
+							result.add(new Lexema(displacement, lineNo, beforeDigit-start, Double.longBitsToDouble(forNumbers[0])));
 							break;
 					}
 					break;
 				default :
 					if (Character.isJavaIdentifierStart(data[from])) {
+						final int	beforeName = from;
+						
 						from = CharUtils.parseName(data, from, forNames);
 						final long	id = KEYWORDS.seekName(data, forNames[0], forNames[1] + 1);
 						
@@ -631,10 +641,10 @@ public class ScriptParserUtil {
 							
 							switch (kw.type) {
 								case CONSTANT	:
-									result.add(new Lexema(displacement, lineNo, forNames[0]-start, kw == Keywords.TRUE));
+									result.add(new Lexema(displacement, lineNo, beforeName-start, kw == Keywords.TRUE));
 									break;
 								default :
-									result.add(new Lexema(displacement, lineNo, forNames[0]-start, kw));
+									result.add(new Lexema(displacement, lineNo, beforeName-start, kw));
 									break;
 							}
 						}
@@ -642,10 +652,10 @@ public class ScriptParserUtil {
 							final long	nameId = names.seekName(data, forNames[0], forNames[1] + 1);
 							
 							if (nameId < 0) {
-								result.add(new Lexema(displacement, lineNo, forNames[0]-start, LexTypes.NAME, names.placeName(data, forNames[0], forNames[1] + 1, null)));
+								result.add(new Lexema(displacement, lineNo, beforeName-start, LexTypes.NAME, names.placeName(data, forNames[0], forNames[1] + 1, null)));
 							}
 							else {
-								result.add(new Lexema(displacement, lineNo, forNames[0]-start, LexTypes.NAME, nameId));
+								result.add(new Lexema(displacement, lineNo, beforeName-start, LexTypes.NAME, nameId));
 							}
 						}
 					}
