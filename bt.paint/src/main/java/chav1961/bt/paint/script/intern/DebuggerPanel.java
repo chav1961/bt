@@ -19,8 +19,10 @@ import javax.swing.JToggleButton;
 import javax.swing.JToolBar;
 
 import chav1961.bt.paint.control.Predefines;
+import chav1961.bt.paint.interfaces.PaintScriptException;
 import chav1961.purelib.basic.AndOrTree;
 import chav1961.purelib.basic.exceptions.LocalizationException;
+import chav1961.purelib.basic.exceptions.SyntaxException;
 import chav1961.purelib.basic.interfaces.SyntaxTreeInterface;
 import chav1961.purelib.cdb.SyntaxNode;
 import chav1961.purelib.i18n.interfaces.Localizer;
@@ -31,8 +33,10 @@ import chav1961.purelib.ui.swing.interfaces.FunctionalDocumentListener;
 import chav1961.purelib.ui.swing.interfaces.OnAction;
 import chav1961.purelib.ui.swing.useful.JFileContentManipulator;
 import chav1961.purelib.i18n.interfaces.LocalizerOwner;
+import chav1961.bt.paint.script.intern.interfaces.ExecuteScriptCallback;
 import chav1961.bt.paint.script.intern.parsers.ScriptParserUtil;
 import chav1961.bt.paint.script.intern.parsers.ScriptParserUtil.SyntaxNodeType;
+import chav1961.bt.paint.script.intern.runtime.ScriptExecutorUtil;
 
 public class DebuggerPanel extends JPanel implements LocaleChangeListener, LocalizerOwner {
 	private static final long serialVersionUID = 1L;
@@ -47,6 +51,7 @@ public class DebuggerPanel extends JPanel implements LocaleChangeListener, Local
 	private final JEditorPane				console = new JEditorPane();
 	private Thread							executor = null;
 	private final Exchanger<Object>			ex = new Exchanger<>();
+	private final DebuggerCallback			dc = new DebuggerCallback((o)->processDebug());
 
 	public DebuggerPanel(final ContentMetadataInterface xda, final Localizer localizer, final Predefines predef, final JFileContentManipulator manipulator, final Consumer<DebuggerPanel> onClose) {
 		if (xda == null) {
@@ -135,25 +140,42 @@ public class DebuggerPanel extends JPanel implements LocaleChangeListener, Local
 
 	@OnAction("action:/startScript")
     public void startScript() throws IOException {
-		final SyntaxTreeInterface<Object>	names = new AndOrTree<>();		
-		final SyntaxNode<SyntaxNodeType, SyntaxNode<SyntaxNodeType, ?>>	tree = ScriptParserUtil.parseScript(new StringReader(script.getText()), names);
-		
-		if (executor != null) {
-			executor.interrupt();
+		try{final SyntaxTreeInterface	names = new AndOrTree<>();		
+			final SyntaxNode<SyntaxNodeType, SyntaxNode<SyntaxNodeType, ?>>	tree = ScriptParserUtil.parseScript(new StringReader(script.getText()), names);
+			
+			if (executor != null) {
+				executor.interrupt();
+			}
+			executor = new Thread(()->{
+				try{executeScript(tree, dc);
+				} catch (PaintScriptException | InterruptedException e) {
+					e.printStackTrace();
+				}
+			});
+			executor.setName("script-executor");
+			executor.setDaemon(true);
+			refreshDebugTooltBarState();
+			dc.start();
+			executor.start();
+		} catch (SyntaxException exc) {
+			throw new IOException(exc);
 		}
-		executor = new Thread(()->executeScript(tree));
-		executor.setName("script-executor");
-		executor.setDaemon(true);
-		refreshDebugTooltBarState();
 	}	
 
 	@OnAction("action:/pauseScript")
     public void pauseScript(final Hashtable<String,String[]> modes) throws IOException {
+		if (!dc.isSuspended()) {
+			dc.suspend();
+		}
+		else {
+			dc.resume();
+		}
 		refreshDebugTooltBarState();
 	}	
 
 	@OnAction("action:/stopScript")
     public void stopScript() throws IOException, InterruptedException {
+		dc.stop();
 		if (executor != null) {
 			executor.interrupt();
 			executor.join(1000);
@@ -164,36 +186,40 @@ public class DebuggerPanel extends JPanel implements LocaleChangeListener, Local
 
 	@OnAction("action:/nextStep")
     public void nextStep() throws IOException {
+		dc.setModeAndGo(DebuggerCallback.MODE_NEXT);
 	}	
 
 	@OnAction("action:/intoStep")
     public void intoStep() throws IOException {
+		dc.setModeAndGo(DebuggerCallback.MODE_INTO);
 	}	
 
 	@OnAction("action:/outStep")
     public void outStep() throws IOException {
+		dc.setModeAndGo(DebuggerCallback.MODE_OUT);
 	}	
 	
-	@OnAction("action:/outStep")
+	@OnAction("action:/runStep")
     public void runStep() throws IOException {
+		dc.setModeAndGo(DebuggerCallback.MODE_RUN);
 	}
 
 	@OnAction("action:/exitScript")
     public void exit() throws IOException {
 		if (manipulator.wasChanged()) {
-			if (manipulator.saveFile()) {
-				onClose.accept(this);
-			}
+			manipulator.saveFile();
 		}
-		else {
-			onClose.accept(this);
-		}
+		onClose.accept(this);
 	}
 	
-	private void executeScript(final SyntaxNode<SyntaxNodeType, SyntaxNode<SyntaxNodeType, ?>> tree) {
-		// TODO:
+	private void executeScript(final SyntaxNode<SyntaxNodeType, SyntaxNode<SyntaxNodeType, ?>> tree, final ExecuteScriptCallback callback) throws PaintScriptException, InterruptedException {
+		ScriptExecutorUtil.execute(tree, null, predef, 0, 0, callback);
 	}
 
+	private void processDebug() {
+		// TODO Auto-generated method stub
+	}
+	
 	private void refreshDebugTooltBarState() {
 		final boolean	processing = executor != null && executor.isAlive();
 

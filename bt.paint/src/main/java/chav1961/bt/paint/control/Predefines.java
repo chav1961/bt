@@ -9,7 +9,8 @@ public class Predefines implements AutoCloseable {
 	public static final String		PREDEF_CLIPBOARD = "clipboard";
 	public static final String		PREDEF_CANVAS = "canvas";
 	public static final String		PREDEF_ARG = "arg";
-	private static final String[]	NAMES = {PREDEF_SYSTEM, PREDEF_CLIPBOARD, PREDEF_CANVAS, PREDEF_ARG};
+	public static final String		PREDEF_LIB = "lib";
+	private static final String[]	NAMES = {PREDEF_SYSTEM, PREDEF_CLIPBOARD, PREDEF_CANVAS, PREDEF_ARG, PREDEF_LIB};
 	
 	private final String[]			args;
 	private final ClipboardWrapper	cbw = ClipboardWrapper.singleton;

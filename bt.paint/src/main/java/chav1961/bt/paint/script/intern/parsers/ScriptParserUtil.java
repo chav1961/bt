@@ -85,30 +85,37 @@ public class ScriptParserUtil {
 		PROC
 	}
 	
-	static enum DataTypes {
-		UNKNOWN(Object.class),
-		INT(int[].class),
-		REAL(double[].class),
-		STR(char[].class),
-		BOOL(boolean[].class),
-		COLOR(ColorWrapper.class),
-		POINT(PointWrapper.class),
-		RECT(RectWrapper.class),
-		SIZE(SizeWrapper.class),
-		FONT(FontWrapper.class),
-		STROKE(StrokeWrapper.class),
-		TRANSFORM(TransformWrapper.class),
-		IMAGE(ImageWrapper.class);
+	public static enum DataTypes {
+		UNKNOWN(Object.class, Object.class),
+		INT(long.class, long.class),
+		REAL(double.class, double.class),
+		STR(char[].class, char[].class),
+		BOOL(boolean.class, boolean.class),
+		COLOR(ColorWrapper.class, ColorWrapper.class),
+		POINT(PointWrapper.class, PointWrapper.class),
+		RECT(RectWrapper.class, RectWrapper.class),
+		SIZE(SizeWrapper.class, SizeWrapper.class),
+		FONT(FontWrapper.class, FontWrapper.class),
+		STROKE(StrokeWrapper.class, StrokeWrapper.class),
+		TRANSFORM(TransformWrapper.class, TransformWrapper.class),
+		IMAGE(ImageWrapper.class, ImageWrapper.class);
 		
-		private final Class<?>	associated;
+		private final Class<?>	leftValueAssociated;
+		private final Class<?>	rightValueAssociated;
 		
-		private DataTypes(final Class<?> associated) {
-			this.associated = associated;
+		private DataTypes(final Class<?> leftValueAssociated, final Class<?> rightValueAssociated) {
+			this.leftValueAssociated = leftValueAssociated;
+			this.rightValueAssociated = rightValueAssociated;
 		}
 		
-		public Class<?> getClassAssociated() {
-			return associated;
+		public Class<?> getLeftValueClassAssociated() {
+			return leftValueAssociated;
 		}
+		
+		public Class<?> getRightValueClassAssociated() {
+			return rightValueAssociated;
+		}
+
 	}
 
 	static enum CollectionType {
@@ -134,7 +141,7 @@ public class ScriptParserUtil {
 		SUFFIX
 	}
 	
-	private static enum OperatorPriorities {
+	public static enum OperatorPriorities {
 		TERM(OperatorLevelTypes.NONE),
 		UNARY(OperatorLevelTypes.PREFIX),
 		TYPE(OperatorLevelTypes.SUFFIX),
@@ -673,11 +680,31 @@ public class ScriptParserUtil {
 		}
 	}
 
-	public static <T> SyntaxNode<SyntaxNodeType,SyntaxNode<SyntaxNodeType,?>> parseScript(final Reader content, final SyntaxTreeInterface<T> names) {
-		return null;
+	public static SyntaxNode<SyntaxNodeType,SyntaxNode<SyntaxNodeType,?>> parseScript(final Reader content, final SyntaxTreeInterface<EntityDescriptor> names) throws SyntaxException {
+		if (content == null) {
+			throw new NullPointerException("Content reader can't be null");
+		}
+		else if (names == null) {
+			throw new NullPointerException("Names tree can't be null");
+		}
+		else {
+			final List<Lexema> 	lexList = parseLex(content, names, false);
+			final Lexema[]		lex = lexList.toArray(new Lexema[lexList.size()]);
+			final SyntaxNode	root = new SyntaxNode<>(0, 0, SyntaxNodeType.ROOT, 0, null);
+			final int			afterParsing = buildSyntaxTree(lex, 0, names, root);
+			
+			if (lex[afterParsing].getType() != LexTypes.EOF) {
+				throw new SyntaxException(lex[afterParsing].getRow(), lex[afterParsing].getCol(), "Unparsed tail in the script"); 
+			}
+			else {
+				return root;
+			}
+		}
 	} 
 
 	static int buildSyntaxTree(final Lexema[] data, int from, final SyntaxTreeInterface<EntityDescriptor> names, final SyntaxNode<SyntaxNodeType,SyntaxNode<SyntaxNodeType,?>> root) throws SyntaxException {
+		boolean	anonParsed = false;
+		
 loop:	for (;;) {
 			switch (data[from].getType()) {
 				case EOF 	:
@@ -695,8 +722,14 @@ loop:	for (;;) {
 					}					
 					break;
 				default :
-					from = buildAnonBlock(data, from, names, root);
-					break;
+					if (!anonParsed) {
+						from = buildAnonBlock(data, from, names, root);
+						anonParsed = true;
+						break;
+					}
+					else {
+						break loop;
+					}
 			}
 		}
 		return from;
@@ -704,8 +737,13 @@ loop:	for (;;) {
 
 	private static int buildAnonBlock(final Lexema[] data, int from, final SyntaxTreeInterface<EntityDescriptor> names, final SyntaxNode<SyntaxNodeType, SyntaxNode<SyntaxNodeType, ?>> root) throws SyntaxException {
 		// TODO Auto-generated method stub
+		final int	start = from;
+		
 		if (data[from].getType() == LexTypes.STATEMENT && data[from].getKeyword() == Keywords.VAR) {
 			from = buildDeclarations(data, from + 1, names, root);
+		}
+		if (data[from].getType() == LexTypes.SEMICOLON) {
+			from++;
 		}
 		if (data[from].getType() == LexTypes.STATEMENT && data[from].getKeyword() == Keywords.BEGIN) {
 			do {
@@ -719,7 +757,12 @@ loop:	for (;;) {
 				throw new SyntaxException(data[from].getRow(), data[from].getCol(), "END awaited");
 			}
 		}
-		return from;
+		if (from == start) {
+			throw new SyntaxException(data[from].getRow(), data[from].getCol(), "Anon block is empty");
+		}
+		else {
+			return from;
+		}
 	}
 
 	private static int buildProcedure(final Lexema[] data, int from, final SyntaxTreeInterface<EntityDescriptor> names, final SyntaxNode<SyntaxNodeType, SyntaxNode<SyntaxNodeType, ?>> root) throws SyntaxException {
@@ -892,6 +935,7 @@ loop:	for (;;) {
 					final SyntaxNode<SyntaxNodeType, SyntaxNode<SyntaxNodeType, ?>>	rightPart = (SyntaxNode<SyntaxNodeType, SyntaxNode<SyntaxNodeType, ?>>) root.clone();
 					
 					from = buildExpression(data, from+1, names, rightPart);
+					convert(rightPart, getValueType(leftPart));
 					root.type = SyntaxNodeType.STRONG_BINARY;
 					root.cargo = OperatorTypes.ASSIGNMENT;
 					root.children = new SyntaxNode[] {leftPart, rightPart};
@@ -1157,6 +1201,10 @@ loop:	for (;;) {
 		return buildExpression(OperatorPriorities.BOOL_OR, data, from, names, root);
 	}
 
+	static void convert(final SyntaxNode node, final Class<?> awaited) {
+		// TODO Auto-generated method stub
+	}
+	
 	private static int buildExpression(final OperatorPriorities prty, final Lexema[] data, int from, final SyntaxTreeInterface<EntityDescriptor> names, final SyntaxNode<SyntaxNodeType, SyntaxNode<SyntaxNodeType, ?>> root) throws SyntaxException {
 		root.row = data[from].getRow();
 		root.col = data[from].getCol();
@@ -1276,7 +1324,7 @@ loop:	for (;;) {
 	}
 		
 	private static int buildAccess(final Lexema[] data, int from, final EntityDescriptor desc, final SyntaxTreeInterface<EntityDescriptor> names, final SyntaxNode<SyntaxNodeType, SyntaxNode<SyntaxNodeType, ?>> root) throws SyntaxException {
-		return buildAccess(data, from, desc, desc.dataType.getClassAssociated(), names, root);
+		return buildAccess(data, from, desc, desc.dataType.getRightValueClassAssociated(), names, root);
 	}
 
 	private static int buildAccess(final Lexema[] data, int from, final EntityDescriptor desc, Class<?> current, final SyntaxTreeInterface<EntityDescriptor> names, final SyntaxNode<SyntaxNodeType, SyntaxNode<SyntaxNodeType, ?>> root) throws SyntaxException {
@@ -1396,11 +1444,26 @@ loop:	for (;;) {
 		return from;
 	}	
 	
-	private static Class<?>[] buildSignature(final SyntaxNode[] children) {
+	private static Class<?>[] buildSignature(final SyntaxNode... children) {
 		// TODO Auto-generated method stub
 		return null;
 	}
 
+	private static Class<?> getValueType(final SyntaxNode node) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	private static boolean canConvert(final SyntaxNode node, final Class<?> awaited) {
+		// TODO Auto-generated method stub
+		return false;
+	}
+	
+	private static Set<Class<?>> collectValueTypes(final SyntaxNode... nodes) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+	
 	public static class Lexema {
 		private final int			displ;
 		private final int			row;
@@ -1564,14 +1627,14 @@ loop:	for (;;) {
 		}
 	}
 	
-	static class EntityDescriptor {
-		final EntityType			type;
-		final long					id;
-		final CollectionType		collType;
-		final DataTypes				dataType;
-		final EntityDescriptor[]	parameters;
-		final EntityDescriptor		returns;
-		final SyntaxNode			initials;
+	public static class EntityDescriptor {
+		public final EntityType			type;
+		public final long				id;
+		public final CollectionType		collType;
+		public final DataTypes			dataType;
+		public final EntityDescriptor[]	parameters;
+		public final EntityDescriptor	returns;
+		public final SyntaxNode			initials;
 
 		public EntityDescriptor(long id, CollectionType collType, DataTypes dataType) {
 			this(EntityType.VAR, id, collType, dataType, null, null, null);
@@ -1591,6 +1654,10 @@ loop:	for (;;) {
 			this.initials = initials;					
 		}
 
+		public long getId() {
+			return id;
+		}
+		
 		@Override
 		public String toString() {
 			return "EntityDescriptor [type=" + type + ", id=" + id + ", collType=" + collType + ", dataType=" + dataType + ", parameters=" + Arrays.toString(parameters) + ", returns=" + returns + "]";
