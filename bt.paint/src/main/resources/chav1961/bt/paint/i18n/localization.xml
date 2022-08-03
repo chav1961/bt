@@ -246,7 +246,6 @@
 		<key name="debug.execute.step.run.tt">Continue to breakpoint</key>
 		<key name="debug.file.exit">Exit</key>
 		<key name="debug.file.exit.tt">Close debug window</key>
-		
 				
 <!-- ImageEditPanel.EditStateString -->
 		<key name="chav1961.bt.paint.bgeditor.ImageEditPanel.EditStateString.prompt">Type command</key>
@@ -281,6 +280,15 @@
 		<key name="askimageresize.stretch.tt">Scale existent image to fill new size</key>
 		<key name="askimageresize.atcenter">Center image</key>
 		<key name="askimageresize.atcenter.tt">Center old image content into new image</key>
+
+<!-- AskSettings class localization -->
+		<key name="asksettings.title">Appliaciton setup</key>
+		<key name="asksettings.title.tt">Appliaciton setup</key>
+		<key name="asksettings.title.help">Appliaciton setup</key>
+		<key name="asksettings.plugindir">Plugin folder</key>
+		<key name="asksettings.plugindir.tt">Folder with plugins</key>
+		<key name="asksettings.imagesdir">Default image folder</key>
+		<key name="asksettings.imagesdir.tt">Default image folder</key>
 		 
 	</lang>
 	<lang name="ru">
@@ -563,5 +571,15 @@
 		<key name="askimageresize.stretch.tt">Масштабировать существующее изображение под новый размер</key>
 		<key name="askimageresize.atcenter">Отцентровать</key>
 		<key name="askimageresize.atcenter.tt">Отцентровать существующее изображение перед выполнением операции</key>
+		
+<!-- Локализация класса AskSettings -->
+		<key name="asksettings.title">Настройки приложения</key>
+		<key name="asksettings.title.tt">Настройки приложения</key>
+		<key name="asksettings.title.help">Настройки приложения</key>
+		<key name="asksettings.plugindir">Папка с дополнениями</key>
+		<key name="asksettings.plugindir.tt">Папка с подсоединяемыми дополнениями</key>
+		<key name="asksettings.imagesdir">Папка для картинок по умолчанию</key>
+		<key name="asksettings.imagesdir.tt">Папка, где в первую очередб юудут искаться картинки</key>
+		
 	</lang>
 </localization>

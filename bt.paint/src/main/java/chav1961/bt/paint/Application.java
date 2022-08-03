@@ -48,6 +48,7 @@ import chav1961.bt.paint.control.ImageUtils;
 import chav1961.bt.paint.control.ImageUtils.ProcessType;
 import chav1961.bt.paint.control.Predefines;
 import chav1961.bt.paint.dialogs.AskImageSize;
+import chav1961.bt.paint.dialogs.AskSettings;
 import chav1961.bt.paint.interfaces.PaintScriptException;
 import chav1961.bt.paint.script.ImageWrapperImpl;
 import chav1961.bt.paint.script.ScriptNodeType;
@@ -491,8 +492,8 @@ public class Application extends JFrame implements NodeMetadataOwner, LocaleChan
 	@OnAction("action:/player.play")
 	public void play() throws IOException {
 		try{scriptManipulator.setFilters(	// Refresh every call because of possibly language changes
-					FilterCallback.of(localizer.getValue(KEY_CMD_FILES), "*.cmd"), 
-					FilterCallback.of(localizer.getValue(KEY_PSC_FILES), "*.psc")
+				FilterCallback.of(localizer.getValue(KEY_CMD_FILES), "*.cmd"), 
+				FilterCallback.of(localizer.getValue(KEY_PSC_FILES), "*.psc")
 			);
 			
 			if (scriptManipulator.openFile()) {
@@ -531,6 +532,15 @@ public class Application extends JFrame implements NodeMetadataOwner, LocaleChan
 	
 	@OnAction("action:/settings")
     public void settings() {
+		final AskSettings	as = new AskSettings(getLogger());
+		
+		as.fillFrom(settings.getProps());
+		try{if (ApplicationUtils.ask(as, getLocalizer(), 640, 80)) {
+				as.saveTo(settings.getProps());
+			}
+		} catch (ContentException exc) {
+			SwingUtils.getNearestLogger(this).message(Severity.error, exc, exc.getLocalizedMessage());
+		}
 	}	
 
 	
@@ -1052,6 +1062,10 @@ public class Application extends JFrame implements NodeMetadataOwner, LocaleChan
 				props.store(os, null);
 				os.flush();
 			}
+		}
+		
+		public SubstitutableProperties getProps() {
+			return props; 
 		}
 	}
 	

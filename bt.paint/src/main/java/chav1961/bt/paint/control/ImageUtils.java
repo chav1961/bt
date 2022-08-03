@@ -210,7 +210,7 @@ public class ImageUtils {
 					if (checkParameterTypes(parameters, String.class, Rectangle.class, Color.class, Font.class)) {
 						textDraw((BufferedImage)source, (String)parameters[0], (Rectangle)parameters[1], (Color)parameters[2], (Font)parameters[3], observer);
 					}
-					else if (checkParameterTypes(parameters, String.class, Rectangle.class, ColorPair.class, Stroke.class)) {
+					else if (checkParameterTypes(parameters, String.class, Rectangle.class, ColorPair.class, Font.class)) {
 						textDraw((BufferedImage)source, (String)parameters[0], (Rectangle)parameters[1], (ColorPair)parameters[2], (Font)parameters[3], observer);
 					}
 					else {
@@ -490,7 +490,7 @@ public class ImageUtils {
 		final Shape				oldClip = g2d.getClip();
 		final AttributedString 	as = new AttributedString(text);
 		
-		float 	x = 0, y = 0;
+		float 	x = (float) rect.getX(), y = (float) rect.getY();
 		int 	w = rect.width - 0 - 0;
 		
 		g2d.setColor(color);
@@ -521,7 +521,7 @@ public class ImageUtils {
 		final Shape				oldClip = g2d.getClip();
 		final AttributedString 	as = new AttributedString(text);
 		
-		float 	x = 0, y = 0;
+		float 	x = (float) rect.getX(), y = (float) rect.getY();
 		int 	w = rect.width - 0 - 0;
 		
 		g2d.setColor(colorPair.getBackground());

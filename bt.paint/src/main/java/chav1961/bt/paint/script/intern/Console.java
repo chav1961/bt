@@ -466,14 +466,13 @@ public class Console {
 	}
 	
 	private static String drawText(final Predefines predef, final Rectangle rect, final Color color, final String text) throws PaintScriptException {
-		ImageUtils.draw(DrawingType.TEXT, predef.getPredefined(Predefines.PREDEF_CANVAS, CanvasWrapper.class).getImage().getImage(), null, rect, color, text);
+		ImageUtils.draw(DrawingType.TEXT, predef.getPredefined(Predefines.PREDEF_CANVAS, CanvasWrapper.class).getImage().getImage(), null, text, rect, color, predef.getPredefined(Predefines.PREDEF_CANVAS, CanvasWrapper.class).getCanvasFont().getFont());
 		return OK;
 	}
 
 
 	private static String drawText(final Predefines predef, final Rectangle rect, final Color foreground, final Color background, final String text) throws PaintScriptException {
-		ImageUtils.draw(DrawingType.FILL, predef.getPredefined(Predefines.PREDEF_CANVAS, CanvasWrapper.class).getImage().getImage(), null, rect, background);
-		ImageUtils.draw(DrawingType.TEXT, predef.getPredefined(Predefines.PREDEF_CANVAS, CanvasWrapper.class).getImage().getImage(), null, rect, foreground, text);
+		ImageUtils.draw(DrawingType.TEXT, predef.getPredefined(Predefines.PREDEF_CANVAS, CanvasWrapper.class).getImage().getImage(), null, text, rect, new ColorPair(foreground,background), predef.getPredefined(Predefines.PREDEF_CANVAS, CanvasWrapper.class).getCanvasFont().getFont());
 		return OK;
 	}
 	
