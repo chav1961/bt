@@ -389,10 +389,10 @@ public class Console {
 						
 						switch (ci.commandType) {
 							case ImageAction	:
-								cw.startImageAction(ci.undoDescriptor);
+								cw.startImageAction(ci.undoDescriptor, ci.redoDescriptor);
 								break;
 							case PropertyAction	:
-								cw.startPropertyAction(ci.undoDescriptor);
+								cw.startPropertyAction(ci.undoDescriptor, ci.redoDescriptor);
 								break;
 							default:
 								break;
@@ -402,10 +402,10 @@ public class Console {
 						
 						switch (ci.commandType) {
 							case ImageAction	:
-								cw.endImageAction(ci.redoDescriptor);
+								cw.endImageAction(ci.undoDescriptor, ci.redoDescriptor);
 								break;
 							case PropertyAction	:
-								cw.endPropertyAction(ci.redoDescriptor);
+								cw.endPropertyAction(ci.undoDescriptor, ci.redoDescriptor);
 								break;
 							default:
 								break;

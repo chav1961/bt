@@ -22,10 +22,11 @@ import javax.swing.border.EmptyBorder;
 import javax.swing.event.MouseInputListener;
 
 import chav1961.purelib.i18n.interfaces.Localizer;
+import chav1961.purelib.i18n.interfaces.LocalizerOwner;
 import chav1961.purelib.ui.swing.SwingUtils;
 import chav1961.purelib.ui.swing.useful.JBackgroundComponent;
 
-public class ResizableImageContainer extends JBackgroundComponent implements MouseInputListener, FocusListener, KeyListener {
+public class ResizableImageContainer<T extends ResizableImageContainer<?>> extends JBackgroundComponent implements MouseInputListener, FocusListener, KeyListener {
 	private static final long 	serialVersionUID = 1L;
 	private static final int	THUMB_SIZE = 3;
 	private static final Stroke	DASHED = new BasicStroke(1, BasicStroke.CAP_BUTT, BasicStroke.JOIN_BEVEL, 1, new float[] {3, 1}, 0);
@@ -81,11 +82,11 @@ public class ResizableImageContainer extends JBackgroundComponent implements Mou
 		}
 	}
 	
-	private final Consumer<ResizableImageContainer> consumer;
-	private final Point		pressPoint = new Point();
-	private CursorLocation	pressLocation;
+	private final Consumer<T> 	consumer;
+	private final Point			pressPoint = new Point();
+	private CursorLocation		pressLocation;
 	
-	public ResizableImageContainer(final Localizer localizer, final Image image, final Consumer<ResizableImageContainer> consumer) {
+	public ResizableImageContainer(final Localizer localizer, final Image image, final Consumer<T> consumer) {
 		super(localizer);
 		if (image == null) {
 			throw new NullPointerException("Image can't be null"); 
@@ -258,7 +259,7 @@ public class ResizableImageContainer extends JBackgroundComponent implements Mou
 	}
 
 	private void accept() {
-		consumer.accept(this);
+		consumer.accept((T) this);
 		exit();
 	}
 	

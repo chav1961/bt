@@ -78,18 +78,18 @@ public class CanvasWrapperImpl extends BufferWrapperImpl implements CanvasWrappe
 	}
 
 	@Override
-	public void startImageAction(String actionType) {
+	public void startImageAction(String beforeActionType, String afterActionType) {
 	}
 
 	@Override
-	public void endImageAction(String actionType) {
+	public void endImageAction(String beforeActionType, String afterActionType) {
 	}
 
 	@Override
-	public void startPropertyAction(String actionType) {
+	public void startPropertyAction(String beforeActionType, String afterActionType) {
 	}
 
 	@Override
-	public void endPropertyAction(String actionType) {
+	public void endPropertyAction(String beforeActionType, String afterActionType) {
 	}
 }

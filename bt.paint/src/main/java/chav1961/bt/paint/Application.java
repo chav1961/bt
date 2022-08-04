@@ -50,9 +50,11 @@ import chav1961.bt.paint.control.Predefines;
 import chav1961.bt.paint.dialogs.AskImageSize;
 import chav1961.bt.paint.dialogs.AskSettings;
 import chav1961.bt.paint.interfaces.PaintScriptException;
+import chav1961.bt.paint.script.CanvasWrapperImpl;
 import chav1961.bt.paint.script.ImageWrapperImpl;
 import chav1961.bt.paint.script.ScriptNodeType;
 import chav1961.bt.paint.script.SystemWrapperImpl;
+import chav1961.bt.paint.script.interfaces.CanvasWrapper;
 import chav1961.bt.paint.script.interfaces.ClipboardWrapper;
 import chav1961.bt.paint.script.interfaces.ImageWrapper;
 import chav1961.bt.paint.script.interfaces.SystemWrapper;
@@ -437,7 +439,7 @@ public class Application extends JFrame implements NodeMetadataOwner, LocaleChan
 
 	@OnAction("action:/cut")
     public void cut() {
-		try{ClipboardWrapper.singleton.setImage(ImageWrapper.of(panel.cutSelectedImage()));
+		try{predef.getPredefined(Predefines.PREDEF_CLIPBOARD, ClipboardWrapper.class).setImage(ImageWrapper.of(panel.cutSelectedImage()));
 		} catch (PaintScriptException e) {
 			getLogger().message(Severity.error,e.getLocalizedMessage());
 		}
@@ -445,7 +447,7 @@ public class Application extends JFrame implements NodeMetadataOwner, LocaleChan
 
 	@OnAction("action:/copy")
     public void copy() {
-		try{ClipboardWrapper.singleton.setImage(ImageWrapper.of(panel.getSelectedImage()));
+		try{predef.getPredefined(Predefines.PREDEF_CLIPBOARD, ClipboardWrapper.class).setImage(ImageWrapper.of(panel.getSelectedImage()));
 		} catch (PaintScriptException e) {
 			getLogger().message(Severity.error,e.getLocalizedMessage());
 		}
@@ -453,6 +455,10 @@ public class Application extends JFrame implements NodeMetadataOwner, LocaleChan
 
 	@OnAction("action:/paste")
     public void paste() {
+		try{panel.setImage(predef.getPredefined(Predefines.PREDEF_CLIPBOARD, ClipboardWrapper.class).getImage());
+		} catch (PaintScriptException e) {
+			getLogger().message(Severity.error,e.getLocalizedMessage());
+		}
 	}	
 	
 	@OnAction("action:/find")
@@ -827,8 +833,11 @@ public class Application extends JFrame implements NodeMetadataOwner, LocaleChan
 		}
 	}
 
-	
 	public static void main(String[] args) {
+		System.exit(callMain(args));
+	}
+	
+	static int callMain(String[] args) {
 		final ArgParser					parser = new ApplicationArgParser();
 		
 		try{final ArgParser				parsed = parser.parse(args);
@@ -847,13 +856,28 @@ public class Application extends JFrame implements NodeMetadataOwner, LocaleChan
 				}
 				else {
 					final SyntaxNode<ScriptNodeType, SyntaxNode<ScriptNodeType,?>>	root;
+					final String	commands;	
 					
 					try(final FileSystemInterface	fsi = FileSystemInterface.Factory.newInstance(URI.create("fsys:file:/"))){
 						
-						predef.putPredefined(Predefines.PREDEF_SYSTEM, new SystemWrapperImpl(fsi, null));
+						predef.putPredefined(Predefines.PREDEF_SYSTEM, new SystemWrapperImpl(fsi, new File("./").getAbsoluteFile().toURI()));
+						predef.putPredefined(Predefines.PREDEF_CANVAS, new CanvasWrapperImpl());
 						
-						try(final Reader	rdr = loadCommandScript(parsed.getValue(ARG_COMMAND, String.class))) {
-							root = ScriptUtils.compile(rdr); 
+						if (parsed.getValue(ARG_COMMAND, String.class).startsWith("@")) {
+							try(final Reader	rdr = new FileReader(parsed.getValue(ARG_COMMAND, String.class).substring(1))) {
+								if (parsed.getValue(ARG_COMMAND, String.class).endsWith(".psc")) {
+									root = ScriptUtils.compile(rdr);
+									commands = null;
+								}
+								else {
+									root = null;
+									commands = Utils.fromResource(rdr);
+								}
+							}
+						}
+						else {
+							root = null;
+							commands = parsed.getValue(ARG_COMMAND, String.class);
 						}
 	
 						if (parsed.isTyped(ARG_INPUT_MASK)) {
@@ -890,10 +914,10 @@ public class Application extends JFrame implements NodeMetadataOwner, LocaleChan
 				
 							try {
 								if (index > 0) {
-									walk(new File(mask.substring(0,index)), Pattern.compile(Utils.fileMask2Regex(mask.substring(index+1))), parsed.getValue(ARG_RECURSION_FLAG, boolean.class), root, ex);
+									walk(new File(mask.substring(0,index)), Pattern.compile(Utils.fileMask2Regex(mask.substring(index+1))), parsed.getValue(ARG_RECURSION_FLAG, boolean.class), root, commands, predef, ex);
 								}
 								else {
-									walk(new File("./"), Pattern.compile(Utils.fileMask2Regex(mask)), parsed.getValue(ARG_RECURSION_FLAG, boolean.class), root, ex);
+									walk(new File("./"), Pattern.compile(Utils.fileMask2Regex(mask)), parsed.getValue(ARG_RECURSION_FLAG, boolean.class), root, commands, predef, ex);
 								}
 								ex.exchange(null);
 								t.join();
@@ -904,59 +928,53 @@ public class Application extends JFrame implements NodeMetadataOwner, LocaleChan
 							if (parsed.getValue(ARG_GUI_FLAG, boolean.class)) {
 								final Image	image = ImageIO.read(System.in);
 								
-								processImage(ImageWrapper.of(image), root);
+								if (root != null) {
+									processImage(ImageWrapper.of(image), root, predef);
+								}
+								else {
+									processImage(ImageWrapper.of(image), commands, predef);
+								}
 								startGUI(ApplicationMode.IN_OUT, xda, localizer, predef);
 							}
 							else {
-								processImage(System.in, root, System.out);
+								if (root != null) {
+									processImage(System.in, root, predef, System.out);
+								}
+								else {
+									processImage(System.in, commands, predef, System.out);
+								}
 							}
 						}
 					}
 				}
 				
 				PureLibSettings.PURELIB_LOCALIZER.pop(localizer);
+				return 0;
 			} catch (SyntaxException | PaintScriptException e) {
 				e.printStackTrace();
-				System.exit(129);
+				return 129;
 			} catch (IOException | EnvironmentException | InterruptedException e) {
 				e.printStackTrace();
-				System.exit(129);
+				return 129;
 			}	
 		} catch (CommandLineParametersException exc) {
 			System.err.println(exc.getLocalizedMessage());
 			System.err.println(parser.getUsage("bt.paint"));
-			System.exit(128);
+			return 128;
 		}
 	}
 
-	private static Reader loadCommandScript(final String value) throws SyntaxException, FileNotFoundException {
-		if (value.startsWith("@")) {
-			final File	f = new File(value.substring(1));
-			
-			if (!f.exists()) {
-				throw new SyntaxException(0, 1, "Script file ["+f.getAbsolutePath()+"] not exists"); 
-			}
-			else if (f.isDirectory()) {
-				throw new SyntaxException(0, 1, "Script ["+f.getAbsolutePath()+"] is directory, not a file"); 
-			}
-			else if (!f.canRead()) {
-				throw new SyntaxException(0, 1, "Script file ["+f.getAbsolutePath()+"] is not accessible for you"); 
-			}
-			else {
-				return new FileReader(f);
-			}
-		}
-		else {
-			return new StringReader(value);
-		}
-	}
-	
-	private static boolean walk(final File current, final Pattern mask, final boolean recursive, final SyntaxNode<ScriptNodeType, SyntaxNode<ScriptNodeType, ?>> root, final Exchanger<Object> ex) throws IOException, PaintScriptException, InterruptedException {
+	private static boolean walk(final File current, final Pattern mask, final boolean recursive, final SyntaxNode<ScriptNodeType, SyntaxNode<ScriptNodeType, ?>> root, final String commands, final Predefines predef, final Exchanger<Object> ex) throws IOException, PaintScriptException, InterruptedException {
 		if (current.isFile()) {
 			try(final InputStream	is = new FileInputStream(current)) {
 				final ImageWrapper	iw = new ImageWrapperImpl(is);
 				
-				processImage(iw, root);
+				if (root != null) {
+					processImage(iw, root, predef);
+				}
+				else {
+					processImage(iw, commands, predef);
+				}
 				final Object	answer = ex.exchange(iw);
 				
 				return answer == null;
@@ -968,7 +986,7 @@ public class Application extends JFrame implements NodeMetadataOwner, LocaleChan
 			if (content != null) {
 				for (File item : content) {
 					if (item.isFile() && mask.matcher(item.getName()).matches()) {
-						if (!walk(item, mask, recursive, root, ex)) {
+						if (!walk(item, mask, recursive, root, commands, predef, ex)) {
 							return false;
 						}
 					}
@@ -976,7 +994,7 @@ public class Application extends JFrame implements NodeMetadataOwner, LocaleChan
 				if (recursive) {
 					for (File item : content) {
 						if (item.isDirectory()) {
-							if (walk(item, mask, recursive, root, ex)) {
+							if (walk(item, mask, recursive, root, commands, predef, ex)) {
 								return false;
 							}
 						}
@@ -987,15 +1005,35 @@ public class Application extends JFrame implements NodeMetadataOwner, LocaleChan
 		}
 	}
 
-	private static void processImage(final InputStream is, final SyntaxNode<ScriptNodeType, SyntaxNode<ScriptNodeType,?>> root, final OutputStream os) throws IOException, PaintScriptException {
+	private static void processImage(final InputStream is, final SyntaxNode<ScriptNodeType, SyntaxNode<ScriptNodeType,?>> root, final Predefines predef, final OutputStream os) throws IOException, PaintScriptException {
 		final ImageWrapper		iw = new ImageWrapperImpl(is);
 
-		processImage(iw, root);
+		processImage(iw, root, predef);
 		ImageIO.write((RenderedImage) iw.getImage(), iw.getFormat(), os);
 		os.flush();
 	}
 
-	private static void processImage(final ImageWrapper image, final SyntaxNode<ScriptNodeType, SyntaxNode<ScriptNodeType,?>> root) throws IOException {
+	private static void processImage(final InputStream is, final String commands, final Predefines predef, final OutputStream os) throws IOException, PaintScriptException {
+		final ImageWrapper		iw = new ImageWrapperImpl(is);
+
+		iw.setFormat("png");
+		processImage(iw, commands, predef);
+		ImageIO.write((RenderedImage) predef.getPredefined(Predefines.PREDEF_CANVAS, CanvasWrapper.class).getImage().getImage(), iw.getFormat(), os);
+		os.flush();
+	}
+	
+	private static void processImage(final ImageWrapper image, final SyntaxNode<ScriptNodeType, SyntaxNode<ScriptNodeType,?>> root, final Predefines predef) throws IOException {
+	}	
+
+	private static void processImage(final ImageWrapper image, final String commands, final Predefines predef) throws IOException {
+		try{predef.getPredefined(Predefines.PREDEF_CANVAS, CanvasWrapper.class).setImage(image);
+		
+			for (String item : commands.split("\n")) {
+				predef.getPredefined(Predefines.PREDEF_SYSTEM, SystemWrapper.class).console(item, predef);
+			}
+		} catch (SyntaxException | PaintScriptException exc) {
+			throw new IOException(exc);
+		}
 	}	
 	
 	private static void startGUI(final ApplicationMode mode, final ContentMetadataInterface xda, final Localizer localizer, final Predefines predef) throws InterruptedException, IOException, PaintScriptException {

@@ -10,8 +10,8 @@ public interface CanvasWrapper extends BufferWrapper {
 	StrokeWrapper getCanvasStroke();
 	void setCanvasStroke(StrokeWrapper stroke);
 	
-	void startImageAction(String actionType);
-	void endImageAction(String actionType);
-	void startPropertyAction(String actionType);
-	void endPropertyAction(String actionType);
+	void startImageAction(String beforeActionType, String afterActionType);
+	void endImageAction(String beforeActionType, String afterActionType);
+	void startPropertyAction(String beforeActionType, String afterActionType);
+	void endPropertyAction(String beforeActionType, String afterActionType);
 }

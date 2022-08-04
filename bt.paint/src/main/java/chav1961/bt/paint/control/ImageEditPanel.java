@@ -42,6 +42,7 @@ import javax.swing.event.UndoableEditEvent;
 import javax.swing.event.UndoableEditListener;
 
 import chav1961.bt.paint.control.ImageUtils.DrawingType;
+import chav1961.bt.paint.control.ImageUtils.ProcessType;
 import chav1961.bt.paint.dialogs.AskImageResize;
 import chav1961.bt.paint.interfaces.PaintScriptException;
 import chav1961.bt.paint.script.interfaces.CanvasWrapper;
@@ -79,26 +80,26 @@ public class ImageEditPanel extends JPanel implements LocalizerOwner, LocaleChan
 	
 	private static final String				KEY_SELECT_COLOR = "chav1961.bt.paint.editor.ImageEditPanel.selectColor";
 
-	private static final String				KEY_UNDO_CROP = "chav1961.bt.paint.editor.ImageEditPanel.undo.crop";
-	private static final String				KEY_REDO_CROP = "chav1961.bt.paint.editor.ImageEditPanel.redo.crop";
-	private static final String				KEY_UNDO_RESIZE = "chav1961.bt.paint.editor.ImageEditPanel.undo.resize";
-	private static final String				KEY_REDO_RESIZE = "chav1961.bt.paint.editor.ImageEditPanel.redo.resize";
-	private static final String				KEY_UNDO_ROTATE = "chav1961.bt.paint.editor.ImageEditPanel.undo.rotate";
-	private static final String				KEY_REDO_ROTATE = "chav1961.bt.paint.editor.ImageEditPanel.redo.rotate";
-	private static final String				KEY_UNDO_REFLECT = "chav1961.bt.paint.editor.ImageEditPanel.undo.reflect";
-	private static final String				KEY_REDO_REFLECT = "chav1961.bt.paint.editor.ImageEditPanel.redo.reflect";
-	private static final String				KEY_UNDO_GRAYSCALE = "chav1961.bt.paint.editor.ImageEditPanel.undo.grayscale";
-	private static final String				KEY_REDO_GRAYSCALE = "chav1961.bt.paint.editor.ImageEditPanel.redo.grayscale";
-	private static final String				KEY_UNDO_TRANSPARENCY = "chav1961.bt.paint.editor.ImageEditPanel.undo.transparency";
-	private static final String				KEY_REDO_TRANSPARENCY = "chav1961.bt.paint.editor.ImageEditPanel.redo.transparency";
-	private static final String				KEY_UNDO_DRAW_ELLIPSE = "chav1961.bt.paint.editor.ImageEditPanel.undo.draw.ellipse";
-	private static final String				KEY_REDO_DRAW_ELLIPSE = "chav1961.bt.paint.editor.ImageEditPanel.redo.draw.ellipse";
-	private static final String				KEY_UNDO_DRAW_LINE = "chav1961.bt.paint.editor.ImageEditPanel.undo.draw.line";
-	private static final String				KEY_REDO_DRAW_LINE = "chav1961.bt.paint.editor.ImageEditPanel.redo.draw.line";
-	private static final String				KEY_UNDO_DRAW_PATH = "chav1961.bt.paint.editor.ImageEditPanel.undo.draw.path";
-	private static final String				KEY_REDO_DRAW_PATH = "chav1961.bt.paint.editor.ImageEditPanel.redo.draw.path";
-	private static final String				KEY_UNDO_DRAW_RECT = "chav1961.bt.paint.editor.ImageEditPanel.undo.draw.rect";
-	private static final String				KEY_REDO_DRAW_RECT = "chav1961.bt.paint.editor.ImageEditPanel.redo.draw.rect";
+//	private static final String				KEY_UNDO_CROP = "chav1961.bt.paint.editor.ImageEditPanel.undo.crop";
+//	private static final String				KEY_REDO_CROP = "chav1961.bt.paint.editor.ImageEditPanel.redo.crop";
+//	private static final String				KEY_UNDO_RESIZE = "chav1961.bt.paint.editor.ImageEditPanel.undo.resize";
+//	private static final String				KEY_REDO_RESIZE = "chav1961.bt.paint.editor.ImageEditPanel.redo.resize";
+//	private static final String				KEY_UNDO_ROTATE = "chav1961.bt.paint.editor.ImageEditPanel.undo.rotate";
+//	private static final String				KEY_REDO_ROTATE = "chav1961.bt.paint.editor.ImageEditPanel.redo.rotate";
+//	private static final String				KEY_UNDO_REFLECT = "chav1961.bt.paint.editor.ImageEditPanel.undo.reflect";
+//	private static final String				KEY_REDO_REFLECT = "chav1961.bt.paint.editor.ImageEditPanel.redo.reflect";
+//	private static final String				KEY_UNDO_GRAYSCALE = "chav1961.bt.paint.editor.ImageEditPanel.undo.grayscale";
+//	private static final String				KEY_REDO_GRAYSCALE = "chav1961.bt.paint.editor.ImageEditPanel.redo.grayscale";
+//	private static final String				KEY_UNDO_TRANSPARENCY = "chav1961.bt.paint.editor.ImageEditPanel.undo.transparency";
+//	private static final String				KEY_REDO_TRANSPARENCY = "chav1961.bt.paint.editor.ImageEditPanel.redo.transparency";
+//	private static final String				KEY_UNDO_DRAW_ELLIPSE = "chav1961.bt.paint.editor.ImageEditPanel.undo.draw.ellipse";
+//	private static final String				KEY_REDO_DRAW_ELLIPSE = "chav1961.bt.paint.editor.ImageEditPanel.redo.draw.ellipse";
+//	private static final String				KEY_UNDO_DRAW_LINE = "chav1961.bt.paint.editor.ImageEditPanel.undo.draw.line";
+//	private static final String				KEY_REDO_DRAW_LINE = "chav1961.bt.paint.editor.ImageEditPanel.redo.draw.line";
+//	private static final String				KEY_UNDO_DRAW_PATH = "chav1961.bt.paint.editor.ImageEditPanel.undo.draw.path";
+//	private static final String				KEY_REDO_DRAW_PATH = "chav1961.bt.paint.editor.ImageEditPanel.redo.draw.path";
+//	private static final String				KEY_UNDO_DRAW_RECT = "chav1961.bt.paint.editor.ImageEditPanel.undo.draw.rect";
+//	private static final String				KEY_REDO_DRAW_RECT = "chav1961.bt.paint.editor.ImageEditPanel.redo.draw.rect";
 	
 	static {
 		try(final InputStream				is = ImageEditPanel.class.getResourceAsStream("imageeditpanel.xml")) {
@@ -125,7 +126,8 @@ public class ImageEditPanel extends JPanel implements LocalizerOwner, LocaleChan
 	private boolean 				fillingOn = false;
 	private boolean 				waitColorExtraction = false;
 	private byte[]					before;
-	private String					undoString;
+	private boolean					startUndoable = false;
+	private String					undoString, redoString;
 
 	public ImageEditPanel(final Localizer localizer) throws NullPointerException {
 		super(new BorderLayout());
@@ -347,36 +349,43 @@ public class ImageEditPanel extends JPanel implements LocalizerOwner, LocaleChan
 	}
 
 	@Override
-	public void startImageAction(final String actionType) {
+	public void startImageAction(final String beforeActionType, final String afterActionType) {
 		try{if (canvas.getBackgroundImage() != null) {
 				before = ImageUndoEdit.packImage(canvas.getBackgroundImage());
 			}
 			else {
 				before = new byte[0];
 			}
-			
-			undoString = actionType;
+			undoString = beforeActionType;
+			redoString = afterActionType;
+			startUndoable = true;
 		} catch (IOException exc) {
 			SwingUtils.getNearestLogger(this).message(Severity.error, exc, exc.getLocalizedMessage());
 		}
 	}
 
 	@Override
-	public void endImageAction(final String actionType) {
-		try{
-			fireUndo(new ImageUndoEdit(undoString, actionType, before, ImageUndoEdit.packImage(canvas.getBackgroundImage()), (i)->canvas.setBackgroundImage(i)));
-		} catch (IOException exc) {
-			SwingUtils.getNearestLogger(this).message(Severity.error, exc, exc.getLocalizedMessage());
+	public void endImageAction(final String beforeActionType, final String afterActionType) {
+		if (startUndoable) {
+			try{fireUndo(new ImageUndoEdit(beforeActionType, afterActionType, before, ImageUndoEdit.packImage(canvas.getBackgroundImage()), (i)->canvas.setBackgroundImage(i)));
+			} catch (IOException exc) {
+				SwingUtils.getNearestLogger(this).message(Severity.error, exc, exc.getLocalizedMessage());
+			} finally {
+				startUndoable = false;
+				before = null;
+				undoString = null;
+				redoString = null;
+			}
 		}
 	}
 
 	@Override
-	public void startPropertyAction(String actionType) {
+	public void startPropertyAction(final String beforeActionType, final String afterActionType) {
 		// TODO Auto-generated method stub
 	}
 
 	@Override
-	public void endPropertyAction(String actionType) {
+	public void endPropertyAction(final String beforeActionType, final String afterActionType) {
 		// TODO Auto-generated method stub
 	}
 	
@@ -513,14 +522,14 @@ public class ImageEditPanel extends JPanel implements LocalizerOwner, LocaleChan
 	public void crop() throws IOException {
 		if (lastSelection != null) {
 			final Image			current = canvas.getBackgroundImage();
-			final byte[]		before = ImageUndoEdit.packImage(current);
-
+//			final byte[]		before = ImageUndoEdit.packImage(current);
+//
 			removeAnyChild();
 			canvas.getSelectionManager().setSelectionStyle(SelectionStyle.RECTANGLE);
 			canvas.getSelectionManager().enableSelection(true);
 			canvas.getSelectionManager().setVisible(true);
 			canvas.setBackgroundImage(ImageUtils.cropImage((BufferedImage) current, lastSelection, null));
-			fireUndo(new ImageUndoEdit(KEY_UNDO_CROP, KEY_REDO_CROP, before, ImageUndoEdit.packImage(canvas.getBackgroundImage()), (i)->canvas.setBackgroundImage(i)));
+//			fireUndo(new ImageUndoEdit(KEY_UNDO_CROP, KEY_REDO_CROP, before, ImageUndoEdit.packImage(canvas.getBackgroundImage()), (i)->canvas.setBackgroundImage(i)));
 			lastSelection = null; 
 		}
 	}
@@ -531,11 +540,11 @@ public class ImageEditPanel extends JPanel implements LocalizerOwner, LocaleChan
 		
 			if (ApplicationUtils.ask(air, getLocalizer(), 300, 145)) {
 				final Image			current = canvas.getBackgroundImage();
-				final byte[]		before = ImageUndoEdit.packImage(current);
-				
+//				final byte[]		before = ImageUndoEdit.packImage(current);
+//				
 				removeAnyChild();
 				canvas.setBackgroundImage(ImageUtils.resizeImage((BufferedImage) current, air.width, air.height, canvas.getBackground(), air.stretchContent, air.fromCenter, null));
-				fireUndo(new ImageUndoEdit(KEY_UNDO_RESIZE, KEY_REDO_RESIZE, before, ImageUndoEdit.packImage(canvas.getBackgroundImage()), (i)->canvas.setBackgroundImage(i)));
+//				fireUndo(new ImageUndoEdit(KEY_UNDO_RESIZE, KEY_REDO_RESIZE, before, ImageUndoEdit.packImage(canvas.getBackgroundImage()), (i)->canvas.setBackgroundImage(i)));
 			}
 		} catch (ContentException e) {
 			SwingUtils.getNearestLogger(this).message(Severity.error, e.getLocalizedMessage());
@@ -545,47 +554,47 @@ public class ImageEditPanel extends JPanel implements LocalizerOwner, LocaleChan
 	@OnAction("action:/rotate")
 	public void rotate() throws IOException {
 		final Image			current = canvas.getBackgroundImage();
-		final byte[]		before = ImageUndoEdit.packImage(current);
+//		final byte[]		before = ImageUndoEdit.packImage(current);
 		
 		removeAnyChild();
 		canvas.setBackgroundImage(ImageUtils.rotateImage((BufferedImage) current, false, null));
-		fireUndo(new ImageUndoEdit(KEY_UNDO_ROTATE, KEY_REDO_ROTATE, before, ImageUndoEdit.packImage(canvas.getBackgroundImage()), (i)->canvas.setBackgroundImage(i)));
+//		fireUndo(new ImageUndoEdit(KEY_UNDO_ROTATE, KEY_REDO_ROTATE, before, ImageUndoEdit.packImage(canvas.getBackgroundImage()), (i)->canvas.setBackgroundImage(i)));
 	}
 	
 	@OnAction("action:/reflectVert")
 	public void reflectV() throws IOException {
 		final Image			current = canvas.getBackgroundImage();
-		final byte[]		before = ImageUndoEdit.packImage(current);
+//		final byte[]		before = ImageUndoEdit.packImage(current);
 
 		removeAnyChild();
 		canvas.setBackgroundImage(ImageUtils.mirrorImage((BufferedImage) current, false, null));
-		fireUndo(new ImageUndoEdit(KEY_UNDO_REFLECT, KEY_REDO_REFLECT, before, ImageUndoEdit.packImage(canvas.getBackgroundImage()), (i)->canvas.setBackgroundImage(i)));
+//		fireUndo(new ImageUndoEdit(KEY_UNDO_REFLECT, KEY_REDO_REFLECT, before, ImageUndoEdit.packImage(canvas.getBackgroundImage()), (i)->canvas.setBackgroundImage(i)));
 	}
 	
 	@OnAction("action:/reflectHor")
 	public void reflectH() throws IOException {
 		final Image			current = canvas.getBackgroundImage();
-		final byte[]		before = ImageUndoEdit.packImage(current);
+//		final byte[]		before = ImageUndoEdit.packImage(current);
 		
 		removeAnyChild();
 		canvas.setBackgroundImage(ImageUtils.mirrorImage((BufferedImage) current, true, null));
-		fireUndo(new ImageUndoEdit(KEY_UNDO_REFLECT, KEY_REDO_REFLECT, before, ImageUndoEdit.packImage(canvas.getBackgroundImage()), (i)->canvas.setBackgroundImage(i)));
+//		fireUndo(new ImageUndoEdit(KEY_UNDO_REFLECT, KEY_REDO_REFLECT, before, ImageUndoEdit.packImage(canvas.getBackgroundImage()), (i)->canvas.setBackgroundImage(i)));
 	}
 
 	@OnAction("action:/toGrayScale")
 	public void toGrayScale() throws IOException {
 		final Image			current = canvas.getBackgroundImage();
-		final byte[]		before = ImageUndoEdit.packImage(current);
+//		final byte[]		before = ImageUndoEdit.packImage(current);
 		
 		removeAnyChild();
 		canvas.setBackgroundImage(ImageUtils.grayScaleImage((BufferedImage) current, null));
-		fireUndo(new ImageUndoEdit(KEY_UNDO_GRAYSCALE, KEY_REDO_GRAYSCALE, before, ImageUndoEdit.packImage(canvas.getBackgroundImage()), (i)->canvas.setBackgroundImage(i)));
+//		fireUndo(new ImageUndoEdit(KEY_UNDO_GRAYSCALE, KEY_REDO_GRAYSCALE, before, ImageUndoEdit.packImage(canvas.getBackgroundImage()), (i)->canvas.setBackgroundImage(i)));
 	}
 	
 	@OnAction("action:/transparency")
 	public void makeTransparent() throws IOException {
 		final Image			current = canvas.getBackgroundImage();
-		final byte[]		before = ImageUndoEdit.packImage(current);
+//		final byte[]		before = ImageUndoEdit.packImage(current);
 		
 		removeAnyChild();
 		if (foregroundNow) {
@@ -594,7 +603,7 @@ public class ImageEditPanel extends JPanel implements LocalizerOwner, LocaleChan
 		else {
 			canvas.setBackgroundImage(ImageUtils.transparentImage((BufferedImage) current, canvas.getBackground(), true, null));
 		}
-		fireUndo(new ImageUndoEdit(KEY_UNDO_TRANSPARENCY, KEY_REDO_TRANSPARENCY, before, ImageUndoEdit.packImage(canvas.getBackgroundImage()), (i)->canvas.setBackgroundImage(i)));
+//		fireUndo(new ImageUndoEdit(KEY_UNDO_TRANSPARENCY, KEY_REDO_TRANSPARENCY, before, ImageUndoEdit.packImage(canvas.getBackgroundImage()), (i)->canvas.setBackgroundImage(i)));
 	}
 	
 	@OnAction("action:/settings.font")
@@ -670,7 +679,18 @@ public class ImageEditPanel extends JPanel implements LocalizerOwner, LocaleChan
 	}
 	
 	public void pasteImage(final Image image) {
-		
+		final String					us = undoString, rs = redoString;
+		final ResizableImageContainer	ric = new ResizableImageContainer<ResizableImageContainer>(localizer, image, (t)->{
+												try{startImageAction(us, rs);
+													ImageUtils.insertImage((BufferedImage)getImage().getImage(), t.getBounds(), (BufferedImage)t.getBackgroundImage(), null);
+													endImageAction(us, rs);
+												} catch (PaintScriptException exc) {
+													SwingUtils.getNearestLogger(t).message(Severity.error, exc, exc.getLocalizedMessage());
+												}
+											});
+		add(ric);
+		ric.setLocation(0, 0);
+		startUndoable = false;
 	}
 
 	public void refreshContent() {
@@ -690,9 +710,9 @@ public class ImageEditPanel extends JPanel implements LocalizerOwner, LocaleChan
     		waitColorExtraction = false;
 		}
 		else {
-			try {
+//			try {
 				final Image		current = canvas.getBackgroundImage();
-				final byte[]	before = ImageUndoEdit.packImage(current);
+//				final byte[]	before = ImageUndoEdit.packImage(current);
 				
 				switch (getCurrentDrawingMode()) {
 					case BRUSH	:
@@ -710,7 +730,7 @@ public class ImageEditPanel extends JPanel implements LocalizerOwner, LocaleChan
 								canvas.getSelectionManager().setSelectionStyle(SelectionStyle.RECTANGLE);
 								canvas.getSelectionManager().enableSelection(true);
 						});
-						fireUndo(new ImageUndoEdit(KEY_UNDO_DRAW_ELLIPSE, KEY_REDO_DRAW_ELLIPSE, before, ImageUndoEdit.packImage(canvas.getBackgroundImage()), (i)->canvas.setBackgroundImage(i)));
+//						fireUndo(new ImageUndoEdit(KEY_UNDO_DRAW_ELLIPSE, KEY_REDO_DRAW_ELLIPSE, before, ImageUndoEdit.packImage(canvas.getBackgroundImage()), (i)->canvas.setBackgroundImage(i)));
 						break;
 					case FILL	:
 						break;
@@ -721,7 +741,7 @@ public class ImageEditPanel extends JPanel implements LocalizerOwner, LocaleChan
 								canvas.getSelectionManager().setSelectionStyle(SelectionStyle.LINE);
 								canvas.getSelectionManager().enableSelection(true);
 						});
-						fireUndo(new ImageUndoEdit(KEY_UNDO_DRAW_LINE, KEY_REDO_DRAW_LINE, before, ImageUndoEdit.packImage(canvas.getBackgroundImage()), (i)->canvas.setBackgroundImage(i)));
+//						fireUndo(new ImageUndoEdit(KEY_UNDO_DRAW_LINE, KEY_REDO_DRAW_LINE, before, ImageUndoEdit.packImage(canvas.getBackgroundImage()), (i)->canvas.setBackgroundImage(i)));
 						break;
 					case PEN	:
 						ImageUtils.pathDraw((BufferedImage)canvas.getBackgroundImage(), (GeneralPath)parameters[0], canvas.getForeground()
@@ -730,7 +750,7 @@ public class ImageEditPanel extends JPanel implements LocalizerOwner, LocaleChan
 								canvas.getSelectionManager().setSelectionStyle(SelectionStyle.PATH);
 								canvas.getSelectionManager().enableSelection(true);
 						});
-						fireUndo(new ImageUndoEdit(KEY_UNDO_DRAW_PATH, KEY_REDO_DRAW_PATH, before, ImageUndoEdit.packImage(canvas.getBackgroundImage()), (i)->canvas.setBackgroundImage(i)));
+//						fireUndo(new ImageUndoEdit(KEY_UNDO_DRAW_PATH, KEY_REDO_DRAW_PATH, before, ImageUndoEdit.packImage(canvas.getBackgroundImage()), (i)->canvas.setBackgroundImage(i)));
 						break;
 					case RECT	:
 						if (fillingOn) {
@@ -745,7 +765,7 @@ public class ImageEditPanel extends JPanel implements LocalizerOwner, LocaleChan
 								canvas.getSelectionManager().setSelectionStyle(SelectionStyle.RECTANGLE);
 								canvas.getSelectionManager().enableSelection(true);
 						});
-						fireUndo(new ImageUndoEdit(KEY_UNDO_DRAW_RECT, KEY_REDO_DRAW_RECT, before, ImageUndoEdit.packImage(canvas.getBackgroundImage()), (i)->canvas.setBackgroundImage(i)));
+//						fireUndo(new ImageUndoEdit(KEY_UNDO_DRAW_RECT, KEY_REDO_DRAW_RECT, before, ImageUndoEdit.packImage(canvas.getBackgroundImage()), (i)->canvas.setBackgroundImage(i)));
 						break;
 					case SELECT	:
 						lastSelection = new Rectangle((Rectangle)parameters[0]);
@@ -765,9 +785,9 @@ public class ImageEditPanel extends JPanel implements LocalizerOwner, LocaleChan
 					default:
 						break;
 				}
-			} catch (IOException exc) {
-				SwingUtils.getNearestLogger(this).message(Severity.error, exc, exc.getLocalizedMessage());
-			}
+//			} catch (IOException exc) {
+//				SwingUtils.getNearestLogger(this).message(Severity.error, exc, exc.getLocalizedMessage());
+//			}
 		}
 	}
 	
