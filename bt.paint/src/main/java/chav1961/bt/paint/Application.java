@@ -455,7 +455,7 @@ public class Application extends JFrame implements NodeMetadataOwner, LocaleChan
 
 	@OnAction("action:/paste")
     public void paste() {
-		try{panel.setImage(predef.getPredefined(Predefines.PREDEF_CLIPBOARD, ClipboardWrapper.class).getImage());
+		try{panel.pasteImage(predef.getPredefined(Predefines.PREDEF_CLIPBOARD, ClipboardWrapper.class).getImage().getImage());
 		} catch (PaintScriptException e) {
 			getLogger().message(Severity.error,e.getLocalizedMessage());
 		}

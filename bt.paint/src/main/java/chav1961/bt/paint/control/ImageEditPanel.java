@@ -36,6 +36,7 @@ import javax.swing.JToggleButton;
 import javax.swing.JToolBar;
 import javax.swing.SwingUtilities;
 import javax.swing.border.EtchedBorder;
+import javax.swing.border.LineBorder;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import javax.swing.event.UndoableEditEvent;
@@ -679,8 +680,8 @@ public class ImageEditPanel extends JPanel implements LocalizerOwner, LocaleChan
 	}
 	
 	public void pasteImage(final Image image) {
-		final String					us = undoString, rs = redoString;
-		final ResizableImageContainer	ric = new ResizableImageContainer<ResizableImageContainer>(localizer, image, (t)->{
+		final String						us = undoString, rs = redoString;
+		final ResizableImageContainer<?>	ric = new ResizableImageContainer<>(localizer, image, (t)->{
 												try{startImageAction(us, rs);
 													ImageUtils.insertImage((BufferedImage)getImage().getImage(), t.getBounds(), (BufferedImage)t.getBackgroundImage(), null);
 													endImageAction(us, rs);
@@ -688,8 +689,11 @@ public class ImageEditPanel extends JPanel implements LocalizerOwner, LocaleChan
 													SwingUtils.getNearestLogger(t).message(Severity.error, exc, exc.getLocalizedMessage());
 												}
 											});
-		add(ric);
+		canvas.add(ric);
 		ric.setLocation(0, 0);
+		ric.setVisible(true);
+		canvas.revalidate();
+		canvas.repaint();
 		startUndoable = false;
 	}
 
