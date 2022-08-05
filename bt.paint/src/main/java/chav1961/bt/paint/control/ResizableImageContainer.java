@@ -112,8 +112,9 @@ public class ResizableImageContainer<T extends ResizableImageContainer<?>> exten
 			addKeyListener(this);
 			addMouseListener(this);
 			addMouseMotionListener(this);
-			addFocusListener(this);
 			setFocusable(true);
+			setRequestFocusEnabled(true);
+			addFocusListener(this);
 		}
 	}
 

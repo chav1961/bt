@@ -1,16 +1,27 @@
 package chav1961.bt.paint.script.intern.runtime;
 
+import java.awt.Color;
+import java.awt.Dimension;
+import java.awt.Font;
+import java.awt.Point;
+import java.awt.Rectangle;
+import java.awt.Stroke;
+import java.awt.geom.AffineTransform;
 import java.lang.reflect.Array;
 import java.nio.channels.UnsupportedAddressTypeException;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Set;
 
 import chav1961.bt.paint.control.Predefines;
 import chav1961.bt.paint.interfaces.PaintScriptException;
 import chav1961.bt.paint.script.intern.interfaces.ExecuteScriptCallback;
+import chav1961.bt.paint.script.intern.parsers.ScriptParserUtil.DataTypes;
 import chav1961.bt.paint.script.intern.parsers.ScriptParserUtil.EntityDescriptor;
 import chav1961.bt.paint.script.intern.parsers.ScriptParserUtil.Lexema;
+import chav1961.bt.paint.script.intern.parsers.ScriptParserUtil.OperatorPriorities;
 import chav1961.bt.paint.script.intern.parsers.ScriptParserUtil.OperatorTypes;
 import chav1961.bt.paint.script.intern.parsers.ScriptParserUtil.SyntaxNodeType;
 import chav1961.purelib.basic.SequenceIterator;
@@ -441,6 +452,216 @@ public class ScriptExecutorUtil {
 		}
 	}
 
+	private static void insertConversions(final SyntaxNode node, final Class<?> awaited) {
+		switch ((SyntaxNodeType)node.getType()) {
+			case BREAK		:	case CASE		:	case CASEDEF	:	case CONTINUE	:
+			case FOR		:	case FOR1		:	case FORALL		:	case IF			:
+			case RETURN1	:	case RETURN		:	case SEQUENCE	:	case UNTIL		:
+			case WHILE		:
+				throw new IllegalArgumentException("Node type ["+node.getType()+"] can't be used for conversion");
+			case ACCESS		:
+				if ((Class<?>)node.cargo != awaited) {
+					addConversion(node, awaited);
+				}
+				break;
+			case BINARY		:
+				final Class<?>	expr = calcType(node);
+				
+				for (SyntaxNode item : node.children) {
+					insertConversions(node, expr);
+				}
+				if (expr != awaited) {
+					addConversion(node, awaited);
+				}
+				break;
+			case CALL		:
+				break;
+			case CONSTANT	:
+				if (((Lexema)node.cargo).getDataType().getRightValueClassAssociated() != awaited) {
+					convertConstant(node, awaited);
+				}
+				break;
+			case LIST		:	case RANGE		:
+				for (SyntaxNode item : node.children) {
+					insertConversions(node, awaited);
+				}
+				break;
+			case PREFIX		:	case SUFFIX		:
+				if (((OperatorTypes)node.cargo).hasStrongReturnedType()) {
+					if (((OperatorTypes)node.cargo).getReturnedType().getRightValueClassAssociated() != awaited) {
+						addConversion(node, awaited);
+					}
+				}
+				else if (calcType(node.children[0]) != awaited) {
+					addConversion(node, awaited);
+				}
+				break;
+			case ROOT		:
+				break;
+			case STRONG_BINARY:
+				if (((OperatorTypes)node.cargo).hasStrongReturnedType()) {
+					final Class<?>	strongLeft = calcType(node.children[0]);
+					
+					insertConversions(node.children[1], strongLeft);
+					if (strongLeft != awaited) {
+						addConversion(node, awaited);
+					}
+				}
+				else {
+					for (SyntaxNode item : node.children) {
+						insertConversions(node, awaited);
+					}
+				}
+				break;
+			case SUBSTITUTION:
+				if (awaited != char[].class) {
+					addConversion(node, awaited);
+				}
+				break;
+			default:
+				throw new UnsupportedOperationException("Node type ["+node.getType()+"] is not supported yet");
+		}
+	}	
+	
+	private static Class<?> calcType(final SyntaxNode node) {
+		switch ((SyntaxNodeType)node.getType()) {
+			case BREAK		:	case CASE		:	case CASEDEF	:	case CONTINUE	:
+			case FOR		:	case FOR1		:	case FORALL		:	case IF			:
+			case RETURN1	:	case RETURN		:	case SEQUENCE	:	case UNTIL		:
+			case WHILE		:
+				return CallResult.class;
+			case ACCESS		:
+				return (Class<?>)node.cargo;
+			case BINARY		:
+				final Set<Class<?>>		binaryCollection = new HashSet<>();
+				final OperatorTypes[]	ops = (OperatorTypes[])node.cargo;
+				
+				binaryCollection.add(calcType(node.children[0]));
+				for (int index = 0; index < ops.length; index++) {
+					if (ops[index].hasStrongReturnedType()) {
+						binaryCollection.add(ops[index].getReturnedType().getRightValueClassAssociated());
+					}
+					else {
+						binaryCollection.add(calcType(node.children[index + 1]));
+					}
+				}
+				if (binaryCollection.size() == 1) {
+					return extractDataType(binaryCollection);
+				}
+				else {
+					return reduceDataType(binaryCollection);
+				}
+			case CALL		:
+				break;
+			case CONSTANT	:
+				return ((Lexema)node.cargo).getDataType().getRightValueClassAssociated();
+			case LIST		:	case RANGE		:
+				final Set<Class<?>>	listCollection = new HashSet<>(); 
+				
+				for (SyntaxNode item : node.children) {
+					listCollection.add(calcType(item));
+				}
+				if (listCollection.size() == 1) {
+					return extractDataType(listCollection);
+				}
+				else {
+					return reduceDataType(listCollection);
+				}
+			case PREFIX		:	case SUFFIX		:
+				if (((OperatorTypes)node.cargo).hasStrongReturnedType()) {
+					return ((OperatorTypes)node.cargo).getReturnedType().getRightValueClassAssociated();
+				}
+				else {
+					return calcType(node.children[0]); 
+				}
+			case ROOT		:
+				return Object.class;
+			case STRONG_BINARY:
+				if (((OperatorTypes)node.cargo).hasStrongReturnedType()) {
+					return ((OperatorTypes)node.cargo).getReturnedType().getRightValueClassAssociated();
+				}
+				else {
+					final Set<Class<?>>	strongCollection = new HashSet<>(); 
+					
+					for (SyntaxNode item : node.children) {
+						strongCollection.add(calcType(item));
+					}
+					if (strongCollection.size() == 1) {
+						return extractDataType(strongCollection);
+					}
+					else {
+						return reduceDataType(strongCollection);
+					}
+				}
+			case SUBSTITUTION:
+				return char[].class;
+			default:
+				throw new UnsupportedOperationException("Node type ["+node.getType()+"] is not supported yet");
+		}
+		return null;
+	}
+	
+	private static Class<?> reduceDataType(final Set<Class<?>> collection) {
+		if (collection.contains(Long.class) && collection.contains(Double.class)) {
+			collection.remove(Long.class);
+		}
+		return extractDataType(collection);
+	}
+
+	private static Class<?> extractDataType(final Set<Class<?>> collection) {
+		for (Class<?> item : collection) {
+			return item;
+		}
+		throw new IllegalArgumentException("Collection can't be empty!"); 
+	}
+
+	private static void convertConstant(final SyntaxNode node, final Class<?> awaited) {
+		addConversion(node, awaited);
+	}
+
+	private static void addConversion(final SyntaxNode node, final Class<?> awaited) {
+		final SyntaxNode	child = (SyntaxNode) node.clone();
+		
+		node.children = new SyntaxNode[] {child};
+		node.type = SyntaxNodeType.SUFFIX;
+		if (awaited == Long.class) {
+			node.cargo = OperatorTypes.TO_INT;
+		}
+		else if (awaited == Double.class) {
+			node.cargo = OperatorTypes.TO_REAL;
+		}
+		else if (awaited == char[].class) {
+			node.cargo = OperatorTypes.TO_STR;
+		}
+		else if (awaited == Boolean.class) {
+			node.cargo = OperatorTypes.TO_BOOL;
+		}
+		else if (awaited == Color.class) {
+			node.cargo = OperatorTypes.TO_COLOR;
+		}
+		else if (awaited == Font.class) {
+			node.cargo = OperatorTypes.TO_FONT;
+		}
+		else if (awaited == Point.class) {
+			node.cargo = OperatorTypes.TO_POINT;
+		}
+		else if (awaited == Rectangle.class) {
+			node.cargo = OperatorTypes.TO_RECT;
+		}
+		else if (awaited == Dimension.class) {
+			node.cargo = OperatorTypes.TO_SIZE;
+		}
+		else if (awaited == Stroke.class) {
+			node.cargo = OperatorTypes.TO_STROKE;
+		}
+		else if (awaited == AffineTransform.class) {
+			node.cargo = OperatorTypes.TO_TRANSFORM;
+		}
+		else {
+			throw new UnsupportedOperationException(); 
+		}
+	}
+	
 	private static class CallResult {
 		private static enum ResultType {
 			ORDINAL(false), 

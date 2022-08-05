@@ -7,6 +7,7 @@ import org.junit.Assert;
 import org.junit.Test;
 
 import chav1961.bt.paint.script.intern.interfaces.LexTypes;
+import chav1961.bt.paint.script.intern.parsers.ScriptParserUtil.AccessType;
 import chav1961.bt.paint.script.intern.parsers.ScriptParserUtil.CollectionType;
 import chav1961.bt.paint.script.intern.parsers.ScriptParserUtil.DataTypes;
 import chav1961.bt.paint.script.intern.parsers.ScriptParserUtil.EntityDescriptor;
@@ -246,6 +247,26 @@ public class ScriptParserUtilTest {
 
 	@Test
 	public void accessTest() throws SyntaxException {
+		final SyntaxTreeInterface<EntityDescriptor>	names = new AndOrTree<>();
+		final SyntaxNode<SyntaxNodeType, SyntaxNode<SyntaxNodeType, ?>>	root = new SyntaxNode<>(0, 0, SyntaxNodeType.ROOT, 0, null);
+
+		ScriptParserUtil.buildDeclarations(buildLex("r : rect", names), 0, names, root);
+
+		ScriptParserUtil.buildExpression(buildLex("r", names), 0, names, root);
+		Assert.assertEquals(SyntaxNodeType.ACCESS, root.getType());
+		Assert.assertEquals(0, root.children.length);
+
+		ScriptParserUtil.buildExpression(buildLex("r.x", names), 0, names, root);
+		Assert.assertEquals(SyntaxNodeType.ACCESS, root.getType());
+		Assert.assertEquals(1, root.children.length);
+		Assert.assertEquals(SyntaxNodeType.SUFFIX, root.children[0].type);
+		Assert.assertEquals(AccessType.GET_FIELD, root.children[0].cargo);
+
+		ScriptParserUtil.buildExpression(buildLex("r.getX()", names), 0, names, root);
+		Assert.assertEquals(SyntaxNodeType.ACCESS, root.getType());
+		Assert.assertEquals(1, root.children.length);
+		Assert.assertEquals(SyntaxNodeType.SUFFIX, root.children[0].type);
+		Assert.assertEquals(AccessType.GET_FIELD, root.children[0].cargo);
 	}	
 
 	@Test

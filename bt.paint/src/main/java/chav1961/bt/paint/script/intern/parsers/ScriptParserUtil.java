@@ -1,5 +1,15 @@
 package chav1961.bt.paint.script.intern.parsers;
 
+
+import java.awt.Color;
+import java.awt.Dimension;
+import java.awt.Font;
+import java.awt.Image;
+import java.awt.Point;
+import java.awt.Rectangle;
+import java.awt.Stroke;
+import java.awt.geom.AffineTransform;
+import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.io.Reader;
 import java.lang.reflect.Field;
@@ -29,6 +39,7 @@ import chav1961.purelib.basic.CharUtils;
 import chav1961.purelib.basic.LineByLineProcessor;
 import chav1961.purelib.basic.exceptions.SyntaxException;
 import chav1961.purelib.basic.interfaces.SyntaxTreeInterface;
+import chav1961.purelib.cdb.CompilerUtils;
 import chav1961.purelib.cdb.SyntaxNode;
 
 //<prog>::=<anon_block>[{<function>|<procedure>]}]...
@@ -86,26 +97,28 @@ public class ScriptParserUtil {
 	}
 	
 	public static enum DataTypes {
-		UNKNOWN(Object.class, Object.class),
-		INT(long.class, long.class),
-		REAL(double.class, double.class),
-		STR(char[].class, char[].class),
-		BOOL(boolean.class, boolean.class),
-		COLOR(ColorWrapper.class, ColorWrapper.class),
-		POINT(PointWrapper.class, PointWrapper.class),
-		RECT(RectWrapper.class, RectWrapper.class),
-		SIZE(SizeWrapper.class, SizeWrapper.class),
-		FONT(FontWrapper.class, FontWrapper.class),
-		STROKE(StrokeWrapper.class, StrokeWrapper.class),
-		TRANSFORM(TransformWrapper.class, TransformWrapper.class),
-		IMAGE(ImageWrapper.class, ImageWrapper.class);
+		UNKNOWN(Object.class, Object.class, Object.class),
+		INT(long.class, long.class, long.class),
+		REAL(double.class, double.class, double.class),
+		STR(char[].class, char[].class, char[].class),
+		BOOL(boolean.class, boolean.class, boolean.class),
+		COLOR(ColorWrapper.class, ColorWrapper.class, Color.class),
+		POINT(PointWrapper.class, PointWrapper.class, Point.class),
+		RECT(RectWrapper.class, RectWrapper.class, Rectangle.class),
+		SIZE(SizeWrapper.class, SizeWrapper.class, Dimension.class),
+		FONT(FontWrapper.class, FontWrapper.class, Font.class),
+		STROKE(StrokeWrapper.class, StrokeWrapper.class, Stroke.class),
+		TRANSFORM(TransformWrapper.class, TransformWrapper.class, AffineTransform.class),
+		IMAGE(ImageWrapper.class, ImageWrapper.class, BufferedImage.class);
 		
 		private final Class<?>	leftValueAssociated;
 		private final Class<?>	rightValueAssociated;
+		private final Class<?>	class2Wrap;
 		
-		private DataTypes(final Class<?> leftValueAssociated, final Class<?> rightValueAssociated) {
+		private DataTypes(final Class<?> leftValueAssociated, final Class<?> rightValueAssociated, final Class<?> class2Wrap) {
 			this.leftValueAssociated = leftValueAssociated;
 			this.rightValueAssociated = rightValueAssociated;
+			this.class2Wrap = class2Wrap;
 		}
 		
 		public Class<?> getLeftValueClassAssociated() {
@@ -116,6 +129,9 @@ public class ScriptParserUtil {
 			return rightValueAssociated;
 		}
 
+		public Class<?> getClass2Wrap() {
+			return class2Wrap;
+		}
 	}
 
 	static enum CollectionType {
@@ -188,42 +204,59 @@ public class ScriptParserUtil {
 	public static enum OperatorTypes {
 		INC(OperatorPriorities.UNKNOWN, OperatorPriorities.UNARY, OperatorPriorities.TYPE),
 		DEC(OperatorPriorities.UNKNOWN, OperatorPriorities.UNARY, OperatorPriorities.TYPE),
-		BIT_INV(OperatorPriorities.UNKNOWN, OperatorPriorities.UNARY, OperatorPriorities.UNKNOWN),
-		BIT_AND(OperatorPriorities.BIT_AND, OperatorPriorities.UNARY, OperatorPriorities.UNKNOWN),
-		BIT_OR(OperatorPriorities.BIT_OR, OperatorPriorities.UNKNOWN, OperatorPriorities.UNKNOWN),
-		BIT_XOR(OperatorPriorities.BIT_OR, OperatorPriorities.UNKNOWN, OperatorPriorities.UNKNOWN),
+		BIT_INV(OperatorPriorities.UNKNOWN, OperatorPriorities.UNARY, OperatorPriorities.UNKNOWN, DataTypes.INT),
+		BIT_AND(OperatorPriorities.BIT_AND, OperatorPriorities.UNARY, OperatorPriorities.UNKNOWN, DataTypes.INT),
+		BIT_OR(OperatorPriorities.BIT_OR, OperatorPriorities.UNKNOWN, OperatorPriorities.UNKNOWN, DataTypes.INT),
+		BIT_XOR(OperatorPriorities.BIT_OR, OperatorPriorities.UNKNOWN, OperatorPriorities.UNKNOWN, DataTypes.INT),
 		MUL(OperatorPriorities.MULTIPLICATION, OperatorPriorities.UNKNOWN, OperatorPriorities.UNKNOWN),
 		DIV(OperatorPriorities.MULTIPLICATION, OperatorPriorities.UNKNOWN, OperatorPriorities.UNKNOWN),
 		MOD(OperatorPriorities.MULTIPLICATION, OperatorPriorities.UNKNOWN, OperatorPriorities.UNKNOWN),
 		ADD(OperatorPriorities.ADDITION, OperatorPriorities.UNARY, OperatorPriorities.UNKNOWN),
 		SUB(OperatorPriorities.ADDITION, OperatorPriorities.UNARY, OperatorPriorities.UNKNOWN),
-		GT(OperatorPriorities.COMPARISON, OperatorPriorities.UNKNOWN, OperatorPriorities.UNKNOWN),
-		GE(OperatorPriorities.COMPARISON, OperatorPriorities.UNKNOWN, OperatorPriorities.UNKNOWN),
-		LT(OperatorPriorities.COMPARISON, OperatorPriorities.UNKNOWN, OperatorPriorities.UNKNOWN),
-		LE(OperatorPriorities.COMPARISON, OperatorPriorities.UNKNOWN, OperatorPriorities.UNKNOWN),
-		EQ(OperatorPriorities.COMPARISON, OperatorPriorities.UNKNOWN, OperatorPriorities.UNKNOWN),
-		NE(OperatorPriorities.COMPARISON, OperatorPriorities.UNKNOWN, OperatorPriorities.UNKNOWN),
-		IN(OperatorPriorities.COMPARISON, OperatorPriorities.UNKNOWN, OperatorPriorities.UNKNOWN, true),
-		BOOL_NOT(OperatorPriorities.UNKNOWN, OperatorPriorities.BOOL_NOT, OperatorPriorities.UNKNOWN),
-		BOOL_AND(OperatorPriorities.BOOL_AND, OperatorPriorities.UNKNOWN, OperatorPriorities.UNKNOWN),
-		BOOL_OR(OperatorPriorities.BOOL_OR, OperatorPriorities.UNKNOWN, OperatorPriorities.UNKNOWN),
+		GT(OperatorPriorities.COMPARISON, OperatorPriorities.UNKNOWN, OperatorPriorities.UNKNOWN, DataTypes.BOOL),
+		GE(OperatorPriorities.COMPARISON, OperatorPriorities.UNKNOWN, OperatorPriorities.UNKNOWN, DataTypes.BOOL),
+		LT(OperatorPriorities.COMPARISON, OperatorPriorities.UNKNOWN, OperatorPriorities.UNKNOWN, DataTypes.BOOL),
+		LE(OperatorPriorities.COMPARISON, OperatorPriorities.UNKNOWN, OperatorPriorities.UNKNOWN, DataTypes.BOOL),
+		EQ(OperatorPriorities.COMPARISON, OperatorPriorities.UNKNOWN, OperatorPriorities.UNKNOWN, DataTypes.BOOL),
+		NE(OperatorPriorities.COMPARISON, OperatorPriorities.UNKNOWN, OperatorPriorities.UNKNOWN, DataTypes.BOOL),
+		IN(OperatorPriorities.COMPARISON, OperatorPriorities.UNKNOWN, OperatorPriorities.UNKNOWN, DataTypes.BOOL, true),
+		BOOL_NOT(OperatorPriorities.UNKNOWN, OperatorPriorities.BOOL_NOT, OperatorPriorities.UNKNOWN, DataTypes.BOOL),
+		BOOL_AND(OperatorPriorities.BOOL_AND, OperatorPriorities.UNKNOWN, OperatorPriorities.UNKNOWN, DataTypes.BOOL),
+		BOOL_OR(OperatorPriorities.BOOL_OR, OperatorPriorities.UNKNOWN, OperatorPriorities.UNKNOWN, DataTypes.BOOL),
 		ASSIGNMENT(OperatorPriorities.ASSIGNMENT, OperatorPriorities.UNKNOWN, OperatorPriorities.UNKNOWN),
+		TO_INT(OperatorPriorities.UNKNOWN, OperatorPriorities.UNKNOWN, OperatorPriorities.UNKNOWN, DataTypes.INT),
+		TO_REAL(OperatorPriorities.UNKNOWN, OperatorPriorities.UNKNOWN, OperatorPriorities.UNKNOWN, DataTypes.REAL),
+		TO_STR(OperatorPriorities.UNKNOWN, OperatorPriorities.UNKNOWN, OperatorPriorities.UNKNOWN, DataTypes.STR),
+		TO_BOOL(OperatorPriorities.UNKNOWN, OperatorPriorities.UNKNOWN, OperatorPriorities.UNKNOWN, DataTypes.BOOL),
+		TO_COLOR(OperatorPriorities.UNKNOWN, OperatorPriorities.UNKNOWN, OperatorPriorities.UNKNOWN, DataTypes.COLOR),
+		TO_FONT(OperatorPriorities.UNKNOWN, OperatorPriorities.UNKNOWN, OperatorPriorities.UNKNOWN, DataTypes.FONT),
+		TO_POINT(OperatorPriorities.UNKNOWN, OperatorPriorities.UNKNOWN, OperatorPriorities.UNKNOWN, DataTypes.POINT),
+		TO_RECT(OperatorPriorities.UNKNOWN, OperatorPriorities.UNKNOWN, OperatorPriorities.UNKNOWN, DataTypes.RECT),
+		TO_SIZE(OperatorPriorities.UNKNOWN, OperatorPriorities.UNKNOWN, OperatorPriorities.UNKNOWN, DataTypes.SIZE),
+		TO_STROKE(OperatorPriorities.UNKNOWN, OperatorPriorities.UNKNOWN, OperatorPriorities.UNKNOWN, DataTypes.STROKE),
+		TO_TRANSFORM(OperatorPriorities.UNKNOWN, OperatorPriorities.UNKNOWN, OperatorPriorities.UNKNOWN, DataTypes.TRANSFORM),
 		UNKNOWN(OperatorPriorities.UNKNOWN, OperatorPriorities.UNKNOWN, OperatorPriorities.UNKNOWN);
 		
 		private final OperatorPriorities	infix;
 		private final OperatorPriorities	prefix;
 		private final OperatorPriorities	suffix;
+		private final DataTypes				returned;
 		private final boolean				listSupported;
 
 		
 		private OperatorTypes(final OperatorPriorities infix, final OperatorPriorities prefix, final OperatorPriorities suffix) {
-			this(infix, prefix, suffix, false);
+			this(infix, prefix, suffix, null, false);
+		}
+
+		private OperatorTypes(final OperatorPriorities infix, final OperatorPriorities prefix, final OperatorPriorities suffix, final DataTypes returned) {
+			this(infix, prefix, suffix, returned, false);
 		}
 		
-		private OperatorTypes(final OperatorPriorities infix, final OperatorPriorities prefix, final OperatorPriorities suffix, final boolean listSupported) {
+		private OperatorTypes(final OperatorPriorities infix, final OperatorPriorities prefix, final OperatorPriorities suffix, final DataTypes returned, final boolean listSupported) {
 			this.infix = infix;
 			this.prefix = prefix;
 			this.suffix = suffix;
+			this.returned = returned;
 			this.listSupported = listSupported;
 		}
 		
@@ -237,6 +270,14 @@ public class ScriptParserUtil {
 
 		public OperatorPriorities getSuffixPriority() {
 			return suffix;
+		}
+		
+		public boolean hasStrongReturnedType() {
+			return returned != null;
+		}
+		
+		public DataTypes getReturnedType() {
+			return returned;
 		}
 		
 		public boolean isListSupported() {
@@ -882,7 +923,8 @@ loop:	for (;;) {
 			if (data[from].getType() == LexTypes.OPERATOR && data[from].opType == OperatorTypes.ASSIGNMENT) {
 				initials = (SyntaxNode) root.clone();
 				
-				from = buildExpression(data, from + 1, names, initials);
+				from = buildExpression(data, from + 1, names, initials);						
+				convert(initials, nameType.getLeftValueClassAssociated());
 			}
 			if (names.getCargo(nameId) == null) {
 				names.setCargo(nameId, new EntityDescriptor(nameId, nameCollection, nameType, initials));
@@ -961,6 +1003,7 @@ loop:	for (;;) {
 						final SyntaxNode<SyntaxNodeType, SyntaxNode<SyntaxNodeType, ?>>	thenNode = (SyntaxNode<SyntaxNodeType, SyntaxNode<SyntaxNodeType, ?>>) root.clone();
 						
 						from = buildExpression(data, from+1, names, ifCond);
+						convert(ifCond, Boolean.class);
 						if (data[from].getType() == LexTypes.OPTION && data[from].getKeyword() == Keywords.THEN) {
 							from = buildStatement(data, from + 1, names, thenNode);
 						}
@@ -986,6 +1029,7 @@ loop:	for (;;) {
 						final SyntaxNode<SyntaxNodeType, SyntaxNode<SyntaxNodeType, ?>>	whileNode = (SyntaxNode<SyntaxNodeType, SyntaxNode<SyntaxNodeType, ?>>) root.clone();
 						
 						from = buildExpression(data, from+1, names, whileCond);
+						convert(whileCond, Boolean.class);
 						if (data[from].getType() == LexTypes.STATEMENT && data[from].getKeyword() == Keywords.DO) {
 							from = buildStatement(data, from + 1, names, whileNode);
 						}
@@ -1003,6 +1047,7 @@ loop:	for (;;) {
 						from = buildStatement(data, from+1, names, untilNode);
 						if (data[from].getType() == LexTypes.STATEMENT && data[from].getKeyword() == Keywords.WHILE) {
 							from = buildExpression(data, from + 1, names, untilCond);
+							convert(untilCond, Boolean.class);
 						}
 						else {
 							throw new SyntaxException(data[from+1].getRow(), data[from+1].getCol(), "Missing 'while'");
@@ -1019,12 +1064,15 @@ loop:	for (;;) {
 								throw new SyntaxException(data[from+1].getRow(), data[from+1].getCol(), "Undeclared variable");
 							}
 							else if (data[from+2].getType() == LexTypes.OPERATOR) {
+								final Class<?>	varAwaited = boolean.class;							
+								
 								switch (data[from+2].getOperatorType()) {
 									case IN 		:
 										final SyntaxNode<SyntaxNodeType, SyntaxNode<SyntaxNodeType, ?>>	inExpr = (SyntaxNode<SyntaxNodeType, SyntaxNode<SyntaxNodeType, ?>>) root.clone();
 										final SyntaxNode<SyntaxNodeType, SyntaxNode<SyntaxNodeType, ?>>	inNode = (SyntaxNode<SyntaxNodeType, SyntaxNode<SyntaxNodeType, ?>>) root.clone();
 										
 										from = buildListExpression(data, from + 3, names, inExpr);
+										convert(inExpr, varAwaited);
 										if (data[from].getType() == LexTypes.STATEMENT && data[from].getKeyword() == Keywords.DO) {
 											from = buildStatement(data, from + 1, names, inNode);
 											root.type = SyntaxNodeType.FORALL;
@@ -1042,13 +1090,16 @@ loop:	for (;;) {
 										final SyntaxNode<SyntaxNodeType, SyntaxNode<SyntaxNodeType, ?>>	forNode = (SyntaxNode<SyntaxNodeType, SyntaxNode<SyntaxNodeType, ?>>) root.clone();
 										
 										from = buildExpression(data, from + 3, names, forInitial);
+										convert(forInitial, varAwaited);
 										if (data[from].getType() == LexTypes.OPTION && data[from].getKeyword() == Keywords.TO) {
 											from = buildExpression(data, from + 1, names, forTerminal);
+											convert(forTerminal, varAwaited);
 											
 											if (data[from].getType() == LexTypes.OPTION && data[from].getKeyword() == Keywords.STEP) {
 												final SyntaxNode<SyntaxNodeType, SyntaxNode<SyntaxNodeType, ?>>	forStep = (SyntaxNode<SyntaxNodeType, SyntaxNode<SyntaxNodeType, ?>>) root.clone();
 
 												from = buildExpression(data, from + 1, names, forStep);
+												convert(forStep, varAwaited);
 												root.type = SyntaxNodeType.FOR;
 												root.value = varId;
 												root.children = new SyntaxNode[] {forInitial, forTerminal, forStep, forNode};
@@ -1077,11 +1128,14 @@ loop:	for (;;) {
 						final List<SyntaxNode<SyntaxNodeType, SyntaxNode<SyntaxNodeType, ?>>> 	ofList = new ArrayList<SyntaxNode<SyntaxNodeType,SyntaxNode<SyntaxNodeType,?>>>();
 						
 						from = buildExpression(data, from + 1, names, caseExpr);
+						final Class<?>	caseAwaited = getValueType(caseExpr);
+						
 						while (data[from].getType() == LexTypes.OPTION && data[from].getKeyword() == Keywords.OF) {
 							final SyntaxNode<SyntaxNodeType, SyntaxNode<SyntaxNodeType, ?>>		ofCond = (SyntaxNode<SyntaxNodeType, SyntaxNode<SyntaxNodeType, ?>>) root.clone();
 							final SyntaxNode<SyntaxNodeType, SyntaxNode<SyntaxNodeType, ?>>		ofNode = (SyntaxNode<SyntaxNodeType, SyntaxNode<SyntaxNodeType, ?>>) root.clone();
 							
 							from = buildListExpression(data, from + 1, names, ofCond);
+							convert(ofCond, caseAwaited);
 							if (data[from].getType() == LexTypes.COLON) {
 								from = buildStatement(data, from+1, names, ofNode);
 							}
@@ -1201,10 +1255,6 @@ loop:	for (;;) {
 		return buildExpression(OperatorPriorities.BOOL_OR, data, from, names, root);
 	}
 
-	static void convert(final SyntaxNode node, final Class<?> awaited) {
-		// TODO Auto-generated method stub
-	}
-	
 	private static int buildExpression(final OperatorPriorities prty, final Lexema[] data, int from, final SyntaxTreeInterface<EntityDescriptor> names, final SyntaxNode<SyntaxNodeType, SyntaxNode<SyntaxNodeType, ?>> root) throws SyntaxException {
 		root.row = data[from].getRow();
 		root.col = data[from].getCol();
@@ -1324,7 +1374,7 @@ loop:	for (;;) {
 	}
 		
 	private static int buildAccess(final Lexema[] data, int from, final EntityDescriptor desc, final SyntaxTreeInterface<EntityDescriptor> names, final SyntaxNode<SyntaxNodeType, SyntaxNode<SyntaxNodeType, ?>> root) throws SyntaxException {
-		return buildAccess(data, from, desc, desc.dataType.getRightValueClassAssociated(), names, root);
+		return buildAccess(data, from, desc, desc.dataType.getClass2Wrap(), names, root);
 	}
 
 	private static int buildAccess(final Lexema[] data, int from, final EntityDescriptor desc, Class<?> current, final SyntaxTreeInterface<EntityDescriptor> names, final SyntaxNode<SyntaxNodeType, SyntaxNode<SyntaxNodeType, ?>> root) throws SyntaxException {
@@ -1348,10 +1398,15 @@ loop:	for (;;) {
 					methodAccess.type = SyntaxNodeType.CALL;
 					methodAccess.value = data[from].getLongAssociated();
 					
-					do {final SyntaxNode<SyntaxNodeType, SyntaxNode<SyntaxNodeType, ?>>	parameterValue = (SyntaxNode<SyntaxNodeType, SyntaxNode<SyntaxNodeType, ?>>) root.clone();
-						from = buildExpression(data, from + 1, names, parameterValue);
-						parameters.add(parameterValue);
-					} while (data[from].getType() == LexTypes.COLON);
+					if (data[from + 2].getType() != LexTypes.CLOSE) {
+						do {final SyntaxNode<SyntaxNodeType, SyntaxNode<SyntaxNodeType, ?>>	parameterValue = (SyntaxNode<SyntaxNodeType, SyntaxNode<SyntaxNodeType, ?>>) root.clone();
+							from = buildExpression(data, from + 1, names, parameterValue);
+							parameters.add(parameterValue);
+						} while (data[from].getType() == LexTypes.COMMA);
+					}
+					else {
+						from += 2;
+					}
 					
 					if (data[from].getType() != LexTypes.CLOSE) {
 						throw new SyntaxException(data[from].getRow(), data[from].getCol(), "Missing ')'"); 
@@ -1404,7 +1459,7 @@ loop:	for (;;) {
 						do {final SyntaxNode<SyntaxNodeType, SyntaxNode<SyntaxNodeType, ?>>	indexValue = (SyntaxNode<SyntaxNodeType, SyntaxNode<SyntaxNodeType, ?>>) root.clone();
 							from = buildExpression(data, from + 1, names, indexValue);
 							indices.add(indexValue);
-						} while (data[from].getType() == LexTypes.COLON);
+						} while (data[from].getType() == LexTypes.COMMA);
 						
 						if (data[from].getType() != LexTypes.CLOSEB) {
 							throw new SyntaxException(data[from].getRow(), data[from].getCol(), "Missing ']'"); 
@@ -1440,29 +1495,297 @@ loop:	for (;;) {
 			theSameFirstName = false;
 		} while (data[from].getType() == LexTypes.DOT);
 
+		root.cargo = current;
 		root.children = items.toArray(new SyntaxNode[items.size()]);
 		return from;
 	}	
 	
 	private static Class<?>[] buildSignature(final SyntaxNode... children) {
 		// TODO Auto-generated method stub
-		return null;
+		if (children.length == 0) {
+			return new Class<?>[0];
+		}
+		else {
+			return null;
+		}
 	}
 
-	private static Class<?> getValueType(final SyntaxNode node) {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	private static boolean canConvert(final SyntaxNode node, final Class<?> awaited) {
-		// TODO Auto-generated method stub
-		return false;
-	}
-	
 	private static Set<Class<?>> collectValueTypes(final SyntaxNode... nodes) {
 		// TODO Auto-generated method stub
 		return null;
 	}
+
+	private static void convert(final SyntaxNode node, final Class<?> awaited) {
+		switch ((SyntaxNodeType)node.getType()) {
+			case BREAK		:	case CASE		:	case CASEDEF	:	case CONTINUE	:
+			case FOR		:	case FOR1		:	case FORALL		:	case IF			:
+			case RETURN1	:	case RETURN		:	case SEQUENCE	:	case UNTIL		:
+			case WHILE		:
+				throw new IllegalArgumentException("Node type ["+node.getType()+"] can't be used for conversion");
+			case ACCESS		:
+				if ((Class<?>)node.cargo != awaited) {
+					addConversion(node, awaited);
+				}
+				break;
+			case BINARY		:
+				final Class<?>	expr = getValueType(node);
+				
+				for (SyntaxNode item : node.children) {
+					convert(item, expr);
+				}
+				if (expr != awaited) {
+					addConversion(node, awaited);
+				}
+				break;
+			case CALL		:
+				break;
+			case CONSTANT	:
+				if (((Lexema)node.cargo).getDataType().getRightValueClassAssociated() != awaited) {
+					convertConstant(node, awaited);
+				}
+				break;
+			case LIST		:	case RANGE		:
+				for (SyntaxNode item : node.children) {
+					convert(item, awaited);
+				}
+				break;
+			case PREFIX		:	case SUFFIX		:
+				if (((OperatorTypes)node.cargo).hasStrongReturnedType()) {
+					if (((OperatorTypes)node.cargo).getReturnedType().getRightValueClassAssociated() != awaited) {
+						addConversion(node, awaited);
+					}
+				}
+				else if (getValueType(node.children[0]) != awaited) {
+					addConversion(node, awaited);
+				}
+				break;
+			case ROOT		:
+				break;
+			case STRONG_BINARY:
+				if (((OperatorTypes)node.cargo).hasStrongReturnedType()) {
+					final Class<?>	strongLeft = getValueType(node.children[0]);
+					
+					convert(node.children[1], strongLeft);
+					if (strongLeft != awaited) {
+						addConversion(node, awaited);
+					}
+				}
+				else {
+					for (SyntaxNode item : node.children) {
+						convert(item, awaited);
+					}
+				}
+				break;
+			case SUBSTITUTION:
+				if (awaited != char[].class) {
+					addConversion(node, awaited);
+				}
+				break;
+			default:
+				throw new UnsupportedOperationException("Node type ["+node.getType()+"] is not supported yet");
+		}
+	}	
+	
+	private static Class<?> getValueType(final SyntaxNode node) {
+		switch ((SyntaxNodeType)node.getType()) {
+			case BREAK		:	case CASE		:	case CASEDEF	:	case CONTINUE	:
+			case FOR		:	case FOR1		:	case FORALL		:	case IF			:
+			case RETURN1	:	case RETURN		:	case SEQUENCE	:	case UNTIL		:
+			case WHILE		:
+				return CallResult.class;
+			case ACCESS		:
+				return (Class<?>)node.cargo;
+			case BINARY		:
+				final Set<Class<?>>		binaryCollection = new HashSet<>();
+				final OperatorTypes[]	ops = (OperatorTypes[])node.cargo;
+				
+				binaryCollection.add(getValueType(node.children[0]));
+				for (int index = 0; index < ops.length; index++) {
+					if (ops[index].hasStrongReturnedType()) {
+						binaryCollection.add(ops[index].getReturnedType().getRightValueClassAssociated());
+					}
+					else {
+						binaryCollection.add(getValueType(node.children[index + 1]));
+					}
+				}
+				if (binaryCollection.size() == 1) {
+					return extractDataType(binaryCollection);
+				}
+				else {
+					return reduceDataType(binaryCollection);
+				}
+			case CALL		:
+				break;
+			case CONSTANT	:
+				return ((Lexema)node.cargo).getDataType().getRightValueClassAssociated();
+			case LIST		:	case RANGE		:
+				final Set<Class<?>>	listCollection = new HashSet<>(); 
+				
+				for (SyntaxNode item : node.children) {
+					listCollection.add(getValueType(item));
+				}
+				if (listCollection.size() == 1) {
+					return extractDataType(listCollection);
+				}
+				else {
+					return reduceDataType(listCollection);
+				}
+			case PREFIX		:	case SUFFIX		:
+				if (((OperatorTypes)node.cargo).hasStrongReturnedType()) {
+					return ((OperatorTypes)node.cargo).getReturnedType().getRightValueClassAssociated();
+				}
+				else {
+					return getValueType(node.children[0]); 
+				}
+			case ROOT		:
+				return Object.class;
+			case STRONG_BINARY:
+				if (((OperatorTypes)node.cargo).hasStrongReturnedType()) {
+					return ((OperatorTypes)node.cargo).getReturnedType().getRightValueClassAssociated();
+				}
+				else {
+					final Set<Class<?>>	strongCollection = new HashSet<>(); 
+					
+					for (SyntaxNode item : node.children) {
+						strongCollection.add(getValueType(item));
+					}
+					if (strongCollection.size() == 1) {
+						return extractDataType(strongCollection);
+					}
+					else {
+						return reduceDataType(strongCollection);
+					}
+				}
+			case SUBSTITUTION:
+				return char[].class;
+			default:
+				throw new UnsupportedOperationException("Node type ["+node.getType()+"] is not supported yet");
+		}
+		return null;
+	}
+	
+	private static Class<?> reduceDataType(final Set<Class<?>> collection) {
+		if (collection.contains(Long.class) && collection.contains(Double.class)) {
+			collection.remove(Long.class);
+		}
+		return extractDataType(collection);
+	}
+
+	private static Class<?> extractDataType(final Set<Class<?>> collection) {
+		for (Class<?> item : collection) {
+			return item;
+		}
+		throw new IllegalArgumentException("Collection can't be empty!"); 
+	}
+
+	private static void convertConstant(final SyntaxNode node, final Class<?> awaited) {
+		if (awaited.isPrimitive()) {
+			convertConstant(node, CompilerUtils.toWrappedClass(awaited));
+		}
+		else {
+			if (awaited == Long.class) {
+				node.cargo = DataTypes.INT;
+				node.value = Long.valueOf(constant2String(node));
+			}
+			else if (awaited == Double.class) {
+				node.cargo = DataTypes.REAL;
+				node.value = Double.doubleToLongBits(Double.valueOf(constant2String(node)).doubleValue());
+			}
+			else if (awaited == char[].class) {
+				node.cargo = DataTypes.STR;
+			}
+			else if (awaited == Boolean.class) {
+				node.cargo = DataTypes.BOOL;
+				node.value = Boolean.valueOf(constant2String(node)).booleanValue() ? 1 : 0;
+			}
+			else if (awaited == Color.class) {
+			}
+			else if (awaited == Font.class) {
+			}
+			else if (awaited == Point.class) {
+			}
+			else if (awaited == Rectangle.class) {
+			}
+			else if (awaited == Dimension.class) {
+			}
+			else if (awaited == Stroke.class) {
+			}
+			else if (awaited == AffineTransform.class) {
+			}
+			else {
+				throw new UnsupportedOperationException(); 
+			}
+		}		
+	}
+
+	private static String constant2String(final SyntaxNode node) {
+		switch ((DataTypes)node.cargo) {
+			case INT 	:
+				return String.valueOf(node.value);
+			case REAL	:
+				return String.valueOf(Double.longBitsToDouble(node.value));
+			case STR	:
+				return "";
+			case BOOL	:
+				return String.valueOf(node.value != 0);
+			default :
+				throw new UnsupportedOperationException(); 
+		}
+	}
+
+	private static void addConversion(final SyntaxNode node, final Class<?> awaited) {
+		if (awaited.isPrimitive()) {
+			addConversion(node, CompilerUtils.toWrappedClass(awaited));
+		}
+		else {
+			final SyntaxNode	child = (SyntaxNode) node.clone();
+			
+			node.children = new SyntaxNode[] {child};
+			node.type = SyntaxNodeType.SUFFIX;
+			if (awaited == Long.class) {
+				node.cargo = OperatorTypes.TO_INT;
+			}
+			else if (awaited == Double.class) {
+				node.cargo = OperatorTypes.TO_REAL;
+			}
+			else if (awaited == char[].class) {
+				node.cargo = OperatorTypes.TO_STR;
+			}
+			else if (awaited == Boolean.class) {
+				node.cargo = OperatorTypes.TO_BOOL;
+			}
+			else if (awaited == Color.class) {
+				node.cargo = OperatorTypes.TO_COLOR;
+			}
+			else if (awaited == Font.class) {
+				node.cargo = OperatorTypes.TO_FONT;
+			}
+			else if (awaited == Point.class) {
+				node.cargo = OperatorTypes.TO_POINT;
+			}
+			else if (awaited == Rectangle.class) {
+				node.cargo = OperatorTypes.TO_RECT;
+			}
+			else if (awaited == Dimension.class) {
+				node.cargo = OperatorTypes.TO_SIZE;
+			}
+			else if (awaited == Stroke.class) {
+				node.cargo = OperatorTypes.TO_STROKE;
+			}
+			else if (awaited == AffineTransform.class) {
+				node.cargo = OperatorTypes.TO_TRANSFORM;
+			}
+			else {
+				throw new UnsupportedOperationException(); 
+			}
+		}
+	}
+	
+	
+	
+	
+	
+	
 	
 	public static class Lexema {
 		private final int			displ;
@@ -1661,6 +1984,44 @@ loop:	for (;;) {
 		@Override
 		public String toString() {
 			return "EntityDescriptor [type=" + type + ", id=" + id + ", collType=" + collType + ", dataType=" + dataType + ", parameters=" + Arrays.toString(parameters) + ", returns=" + returns + "]";
+		}
+	}
+
+	public static class CallResult {
+		private static enum ResultType {
+			ORDINAL(false), 
+			BREAK(true), 
+			CONTINUE(true), 
+			RETURN(true);
+			
+			private final boolean	returnRequired;
+			
+			private ResultType(final boolean returnRequired) {
+				this.returnRequired = returnRequired;
+			}
+			
+			private boolean isReturnRequired() {
+				return returnRequired;
+			}
+		}
+		
+		final ResultType	type;
+		int					level;
+		Object				value;
+
+		public CallResult(final ResultType type) {
+			this(type, 0);
+		}
+
+		public CallResult(final ResultType type, final int level) {
+			this.type = type;
+			this.level = level;
+		}
+
+		public CallResult(final ResultType type, final int level, final Object value) {
+			this.type = type;
+			this.level = level;
+			this.value = value;
 		}
 	}
 }
