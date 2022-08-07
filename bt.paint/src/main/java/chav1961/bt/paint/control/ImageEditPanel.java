@@ -687,13 +687,16 @@ public class ImageEditPanel extends JPanel implements LocalizerOwner, LocaleChan
 													endImageAction(us, rs);
 												} catch (PaintScriptException exc) {
 													SwingUtils.getNearestLogger(t).message(Severity.error, exc, exc.getLocalizedMessage());
+												} finally {
+													refreshContent();
 												}
 											});
 		canvas.add(ric);
 		ric.setLocation(0, 0);
 		ric.setVisible(true);
+		SwingUtilities.invokeLater(()->ric.requestFocusInWindow());
 		canvas.revalidate();
-		canvas.repaint();
+		refreshContent();
 		startUndoable = false;
 	}
 

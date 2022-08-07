@@ -3,6 +3,7 @@ package chav1961.bt.paint.control;
 import java.awt.AWTEvent;
 import java.awt.BasicStroke;
 import java.awt.Color;
+import java.awt.Container;
 import java.awt.Cursor;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
@@ -102,6 +103,8 @@ public class ResizableImageContainer<T extends ResizableImageContainer<?>> exten
 		else {
 			this.consumer = consumer;
 
+			setFocusable(true);
+			setRequestFocusEnabled(true);
 			enableEvents(AWTEvent.KEY_EVENT_MASK | AWTEvent.MOUSE_EVENT_MASK | AWTEvent.FOCUS_EVENT_MASK | AWTEvent.INPUT_METHOD_EVENT_MASK);
 			setSize(image.getWidth(null), image.getHeight(null));
 			setBackgroundImage(image);
@@ -112,8 +115,6 @@ public class ResizableImageContainer<T extends ResizableImageContainer<?>> exten
 			addKeyListener(this);
 			addMouseListener(this);
 			addMouseMotionListener(this);
-			setFocusable(true);
-			setRequestFocusEnabled(true);
 			addFocusListener(this);
 		}
 	}
@@ -129,6 +130,7 @@ public class ResizableImageContainer<T extends ResizableImageContainer<?>> exten
 	public void mousePressed(final MouseEvent e) {
 		pressPoint.setLocation(e.getPoint());
 		pressLocation = getCursorLocation(pressPoint);
+		requestFocusInWindow();
 	}
 
 	@Override
@@ -159,8 +161,8 @@ public class ResizableImageContainer<T extends ResizableImageContainer<?>> exten
 		final int	deltaX = pressLocation.canChangeX() ? e.getPoint().x - pressPoint.x : 0; 
 		final int	deltaY = pressLocation.canChangeY() ? e.getPoint().y - pressPoint.y : 0; 
 
-		System.err.println("DeltaX = "+deltaX+", deltaY = "+deltaY);
-		System.err.println("DeltaLX = "+(pressLocation.getLocationMultiplier() * deltaX)+", deltaLY = "+(pressLocation.getLocationMultiplier() * deltaY));
+//		System.err.println("DeltaX = "+deltaX+", deltaY = "+deltaY);
+//		System.err.println("DeltaLX = "+(pressLocation.getLocationMultiplier() * deltaX)+", deltaLY = "+(pressLocation.getLocationMultiplier() * deltaY));
 		
 		setSize(getWidth() + deltaX, getHeight() + deltaY);
 		setLocation(getX() + pressLocation.getLocationMultiplier() * deltaX, getY() + pressLocation.getLocationMultiplier() * deltaY);
@@ -268,7 +270,11 @@ public class ResizableImageContainer<T extends ResizableImageContainer<?>> exten
 	}
 	
 	private void exit() {
-		getParent().remove(this);
+		final Container	parent = getParent();
+		
+		if (parent!= null) {
+			parent.remove(this);
+		}
 		setVisible(false);
 	}
 }
