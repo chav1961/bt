@@ -1424,8 +1424,8 @@ loop:	for (;;) {
 								found = true;
 							}
 						}
-						if (data[from].getType() != LexTypes.CLOSEB) {
-							throw new SyntaxException(data[from].getRow(), data[from].getCol(), "Missing ']'"); 
+						if (data[from].getType() != LexTypes.CLOSE) {
+							throw new SyntaxException(data[from].getRow(), data[from].getCol(), "Missing ')'"); 
 						}
 						else {
 							methodAccess.children = children;
