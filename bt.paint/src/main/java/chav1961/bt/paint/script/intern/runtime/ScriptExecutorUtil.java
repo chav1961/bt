@@ -18,6 +18,7 @@ import java.util.Set;
 import chav1961.bt.paint.control.Predefines;
 import chav1961.bt.paint.interfaces.PaintScriptException;
 import chav1961.bt.paint.script.intern.interfaces.ExecuteScriptCallback;
+import chav1961.bt.paint.script.intern.interfaces.PaintScriptListInterface;
 import chav1961.bt.paint.script.intern.parsers.ScriptParserUtil.ConstantDescriptor;
 import chav1961.bt.paint.script.intern.parsers.ScriptParserUtil.DataTypes;
 import chav1961.bt.paint.script.intern.parsers.ScriptParserUtil.EntityDescriptor;
@@ -27,6 +28,7 @@ import chav1961.bt.paint.script.intern.parsers.ScriptParserUtil.OperatorTypes;
 import chav1961.bt.paint.script.intern.parsers.ScriptParserUtil.SyntaxNodeType;
 import chav1961.purelib.basic.SequenceIterator;
 import chav1961.purelib.basic.exceptions.ContentException;
+import chav1961.purelib.basic.exceptions.SyntaxException;
 import chav1961.purelib.basic.interfaces.SyntaxTreeInterface;
 import chav1961.purelib.cdb.CompilerUtils;
 import chav1961.purelib.cdb.SyntaxNode;
@@ -173,10 +175,20 @@ public class ScriptExecutorUtil {
 		callback.process(level, node);
 		switch ((SyntaxNodeType)node.getType()) {
 			case ACCESS			:
-				if (node.children.length == 0) {
-					return stack.getVar(node.value);
+				Object	accVal = stack.getVar(node.value);
+				
+				if (accVal == null) {
+					throw new PaintScriptException(new SyntaxException(node.row, node.col, "Null value inside...")); 
 				}
-				break;
+				if (node.children != null) {
+					for (SyntaxNode item : node.children) {
+						accVal = processAccess(accVal, item);
+						if (accVal == null) {
+							throw new PaintScriptException(new SyntaxException(node.row, node.col, "Null value inside...")); 
+						}
+					}
+				}
+				return accVal;
 			case BINARY			:
 				final Object	infix = calc(node.children[0], names, stack, predef, level, callback);
 				
@@ -412,6 +424,26 @@ public class ScriptExecutorUtil {
 		}
 		return null;
 	}	
+
+	private static Object processAccess(final Object value, final SyntaxNode<SyntaxNodeType, ?> node) {
+		// TODO Auto-generated method stub
+		switch (node.getType()) {
+			case CALL				:
+				break;
+			case GET_FIELD			:
+				break;
+			case GET_FIELD_INDEX	:
+				break;
+			case GET_VAR_INDEX		:
+				if (value instanceof PaintScriptListInterface) {
+					return ((PaintScriptListInterface)value).get(0);
+				}
+				break;
+			default:
+				break;
+		}
+		return value;
+	}
 
 	private static <T> Iterable<Number> buildIterable(final SyntaxNode initial, final SyntaxNode terminal, final SyntaxTreeInterface<T> names, final LocalStack stack, final Predefines predef, final int level, final ExecuteScriptCallback callback) throws PaintScriptException, InterruptedException {
 		final int	initialValue = convert(calc(initial, names, stack, predef, level, callback), int.class);

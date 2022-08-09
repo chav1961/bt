@@ -126,7 +126,7 @@ public class ScriptParserUtil {
 		
 		private DataTypes(final Class<?> class2Wrap) {
 			this.isCollection = true;
-			this.leftValueAssociated = null;
+			this.leftValueAssociated = class2Wrap;
 			this.rightValueAssociated = null;
 			this.class2Wrap = class2Wrap;
 		}
@@ -995,7 +995,7 @@ loop:	for (;;) {
 					throw new SyntaxException(data[from].getRow(), data[from].getCol(), "Name is not declared");
 				}
 				else {
-					from = buildAccess(data, from, desc, names, root);
+					from = buildAccess(true, data, from, desc, names, root);
 				}
 				if (data[from].getType() == LexTypes.OPERATOR && data[from].getOperatorType() == OperatorTypes.ASSIGNMENT) {
 					final SyntaxNode<SyntaxNodeType, SyntaxNode<SyntaxNodeType, ?>>	leftPart = (SyntaxNode<SyntaxNodeType, SyntaxNode<SyntaxNodeType, ?>>) root.clone();
@@ -1017,7 +1017,7 @@ loop:	for (;;) {
 			case PREDEFINED_VAR	:
 				final SyntaxNode<SyntaxNodeType, SyntaxNode<SyntaxNodeType, ?>>	callPart = (SyntaxNode<SyntaxNodeType, SyntaxNode<SyntaxNodeType, ?>>) root.clone();
 				
-				from = buildAccess(data, from, PREDEFINED.get(data[from].getKeyword()), names, callPart);
+				from = buildAccess(false, data, from, PREDEFINED.get(data[from].getKeyword()), names, callPart);
 				root.type = SyntaxNodeType.CALL;
 				root.cargo = callPart;
 				break;
@@ -1376,11 +1376,11 @@ loop:	for (;;) {
 					throw new SyntaxException(data[from].getRow(), data[from].getCol(), "Name is not declared");
 				}
 				else {
-					from = buildAccess(data, from, desc, names, root);
+					from = buildAccess(false, data, from, desc, names, root);
 				}
 				break;
 			case PREDEFINED_VAR	:
-				from = buildAccess(data, from, PREDEFINED.get(data[from].getKeyword()), names, root);
+				from = buildAccess(false, data, from, PREDEFINED.get(data[from].getKeyword()), names, root);
 				break;
 			case CONSTANT	:
 				root.type = SyntaxNodeType.CONSTANT;
@@ -1413,26 +1413,11 @@ loop:	for (;;) {
 		return from;
 	}
 		
-	private static int buildAccess(final Lexema[] data, int from, final EntityDescriptor desc, final SyntaxTreeInterface<EntityDescriptor> names, final SyntaxNode<SyntaxNodeType, SyntaxNode<SyntaxNodeType, ?>> root) throws SyntaxException {
-//		switch (desc.collType) {
-//			case ARRAY		:
-//				break;
-//			case FUNC		:
-//				break;
-//			case MAP		:
-//				break;
-//			case ORDINAL	:
-				return buildAccess(data, from, desc, desc.dataType.get(0).getClass2Wrap(), names, root);
-//			case PROC		:
-//				break;
-//			case STRUCTURE	:
-//				break;
-//			default:
-	//			throw new UnsupportedOperationException("Collection type ["+desc.collType+"] is not supported yet");
-		//}
+	private static int buildAccess(final boolean leftPart, final Lexema[] data, int from, final EntityDescriptor desc, final SyntaxTreeInterface<EntityDescriptor> names, final SyntaxNode<SyntaxNodeType, SyntaxNode<SyntaxNodeType, ?>> root) throws SyntaxException {
+		return buildAccess(leftPart, data, from, desc, desc.getDataTypes(), names, root);
 	}
 
-	private static int buildAccess(final Lexema[] data, int from, final EntityDescriptor desc, Class<?> current, final SyntaxTreeInterface<EntityDescriptor> names, final SyntaxNode<SyntaxNodeType, SyntaxNode<SyntaxNodeType, ?>> root) throws SyntaxException {
+	private static int buildAccess(final boolean leftPart, final Lexema[] data, int from, final EntityDescriptor desc, List<Class<?>> current, final SyntaxTreeInterface<EntityDescriptor> names, final SyntaxNode<SyntaxNodeType, SyntaxNode<SyntaxNodeType, ?>> root) throws SyntaxException {
 		final List<SyntaxNode<SyntaxNodeType, SyntaxNode<SyntaxNodeType, ?>>>	items = new ArrayList<>();
 		boolean theSameFirstName = true;
 		
@@ -1472,7 +1457,7 @@ loop:	for (;;) {
 						Class<?>			classFound = null;
 						boolean				found = false;
 						
-						for (Method m : current.getMethods()) {
+						for (Method m : current.get(0).getMethods()) {
 							if (names.seekName(m.getName()) == methodAccess.value && Arrays.equals(m.getParameterTypes(), signature)) {
 								methodAccess.cargo = m;
 								classFound = m.getReturnType();
@@ -1489,7 +1474,8 @@ loop:	for (;;) {
 						else {
 							methodAccess.children = children;
 							items.add(methodAccess);
-							current = classFound;
+							current = new ArrayList<>();
+							current.add(classFound);
 							from++;
 						}
 					}
@@ -1499,7 +1485,7 @@ loop:	for (;;) {
 					Class<?>	classFound = null;
 					boolean		found = false;
 					
-					for (Field f : current.getFields()) {
+					for (Field f : current.get(0).getFields()) {
 						if (names.seekName(f.getName()) == data[from].associatedLong) {
 							fieldAccess.row = data[from].getRow();
 							fieldAccess.col = data[from].getCol();
@@ -1530,21 +1516,35 @@ loop:	for (;;) {
 							fieldAccess.type = theSameFirstName ? SyntaxNodeType.GET_VAR_INDEX : SyntaxNodeType.GET_FIELD_INDEX;
 							fieldAccess.children = indices.toArray(new SyntaxNode[indices.size()]);
 							
+							if (classFound == null) {
+								classFound = current.remove(0);
+							}
+							
 							for (int index = 0; index < indices.size(); index++) {
-								if (classFound.isArray()) {
-									classFound = classFound.getComponentType();
+								if (found) {
+									if (classFound.isArray()) {
+										classFound = classFound.getComponentType();
+									}
+									else {
+										throw new SyntaxException(data[from].getRow(), data[from].getCol(), "Too many indices for array"); 
+									}
+								}
+								else if (!current.isEmpty()) {
+									classFound = current.remove(0);
 								}
 								else {
 									throw new SyntaxException(data[from].getRow(), data[from].getCol(), "Too many indices for array"); 
 								}
 							}
-							current = classFound;
+							current = new ArrayList<>();
+							current.add(classFound);
 							from++;
 						}
 						items.add(fieldAccess);
 					}
 					else if (!theSameFirstName) {
-						current = classFound;
+						current = new ArrayList<>();
+						current.add(classFound);
 						items.add(fieldAccess);
 						from++;
 					}
@@ -1655,7 +1655,7 @@ loop:	for (;;) {
 			case WHILE		:
 				return CallResult.class;
 			case ACCESS		:
-				return (Class<?>)node.cargo;
+				return ((List<Class<?>>)node.cargo).get(0);
 			case BINARY		:
 				final Set<Class<?>>		binaryCollection = new HashSet<>();
 				final OperatorTypes[]	ops = (OperatorTypes[])node.cargo;
@@ -1840,12 +1840,6 @@ loop:	for (;;) {
 			}
 		}
 	}
-	
-	
-	
-	
-	
-	
 	
 	public static class Lexema {
 		private final int			displ;
@@ -2093,6 +2087,15 @@ loop:	for (;;) {
 			return id;
 		}
 		
+		public List<Class<?>> getDataTypes() {
+			final List<Class<?>> result = new ArrayList<>();
+			
+			for (DataTypes item : dataType) {
+				result.add(item.getClass2Wrap());
+			}
+			return result;
+		}
+				
 		@Override
 		public String toString() {
 			return "EntityDescriptor [type=" + type + ", id=" + id + /*", collType=" + collType +*/ ", dataType=" + dataType + ", parameters=" + Arrays.toString(parameters) + ", returns=" + returns + "]";
