@@ -98,7 +98,7 @@ public class LocalStack {
 		
 		private VarKeeper(final EntityDescriptor desc) {
 			this.desc = desc;
-			this.currentValue = Array.newInstance(desc.dataType.getLeftValueClassAssociated(), 1);
+			this.currentValue = Array.newInstance(desc.dataType.get(0).getLeftValueClassAssociated(), 1);
 		}
 	}
 }

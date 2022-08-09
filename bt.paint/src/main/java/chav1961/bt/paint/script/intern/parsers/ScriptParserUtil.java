@@ -34,6 +34,9 @@ import chav1961.bt.paint.script.interfaces.StrokeWrapper;
 import chav1961.bt.paint.script.interfaces.SystemWrapper;
 import chav1961.bt.paint.script.interfaces.TransformWrapper;
 import chav1961.bt.paint.script.intern.interfaces.LexTypes;
+import chav1961.bt.paint.script.intern.interfaces.PaintScriptCollectionInterface;
+import chav1961.bt.paint.script.intern.interfaces.PaintScriptListInterface;
+import chav1961.bt.paint.script.intern.interfaces.PaintScriptMapInterface;
 import chav1961.purelib.basic.AndOrTree;
 import chav1961.purelib.basic.CharUtils;
 import chav1961.purelib.basic.LineByLineProcessor;
@@ -109,13 +112,27 @@ public class ScriptParserUtil {
 		FONT(FontWrapper.class, FontWrapper.class, Font.class),
 		STROKE(StrokeWrapper.class, StrokeWrapper.class, Stroke.class),
 		TRANSFORM(TransformWrapper.class, TransformWrapper.class, AffineTransform.class),
-		IMAGE(ImageWrapper.class, ImageWrapper.class, BufferedImage.class);
+		IMAGE(ImageWrapper.class, ImageWrapper.class, BufferedImage.class),
+		STRUCTURE(null),
+		ARRAY(PaintScriptListInterface.class),
+		MAP(PaintScriptMapInterface.class),
+		FUNC(null),
+		PROC(null);
 		
+		private final boolean	isCollection;
 		private final Class<?>	leftValueAssociated;
 		private final Class<?>	rightValueAssociated;
 		private final Class<?>	class2Wrap;
 		
+		private DataTypes(final Class<?> class2Wrap) {
+			this.isCollection = true;
+			this.leftValueAssociated = null;
+			this.rightValueAssociated = null;
+			this.class2Wrap = class2Wrap;
+		}
+		
 		private DataTypes(final Class<?> leftValueAssociated, final Class<?> rightValueAssociated, final Class<?> class2Wrap) {
+			this.isCollection = false;
 			this.leftValueAssociated = leftValueAssociated;
 			this.rightValueAssociated = rightValueAssociated;
 			this.class2Wrap = class2Wrap;
@@ -129,26 +146,34 @@ public class ScriptParserUtil {
 			return rightValueAssociated;
 		}
 
+		public boolean isCollection() {
+			return isCollection;
+		}
+		
 		public Class<?> getClass2Wrap() {
 			return class2Wrap;
 		}
 	}
 
-	static enum CollectionType {
-		ORDINAL,
-		STRUCTURE,
-		ARRAY,
-		MAP,
-		FUNC,
-		PROC;
-	}
+//	static enum CollectionType {
+//		ORDINAL(PaintScriptCollectionInterface.class),
+//		STRUCTURE(null),
+//		ARRAY(PaintScriptListInterface.class),
+//		MAP(PaintScriptMapInterface.class),
+//		FUNC(null),
+//		PROC(null);
+//
+//		private final Class<?>	class2Wrap;
+//		
+//		private CollectionType(final Class<?> class2Wrap) {
+//			this.class2Wrap = class2Wrap;			
+//		}
+//		
+//		public Class<?> getClass2Wrap() {
+//			return class2Wrap;
+//		}
+//	}
 
-	static enum AccessType {
-		GET_FIELD,
-		GET_ARRAY_INDEX,
-		GET_VAR_INDEX
-	}
-	
 	private static enum OperatorLevelTypes {
 		NONE,
 		BINARY,
@@ -397,6 +422,9 @@ public class ScriptParserUtil {
 		CONSTANT,
 		SUBSTITUTION,
 		ACCESS,
+		GET_FIELD,
+		GET_FIELD_INDEX,
+		GET_VAR_INDEX,
 		CALL
 	}
 	
@@ -849,8 +877,7 @@ loop:	for (;;) {
 	static int buildDeclarations(final Lexema[] data, int from, final SyntaxTreeInterface<EntityDescriptor> names, final SyntaxNode<SyntaxNodeType, SyntaxNode<SyntaxNodeType, ?>> root) throws SyntaxException {
 		while (data[from].getType() == LexTypes.NAME) {
 			final long				nameId = data[from].getLongAssociated();
-			final DataTypes			nameType;
-			final CollectionType	nameCollection;
+			final List<DataTypes>	nameType = new ArrayList<>();
 			final int				nameLex = from;
 			SyntaxNode				initials = null;
 			
@@ -858,12 +885,12 @@ loop:	for (;;) {
 				if (data[from+2].getType() == LexTypes.TYPE) {
 					switch (data[from+2].getKeyword()) {
 						case ARRAY 	:
-							nameCollection = CollectionType.ARRAY;
+							nameType.add(DataTypes.ARRAY);
 							if (data[from+3].getType() == LexTypes.OPTION && data[from+3].getKeyword() == Keywords.OF) {
 								if (data[from+4].getType() == LexTypes.TYPE) {
 									switch (data[from+4].getKeyword()) {
 										case INT : case REAL : case STR : case BOOL : case COLOR : case POINT : case RECT : case FONT : case STROKE : case TRANSFORM : case IMAGE :
-											nameType = data[from+4].getDataType();
+											nameType.add(data[from+4].getDataType());
 											from += 5;
 											break;
 										default :
@@ -879,12 +906,12 @@ loop:	for (;;) {
 							}
 							break;
 						case MAP	:
-							nameCollection = CollectionType.MAP;
+							nameType.add(DataTypes.MAP);
 							if (data[from+3].getType() == LexTypes.OPTION && data[from+3].getKeyword() == Keywords.OF) {
 								if (data[from+4].getType() == LexTypes.TYPE) {
 									switch (data[from+4].getKeyword()) {
 										case INT : case REAL : case STR : case BOOL : case COLOR : case POINT : case RECT : case FONT : case STROKE : case TRANSFORM : case IMAGE :
-											nameType = data[from+4].getDataType();
+											nameType.add(data[from+4].getDataType());
 											from += 5;
 											break;
 										default :
@@ -900,13 +927,11 @@ loop:	for (;;) {
 							}
 							break;
 						case INT : case REAL : case STR : case BOOL :
-							nameType = data[from+2].getDataType();
-							nameCollection = CollectionType.ORDINAL;
+							nameType.add(data[from+2].getDataType());
 							from += 3;
 							break;
 						case COLOR : case POINT : case RECT : case FONT : case STROKE : case TRANSFORM : case IMAGE :
-							nameType = data[from+2].getDataType();
-							nameCollection = CollectionType.STRUCTURE;
+							nameType.add(data[from+2].getDataType());
 							from += 3;
 							break;
 						default :
@@ -924,10 +949,10 @@ loop:	for (;;) {
 				initials = (SyntaxNode) root.clone();
 				
 				from = buildExpression(data, from + 1, names, initials);						
-				convert(initials, nameType.getLeftValueClassAssociated());
+				convert(initials, nameType.get(nameType.size()-1).getLeftValueClassAssociated());
 			}
 			if (names.getCargo(nameId) == null) {
-				names.setCargo(nameId, new EntityDescriptor(nameId, nameCollection, nameType, initials));
+				names.setCargo(nameId, new EntityDescriptor(nameId, /*nameCollection,*/ nameType, initials));
 			}
 			else {
 				throw new SyntaxException(data[nameLex].getRow(), data[nameLex].getCol(), "Name already declared earlier");
@@ -1359,7 +1384,22 @@ loop:	for (;;) {
 				break;
 			case CONSTANT	:
 				root.type = SyntaxNodeType.CONSTANT;
-				root.cargo = data[from];
+				switch (data[from].dataType) {
+					case BOOL	:
+						root.cargo = new ConstantDescriptor(data[from].getLongAssociated() != 0);
+						break;
+					case INT	:
+						root.cargo = new ConstantDescriptor(data[from].getLongAssociated());
+						break;
+					case REAL	:
+						root.cargo = new ConstantDescriptor(Double.longBitsToDouble(data[from].getLongAssociated()));
+						break;
+					case STR	:
+						root.cargo = new ConstantDescriptor(data[from].getObjectAssociated(char[].class));
+						break;
+					default:
+						break;
+				}
 				from++;
 				break;
 			case SUBSTITUTION:
@@ -1374,7 +1414,22 @@ loop:	for (;;) {
 	}
 		
 	private static int buildAccess(final Lexema[] data, int from, final EntityDescriptor desc, final SyntaxTreeInterface<EntityDescriptor> names, final SyntaxNode<SyntaxNodeType, SyntaxNode<SyntaxNodeType, ?>> root) throws SyntaxException {
-		return buildAccess(data, from, desc, desc.dataType.getClass2Wrap(), names, root);
+//		switch (desc.collType) {
+//			case ARRAY		:
+//				break;
+//			case FUNC		:
+//				break;
+//			case MAP		:
+//				break;
+//			case ORDINAL	:
+				return buildAccess(data, from, desc, desc.dataType.get(0).getClass2Wrap(), names, root);
+//			case PROC		:
+//				break;
+//			case STRUCTURE	:
+//				break;
+//			default:
+	//			throw new UnsupportedOperationException("Collection type ["+desc.collType+"] is not supported yet");
+		//}
 	}
 
 	private static int buildAccess(final Lexema[] data, int from, final EntityDescriptor desc, Class<?> current, final SyntaxTreeInterface<EntityDescriptor> names, final SyntaxNode<SyntaxNodeType, SyntaxNode<SyntaxNodeType, ?>> root) throws SyntaxException {
@@ -1422,13 +1477,18 @@ loop:	for (;;) {
 								methodAccess.cargo = m;
 								classFound = m.getReturnType();
 								found = true;
+								break;
 							}
 						}
-						if (data[from].getType() != LexTypes.CLOSE) {
+						if (!found) {
+							throw new SyntaxException(data[from].getRow(), data[from].getCol(), "Unknown method ["+names.getName(methodAccess.value)+"]");
+						}
+						else if (data[from].getType() != LexTypes.CLOSE) {
 							throw new SyntaxException(data[from].getRow(), data[from].getCol(), "Missing ')'"); 
 						}
 						else {
 							methodAccess.children = children;
+							items.add(methodAccess);
 							current = classFound;
 							from++;
 						}
@@ -1443,8 +1503,9 @@ loop:	for (;;) {
 						if (names.seekName(f.getName()) == data[from].associatedLong) {
 							fieldAccess.row = data[from].getRow();
 							fieldAccess.col = data[from].getCol();
-							fieldAccess.type = SyntaxNodeType.SUFFIX;
+							fieldAccess.type = SyntaxNodeType.GET_FIELD;
 							fieldAccess.value = data[from].associatedLong;
+							fieldAccess.cargo = f;
 							classFound = f.getType();
 							found = true;
 							break;
@@ -1456,6 +1517,7 @@ loop:	for (;;) {
 					else if (data[from + 1].getType() == LexTypes.OPENB) {
 						final List<SyntaxNode<SyntaxNodeType, SyntaxNode<SyntaxNodeType, ?>>>	indices = new ArrayList<>();
 						
+						from++;
 						do {final SyntaxNode<SyntaxNodeType, SyntaxNode<SyntaxNodeType, ?>>	indexValue = (SyntaxNode<SyntaxNodeType, SyntaxNode<SyntaxNodeType, ?>>) root.clone();
 							from = buildExpression(data, from + 1, names, indexValue);
 							indices.add(indexValue);
@@ -1465,7 +1527,7 @@ loop:	for (;;) {
 							throw new SyntaxException(data[from].getRow(), data[from].getCol(), "Missing ']'"); 
 						}
 						else {
-							fieldAccess.cargo = theSameFirstName ? AccessType.GET_VAR_INDEX : AccessType.GET_ARRAY_INDEX;
+							fieldAccess.type = theSameFirstName ? SyntaxNodeType.GET_VAR_INDEX : SyntaxNodeType.GET_FIELD_INDEX;
 							fieldAccess.children = indices.toArray(new SyntaxNode[indices.size()]);
 							
 							for (int index = 0; index < indices.size(); index++) {
@@ -1482,7 +1544,6 @@ loop:	for (;;) {
 						items.add(fieldAccess);
 					}
 					else if (!theSameFirstName) {
-						fieldAccess.cargo = AccessType.GET_FIELD;
 						current = classFound;
 						items.add(fieldAccess);
 						from++;
@@ -1540,7 +1601,7 @@ loop:	for (;;) {
 			case CALL		:
 				break;
 			case CONSTANT	:
-				if (((Lexema)node.cargo).getDataType().getRightValueClassAssociated() != awaited) {
+				if (((ConstantDescriptor)node.cargo).getDataType().getRightValueClassAssociated() != awaited) {
 					convertConstant(node, awaited);
 				}
 				break;
@@ -1617,7 +1678,7 @@ loop:	for (;;) {
 			case CALL		:
 				break;
 			case CONSTANT	:
-				return ((Lexema)node.cargo).getDataType().getRightValueClassAssociated();
+				return ((ConstantDescriptor)node.cargo).getDataType().getRightValueClassAssociated();
 			case LIST		:	case RANGE		:
 				final Set<Class<?>>	listCollection = new HashSet<>(); 
 				
@@ -1683,35 +1744,34 @@ loop:	for (;;) {
 			convertConstant(node, CompilerUtils.toWrappedClass(awaited));
 		}
 		else {
+			final String src = ((ConstantDescriptor)node.cargo).asString();
+			
 			if (awaited == Long.class) {
-				node.cargo = DataTypes.INT;
-				node.value = Long.valueOf(constant2String(node));
+				node.cargo = new ConstantDescriptor(Long.valueOf(src));
 			}
 			else if (awaited == Double.class) {
-				node.cargo = DataTypes.REAL;
-				node.value = Double.doubleToLongBits(Double.valueOf(constant2String(node)).doubleValue());
+				node.cargo = new ConstantDescriptor(Double.valueOf(src));
 			}
 			else if (awaited == char[].class) {
-				node.cargo = DataTypes.STR;
+				node.cargo = new ConstantDescriptor(src.toCharArray());
 			}
 			else if (awaited == Boolean.class) {
-				node.cargo = DataTypes.BOOL;
-				node.value = Boolean.valueOf(constant2String(node)).booleanValue() ? 1 : 0;
+				node.cargo = new ConstantDescriptor(Boolean.valueOf(src));
 			}
-			else if (awaited == Color.class) {
-			}
-			else if (awaited == Font.class) {
-			}
-			else if (awaited == Point.class) {
-			}
-			else if (awaited == Rectangle.class) {
-			}
-			else if (awaited == Dimension.class) {
-			}
-			else if (awaited == Stroke.class) {
-			}
-			else if (awaited == AffineTransform.class) {
-			}
+//			else if (awaited == Color.class) {
+//			}
+//			else if (awaited == Font.class) {
+//			}
+//			else if (awaited == Point.class) {
+//			}
+//			else if (awaited == Rectangle.class) {
+//			}
+//			else if (awaited == Dimension.class) {
+//			}
+//			else if (awaited == Stroke.class) {
+//			}
+//			else if (awaited == AffineTransform.class) {
+//			}
 			else {
 				throw new UnsupportedOperationException(); 
 			}
@@ -1949,29 +2009,81 @@ loop:	for (;;) {
 					+ associatedObject + "]";
 		}
 	}
+
+	public static class ConstantDescriptor {
+		public final DataTypes	dataType;
+		public final long		longContent;
+		public final char[]		charContent;
+
+		public ConstantDescriptor(final long longContent) {
+			this(DataTypes.INT, longContent, null);
+		}
+
+		public ConstantDescriptor(final double doubleContent) {
+			this(DataTypes.REAL, Double.doubleToLongBits(doubleContent), null);
+		}
+
+		public ConstantDescriptor(final char[] charContent) {
+			this(DataTypes.STR, 0, charContent);
+		}
+
+		public ConstantDescriptor(final boolean booleanContent) {
+			this(DataTypes.BOOL, booleanContent ? 1 : 0, null);
+		}
+		
+		private ConstantDescriptor(final DataTypes dataType, long longContent, char[] charContent) {
+			this.dataType = dataType;
+			this.longContent = longContent;
+			this.charContent = charContent;
+		}
+
+		public DataTypes getDataType() {
+			return dataType;
+		}
+		
+		public String asString() {
+			switch (getDataType()) {
+				case BOOL	:
+					return String.valueOf(longContent != 0);
+				case INT	:
+					return String.valueOf(longContent);
+				case REAL	:
+					return String.valueOf(Double.longBitsToDouble(longContent));
+				case STR	:
+					return new String(charContent);
+				default :
+					throw new UnsupportedOperationException("Constant data type ["+getDataType()+"] is not supported yet");
+			}
+		}
+		
+		@Override
+		public String toString() {
+			return "ConstantDescriptor [dataType=" + dataType + ", longContent=" + longContent + ", charContent=" + Arrays.toString(charContent) + "]";
+		}
+	}
 	
 	public static class EntityDescriptor {
 		public final EntityType			type;
 		public final long				id;
-		public final CollectionType		collType;
-		public final DataTypes			dataType;
+//		public final CollectionType		collType;
+		public final List<DataTypes>	dataType = new ArrayList<>();
 		public final EntityDescriptor[]	parameters;
 		public final EntityDescriptor	returns;
 		public final SyntaxNode			initials;
 
-		public EntityDescriptor(long id, CollectionType collType, DataTypes dataType) {
-			this(EntityType.VAR, id, collType, dataType, null, null, null);
+		public EntityDescriptor(long id, /*CollectionType collType,*/ List<DataTypes> dataType) {
+			this(EntityType.VAR, id, /*collType,*/ dataType, null, null, null);
 		}
 
-		public EntityDescriptor(long id, CollectionType collType, DataTypes dataType, SyntaxNode initials) {
-			this(EntityType.VAR, id, collType, dataType, null, null, initials);
+		public EntityDescriptor(long id, /*CollectionType collType,*/ List<DataTypes> dataType, SyntaxNode initials) {
+			this(EntityType.VAR, id, /*collType,*/ dataType, null, null, initials);
 		}
 		
-		private EntityDescriptor(EntityType type, long id, CollectionType collType, DataTypes dataType, EntityDescriptor[] parameters, EntityDescriptor returns, final SyntaxNode initials) {
+		private EntityDescriptor(EntityType type, long id, /*CollectionType collType,*/ List<DataTypes> dataType, EntityDescriptor[] parameters, EntityDescriptor returns, final SyntaxNode initials) {
 			this.type = type;
 			this.id = id;
-			this.collType = collType;
-			this.dataType = dataType;
+//			this.collType = collType;
+			this.dataType.addAll(dataType);
 			this.parameters = parameters;
 			this.returns = returns;
 			this.initials = initials;					
@@ -1983,7 +2095,7 @@ loop:	for (;;) {
 		
 		@Override
 		public String toString() {
-			return "EntityDescriptor [type=" + type + ", id=" + id + ", collType=" + collType + ", dataType=" + dataType + ", parameters=" + Arrays.toString(parameters) + ", returns=" + returns + "]";
+			return "EntityDescriptor [type=" + type + ", id=" + id + /*", collType=" + collType +*/ ", dataType=" + dataType + ", parameters=" + Arrays.toString(parameters) + ", returns=" + returns + "]";
 		}
 	}
 

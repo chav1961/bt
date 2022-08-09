@@ -18,6 +18,7 @@ import java.util.Set;
 import chav1961.bt.paint.control.Predefines;
 import chav1961.bt.paint.interfaces.PaintScriptException;
 import chav1961.bt.paint.script.intern.interfaces.ExecuteScriptCallback;
+import chav1961.bt.paint.script.intern.parsers.ScriptParserUtil.ConstantDescriptor;
 import chav1961.bt.paint.script.intern.parsers.ScriptParserUtil.DataTypes;
 import chav1961.bt.paint.script.intern.parsers.ScriptParserUtil.EntityDescriptor;
 import chav1961.bt.paint.script.intern.parsers.ScriptParserUtil.Lexema;
@@ -25,9 +26,11 @@ import chav1961.bt.paint.script.intern.parsers.ScriptParserUtil.OperatorPrioriti
 import chav1961.bt.paint.script.intern.parsers.ScriptParserUtil.OperatorTypes;
 import chav1961.bt.paint.script.intern.parsers.ScriptParserUtil.SyntaxNodeType;
 import chav1961.purelib.basic.SequenceIterator;
+import chav1961.purelib.basic.exceptions.ContentException;
 import chav1961.purelib.basic.interfaces.SyntaxTreeInterface;
 import chav1961.purelib.cdb.CompilerUtils;
 import chav1961.purelib.cdb.SyntaxNode;
+import chav1961.purelib.sql.SQLUtils;
 
 public class ScriptExecutorUtil {
 	public static Object execute(final SyntaxNode node, final SyntaxTreeInterface<EntityDescriptor> names, final Predefines predef, final int depth, final int level) throws PaintScriptException, InterruptedException {
@@ -175,87 +178,148 @@ public class ScriptExecutorUtil {
 				}
 				break;
 			case BINARY			:
-				switch (((OperatorTypes[])node.cargo)[0].getSuffixPriority()) {
-					case ADDITION		:
-						break;
-					case BIT_AND		:
-						break;
-					case BIT_OR			:
-						break;
-					case BOOL_AND		:
-						break;
-					case BOOL_OR		:
-						break;
-					case MULTIPLICATION	:
-						break;
-					default:
-						break;
-				}
+				final Object	infix = calc(node.children[0], names, stack, predef, level, callback);
 				
-				switch ((OperatorTypes)node.cargo) {
+				switch (((OperatorTypes[])node.cargo)[0].getInfixPriority()) {
+					case ADDITION	:
+						if (infix instanceof char[]) {
+							final StringBuilder	sb = new StringBuilder();
+							
+							sb.append((char[])infix);
+							
+							for (int index = 1; index < node.children.length; index++) {
+								if (((OperatorTypes[])node.cargo)[index - 1] == OperatorTypes.ADD) {
+									sb.append((char[])calc(node.children[index], names, stack, predef, level, callback));
+								}
+								else {
+									sb.append(new String((char[])calc(node.children[index], names, stack, predef, level, callback)).trim());
+								}
+							}
+							return sb.toString().toCharArray();
+						}
+						else if (infix instanceof Double) {
+							double	addOp = ((Double)infix).doubleValue();
+							
+							for (int index = 1; index < node.children.length; index++) {
+								if (((OperatorTypes[])node.cargo)[index - 1] == OperatorTypes.ADD) {
+									addOp += ((Double)calc(node.children[index], names, stack, predef, level, callback));
+								}
+								else {
+									addOp -= ((Double)calc(node.children[index], names, stack, predef, level, callback));
+								}
+							}
+							return Double.valueOf(addOp);
+						}
+						else if (infix instanceof Long) {
+							long	addOp = ((Long)infix).longValue();
+							
+							for (int index = 1; index < node.children.length; index++) {
+								if (((OperatorTypes[])node.cargo)[index - 1] == OperatorTypes.ADD) {
+									addOp += ((Long)calc(node.children[index], names, stack, predef, level, callback));
+								}
+								else {
+									addOp -= ((Long)calc(node.children[index], names, stack, predef, level, callback));
+								}
+							}
+							return Long.valueOf(addOp);
+						}
+						else {
+							throw new UnsupportedOperationException();
+						}
 					case BIT_AND	:
-						long	bitAndValue = Long.MIN_VALUE;
+						long	bitAndOp = ((Long)infix).longValue();
 						
-						for (SyntaxNode item : node.children) {
-							final Long	current = convert(calc(item, names, stack, predef, level, callback), Long.class);
-							
-							bitAndValue &= current.longValue();
+						for (int index = 1; index < node.children.length; index++) {
+							bitAndOp &= ((Long)calc(node.children[index], names, stack, predef, level, callback));
 						}
-						return Long.valueOf(bitAndValue);
+						return Long.valueOf(bitAndOp);
 					case BIT_OR		:
-						long	bitOrValue = 0;
+						long	bitOrOp = ((Long)infix).longValue();
 						
-						for (SyntaxNode item : node.children) {
-							final Long	current = convert(calc(item, names, stack, predef, level, callback), Long.class);
-							
-							bitOrValue |= current.longValue();
+						for (int index = 1; index < node.children.length; index++) {
+							if (((OperatorTypes[])node.cargo)[index - 1] == OperatorTypes.BIT_OR) {
+								bitOrOp |= ((Long)calc(node.children[index], names, stack, predef, level, callback));
+							}
+							else {
+								bitOrOp ^= ((Long)calc(node.children[index], names, stack, predef, level, callback));
+							}
 						}
-						return Long.valueOf(bitOrValue);
-					case BIT_XOR	:
-						long	bitXOrValue = 0;
-						
-						for (SyntaxNode item : node.children) {
-							final Long	current = convert(calc(item, names, stack, predef, level, callback), Long.class);
-							
-							bitXOrValue ^= current.longValue();
-						}
-						return Long.valueOf(bitXOrValue);
+						return Long.valueOf(bitOrOp);
 					case BOOL_AND	:
-						for (SyntaxNode item : node.children) {
-							if (!convert(calc(item, names, stack, predef, level, callback), boolean.class)) {
-								return Boolean.valueOf(false);
-							}
+						if (!((Boolean)infix)) {
+							return Boolean.valueOf(false);
 						}
-						return Boolean.valueOf(true);
+						else {
+							for (int index = 1; index < node.children.length; index++) {
+								if (!((Boolean)calc(node.children[index], names, stack, predef, level, callback))) {
+									return Boolean.valueOf(false);
+								}
+							}
+							return Boolean.valueOf(true);
+						}
 					case BOOL_OR	:
-						for (SyntaxNode item : node.children) {
-							if (convert(calc(item, names, stack, predef, level, callback), boolean.class)) {
-								return Boolean.valueOf(true);
-							}
+						if (((Boolean)infix)) {
+							return Boolean.valueOf(true);
 						}
-						return Boolean.valueOf(false);
-					case MUL		:
-						break;
-					case DIV		:
-						break;
-					case MOD		:
-						break;
-					case ADD		:
-						break;
-					case SUB		:
-						break;
+						else {
+							for (int index = 1; index < node.children.length; index++) {
+								if (((Boolean)calc(node.children[index], names, stack, predef, level, callback))) {
+									return Boolean.valueOf(true);
+								}
+							}
+							return Boolean.valueOf(false);
+						}
+					case MULTIPLICATION:
+						if (infix instanceof Double) {
+							double	mulOp = ((Double)infix).doubleValue();
+							
+							for (int index = 1; index < node.children.length; index++) {
+								if (((OperatorTypes[])node.cargo)[index - 1] == OperatorTypes.MUL) {
+									mulOp *= ((Double)calc(node.children[index], names, stack, predef, level, callback));
+								}
+								else if (((OperatorTypes[])node.cargo)[index - 1] == OperatorTypes.DIV) {
+									mulOp /= ((Double)calc(node.children[index], names, stack, predef, level, callback));
+								}
+								else {
+									mulOp %= ((Double)calc(node.children[index], names, stack, predef, level, callback));
+								}
+							}
+							return Double.valueOf(mulOp);
+						}
+						else if (infix instanceof Long) {
+							long	mulOp = ((Long)infix).longValue();
+							
+							for (int index = 1; index < node.children.length; index++) {
+								if (((OperatorTypes[])node.cargo)[index - 1] == OperatorTypes.MUL) {
+									mulOp *= ((Long)calc(node.children[index], names, stack, predef, level, callback));
+								}
+								else if (((OperatorTypes[])node.cargo)[index - 1] == OperatorTypes.DIV) {
+									mulOp /= ((Long)calc(node.children[index], names, stack, predef, level, callback));
+								}
+								else {
+									mulOp %= ((Long)calc(node.children[index], names, stack, predef, level, callback));
+								}
+							}
+							return Long.valueOf(mulOp);
+						}
+						else {
+							throw new UnsupportedOperationException();
+						}
 					default:
-						break;
+						throw new UnsupportedOperationException();
 				}
-				break;
 			case CALL			:
 				break;
 			case CONSTANT		:
-				switch (((Lexema)node.cargo).getDataType()) {
+				switch (((ConstantDescriptor)node.cargo).getDataType()) {
 					case INT 	:
-						return ((Lexema)node.cargo).getLongAssociated();
+						return Long.valueOf(((ConstantDescriptor)node.cargo).longContent);
+					case REAL 	:
+						return Double.valueOf(Double.longBitsToDouble(((ConstantDescriptor)node.cargo).longContent));
 					case BOOL	:
-						return ((Lexema)node.cargo).getLongAssociated() != 0;
+						return Boolean.valueOf(((ConstantDescriptor)node.cargo).longContent != 0);
+					case STR	:
+						return ((ConstantDescriptor)node.cargo).charContent;
 					default :
 						throw new UnsupportedOperationException();
 				}
@@ -304,28 +368,44 @@ public class ScriptExecutorUtil {
 						throw new UnsupportedOperationException("Operator type ["+node.cargo+"] is not supported here"); 
 				}
 			case PREFIX			:
-				final Object	obj = calc(node.children[0], names, stack, predef, level, callback);
+				final Object	prefix = calc(node.children[0], names, stack, predef, level, callback);
 				
 				switch ((OperatorTypes)node.cargo) {
 					case ADD		:
-						return obj;
+						return prefix;
 					case BIT_INV	:
-						return Long.valueOf(~convert(obj, long.class));
+						return Long.valueOf(~convert(prefix, long.class));
 					case BOOL_NOT	:
-						return Boolean.valueOf(!convert(obj, boolean.class));
+						return Boolean.valueOf(!convert(prefix, boolean.class));
 					case INC		:
 						throw new UnsupportedOperationException();
 					case DEC		:
 						throw new UnsupportedOperationException();
 					case SUB		:
-						if (obj instanceof Long) {
-							return -convert(obj, long.class);
+						if (prefix instanceof Long) {
+							return -convert(prefix, long.class);
 						}
 						else {
-							return -convert(obj, double.class);
+							return -convert(prefix, double.class);
 						}
 					default:
 						throw new UnsupportedOperationException("Operator type ["+node.cargo+"] is not supported here"); 
+				}
+			case SUFFIX			:
+				final Object	suffix = calc(node.children[0], names, stack, predef, level, callback);
+				
+				try{switch ((OperatorTypes)node.cargo) {
+						case TO_REAL		:
+							return SQLUtils.convert(double.class, suffix);
+						case TO_INT		:
+							return SQLUtils.convert(long.class, suffix);
+						case TO_STR		:
+							return SQLUtils.convert(String.class, suffix).toCharArray();
+						default:
+							throw new UnsupportedOperationException("Operator type ["+node.cargo+"] is not supported here"); 
+					}
+				} catch (ContentException exc) {
+					throw new PaintScriptException(exc); 
 				}
 			default:
 				throw new UnsupportedOperationException("Node type ["+node.getType()+"] is not supported yet"); 

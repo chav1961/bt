@@ -7,8 +7,7 @@ import org.junit.Assert;
 import org.junit.Test;
 
 import chav1961.bt.paint.script.intern.interfaces.LexTypes;
-import chav1961.bt.paint.script.intern.parsers.ScriptParserUtil.AccessType;
-import chav1961.bt.paint.script.intern.parsers.ScriptParserUtil.CollectionType;
+import chav1961.bt.paint.script.intern.parsers.ScriptParserUtil.ConstantDescriptor;
 import chav1961.bt.paint.script.intern.parsers.ScriptParserUtil.DataTypes;
 import chav1961.bt.paint.script.intern.parsers.ScriptParserUtil.EntityDescriptor;
 import chav1961.bt.paint.script.intern.parsers.ScriptParserUtil.Lexema;
@@ -123,11 +122,11 @@ public class ScriptParserUtilTest {
 		
 		ScriptParserUtil.buildExpression(buildLex("1", names), 0, names, root);
 		Assert.assertEquals(SyntaxNodeType.CONSTANT, root.getType());
-		Assert.assertEquals(1, ((Lexema)root.cargo).getLongAssociated());
+		Assert.assertEquals(1, ((ConstantDescriptor)root.cargo).longContent);
 
 		ScriptParserUtil.buildExpression(buildLex("\"abc\"", names), 0, names, root);
 		Assert.assertEquals(SyntaxNodeType.CONSTANT, root.getType());
-		Assert.assertArrayEquals("abc".toCharArray(), ((Lexema)root.cargo).getObjectAssociated(char[].class));
+		Assert.assertArrayEquals("abc".toCharArray(), ((ConstantDescriptor)root.cargo).charContent);
 
 		ScriptParserUtil.buildExpression(buildLex("`abc`", names), 0, names, root);
 		Assert.assertEquals(SyntaxNodeType.SUBSTITUTION, root.getType());
@@ -135,11 +134,11 @@ public class ScriptParserUtilTest {
 
 		ScriptParserUtil.buildExpression(buildLex("true", names), 0, names, root);
 		Assert.assertEquals(SyntaxNodeType.CONSTANT, root.getType());
-		Assert.assertEquals(1, ((Lexema)root.cargo).getLongAssociated());
+		Assert.assertEquals(1, ((ConstantDescriptor)root.cargo).longContent);
 		
 		ScriptParserUtil.buildExpression(buildLex("(1)", names), 0, names, root);
 		Assert.assertEquals(SyntaxNodeType.CONSTANT, root.getType());
-		Assert.assertEquals(1, ((Lexema)root.cargo).getLongAssociated());
+		Assert.assertEquals(1, ((ConstantDescriptor)root.cargo).longContent);
 		
 		try{ScriptParserUtil.buildExpression(buildLex("(1", names), 0, names, root);
 			Assert.fail("Mandatory exception was not detected (missing ')')");
@@ -259,14 +258,12 @@ public class ScriptParserUtilTest {
 		ScriptParserUtil.buildExpression(buildLex("r.x", names), 0, names, root);
 		Assert.assertEquals(SyntaxNodeType.ACCESS, root.getType());
 		Assert.assertEquals(1, root.children.length);
-		Assert.assertEquals(SyntaxNodeType.SUFFIX, root.children[0].type);
-		Assert.assertEquals(AccessType.GET_FIELD, root.children[0].cargo);
+		Assert.assertEquals(SyntaxNodeType.GET_FIELD, root.children[0].type);
 
 		ScriptParserUtil.buildExpression(buildLex("r.getX()", names), 0, names, root);
 		Assert.assertEquals(SyntaxNodeType.ACCESS, root.getType());
 		Assert.assertEquals(1, root.children.length);
-		Assert.assertEquals(SyntaxNodeType.SUFFIX, root.children[0].type);
-		Assert.assertEquals(AccessType.GET_FIELD, root.children[0].cargo);
+		Assert.assertEquals(SyntaxNodeType.CALL, root.children[0].type);
 	}	
 
 	@Test
@@ -276,18 +273,23 @@ public class ScriptParserUtilTest {
 
 		ScriptParserUtil.buildDeclarations(buildLex("i : int", names), 0, names, root);
 		Assert.assertTrue(names.seekName("i") >= 0);
-		Assert.assertEquals(DataTypes.INT, names.getCargo(names.seekName("i")).dataType);
+		Assert.assertEquals(DataTypes.INT, names.getCargo(names.seekName("i")).dataType.get(0));
 
 		ScriptParserUtil.buildDeclarations(buildLex("j : real := 10", names), 0, names, root);
 		Assert.assertTrue(names.seekName("j") >= 0);
-		Assert.assertEquals(DataTypes.REAL, names.getCargo(names.seekName("j")).dataType);
+		Assert.assertEquals(DataTypes.REAL, names.getCargo(names.seekName("j")).dataType.get(0));
 		Assert.assertEquals(SyntaxNodeType.CONSTANT, names.getCargo(names.seekName("j")).initials.getType());
 
 		ScriptParserUtil.buildDeclarations(buildLex("k : str := \"123\", m : int", names), 0, names, root);
 		Assert.assertTrue(names.seekName("k") >= 0);
-		Assert.assertEquals(DataTypes.STR, names.getCargo(names.seekName("k")).dataType);
+		Assert.assertEquals(DataTypes.STR, names.getCargo(names.seekName("k")).dataType.get(0));
 		Assert.assertEquals(SyntaxNodeType.CONSTANT, names.getCargo(names.seekName("k")).initials.getType());
 		Assert.assertTrue(names.seekName("m") >= 0);
+
+		ScriptParserUtil.buildDeclarations(buildLex("t : array of str", names), 0, names, root);
+		Assert.assertTrue(names.seekName("t") >= 0);
+		Assert.assertEquals(DataTypes.ARRAY, names.getCargo(names.seekName("t")).dataType.get(0));
+		Assert.assertEquals(DataTypes.STR, names.getCargo(names.seekName("t")).dataType.get(1));
 		
 		try{ScriptParserUtil.buildDeclarations(buildLex("a int", names), 0, names, root);
 			Assert.fail("Mandatory exception was not detected (missing ':')");
