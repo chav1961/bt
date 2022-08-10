@@ -995,7 +995,7 @@ loop:	for (;;) {
 					throw new SyntaxException(data[from].getRow(), data[from].getCol(), "Name is not declared");
 				}
 				else {
-					from = buildAccess(true, data, from, desc, names, root);
+					from = buildLeftAccess(data, from, desc, names, root);
 				}
 				if (data[from].getType() == LexTypes.OPERATOR && data[from].getOperatorType() == OperatorTypes.ASSIGNMENT) {
 					final SyntaxNode<SyntaxNodeType, SyntaxNode<SyntaxNodeType, ?>>	leftPart = (SyntaxNode<SyntaxNodeType, SyntaxNode<SyntaxNodeType, ?>>) root.clone();
@@ -1017,7 +1017,7 @@ loop:	for (;;) {
 			case PREDEFINED_VAR	:
 				final SyntaxNode<SyntaxNodeType, SyntaxNode<SyntaxNodeType, ?>>	callPart = (SyntaxNode<SyntaxNodeType, SyntaxNode<SyntaxNodeType, ?>>) root.clone();
 				
-				from = buildAccess(false, data, from, PREDEFINED.get(data[from].getKeyword()), names, callPart);
+				from = buildRightAccess(data, from, PREDEFINED.get(data[from].getKeyword()), names, callPart);
 				root.type = SyntaxNodeType.CALL;
 				root.cargo = callPart;
 				break;
@@ -1376,11 +1376,11 @@ loop:	for (;;) {
 					throw new SyntaxException(data[from].getRow(), data[from].getCol(), "Name is not declared");
 				}
 				else {
-					from = buildAccess(false, data, from, desc, names, root);
+					from = buildRightAccess(data, from, desc, names, root);
 				}
 				break;
 			case PREDEFINED_VAR	:
-				from = buildAccess(false, data, from, PREDEFINED.get(data[from].getKeyword()), names, root);
+				from = buildRightAccess(data, from, PREDEFINED.get(data[from].getKeyword()), names, root);
 				break;
 			case CONSTANT	:
 				root.type = SyntaxNodeType.CONSTANT;
@@ -1402,6 +1402,32 @@ loop:	for (;;) {
 				}
 				from++;
 				break;
+			case TYPE		:
+				switch (data[from].getDataType()) {
+					case ARRAY	:	// array(item,...)
+						break;
+					case COLOR	:	// color(int)|color(int,int,int)
+						break;
+					case FONT	:	// font("family",size,style)
+						break;
+					case IMAGE	:	// image(width,height,type)
+						break;
+					case MAP	:	// map("key":value,...)
+						break;
+					case POINT	:	// point(int,int)
+						break;
+					case RECT	:	// rect(x,y,width,height)|rect(point(...),size(...))
+						break;
+					case SIZE	:	// size(width,height)
+						break;
+					case STROKE	:	// stroke(width,style,style)
+						break;
+					case TRANSFORM	:	// transform(v1,v2,v3,v4,v5,v6)|transform()
+						break;
+					default	:
+						throw new SyntaxException(data[from].getRow(), data[from].getCol(), "Illegal type reference");
+				}
+				break;
 			case SUBSTITUTION:
 				root.type = SyntaxNodeType.SUBSTITUTION;
 				root.cargo = data[from];
@@ -1413,11 +1439,11 @@ loop:	for (;;) {
 		return from;
 	}
 		
-	private static int buildAccess(final boolean leftPart, final Lexema[] data, int from, final EntityDescriptor desc, final SyntaxTreeInterface<EntityDescriptor> names, final SyntaxNode<SyntaxNodeType, SyntaxNode<SyntaxNodeType, ?>> root) throws SyntaxException {
-		return buildAccess(leftPart, data, from, desc, desc.getDataTypes(), names, root);
+	private static int buildRightAccess(final Lexema[] data, int from, final EntityDescriptor desc, final SyntaxTreeInterface<EntityDescriptor> names, final SyntaxNode<SyntaxNodeType, SyntaxNode<SyntaxNodeType, ?>> root) throws SyntaxException {
+		return buildRightAccess(data, from, desc, desc.getDataTypes(), names, root);
 	}
 
-	private static int buildAccess(final boolean leftPart, final Lexema[] data, int from, final EntityDescriptor desc, List<Class<?>> current, final SyntaxTreeInterface<EntityDescriptor> names, final SyntaxNode<SyntaxNodeType, SyntaxNode<SyntaxNodeType, ?>> root) throws SyntaxException {
+	private static int buildRightAccess(final Lexema[] data, int from, final EntityDescriptor desc, List<Class<?>> current, final SyntaxTreeInterface<EntityDescriptor> names, final SyntaxNode<SyntaxNodeType, SyntaxNode<SyntaxNodeType, ?>> root) throws SyntaxException {
 		final List<SyntaxNode<SyntaxNodeType, SyntaxNode<SyntaxNodeType, ?>>>	items = new ArrayList<>();
 		boolean theSameFirstName = true;
 		
@@ -1560,6 +1586,103 @@ loop:	for (;;) {
 		root.children = items.toArray(new SyntaxNode[items.size()]);
 		return from;
 	}	
+
+	
+	private static int buildLeftAccess(final Lexema[] data, int from, final EntityDescriptor desc, final SyntaxTreeInterface<EntityDescriptor> names, final SyntaxNode<SyntaxNodeType, SyntaxNode<SyntaxNodeType, ?>> root) throws SyntaxException {
+		return buildLeftAccess(data, from, desc, desc.getDataTypes(), names, root);
+	}
+
+	private static int buildLeftAccess(final Lexema[] data, int from, final EntityDescriptor desc, List<Class<?>> current, final SyntaxTreeInterface<EntityDescriptor> names, final SyntaxNode<SyntaxNodeType, SyntaxNode<SyntaxNodeType, ?>> root) throws SyntaxException {
+		final List<SyntaxNode<SyntaxNodeType, SyntaxNode<SyntaxNodeType, ?>>>	items = new ArrayList<>();
+		boolean theSameFirstName = true;
+		
+		root.row = data[from].getRow();
+		root.col = data[from].getCol();
+		root.type = SyntaxNodeType.ACCESS;
+		root.value = data[from].getLongAssociated(); 
+		from--;
+		
+		do {from++;
+			if (data[from].getType() == LexTypes.NAME) {
+				final SyntaxNode<SyntaxNodeType, SyntaxNode<SyntaxNodeType, ?>>	fieldAccess = (SyntaxNode<SyntaxNodeType, SyntaxNode<SyntaxNodeType, ?>>) root.clone();
+				Class<?>	classFound = null;
+				boolean		found = false;
+				
+				for (Field f : current.get(0).getFields()) {
+					if (names.seekName(f.getName()) == data[from].associatedLong) {
+						fieldAccess.row = data[from].getRow();
+						fieldAccess.col = data[from].getCol();
+						fieldAccess.type = SyntaxNodeType.GET_FIELD;
+						fieldAccess.value = data[from].associatedLong;
+						fieldAccess.cargo = f;
+						classFound = f.getType();
+						found = true;
+						break;
+					}
+				}
+				if (!found && !theSameFirstName) {
+					throw new SyntaxException(data[from].getRow(), data[from].getCol(), "Unknown field"); 
+				}
+				else if (data[from + 1].getType() == LexTypes.OPENB) {
+					final List<SyntaxNode<SyntaxNodeType, SyntaxNode<SyntaxNodeType, ?>>>	indices = new ArrayList<>();
+					
+					from++;
+					do {final SyntaxNode<SyntaxNodeType, SyntaxNode<SyntaxNodeType, ?>>	indexValue = (SyntaxNode<SyntaxNodeType, SyntaxNode<SyntaxNodeType, ?>>) root.clone();
+						from = buildExpression(data, from + 1, names, indexValue);
+						indices.add(indexValue);
+					} while (data[from].getType() == LexTypes.COMMA);
+					
+					if (data[from].getType() != LexTypes.CLOSEB) {
+						throw new SyntaxException(data[from].getRow(), data[from].getCol(), "Missing ']'"); 
+					}
+					else {
+						fieldAccess.type = theSameFirstName ? SyntaxNodeType.GET_VAR_INDEX : SyntaxNodeType.GET_FIELD_INDEX;
+						fieldAccess.children = indices.toArray(new SyntaxNode[indices.size()]);
+						
+						if (classFound == null) {
+							classFound = current.remove(0);
+						}
+						
+						for (int index = 0; index < indices.size(); index++) {
+							if (found) {
+								if (classFound.isArray()) {
+									classFound = classFound.getComponentType();
+								}
+								else {
+									throw new SyntaxException(data[from].getRow(), data[from].getCol(), "Too many indices for array"); 
+								}
+							}
+							else if (!current.isEmpty()) {
+								classFound = current.remove(0);
+							}
+							else {
+								throw new SyntaxException(data[from].getRow(), data[from].getCol(), "Too many indices for array"); 
+							}
+						}
+						current = new ArrayList<>();
+						current.add(classFound);
+						from++;
+					}
+					items.add(fieldAccess);
+				}
+				else if (!theSameFirstName) {
+					current = new ArrayList<>();
+					current.add(classFound);
+					items.add(fieldAccess);
+					from++;
+				}
+				else {
+					from++;
+				}
+			}
+			theSameFirstName = false;
+		} while (data[from].getType() == LexTypes.DOT);
+
+		root.cargo = current;
+		root.children = items.toArray(new SyntaxNode[items.size()]);
+		return from;
+	}	
+	
 	
 	private static Class<?>[] buildSignature(final SyntaxNode... children) {
 		// TODO Auto-generated method stub
