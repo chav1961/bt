@@ -8,6 +8,8 @@ import org.junit.Test;
 import chav1961.bt.paint.control.Predefines;
 import chav1961.bt.paint.interfaces.PaintScriptException;
 import chav1961.bt.paint.script.intern.interfaces.ExecuteScriptCallback;
+import chav1961.bt.paint.script.intern.interfaces.PaintScriptListInterface;
+import chav1961.bt.paint.script.intern.interfaces.PaintScriptMapInterface;
 import chav1961.bt.paint.script.intern.parsers.ScriptParserUtil;
 import chav1961.bt.paint.script.intern.parsers.ScriptParserUtil.SyntaxNodeType;
 import chav1961.purelib.basic.AndOrTree;
@@ -126,9 +128,18 @@ public class ScriptExecutorUtilTest {
 		Object						result;
 		
 		names.clear();
-		result = ScriptExecutorUtil.calc(ScriptParserUtil.parseScript(new StringReader("var i : array of int; begin i[0] := 10 end"), names), names, 
+		result = ScriptExecutorUtil.calc(ScriptParserUtil.parseScript(new StringReader("var i : array of int := array(20); begin i[0] := 10 end"), names), names, 
 						stack = new LocalStack(names, predef, callback), predef, 0, callback);
-		Assert.assertEquals(10, ((Long)(((long[])stack.getVar(names.seekName("i")))[0])).longValue());
+		Assert.assertEquals(10, ((Long)(((PaintScriptListInterface[])stack.getVar(names.seekName("i")))[0].get(0))).longValue());
 
+		names.clear();
+		result = ScriptExecutorUtil.calc(ScriptParserUtil.parseScript(new StringReader("var i : map of int := map(\"x\" : 20); begin i[\"x\"] := 10 end"), names), names, 
+						stack = new LocalStack(names, predef, callback), predef, 0, callback);
+		Assert.assertEquals(10, ((Long)(((PaintScriptMapInterface[])stack.getVar(names.seekName("i")))[0].get("x".toCharArray()))).longValue());
+
+		names.clear();
+		result = ScriptExecutorUtil.calc(ScriptParserUtil.parseScript(new StringReader("var i : color := color(10,20,30), j : int; begin j := i.getRed() end"), names), names, 
+						stack = new LocalStack(names, predef, callback), predef, 0, callback);
+		Assert.assertEquals(10, ((Long)(((PaintScriptMapInterface[])stack.getVar(names.seekName("i")))[0].get("x".toCharArray()))).longValue());
 	}
 }

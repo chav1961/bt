@@ -19,6 +19,8 @@ import chav1961.bt.paint.control.Predefines;
 import chav1961.bt.paint.interfaces.PaintScriptException;
 import chav1961.bt.paint.script.intern.interfaces.ExecuteScriptCallback;
 import chav1961.bt.paint.script.intern.interfaces.PaintScriptListInterface;
+import chav1961.bt.paint.script.intern.interfaces.PaintScriptMapInterface;
+import chav1961.bt.paint.script.intern.parsers.ScriptParserUtil.ArrayDescriptor;
 import chav1961.bt.paint.script.intern.parsers.ScriptParserUtil.ConstantDescriptor;
 import chav1961.bt.paint.script.intern.parsers.ScriptParserUtil.DataTypes;
 import chav1961.bt.paint.script.intern.parsers.ScriptParserUtil.EntityDescriptor;
@@ -171,7 +173,7 @@ public class ScriptExecutorUtil {
 		return null;
 	}
 
-	static <T> Object calc(final SyntaxNode node, final SyntaxTreeInterface<T> names, final LocalStack stack, final Predefines predef, final int level, final ExecuteScriptCallback callback) throws PaintScriptException, InterruptedException {
+	static Object calc(final SyntaxNode node, final SyntaxTreeInterface<EntityDescriptor> names, final LocalStack stack, final Predefines predef, final int level, final ExecuteScriptCallback callback) throws PaintScriptException, InterruptedException {
 		callback.process(level, node);
 		switch ((SyntaxNodeType)node.getType()) {
 			case ACCESS			:
@@ -181,12 +183,7 @@ public class ScriptExecutorUtil {
 					throw new PaintScriptException(new SyntaxException(node.row, node.col, "Null value inside...")); 
 				}
 				if (node.children != null) {
-					for (SyntaxNode item : node.children) {
-						accVal = processAccess(accVal, item);
-						if (accVal == null) {
-							throw new PaintScriptException(new SyntaxException(node.row, node.col, "Null value inside...")); 
-						}
-					}
+					processAccess(accVal, node, names, stack, predef, level, callback);
 				}
 				return accVal;
 			case BINARY			:
@@ -340,9 +337,12 @@ public class ScriptExecutorUtil {
 				
 				switch ((OperatorTypes)node.cargo) {
 					case ASSIGNMENT	:
-						leftValue = calc(node.children[0], names, stack, predef, level, callback);
-						rightValue = convert(calc(node.children[1], names, stack, predef, level, callback), leftValue.getClass().getComponentType());
-						Array.set(leftValue, 0, rightValue);
+						final Class<?> leftType = calcType(node.children[0]);
+						
+						rightValue = convert(calc(node.children[1], names, stack, predef, level, callback), leftType);
+						processAccess(rightValue, node.children[0], names, stack, predef, level, callback);
+//						leftValue = calc(node.children[0], names, stack, predef, level, callback);
+//						Array.set(leftValue, 0, rightValue);
 						return new CallResult(CallResult.ResultType.ORDINAL);
 					case EQ			:
 						leftValue = calc(node.children[0], names, stack, predef, level, callback);
@@ -419,33 +419,126 @@ public class ScriptExecutorUtil {
 				} catch (ContentException exc) {
 					throw new PaintScriptException(exc); 
 				}
+			case CONSTRUCTOR	:
+				switch (((ArrayDescriptor)node.cargo).dataType) {
+					case ARRAY	:
+						final PaintScriptListInterface	psli = PaintScriptListInterface.Factory.newInstance(((ArrayDescriptor)node.cargo).contentType);
+						
+						psli.append(node.children.length);
+						for (int index = 0; index < node.children.length; index++) {
+							psli.set(index, calc(node.children[index], names, stack, predef, level, callback));
+						}
+						return psli;
+					case COLOR	:
+						if (node.children.length == 3) {
+							final Number	red = (Number)calc(node.children[0], names, stack, predef, level, callback);
+							final Number	green = (Number)calc(node.children[1], names, stack, predef, level, callback);
+							final Number	blue = (Number)calc(node.children[2], names, stack, predef, level, callback);
+							
+							return new Color(red.intValue(), green.intValue(), blue.intValue());
+						}
+						else if (node.children.length == 1) {
+							final Number	val = (Number)calc(node.children[0], names, stack, predef, level, callback);
+							
+							return new Color(val.intValue());
+						}
+						break;
+					case FONT:
+						break;
+					case FUNC:
+						break;
+					case IMAGE:
+						break;
+					case MAP:
+						final PaintScriptMapInterface	psmi = PaintScriptMapInterface.Factory.newInstance(((ArrayDescriptor)node.cargo).contentType);
+						
+						for (int index = 0; index < node.children.length; index+= 2) {
+							psmi.set((char[])calc(node.children[index], names, stack, predef, level, callback), calc(node.children[index + 1], names, stack, predef, level, callback));
+						}
+						return psmi;
+					case POINT:
+						break;
+					case PROC:
+						break;
+					case RECT:
+						break;
+					case SIZE:
+						break;
+					case STROKE:
+						break;
+					case STRUCTURE:
+						break;
+					case TRANSFORM:
+						break;
+					case UNKNOWN:
+						break;
+					default:
+						throw new UnsupportedOperationException("Data type ["+node.cargo+"] is not supported yet"); 
+				}
+				break;
 			default:
 				throw new UnsupportedOperationException("Node type ["+node.getType()+"] is not supported yet"); 
 		}
 		return null;
 	}	
 
-	private static Object processAccess(final Object value, final SyntaxNode<SyntaxNodeType, ?> node) {
+	private static void processAccess(final Object value, final SyntaxNode node, final SyntaxTreeInterface<EntityDescriptor> names, final LocalStack stack, final Predefines predef, final int level, final ExecuteScriptCallback callback) throws PaintScriptException, InterruptedException {
 		// TODO Auto-generated method stub
-		switch (node.getType()) {
-			case CALL				:
-				break;
-			case GET_FIELD			:
-				break;
-			case GET_FIELD_INDEX	:
-				break;
-			case GET_VAR_INDEX		:
-				if (value instanceof PaintScriptListInterface) {
-					return ((PaintScriptListInterface)value).get(0);
+		if (node.getType() == SyntaxNodeType.ACCESS) {
+			Object 	accTarget = stack.getVar(node.value);
+			
+			if (accTarget == null) {
+				throw new PaintScriptException(new SyntaxException(node.row, node.col, "Null value inside...")); 
+			}
+			else if (node.children.length > 0) {
+				for (SyntaxNode<SyntaxNodeType, ?> item : node.children) {
+					switch (item.getType()) {
+						case CALL				:
+							break;
+						case GET_FIELD			:
+							break;
+						case GET_FIELD_INDEX	:
+							break;
+						case GET_VAR_INDEX		:
+							break;
+						case SET_FIELD			:
+							break;
+						case SET_FIELD_INDEX	:
+							break;
+						case SET_VAR_INDEX		:
+							if (accTarget instanceof PaintScriptListInterface[]) {
+								final long	index = convert(calc(item.children[0], names, stack, predef, level, callback), long.class);
+								
+								((PaintScriptListInterface[])accTarget)[0].set((int)index, value);
+							}
+							else if (accTarget instanceof PaintScriptMapInterface[]) {
+								final char[]	index = convert(calc(item.children[0], names, stack, predef, level, callback), char[].class);
+								
+								((PaintScriptMapInterface[])accTarget)[0].set(index, value);
+							}
+							break;
+						default:
+							break;
+					}
 				}
-				break;
-			default:
-				break;
+			}
+			else {
+				final Class<?>	cl = accTarget.getClass();
+				
+				if (cl.isArray()) {
+					Array.set(accTarget, 0, value);
+				}
+				else {
+					throw new UnsupportedOperationException();
+				}
+			}
 		}
-		return value;
+		else {
+			throw new UnsupportedOperationException();
+		}
 	}
 
-	private static <T> Iterable<Number> buildIterable(final SyntaxNode initial, final SyntaxNode terminal, final SyntaxTreeInterface<T> names, final LocalStack stack, final Predefines predef, final int level, final ExecuteScriptCallback callback) throws PaintScriptException, InterruptedException {
+	private static Iterable<Number> buildIterable(final SyntaxNode initial, final SyntaxNode terminal, final SyntaxTreeInterface<EntityDescriptor> names, final LocalStack stack, final Predefines predef, final int level, final ExecuteScriptCallback callback) throws PaintScriptException, InterruptedException {
 		final int	initialValue = convert(calc(initial, names, stack, predef, level, callback), int.class);
 		final int	terminalValue = convert(calc(terminal, names, stack, predef, level, callback), int.class);
 		
@@ -474,7 +567,7 @@ public class ScriptExecutorUtil {
 		}
 	}
 
-	private static <T> Iterable<Number> buildIterable(final SyntaxNode initial, final SyntaxNode terminal, final SyntaxNode step, final SyntaxTreeInterface<T> names, final LocalStack stack, final Predefines predef, final int level, final ExecuteScriptCallback callback) throws PaintScriptException, InterruptedException {
+	private static Iterable<Number> buildIterable(final SyntaxNode initial, final SyntaxNode terminal, final SyntaxNode step, final SyntaxTreeInterface<EntityDescriptor> names, final LocalStack stack, final Predefines predef, final int level, final ExecuteScriptCallback callback) throws PaintScriptException, InterruptedException {
 		final int	initialValue = convert(calc(initial, names, stack, predef, level, callback), int.class);
 		final int	terminalValue = convert(calc(terminal, names, stack, predef, level, callback), int.class);
 		final int 	stepValue = convert(calc(step, names, stack, predef, level, callback), int.class);
@@ -507,7 +600,7 @@ public class ScriptExecutorUtil {
 		}
 	}
 	
-	private static <T> Iterable<Object> buildSimpleIterable(final SyntaxNode node, final SyntaxTreeInterface<T> names, final LocalStack stack, final Predefines predef, final int level, final ExecuteScriptCallback callback) throws InterruptedException, PaintScriptException {
+	private static Iterable<Object> buildSimpleIterable(final SyntaxNode node, final SyntaxTreeInterface<EntityDescriptor> names, final LocalStack stack, final Predefines predef, final int level, final ExecuteScriptCallback callback) throws InterruptedException, PaintScriptException {
 		final List<Object>	result = new ArrayList<>();
 
 		callback.process(level, node);
@@ -523,7 +616,7 @@ public class ScriptExecutorUtil {
 		return result;
 	}
 
-	private static <T> void buildRangedIterable(final SyntaxNode node, final SyntaxTreeInterface<T> names, final LocalStack stack, final Predefines predef, final List<Number[]> result, final int level, final ExecuteScriptCallback callback) throws InterruptedException, PaintScriptException {
+	private static void buildRangedIterable(final SyntaxNode node, final SyntaxTreeInterface<EntityDescriptor> names, final LocalStack stack, final Predefines predef, final List<Number[]> result, final int level, final ExecuteScriptCallback callback) throws InterruptedException, PaintScriptException {
 		callback.process(level, node);
 		switch ((SyntaxNodeType)node.getType()) {
 			case LIST			:
@@ -643,7 +736,7 @@ public class ScriptExecutorUtil {
 			case WHILE		:
 				return CallResult.class;
 			case ACCESS		:
-				return (Class<?>)node.cargo;
+				return ((Class<?>[])node.cargo)[((Class<?>[])node.cargo).length - 1];
 			case BINARY		:
 				final Set<Class<?>>		binaryCollection = new HashSet<>();
 				final OperatorTypes[]	ops = (OperatorTypes[])node.cargo;

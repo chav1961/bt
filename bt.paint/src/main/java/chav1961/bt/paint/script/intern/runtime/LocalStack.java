@@ -1,11 +1,14 @@
 package chav1961.bt.paint.script.intern.runtime;
 
+
+import java.awt.Color;
 import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.List;
 
 import chav1961.bt.paint.control.Predefines;
 import chav1961.bt.paint.interfaces.PaintScriptException;
+import chav1961.bt.paint.script.interfaces.ColorWrapper;
 import chav1961.bt.paint.script.intern.interfaces.ExecuteScriptCallback;
 import chav1961.bt.paint.script.intern.parsers.ScriptParserUtil.EntityDescriptor;
 import chav1961.purelib.basic.interfaces.SyntaxTreeInterface;
@@ -86,7 +89,17 @@ public class LocalStack {
 	private void initialize(final VarKeeper[] varKeepers, final SyntaxTreeInterface<EntityDescriptor> vars) throws PaintScriptException, InterruptedException {
 		for (VarKeeper item : varKeepers) {
 			if (item.desc.initials != null) {
-				Array.set(item.currentValue, 0, ScriptExecutorUtil.calc(item.desc.initials, vars, this, predef, 0, callback));
+				final Object	value = ScriptExecutorUtil.calc(item.desc.initials, vars, this, predef, 0, callback);
+				
+				if (item.currentValue instanceof ColorWrapper[]) {
+					Array.set(item.currentValue, 0, ColorWrapper.of((Color)value));
+				}
+				else if (item.currentValue.getClass().isArray()) {
+					Array.set(item.currentValue, 0, value);
+				}
+				else {
+					throw new UnsupportedOperationException();
+				}
 			}
 		}
 	}

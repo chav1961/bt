@@ -14,6 +14,7 @@ import java.io.IOException;
 import java.io.Reader;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -322,6 +323,7 @@ public class ScriptParserUtil {
 		POINT(LexTypes.TYPE, DataTypes.POINT),
 		RECT(LexTypes.TYPE, DataTypes.RECT),
 		FONT(LexTypes.TYPE, DataTypes.FONT),
+		SIZE(LexTypes.TYPE, DataTypes.SIZE),
 		STROKE(LexTypes.TYPE, DataTypes.STROKE),
 		TRANSFORM(LexTypes.TYPE, DataTypes.TRANSFORM),
 		IMAGE(LexTypes.TYPE, DataTypes.IMAGE),
@@ -420,11 +422,15 @@ public class ScriptParserUtil {
 		PREFIX,
 		SUFFIX,
 		CONSTANT,
+		CONSTRUCTOR,
 		SUBSTITUTION,
 		ACCESS,
 		GET_FIELD,
 		GET_FIELD_INDEX,
 		GET_VAR_INDEX,
+		SET_FIELD,
+		SET_FIELD_INDEX,
+		SET_VAR_INDEX,
 		CALL
 	}
 	
@@ -1403,16 +1409,99 @@ loop:	for (;;) {
 				from++;
 				break;
 			case TYPE		:
-				switch (data[from].getDataType()) {
+				root.type = SyntaxNodeType.CONSTRUCTOR;
+				
+				switch (data[from].getKeyword()) {
 					case ARRAY	:	// array(item,...)
+						if (data[++from].getType() == LexTypes.OPEN) {
+							final List<SyntaxNode<SyntaxNodeType, SyntaxNode<SyntaxNodeType, ?>>>	arguments = new ArrayList<>();
+							
+							if (data[from].getType() != LexTypes.CLOSE) {
+								do {final SyntaxNode<SyntaxNodeType, SyntaxNode<SyntaxNodeType, ?>>	item = (SyntaxNode<SyntaxNodeType, SyntaxNode<SyntaxNodeType, ?>>) root.clone();
+								
+									from = buildExpression(data, from + 1, names, item); 
+									arguments.add(item);
+								} while (data[from].getType() == LexTypes.COMMA);
+								if (data[from].getType() == LexTypes.CLOSE) {
+									from++;
+								}
+								else {
+									throw new SyntaxException(data[from].getRow(), data[from].getCol(), "Missing ')'");
+								}
+							}
+							else {
+								from++;
+							}
+							root.cargo = new ArrayDescriptor(DataTypes.ARRAY);
+							root.children = arguments.toArray(new SyntaxNode[arguments.size()]);
+						}
+						else {
+							throw new SyntaxException(data[from].getRow(), data[from].getCol(), "Missing '('");
+						}
 						break;
-					case COLOR	:	// color(int)|color(int,int,int)
+					case COLOR	:	// color(int)|color("str")|color(int,int,int)
+						if (data[++from].getType() == LexTypes.OPEN) {
+							final List<SyntaxNode<SyntaxNodeType, SyntaxNode<SyntaxNodeType, ?>>>	arguments = new ArrayList<>();
+							
+							if (data[from].getType() != LexTypes.CLOSE) {
+								do {final SyntaxNode<SyntaxNodeType, SyntaxNode<SyntaxNodeType, ?>>	item = (SyntaxNode<SyntaxNodeType, SyntaxNode<SyntaxNodeType, ?>>) root.clone();
+								
+									from = buildExpression(data, from + 1, names, item); 
+									arguments.add(item);
+								} while (data[from].getType() == LexTypes.COMMA);
+								if (data[from].getType() == LexTypes.CLOSE) {
+									from++;
+								}
+								else {
+									throw new SyntaxException(data[from].getRow(), data[from].getCol(), "Missing ')'");
+								}
+							}
+							else {
+								from++;
+							}
+							root.cargo = new ArrayDescriptor(DataTypes.COLOR);
+							root.children = arguments.toArray(new SyntaxNode[arguments.size()]);
+						}
+						else {
+							throw new SyntaxException(data[from].getRow(), data[from].getCol(), "Missing '('");
+						}
 						break;
 					case FONT	:	// font("family",size,style)
 						break;
 					case IMAGE	:	// image(width,height,type)
 						break;
 					case MAP	:	// map("key":value,...)
+						if (data[++from].getType() == LexTypes.OPEN) {
+							final List<SyntaxNode<SyntaxNodeType, SyntaxNode<SyntaxNodeType, ?>>>	arguments = new ArrayList<>();
+							
+							if (data[from].getType() != LexTypes.CLOSE) {
+								do {final SyntaxNode<SyntaxNodeType, SyntaxNode<SyntaxNodeType, ?>>	item = (SyntaxNode<SyntaxNodeType, SyntaxNode<SyntaxNodeType, ?>>) root.clone();
+								
+									from = buildExpression(data, from + 1, names, item);
+									arguments.add(item);
+									if (data[from].getType() == LexTypes.COLON) {
+										final SyntaxNode<SyntaxNodeType, SyntaxNode<SyntaxNodeType, ?>>	value = (SyntaxNode<SyntaxNodeType, SyntaxNode<SyntaxNodeType, ?>>) root.clone();
+										
+										from = buildExpression(data, from + 1, names, value);
+										arguments.add(value);
+									}
+								} while (data[from].getType() == LexTypes.COMMA);
+								if (data[from].getType() == LexTypes.CLOSE) {
+									from++;
+								}
+								else {
+									throw new SyntaxException(data[from].getRow(), data[from].getCol(), "Missing ')'");
+								}
+							}
+							else {
+								from++;
+							}
+							root.cargo = new ArrayDescriptor(DataTypes.MAP);
+							root.children = arguments.toArray(new SyntaxNode[arguments.size()]);
+						}
+						else {
+							throw new SyntaxException(data[from].getRow(), data[from].getCol(), "Missing '('");
+						}
 						break;
 					case POINT	:	// point(int,int)
 						break;
@@ -1427,6 +1516,7 @@ loop:	for (;;) {
 					default	:
 						throw new SyntaxException(data[from].getRow(), data[from].getCol(), "Illegal type reference");
 				}
+				
 				break;
 			case SUBSTITUTION:
 				root.type = SyntaxNodeType.SUBSTITUTION;
@@ -1500,7 +1590,6 @@ loop:	for (;;) {
 						else {
 							methodAccess.children = children;
 							items.add(methodAccess);
-							current = new ArrayList<>();
 							current.add(classFound);
 							from++;
 						}
@@ -1582,7 +1671,7 @@ loop:	for (;;) {
 			theSameFirstName = false;
 		} while (data[from].getType() == LexTypes.DOT);
 
-		root.cargo = current;
+		root.cargo = current.toArray(new Class<?>[current.size()]);
 		root.children = items.toArray(new SyntaxNode[items.size()]);
 		return from;
 	}	
@@ -1678,11 +1767,33 @@ loop:	for (;;) {
 			theSameFirstName = false;
 		} while (data[from].getType() == LexTypes.DOT);
 
-		root.cargo = current;
+		root.cargo = current.toArray(new Class<?>[current.size()]);
 		root.children = items.toArray(new SyntaxNode[items.size()]);
+		
+		if (root.children.length > 0) {
+			switch (root.children[root.children.length-1].getType()) {
+				case GET_FIELD			:
+					final Field	f = (Field)root.children[root.children.length-1].cargo; 
+					
+					if (Modifier.isFinal(f.getModifiers())) {
+						throw new SyntaxException(data[from].getRow(), data[from].getCol(), "Final field ["+f.getName()+"] can't be used in the left part of assignment"); 
+					}
+					else {
+						root.children[root.children.length-1].type = SyntaxNodeType.SET_FIELD;
+					}
+					break;
+				case GET_FIELD_INDEX	:
+					root.children[root.children.length-1].type = SyntaxNodeType.SET_FIELD_INDEX;
+					break;
+				case GET_VAR_INDEX		:
+					root.children[root.children.length-1].type = SyntaxNodeType.SET_VAR_INDEX;
+					break;
+				default:
+					break;
+			}
+		}
 		return from;
 	}	
-	
 	
 	private static Class<?>[] buildSignature(final SyntaxNode... children) {
 		// TODO Auto-generated method stub
@@ -1699,7 +1810,7 @@ loop:	for (;;) {
 		return null;
 	}
 
-	private static void convert(final SyntaxNode node, final Class<?> awaited) {
+	private static void convert(final SyntaxNode node, final Class<?> awaited) throws SyntaxException {
 		switch ((SyntaxNodeType)node.getType()) {
 			case BREAK		:	case CASE		:	case CASEDEF	:	case CONTINUE	:
 			case FOR		:	case FOR1		:	case FORALL		:	case IF			:
@@ -1707,7 +1818,7 @@ loop:	for (;;) {
 			case WHILE		:
 				throw new IllegalArgumentException("Node type ["+node.getType()+"] can't be used for conversion");
 			case ACCESS		:
-				if ((Class<?>)node.cargo != awaited) {
+				if (!((Class[])node.cargo)[((Class[])node.cargo).length-1].isAssignableFrom(awaited)) {
 					addConversion(node, awaited);
 				}
 				break;
@@ -1765,6 +1876,68 @@ loop:	for (;;) {
 					addConversion(node, awaited);
 				}
 				break;
+			case CONSTRUCTOR:
+				switch (((ArrayDescriptor)node.cargo).dataType) {
+					case ARRAY		:
+						for (SyntaxNode item : node.children) {
+							convert(item, awaited);
+						}
+						((ArrayDescriptor)node.cargo).contentType = (Class<Object>) awaited;
+						break;
+					case COLOR		:
+						if (node.children.length == 3) {
+							for (SyntaxNode item : node.children) {
+								convert(item, long.class);
+							}
+							((ArrayDescriptor)node.cargo).contentType = (Class<Object>) awaited;
+						}
+						else if (node.children.length == 1) {
+							final Class<?>	cl = getValueType(node.children[0]);
+							
+							if (Number.class.isAssignableFrom(cl)) {
+								convert(node.children[0], long.class);
+								((ArrayDescriptor)node.cargo).contentType = (Class<Object>) awaited;
+							}
+							else {
+								convert(node.children[0], char[].class);
+								((ArrayDescriptor)node.cargo).contentType = (Class<Object>) awaited;
+							}
+						}
+						else {
+							throw new SyntaxException(node.row, node.row, "Invalid constructor for type Color, only Color(int), Color(str) and Color(int,int,int) are available"); 
+						}
+						break;
+					case FONT		:
+						break;
+					case FUNC		:
+						break;
+					case IMAGE		:
+						break;
+					case MAP		:
+						for (int index = 0; index < node.children.length; index += 2) {
+							convert(node.children[index+0], char[].class);
+							convert(node.children[index+1], awaited);
+						}
+						((ArrayDescriptor)node.cargo).contentType = (Class<Object>) awaited;
+						break;
+					case POINT		:
+						break;
+					case PROC		:
+						break;
+					case RECT		:
+						break;
+					case SIZE		:
+						break;
+					case STROKE		:
+						break;
+					case STRUCTURE	:
+						break;
+					case TRANSFORM	:
+						break;
+					default:
+						throw new UnsupportedOperationException("Data type ["+((ArrayDescriptor)node.cargo).dataType+"] is not supported yet");
+				}
+				break;
 			default:
 				throw new UnsupportedOperationException("Node type ["+node.getType()+"] is not supported yet");
 		}
@@ -1778,7 +1951,7 @@ loop:	for (;;) {
 			case WHILE		:
 				return CallResult.class;
 			case ACCESS		:
-				return ((List<Class<?>>)node.cargo).get(0);
+				return ((Class<?>[])node.cargo)[((Class<?>[])node.cargo).length-1];
 			case BINARY		:
 				final Set<Class<?>>		binaryCollection = new HashSet<>();
 				final OperatorTypes[]	ops = (OperatorTypes[])node.cargo;
@@ -2260,6 +2433,25 @@ loop:	for (;;) {
 			this.type = type;
 			this.level = level;
 			this.value = value;
+		}
+
+		@Override
+		public String toString() {
+			return "CallResult [type=" + type + ", level=" + level + ", value=" + value + "]";
+		}
+	}
+	
+	public static class ArrayDescriptor {
+		public final DataTypes	dataType;
+		public Class<Object>	contentType;
+		
+		public ArrayDescriptor(DataTypes dataType) {
+			this.dataType = dataType;
+		}
+
+		@Override
+		public String toString() {
+			return "ArrayDescriptor [dataType=" + dataType + ", contentType=" + contentType + "]";
 		}
 	}
 }
