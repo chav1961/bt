@@ -5,7 +5,7 @@ import java.awt.Font;
 import chav1961.bt.paint.interfaces.PaintScriptException;
 import chav1961.bt.paint.script.FontWrapperImpl;
 
-public interface FontWrapper {
+public interface FontWrapper extends ContentWrapper<Font> {
 	public static enum FontStyle {
 		PLAIN(Font.PLAIN),
 		BOLD(Font.BOLD),

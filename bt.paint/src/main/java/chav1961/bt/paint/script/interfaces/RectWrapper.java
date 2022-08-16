@@ -5,7 +5,7 @@ import java.awt.Rectangle;
 import chav1961.bt.paint.interfaces.PaintScriptException;
 import chav1961.bt.paint.script.RectWrapperImpl;
 
-public interface RectWrapper {
+public interface RectWrapper extends ContentWrapper<Rectangle> {
 	Rectangle getRect();
 	RectWrapper setRect(Rectangle rect) throws PaintScriptException;
 	RectWrapper setRect(String rect) throws PaintScriptException;

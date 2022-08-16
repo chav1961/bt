@@ -447,20 +447,32 @@ public class ScriptExecutorUtil {
 							return new Color(val.intValue());
 						}
 						break;
-					case FONT:
+					case FONT	:
+						if (node.children.length == 3) {
+							final char[]	family = (char[])calc(node.children[0], names, stack, predef, level, callback);
+							final Number	size = (Number)calc(node.children[1], names, stack, predef, level, callback);
+							final Number	style = (Number)calc(node.children[2], names, stack, predef, level, callback);
+							
+							return new Font(new String(family), size.intValue(), style.intValue());
+						}
+						else if (node.children.length == 1) {
+							final char[]	descr = (char[])calc(node.children[0], names, stack, predef, level, callback);
+							
+							return Font.decode(new String(descr));
+						}
 						break;
 					case FUNC:
 						break;
 					case IMAGE:
 						break;
-					case MAP:
+					case MAP	:
 						final PaintScriptMapInterface	psmi = PaintScriptMapInterface.Factory.newInstance(((ArrayDescriptor)node.cargo).contentType);
 						
 						for (int index = 0; index < node.children.length; index+= 2) {
 							psmi.set((char[])calc(node.children[index], names, stack, predef, level, callback), calc(node.children[index + 1], names, stack, predef, level, callback));
 						}
 						return psmi;
-					case POINT:
+					case POINT	:
 						if (node.children.length == 2) {
 							final Number	x = (Number)calc(node.children[0], names, stack, predef, level, callback);
 							final Number	y = (Number)calc(node.children[1], names, stack, predef, level, callback);
@@ -470,9 +482,29 @@ public class ScriptExecutorUtil {
 						break;
 					case PROC:
 						break;
-					case RECT:
+					case RECT	:
+						if (node.children.length == 4) {
+							final Number	x = (Number)calc(node.children[0], names, stack, predef, level, callback);
+							final Number	y = (Number)calc(node.children[1], names, stack, predef, level, callback);
+							final Number	width = (Number)calc(node.children[2], names, stack, predef, level, callback);
+							final Number	height = (Number)calc(node.children[3], names, stack, predef, level, callback);
+							
+							return new Rectangle(x.intValue(), y.intValue(), width.intValue(), height.intValue());
+						}
+						else if (node.children.length == 2) {
+							final Point		p = (Point)calc(node.children[0], names, stack, predef, level, callback);
+							final Dimension	s = (Dimension)calc(node.children[1], names, stack, predef, level, callback);
+							
+							return new Rectangle(p, s);
+						}
 						break;
-					case SIZE:
+					case SIZE	:
+						if (node.children.length == 2) {
+							final Number	x = (Number)calc(node.children[0], names, stack, predef, level, callback);
+							final Number	y = (Number)calc(node.children[1], names, stack, predef, level, callback);
+							
+							return new Dimension(x.intValue(), y.intValue());
+						}
 						break;
 					case STROKE:
 						break;

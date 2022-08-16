@@ -2,21 +2,42 @@ package chav1961.bt.paint.script.intern.runtime;
 
 
 import java.awt.Color;
+import java.awt.Dimension;
+import java.awt.Font;
 import java.awt.Point;
+import java.awt.Rectangle;
 import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Function;
 
 import chav1961.bt.paint.control.Predefines;
 import chav1961.bt.paint.interfaces.PaintScriptException;
 import chav1961.bt.paint.script.interfaces.ColorWrapper;
 import chav1961.bt.paint.script.interfaces.ContentWrapper;
+import chav1961.bt.paint.script.interfaces.FontWrapper;
 import chav1961.bt.paint.script.interfaces.PointWrapper;
+import chav1961.bt.paint.script.interfaces.RectWrapper;
+import chav1961.bt.paint.script.interfaces.SizeWrapper;
 import chav1961.bt.paint.script.intern.interfaces.ExecuteScriptCallback;
 import chav1961.bt.paint.script.intern.parsers.ScriptParserUtil.EntityDescriptor;
 import chav1961.purelib.basic.interfaces.SyntaxTreeInterface;
 
 public class LocalStack {
+	private static Initials[]			INITIALS;
+	
+	static {
+		final List<Initials>	result = new ArrayList<>();
+		
+		result.add(new Initials(ColorWrapper.class, Color.class, (value)->ColorWrapper.of((Color)value)));
+		result.add(new Initials(PointWrapper.class, Point.class, (value)->PointWrapper.of((Point)value)));
+		result.add(new Initials(RectWrapper.class, Rectangle.class, (value)->RectWrapper.of((Rectangle)value)));
+		result.add(new Initials(SizeWrapper.class, Dimension.class, (value)->SizeWrapper.of((Dimension)value)));
+		result.add(new Initials(FontWrapper.class, Font.class, (value)->FontWrapper.of((Font)value)));
+		
+		INITIALS = result.toArray(new Initials[result.size()]);
+	}
+	
 	private final Predefines			predef;
 	private final ExecuteScriptCallback	callback;
 	private final List<VarKeeper[]>		stack = new ArrayList<>();
@@ -101,33 +122,27 @@ public class LocalStack {
 			}
 		}
 	}
-
 	
 	private static void setValue(final VarKeeper item, final Object value) {
-		if (item.currentValue instanceof ColorWrapper[]) {
-			if (value instanceof ColorWrapper) {
-				Array.set(item.currentValue, 0, value);
+		if (item.currentValue instanceof ContentWrapper[]) {
+			final Class<?>	left = item.currentValue.getClass().getComponentType();
+			final Class<?>	right = value.getClass();
+			
+			for (Initials initial : INITIALS) {
+				if (initial.leftContentType == left) {
+					if (left.isAssignableFrom(right)) {
+						Array.set(item.currentValue, 0, value);
+					}
+					else if (initial.rightContentType.isAssignableFrom(right)) {
+						Array.set(item.currentValue, 0, initial.convertor.apply(value));
+					}
+					else {
+						throw new UnsupportedOperationException("Unsupported rvalue for "+item.desc);
+					}
+					return;
+				}
 			}
-			else if (value instanceof Color) {
-				Array.set(item.currentValue, 0, ColorWrapper.of((Color)value));
-			}
-			else {
-				throw new UnsupportedOperationException();
-			}
-		}
-		else if (item.currentValue instanceof PointWrapper[]) {
-			if (value instanceof PointWrapper) {
-				Array.set(item.currentValue, 0, value);
-			}
-			else if (value instanceof Point) {
-				Array.set(item.currentValue, 0, PointWrapper.of((Point)value));
-			}
-			else {
-				throw new UnsupportedOperationException();
-			}
-		}
-		else if (item.currentValue instanceof ContentWrapper[]) {
-			throw new UnsupportedOperationException();
+			throw new UnsupportedOperationException("Unsupported initialization for "+item.desc);
 		}
 		else if (item.currentValue.getClass().isArray()) {
 			Array.set(item.currentValue, 0, value);
@@ -144,6 +159,18 @@ public class LocalStack {
 		private VarKeeper(final EntityDescriptor desc) {
 			this.desc = desc;
 			this.currentValue = Array.newInstance(desc.dataType.get(0).getLeftValueClassAssociated(), 1);
+		}
+	}
+	
+	private static class Initials {
+		private final Class<?>	leftContentType;
+		private final Class<?>	rightContentType;
+		private final Function	convertor;
+		
+		public Initials(Class<?> leftContentType, Class<?> rightContentType, Function convertor) {
+			this.leftContentType = leftContentType;
+			this.rightContentType = rightContentType;
+			this.convertor = convertor;
 		}
 	}
 }

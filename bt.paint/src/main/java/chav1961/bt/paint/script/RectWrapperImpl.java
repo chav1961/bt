@@ -85,4 +85,24 @@ public class RectWrapperImpl implements RectWrapper {
 			}
 		}
 	}
+
+	@Override
+	public Class<Rectangle> getContentType() {
+		return Rectangle.class;
+	}
+
+	@Override
+	public Rectangle getContent() throws PaintScriptException {
+		return rect;
+	}
+
+	@Override
+	public void setContent(final Rectangle content) throws PaintScriptException {
+		setRect(content);
+	}
+	
+	@Override
+	public Object clone() throws CloneNotSupportedException {
+		return new RectWrapperImpl(this.rect);
+	}
 }

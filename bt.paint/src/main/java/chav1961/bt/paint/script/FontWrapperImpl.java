@@ -21,6 +21,15 @@ public class FontWrapperImpl implements FontWrapper {
 			this.font = font.deriveFont(new AffineTransform());
 		}
 	}
+
+	public FontWrapperImpl(final String font) {
+		if (font == null || font.isEmpty()) {
+			throw new IllegalArgumentException("Font can'tbe null");
+		}
+		else {
+			this.font = Font.decode(font);
+		}
+	}
 	
 	@Override
 	public FontWrapper reset() {
@@ -86,6 +95,26 @@ public class FontWrapperImpl implements FontWrapper {
 	@Override
 	public Font getFont() {
 		return font;
+	}
+
+	@Override
+	public Class<Font> getContentType() {
+		return Font.class;
+	}
+
+	@Override
+	public Font getContent() throws PaintScriptException {
+		return getFont();
+	}
+
+	@Override
+	public void setContent(final Font content) throws PaintScriptException {
+		setFont(FontWrapper.of(content));
+	}
+	
+	@Override
+	public Object clone() throws CloneNotSupportedException {
+		return new FontWrapperImpl(font);
 	}
 
 	@Override

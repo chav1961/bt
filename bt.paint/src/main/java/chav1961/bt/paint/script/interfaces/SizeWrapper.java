@@ -1,18 +1,20 @@
 package chav1961.bt.paint.script.interfaces;
 
-import java.awt.Point;
+import java.awt.Dimension;
 
 import chav1961.bt.paint.interfaces.PaintScriptException;
+import chav1961.bt.paint.script.SizeWrapperImpl;
 
-public interface SizeWrapper {
-	Point getPoint();
-	SizeWrapper setPoint(String point) throws PaintScriptException;
+public interface SizeWrapper extends ContentWrapper<Dimension> {
+	Dimension getSize();
+	SizeWrapper setSize(String size) throws PaintScriptException;
+	SizeWrapper setSize(Dimension size) throws PaintScriptException;
 
-	static SizeWrapper of(final Point rect) {
-		return null;
+	static SizeWrapper of(final Dimension size) {
+		return new SizeWrapperImpl(size);
 	}
 
-	static SizeWrapper of(final String rect) throws PaintScriptException {
-		return null;
+	static SizeWrapper of(final String size) throws PaintScriptException {
+		return new SizeWrapperImpl(size);
 	}
 }

@@ -1,7 +1,10 @@
 package chav1961.bt.paint.script.intern.runtime;
 
 import java.awt.Color;
+import java.awt.Dimension;
+import java.awt.Font;
 import java.awt.Point;
+import java.awt.Rectangle;
 import java.io.StringReader;
 
 import org.junit.Assert;
@@ -10,7 +13,10 @@ import org.junit.Test;
 import chav1961.bt.paint.control.Predefines;
 import chav1961.bt.paint.interfaces.PaintScriptException;
 import chav1961.bt.paint.script.interfaces.ColorWrapper;
+import chav1961.bt.paint.script.interfaces.FontWrapper;
 import chav1961.bt.paint.script.interfaces.PointWrapper;
+import chav1961.bt.paint.script.interfaces.RectWrapper;
+import chav1961.bt.paint.script.interfaces.SizeWrapper;
 import chav1961.bt.paint.script.intern.interfaces.ExecuteScriptCallback;
 import chav1961.bt.paint.script.intern.interfaces.PaintScriptListInterface;
 import chav1961.bt.paint.script.intern.interfaces.PaintScriptMapInterface;
@@ -130,17 +136,20 @@ public class ScriptExecutorUtilTest {
 		final ExecuteScriptCallback	callback = (l,n)->{}; 
 		LocalStack					stack = new LocalStack(names, predef, callback);
 		Object						result;
-		
+
+		// Array
 		names.clear();
 		result = ScriptExecutorUtil.calc(ScriptParserUtil.parseScript(new StringReader("var i : array of int := array(20); begin i[0] := 10 end"), names), names, 
 						stack = new LocalStack(names, predef, callback), predef, 0, callback);
 		Assert.assertEquals(10, ((Long)(((PaintScriptListInterface[])stack.getVar(names.seekName("i")))[0].get(0))).longValue());
 
+		// Map
 		names.clear();
 		result = ScriptExecutorUtil.calc(ScriptParserUtil.parseScript(new StringReader("var i : map of int := map(\"x\" : 20); begin i[\"x\"] := 10 end"), names), names, 
 						stack = new LocalStack(names, predef, callback), predef, 0, callback);
 		Assert.assertEquals(10, ((Long)(((PaintScriptMapInterface[])stack.getVar(names.seekName("i")))[0].get("x".toCharArray()))).longValue());
 
+		// Color
 		names.clear();
 		result = ScriptExecutorUtil.calc(ScriptParserUtil.parseScript(new StringReader("var i : color := color(10,20,30), j : int; begin j := i.getRed() end"), names), names, 
 						stack = new LocalStack(names, predef, callback), predef, 0, callback);
@@ -151,6 +160,18 @@ public class ScriptExecutorUtilTest {
 						stack = new LocalStack(names, predef, callback), predef, 0, callback);
 		Assert.assertEquals(new Color(10,20,30), (Color)((ColorWrapper[])stack.getVar(names.seekName("i")))[0].getColor());
 
+		// Font
+		names.clear();
+		result = ScriptExecutorUtil.calc(ScriptParserUtil.parseScript(new StringReader("var i : font := font(\"Monospace\",0,12), j : int; begin j := i.getSize() end"), names), names, 
+						stack = new LocalStack(names, predef, callback), predef, 0, callback);
+		Assert.assertEquals(12, (long)((long[])stack.getVar(names.seekName("j")))[0]);
+
+		names.clear();
+		result = ScriptExecutorUtil.calc(ScriptParserUtil.parseScript(new StringReader("var i : font; begin i := font(\"Monospace\",0,12) end"), names), names, 
+						stack = new LocalStack(names, predef, callback), predef, 0, callback);
+		Assert.assertEquals(new Font("Monospace",0,12), (Font)((FontWrapper[])stack.getVar(names.seekName("i")))[0].getFont());
+		
+		// Point
 		names.clear();
 		result = ScriptExecutorUtil.calc(ScriptParserUtil.parseScript(new StringReader("var i : point := point(10,20), j : int; begin j := i.getX() end"), names), names, 
 						stack = new LocalStack(names, predef, callback), predef, 0, callback);
@@ -165,5 +186,37 @@ public class ScriptExecutorUtilTest {
 		result = ScriptExecutorUtil.calc(ScriptParserUtil.parseScript(new StringReader("var i : point; begin i := point(10,20) end"), names), names, 
 						stack = new LocalStack(names, predef, callback), predef, 0, callback);
 		Assert.assertEquals(new Point(10,20), (Point)((PointWrapper[])stack.getVar(names.seekName("i")))[0].getPoint());
+
+		// Size
+		names.clear();
+		result = ScriptExecutorUtil.calc(ScriptParserUtil.parseScript(new StringReader("var i : size := size(10,20), j : int; begin j := i.getWidth() end"), names), names, 
+						stack = new LocalStack(names, predef, callback), predef, 0, callback);
+		Assert.assertEquals(10, (long)((long[])stack.getVar(names.seekName("j")))[0]);
+
+		names.clear();
+		result = ScriptExecutorUtil.calc(ScriptParserUtil.parseScript(new StringReader("var i : size := size(10,20), j : int; begin j := i.width end"), names), names, 
+						stack = new LocalStack(names, predef, callback), predef, 0, callback);
+		Assert.assertEquals(10, (long)((long[])stack.getVar(names.seekName("j")))[0]);
+		
+		names.clear();
+		result = ScriptExecutorUtil.calc(ScriptParserUtil.parseScript(new StringReader("var i : size; begin i := size(10,20) end"), names), names, 
+						stack = new LocalStack(names, predef, callback), predef, 0, callback);
+		Assert.assertEquals(new Dimension(10,20), (Dimension)((SizeWrapper[])stack.getVar(names.seekName("i")))[0].getSize());
+		
+		// Rect
+		names.clear();
+		result = ScriptExecutorUtil.calc(ScriptParserUtil.parseScript(new StringReader("var i : rect := rect(10,20,30,40), j : int; begin j := i.getX() end"), names), names, 
+						stack = new LocalStack(names, predef, callback), predef, 0, callback);
+		Assert.assertEquals(10, (long)((long[])stack.getVar(names.seekName("j")))[0]);
+
+		names.clear();
+		result = ScriptExecutorUtil.calc(ScriptParserUtil.parseScript(new StringReader("var i : rect := rect(10,20,30,40), j : int; begin j := i.width end"), names), names, 
+						stack = new LocalStack(names, predef, callback), predef, 0, callback);
+		Assert.assertEquals(30, (long)((long[])stack.getVar(names.seekName("j")))[0]);
+		
+		names.clear();
+		result = ScriptExecutorUtil.calc(ScriptParserUtil.parseScript(new StringReader("var i : rect; begin i := rect(10,20,30,40) end"), names), names, 
+						stack = new LocalStack(names, predef, callback), predef, 0, callback);
+		Assert.assertEquals(new Rectangle(10,20,30,40), (Rectangle)((RectWrapper[])stack.getVar(names.seekName("i")))[0].getRect());
 	}
 }

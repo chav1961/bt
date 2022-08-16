@@ -108,10 +108,10 @@ public class ScriptParserUtil {
 		STR(char[].class, char[].class, char[].class),
 		BOOL(boolean.class, boolean.class, boolean.class),
 		COLOR(ColorWrapper.class, ColorWrapper.class, Color.class, ColorWrapper.of(Color.BLACK)),
-		POINT(PointWrapper.class, PointWrapper.class, Point.class, PointWrapper.of(new Point(0,0))),
-		RECT(RectWrapper.class, RectWrapper.class, Rectangle.class),
-		SIZE(SizeWrapper.class, SizeWrapper.class, Dimension.class),
-		FONT(FontWrapper.class, FontWrapper.class, Font.class),
+		POINT(PointWrapper.class, PointWrapper.class, Point.class, PointWrapper.of(new Point())),
+		RECT(RectWrapper.class, RectWrapper.class, Rectangle.class, RectWrapper.of(new Rectangle())),
+		SIZE(SizeWrapper.class, SizeWrapper.class, Dimension.class, SizeWrapper.of(new Dimension())),
+		FONT(FontWrapper.class, FontWrapper.class, Font.class, FontWrapper.of(Font.decode(null))),
 		STROKE(StrokeWrapper.class, StrokeWrapper.class, Stroke.class),
 		TRANSFORM(TransformWrapper.class, TransformWrapper.class, AffineTransform.class),
 		IMAGE(ImageWrapper.class, ImageWrapper.class, BufferedImage.class),
@@ -448,6 +448,7 @@ public class ScriptParserUtil {
 		KEYWORDS.placeName("bool", Keywords.BOOL);
 		KEYWORDS.placeName("color", Keywords.COLOR);
 		KEYWORDS.placeName("point", Keywords.POINT);
+		KEYWORDS.placeName("size", Keywords.SIZE);
 		KEYWORDS.placeName("rect", Keywords.RECT);
 		KEYWORDS.placeName("font", Keywords.FONT);
 		KEYWORDS.placeName("stroke", Keywords.STROKE);
@@ -889,7 +890,7 @@ loop:	for (;;) {
 			final long				nameId = data[from].getLongAssociated();
 			final List<DataTypes>	nameType = new ArrayList<>();
 			final int				nameLex = from;
-			SyntaxNode				initials = null;
+			SyntaxNode<SyntaxNodeType, SyntaxNode<SyntaxNodeType, ?>>	initials = null;
 			
 			if (data[from+1].getType() == LexTypes.COLON) {
 				if (data[from+2].getType() == LexTypes.TYPE) {
@@ -899,7 +900,7 @@ loop:	for (;;) {
 							if (data[from+3].getType() == LexTypes.OPTION && data[from+3].getKeyword() == Keywords.OF) {
 								if (data[from+4].getType() == LexTypes.TYPE) {
 									switch (data[from+4].getKeyword()) {
-										case INT : case REAL : case STR : case BOOL : case COLOR : case POINT : case RECT : case FONT : case STROKE : case TRANSFORM : case IMAGE :
+										case INT : case REAL : case STR : case BOOL : case COLOR : case POINT : case RECT : case SIZE : case FONT : case STROKE : case TRANSFORM : case IMAGE :
 											nameType.add(data[from+4].getDataType());
 											from += 5;
 											break;
@@ -920,7 +921,7 @@ loop:	for (;;) {
 							if (data[from+3].getType() == LexTypes.OPTION && data[from+3].getKeyword() == Keywords.OF) {
 								if (data[from+4].getType() == LexTypes.TYPE) {
 									switch (data[from+4].getKeyword()) {
-										case INT : case REAL : case STR : case BOOL : case COLOR : case POINT : case RECT : case FONT : case STROKE : case TRANSFORM : case IMAGE :
+										case INT : case REAL : case STR : case BOOL : case COLOR : case POINT : case RECT : case SIZE : case FONT : case STROKE : case TRANSFORM : case IMAGE :
 											nameType.add(data[from+4].getDataType());
 											from += 5;
 											break;
@@ -940,7 +941,7 @@ loop:	for (;;) {
 							nameType.add(data[from+2].getDataType());
 							from += 3;
 							break;
-						case COLOR : case POINT : case RECT : case FONT : case STROKE : case TRANSFORM : case IMAGE :
+						case COLOR : case POINT : case RECT : case SIZE : case FONT : case STROKE : case TRANSFORM : case IMAGE :
 							nameType.add(data[from+2].getDataType());
 							from += 3;
 							break;
@@ -961,12 +962,6 @@ loop:	for (;;) {
 				from = buildExpression(data, from + 1, names, initials);						
 				convert(initials, nameType.get(nameType.size()-1).getLeftValueClassAssociated());
 			}
-//			else if (nameType.get(nameType.size()-1).hasDefaultValue()) {
-//				try{initials = nameType.get(nameType.size()-1).getDefaultValue();
-//				} catch (PaintScriptException e) {
-//					throw new SyntaxException(data[from+1].getRow(), data[from+1].getCol(), e.getLocalizedMessage(), e);
-//				}
-//			}
 			if (names.getCargo(nameId) == null) {
 				names.setCargo(nameId, new EntityDescriptor(nameId, /*nameCollection,*/ nameType, initials));
 			}
@@ -1477,6 +1472,31 @@ loop:	for (;;) {
 						}
 						break;
 					case FONT	:	// font("family",size,style)
+						if (data[++from].getType() == LexTypes.OPEN) {
+							final List<SyntaxNode<SyntaxNodeType, SyntaxNode<SyntaxNodeType, ?>>>	arguments = new ArrayList<>();
+							
+							if (data[from].getType() != LexTypes.CLOSE) {
+								do {final SyntaxNode<SyntaxNodeType, SyntaxNode<SyntaxNodeType, ?>>	item = (SyntaxNode<SyntaxNodeType, SyntaxNode<SyntaxNodeType, ?>>) root.clone();
+								
+									from = buildExpression(data, from + 1, names, item); 
+									arguments.add(item);
+								} while (data[from].getType() == LexTypes.COMMA);
+								if (data[from].getType() == LexTypes.CLOSE) {
+									from++;
+								}
+								else {
+									throw new SyntaxException(data[from].getRow(), data[from].getCol(), "Missing ')'");
+								}
+							}
+							else {
+								from++;
+							}
+							root.cargo = new ArrayDescriptor(DataTypes.FONT);
+							root.children = arguments.toArray(new SyntaxNode[arguments.size()]);
+						}
+						else {
+							throw new SyntaxException(data[from].getRow(), data[from].getCol(), "Missing '('");
+						}
 						break;
 					case IMAGE	:	// image(width,height,type)
 						break;
@@ -1541,8 +1561,58 @@ loop:	for (;;) {
 						}
 						break;
 					case RECT	:	// rect(x,y,width,height)|rect(point(...),size(...))
+						if (data[++from].getType() == LexTypes.OPEN) {
+							final List<SyntaxNode<SyntaxNodeType, SyntaxNode<SyntaxNodeType, ?>>>	arguments = new ArrayList<>();
+							
+							if (data[from].getType() != LexTypes.CLOSE) {
+								do {final SyntaxNode<SyntaxNodeType, SyntaxNode<SyntaxNodeType, ?>>	item = (SyntaxNode<SyntaxNodeType, SyntaxNode<SyntaxNodeType, ?>>) root.clone();
+								
+									from = buildExpression(data, from + 1, names, item); 
+									arguments.add(item);
+								} while (data[from].getType() == LexTypes.COMMA);
+								if (data[from].getType() == LexTypes.CLOSE) {
+									from++;
+								}
+								else {
+									throw new SyntaxException(data[from].getRow(), data[from].getCol(), "Missing ')'");
+								}
+							}
+							else {
+								from++;
+							}
+							root.cargo = new ArrayDescriptor(DataTypes.RECT);
+							root.children = arguments.toArray(new SyntaxNode[arguments.size()]);
+						}
+						else {
+							throw new SyntaxException(data[from].getRow(), data[from].getCol(), "Missing '('");
+						}
 						break;
 					case SIZE	:	// size(width,height)
+						if (data[++from].getType() == LexTypes.OPEN) {
+							final List<SyntaxNode<SyntaxNodeType, SyntaxNode<SyntaxNodeType, ?>>>	arguments = new ArrayList<>();
+							
+							if (data[from].getType() != LexTypes.CLOSE) {
+								do {final SyntaxNode<SyntaxNodeType, SyntaxNode<SyntaxNodeType, ?>>	item = (SyntaxNode<SyntaxNodeType, SyntaxNode<SyntaxNodeType, ?>>) root.clone();
+								
+									from = buildExpression(data, from + 1, names, item); 
+									arguments.add(item);
+								} while (data[from].getType() == LexTypes.COMMA);
+								if (data[from].getType() == LexTypes.CLOSE) {
+									from++;
+								}
+								else {
+									throw new SyntaxException(data[from].getRow(), data[from].getCol(), "Missing ')'");
+								}
+							}
+							else {
+								from++;
+							}
+							root.cargo = new ArrayDescriptor(DataTypes.SIZE);
+							root.children = arguments.toArray(new SyntaxNode[arguments.size()]);
+						}
+						else {
+							throw new SyntaxException(data[from].getRow(), data[from].getCol(), "Missing '('");
+						}
 						break;
 					case STROKE	:	// stroke(width,style,style)
 						break;
@@ -1943,6 +2013,19 @@ loop:	for (;;) {
 						}
 						break;
 					case FONT		:
+						if (node.children.length == 3) {
+							convert(node.children[0], char[].class);
+							convert(node.children[1], long.class);
+							convert(node.children[2], long.class);
+							((ArrayDescriptor)node.cargo).contentType = (Class<Object>) awaited;
+						}
+						else if (node.children.length == 1) {
+							convert(node.children[0], char[].class);
+							((ArrayDescriptor)node.cargo).contentType = (Class<Object>) awaited;
+						}
+						else {
+							throw new SyntaxException(node.row, node.row, "Invalid constructor for type Font, only Point(str, int, int) or Font(str) are available"); 
+						}
 						break;
 					case FUNC		:
 						break;
@@ -1969,8 +2052,31 @@ loop:	for (;;) {
 					case PROC		:
 						break;
 					case RECT		:
+						if (node.children.length == 4) {
+							for (SyntaxNode item : node.children) {
+								convert(item, long.class);
+							}
+							((ArrayDescriptor)node.cargo).contentType = (Class<Object>) awaited;
+						}
+						else if (node.children.length == 2) {
+							convert(node.children[0], Point.class);
+							convert(node.children[1], Dimension.class);
+							((ArrayDescriptor)node.cargo).contentType = (Class<Object>) awaited;
+						}
+						else {
+							throw new SyntaxException(node.row, node.row, "Invalid constructor for type Rect, only Rect(int, int, int, int) and Rect(Point, Size) are available"); 
+						}
 						break;
 					case SIZE		:
+						if (node.children.length == 2) {
+							for (SyntaxNode item : node.children) {
+								convert(item, long.class);
+							}
+							((ArrayDescriptor)node.cargo).contentType = (Class<Object>) awaited;
+						}
+						else {
+							throw new SyntaxException(node.row, node.row, "Invalid constructor for type Size, only Size(int, int) are available"); 
+						}
 						break;
 					case STROKE		:
 						break;
