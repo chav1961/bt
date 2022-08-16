@@ -1,5 +1,10 @@
 package chav1961.bt.paint.script.interfaces;
 
-public interface ContentWrapper<T> {
-	T getContent();
+import chav1961.bt.paint.interfaces.PaintScriptException;
+
+public interface ContentWrapper<T> extends Cloneable {
+	Class<T> getContentType();
+	T getContent() throws PaintScriptException;
+	void setContent(T content) throws PaintScriptException;
+	Object clone() throws CloneNotSupportedException;
 }

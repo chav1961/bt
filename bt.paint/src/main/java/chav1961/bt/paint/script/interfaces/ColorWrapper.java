@@ -5,7 +5,7 @@ import java.awt.Color;
 import chav1961.bt.paint.interfaces.PaintScriptException;
 import chav1961.bt.paint.script.ColorWrapperImpl;
 
-public interface ColorWrapper {
+public interface ColorWrapper extends ContentWrapper<Color> {
 	Color getColor();
 	ColorWrapper setColor(ColorWrapper color);
 	ColorWrapper setColor(String color) throws PaintScriptException;

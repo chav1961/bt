@@ -53,4 +53,24 @@ public class ColorWrapperImpl implements ColorWrapper {
 	public String toString() {
 		return "ColorWrapperImpl [color=" + color + "]";
 	}
+
+	@Override
+	public Class<Color> getContentType() {
+		return Color.class;
+	}
+
+	@Override
+	public Color getContent() throws PaintScriptException {
+		return getColor();
+	}
+
+	@Override
+	public void setContent(final Color content) throws PaintScriptException {
+		setColor(ColorWrapper.of(content));
+	}
+
+	@Override
+	public Object clone() throws CloneNotSupportedException {
+		return super.clone();
+	}
 }

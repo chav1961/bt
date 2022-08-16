@@ -4,7 +4,6 @@ package chav1961.bt.paint.script.intern.parsers;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Font;
-import java.awt.Image;
 import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.Stroke;
@@ -23,9 +22,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import chav1961.bt.paint.interfaces.PaintScriptException;
 import chav1961.bt.paint.script.interfaces.CanvasWrapper;
 import chav1961.bt.paint.script.interfaces.ClipboardWrapper;
 import chav1961.bt.paint.script.interfaces.ColorWrapper;
+import chav1961.bt.paint.script.interfaces.ContentWrapper;
 import chav1961.bt.paint.script.interfaces.FontWrapper;
 import chav1961.bt.paint.script.interfaces.ImageWrapper;
 import chav1961.bt.paint.script.interfaces.PointWrapper;
@@ -106,30 +107,32 @@ public class ScriptParserUtil {
 		REAL(double.class, double.class, double.class),
 		STR(char[].class, char[].class, char[].class),
 		BOOL(boolean.class, boolean.class, boolean.class),
-		COLOR(ColorWrapper.class, ColorWrapper.class, Color.class),
-		POINT(PointWrapper.class, PointWrapper.class, Point.class),
+		COLOR(ColorWrapper.class, ColorWrapper.class, Color.class, ColorWrapper.of(Color.BLACK)),
+		POINT(PointWrapper.class, PointWrapper.class, Point.class, PointWrapper.of(new Point(0,0))),
 		RECT(RectWrapper.class, RectWrapper.class, Rectangle.class),
 		SIZE(SizeWrapper.class, SizeWrapper.class, Dimension.class),
 		FONT(FontWrapper.class, FontWrapper.class, Font.class),
 		STROKE(StrokeWrapper.class, StrokeWrapper.class, Stroke.class),
 		TRANSFORM(TransformWrapper.class, TransformWrapper.class, AffineTransform.class),
 		IMAGE(ImageWrapper.class, ImageWrapper.class, BufferedImage.class),
-		STRUCTURE(null),
 		ARRAY(PaintScriptListInterface.class),
 		MAP(PaintScriptMapInterface.class),
+		STRUCTURE(null),
 		FUNC(null),
 		PROC(null);
 		
-		private final boolean	isCollection;
-		private final Class<?>	leftValueAssociated;
-		private final Class<?>	rightValueAssociated;
-		private final Class<?>	class2Wrap;
+		private final boolean			isCollection;
+		private final Class<?>			leftValueAssociated;
+		private final Class<?>			rightValueAssociated;
+		private final Class<?>			class2Wrap;
+		private final ContentWrapper<?>	initialValue;
 		
 		private DataTypes(final Class<?> class2Wrap) {
 			this.isCollection = true;
 			this.leftValueAssociated = class2Wrap;
 			this.rightValueAssociated = null;
 			this.class2Wrap = class2Wrap;
+			this.initialValue = null;
 		}
 		
 		private DataTypes(final Class<?> leftValueAssociated, final Class<?> rightValueAssociated, final Class<?> class2Wrap) {
@@ -137,6 +140,15 @@ public class ScriptParserUtil {
 			this.leftValueAssociated = leftValueAssociated;
 			this.rightValueAssociated = rightValueAssociated;
 			this.class2Wrap = class2Wrap;
+			this.initialValue = null;
+		}
+
+		private DataTypes(final Class<?> leftValueAssociated, final Class<?> rightValueAssociated, final Class<?> class2Wrap, final ContentWrapper<?> initialValue) {
+			this.isCollection = false;
+			this.leftValueAssociated = leftValueAssociated;
+			this.rightValueAssociated = rightValueAssociated;
+			this.class2Wrap = class2Wrap;
+			this.initialValue = initialValue;
 		}
 		
 		public Class<?> getLeftValueClassAssociated() {
@@ -154,26 +166,18 @@ public class ScriptParserUtil {
 		public Class<?> getClass2Wrap() {
 			return class2Wrap;
 		}
+		
+		public boolean hasDefaultValue() {
+			return initialValue != null;
+		}
+		
+		public <T> T getDefaultValue() throws PaintScriptException {
+			try{return (T) initialValue.clone();
+			} catch (CloneNotSupportedException e) {
+				throw new PaintScriptException("Error cloning type ["+name()+"] : "+e.getLocalizedMessage(), e); 
+			}
+		}
 	}
-
-//	static enum CollectionType {
-//		ORDINAL(PaintScriptCollectionInterface.class),
-//		STRUCTURE(null),
-//		ARRAY(PaintScriptListInterface.class),
-//		MAP(PaintScriptMapInterface.class),
-//		FUNC(null),
-//		PROC(null);
-//
-//		private final Class<?>	class2Wrap;
-//		
-//		private CollectionType(final Class<?> class2Wrap) {
-//			this.class2Wrap = class2Wrap;			
-//		}
-//		
-//		public Class<?> getClass2Wrap() {
-//			return class2Wrap;
-//		}
-//	}
 
 	private static enum OperatorLevelTypes {
 		NONE,
@@ -957,6 +961,12 @@ loop:	for (;;) {
 				from = buildExpression(data, from + 1, names, initials);						
 				convert(initials, nameType.get(nameType.size()-1).getLeftValueClassAssociated());
 			}
+//			else if (nameType.get(nameType.size()-1).hasDefaultValue()) {
+//				try{initials = nameType.get(nameType.size()-1).getDefaultValue();
+//				} catch (PaintScriptException e) {
+//					throw new SyntaxException(data[from+1].getRow(), data[from+1].getCol(), e.getLocalizedMessage(), e);
+//				}
+//			}
 			if (names.getCargo(nameId) == null) {
 				names.setCargo(nameId, new EntityDescriptor(nameId, /*nameCollection,*/ nameType, initials));
 			}
@@ -1504,6 +1514,31 @@ loop:	for (;;) {
 						}
 						break;
 					case POINT	:	// point(int,int)
+						if (data[++from].getType() == LexTypes.OPEN) {
+							final List<SyntaxNode<SyntaxNodeType, SyntaxNode<SyntaxNodeType, ?>>>	arguments = new ArrayList<>();
+							
+							if (data[from].getType() != LexTypes.CLOSE) {
+								do {final SyntaxNode<SyntaxNodeType, SyntaxNode<SyntaxNodeType, ?>>	item = (SyntaxNode<SyntaxNodeType, SyntaxNode<SyntaxNodeType, ?>>) root.clone();
+								
+									from = buildExpression(data, from + 1, names, item); 
+									arguments.add(item);
+								} while (data[from].getType() == LexTypes.COMMA);
+								if (data[from].getType() == LexTypes.CLOSE) {
+									from++;
+								}
+								else {
+									throw new SyntaxException(data[from].getRow(), data[from].getCol(), "Missing ')'");
+								}
+							}
+							else {
+								from++;
+							}
+							root.cargo = new ArrayDescriptor(DataTypes.POINT);
+							root.children = arguments.toArray(new SyntaxNode[arguments.size()]);
+						}
+						else {
+							throw new SyntaxException(data[from].getRow(), data[from].getCol(), "Missing '('");
+						}
 						break;
 					case RECT	:	// rect(x,y,width,height)|rect(point(...),size(...))
 						break;
@@ -1921,6 +1956,15 @@ loop:	for (;;) {
 						((ArrayDescriptor)node.cargo).contentType = (Class<Object>) awaited;
 						break;
 					case POINT		:
+						if (node.children.length == 2) {
+							for (SyntaxNode item : node.children) {
+								convert(item, long.class);
+							}
+							((ArrayDescriptor)node.cargo).contentType = (Class<Object>) awaited;
+						}
+						else {
+							throw new SyntaxException(node.row, node.row, "Invalid constructor for type Point, only Point(int, int) are available"); 
+						}
 						break;
 					case PROC		:
 						break;

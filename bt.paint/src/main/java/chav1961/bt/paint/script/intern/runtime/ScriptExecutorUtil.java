@@ -8,6 +8,9 @@ import java.awt.Rectangle;
 import java.awt.Stroke;
 import java.awt.geom.AffineTransform;
 import java.lang.reflect.Array;
+import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.nio.channels.UnsupportedAddressTypeException;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -17,6 +20,7 @@ import java.util.Set;
 
 import chav1961.bt.paint.control.Predefines;
 import chav1961.bt.paint.interfaces.PaintScriptException;
+import chav1961.bt.paint.script.interfaces.ContentWrapper;
 import chav1961.bt.paint.script.intern.interfaces.ExecuteScriptCallback;
 import chav1961.bt.paint.script.intern.interfaces.PaintScriptListInterface;
 import chav1961.bt.paint.script.intern.interfaces.PaintScriptMapInterface;
@@ -183,7 +187,7 @@ public class ScriptExecutorUtil {
 					throw new PaintScriptException(new SyntaxException(node.row, node.col, "Null value inside...")); 
 				}
 				if (node.children != null) {
-					processAccess(accVal, node, names, stack, predef, level, callback);
+					accVal = processAccess(accVal, node, names, stack, predef, level, callback);
 				}
 				return accVal;
 			case BINARY			:
@@ -457,6 +461,12 @@ public class ScriptExecutorUtil {
 						}
 						return psmi;
 					case POINT:
+						if (node.children.length == 2) {
+							final Number	x = (Number)calc(node.children[0], names, stack, predef, level, callback);
+							final Number	y = (Number)calc(node.children[1], names, stack, predef, level, callback);
+							
+							return new Point(x.intValue(), y.intValue());
+						}
 						break;
 					case PROC:
 						break;
@@ -482,7 +492,7 @@ public class ScriptExecutorUtil {
 		return null;
 	}	
 
-	private static void processAccess(final Object value, final SyntaxNode node, final SyntaxTreeInterface<EntityDescriptor> names, final LocalStack stack, final Predefines predef, final int level, final ExecuteScriptCallback callback) throws PaintScriptException, InterruptedException {
+	private static Object processAccess(final Object value, final SyntaxNode node, final SyntaxTreeInterface<EntityDescriptor> names, final LocalStack stack, final Predefines predef, final int level, final ExecuteScriptCallback callback) throws PaintScriptException, InterruptedException {
 		// TODO Auto-generated method stub
 		if (node.getType() == SyntaxNodeType.ACCESS) {
 			Object 	accTarget = stack.getVar(node.value);
@@ -494,17 +504,41 @@ public class ScriptExecutorUtil {
 				for (SyntaxNode<SyntaxNodeType, ?> item : node.children) {
 					switch (item.getType()) {
 						case CALL				:
+							if (accTarget instanceof ContentWrapper[]) {
+								accTarget = ((ContentWrapper[])accTarget)[0].getContent();
+							}
+							if (item.children.length > 0) {
+								throw new UnsupportedOperationException();
+							}
+							else {
+								try{accTarget = ((Method)item.cargo).invoke(accTarget);
+								} catch (IllegalAccessException | InvocationTargetException exc) {
+									throw new PaintScriptException(new SyntaxException(node.row, node.col, "Method call error: "+exc.getLocalizedMessage(), exc)); 
+								}
+							}
 							break;
 						case GET_FIELD			:
+							if (accTarget instanceof ContentWrapper[]) {
+								accTarget = ((ContentWrapper[])accTarget)[0].getContent();
+							}
+							if (item.children.length > 0) {
+								throw new UnsupportedOperationException();
+							}
+							else {
+								try{accTarget = ((Field)item.cargo).get(accTarget);
+								} catch (IllegalAccessException exc) {
+									throw new PaintScriptException(new SyntaxException(node.row, node.col, "Field get error: "+exc.getLocalizedMessage(), exc)); 
+								}
+							}
 							break;
 						case GET_FIELD_INDEX	:
-							break;
+							throw new UnsupportedOperationException();
 						case GET_VAR_INDEX		:
-							break;
+							throw new UnsupportedOperationException();
 						case SET_FIELD			:
-							break;
+							throw new UnsupportedOperationException();
 						case SET_FIELD_INDEX	:
-							break;
+							throw new UnsupportedOperationException();
 						case SET_VAR_INDEX		:
 							if (accTarget instanceof PaintScriptListInterface[]) {
 								final long	index = convert(calc(item.children[0], names, stack, predef, level, callback), long.class);
@@ -518,7 +552,7 @@ public class ScriptExecutorUtil {
 							}
 							break;
 						default:
-							break;
+							throw new UnsupportedOperationException();
 					}
 				}
 			}
@@ -526,12 +560,18 @@ public class ScriptExecutorUtil {
 				final Class<?>	cl = accTarget.getClass();
 				
 				if (cl.isArray()) {
-					Array.set(accTarget, 0, value);
+					if (ContentWrapper.class.isAssignableFrom(cl.getComponentType())) {
+						((ContentWrapper)Array.get(accTarget, 0)).setContent(value);
+					}
+					else {
+						Array.set(accTarget, 0, value);
+					}
 				}
 				else {
 					throw new UnsupportedOperationException();
 				}
 			}
+			return accTarget;
 		}
 		else {
 			throw new UnsupportedOperationException();

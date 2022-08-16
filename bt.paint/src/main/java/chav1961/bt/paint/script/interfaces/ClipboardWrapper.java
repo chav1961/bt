@@ -17,7 +17,7 @@ import chav1961.bt.paint.interfaces.PaintScriptException;
 import chav1961.bt.paint.script.ImageWrapperImpl;
 import chav1961.purelib.concurrent.LightWeightListenerList;
 
-public interface ClipboardWrapper {
+public interface ClipboardWrapper extends ContentWrapper<ImageWrapper> {
 	boolean hasImage() throws PaintScriptException;
 	ImageWrapper getImage() throws PaintScriptException;
 	void setImage(ImageWrapper image) throws PaintScriptException;
@@ -108,6 +108,26 @@ public interface ClipboardWrapper {
 			else {
 				listeners.removeListener(l);
 			}
+		}
+
+		@Override
+		public ImageWrapper getContent() throws PaintScriptException {
+			return getImage();
+		}
+
+		@Override
+		public void setContent(final ImageWrapper content) throws PaintScriptException {
+			setImage(content);
+		}
+
+		@Override
+		public Class<ImageWrapper> getContentType() {
+			return ImageWrapper.class;
+		}
+		
+		@Override
+		public Object clone() throws CloneNotSupportedException {
+			return super.clone();
 		}
 	};
 }
