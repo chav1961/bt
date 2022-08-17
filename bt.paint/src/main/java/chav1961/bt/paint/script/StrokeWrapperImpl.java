@@ -9,7 +9,7 @@ import chav1961.bt.paint.script.interfaces.StrokeWrapper;
 import chav1961.purelib.basic.exceptions.SyntaxException;
 
 public class StrokeWrapperImpl implements StrokeWrapper {
-	private Stroke		stroke;
+	private BasicStroke	stroke;
 	private int			width = 1;
 	private LineStroke	style = LineStroke.SOLID;
 	private LineCaps	caps = LineCaps.BUTT;
@@ -19,7 +19,7 @@ public class StrokeWrapperImpl implements StrokeWrapper {
 		this(new BasicStroke());
 	}
 	
-	public StrokeWrapperImpl(final Stroke stroke) {
+	public StrokeWrapperImpl(final BasicStroke stroke) {
 		if (stroke == null) {
 			throw new NullPointerException("Stroke to set can't be null");
 		}
@@ -27,9 +27,24 @@ public class StrokeWrapperImpl implements StrokeWrapper {
 			this.stroke = stroke;
 		}
 	}
+
+	@Override
+	public Class<BasicStroke> getContentType() {
+		return BasicStroke.class;
+	}
+
+	@Override
+	public BasicStroke getContent() throws PaintScriptException {
+		return getStroke();
+	}
+
+	@Override
+	public void setContent(final BasicStroke content) throws PaintScriptException {
+		setStroke(content);
+	}
 	
 	@Override
-	public Stroke getStroke() {
+	public BasicStroke getStroke() {
 		return stroke;
 	}
 
@@ -52,6 +67,7 @@ public class StrokeWrapperImpl implements StrokeWrapper {
 		}
 		else {
 			this.style = style;
+			stroke = ImageUtils.buildStroke(width, style, caps, join);
 			return this;
 		}
 	}
@@ -63,6 +79,7 @@ public class StrokeWrapperImpl implements StrokeWrapper {
 		}
 		else {
 			this.caps = caps;
+			stroke = ImageUtils.buildStroke(width, style, caps, join);
 			return this;
 		}
 	}
@@ -74,12 +91,13 @@ public class StrokeWrapperImpl implements StrokeWrapper {
 		}
 		else {
 			this.join = join;
+			stroke = ImageUtils.buildStroke(width, style, caps, join);
 			return this;
 		}
 	}
 	
 	@Override
-	public StrokeWrapper setStroke(final Stroke stroke) {
+	public StrokeWrapper setStroke(final BasicStroke stroke) {
 		if (stroke == null) {
 			throw new NullPointerException("Stroke to set can't be null");
 		}
@@ -107,5 +125,10 @@ public class StrokeWrapperImpl implements StrokeWrapper {
 	@Override
 	public String toString() {
 		return "StrokeWrapperImpl [stroke=" + stroke + "]";
+	}
+	
+	@Override
+	public Object clone() throws CloneNotSupportedException {
+		return super.clone();
 	}
 }

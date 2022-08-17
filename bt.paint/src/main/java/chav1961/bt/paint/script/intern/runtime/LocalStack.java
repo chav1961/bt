@@ -1,11 +1,14 @@
 package chav1961.bt.paint.script.intern.runtime;
 
 
+import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.Point;
 import java.awt.Rectangle;
+import java.awt.geom.AffineTransform;
+import java.awt.image.BufferedImage;
 import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.List;
@@ -16,9 +19,12 @@ import chav1961.bt.paint.interfaces.PaintScriptException;
 import chav1961.bt.paint.script.interfaces.ColorWrapper;
 import chav1961.bt.paint.script.interfaces.ContentWrapper;
 import chav1961.bt.paint.script.interfaces.FontWrapper;
+import chav1961.bt.paint.script.interfaces.ImageWrapper;
 import chav1961.bt.paint.script.interfaces.PointWrapper;
 import chav1961.bt.paint.script.interfaces.RectWrapper;
 import chav1961.bt.paint.script.interfaces.SizeWrapper;
+import chav1961.bt.paint.script.interfaces.StrokeWrapper;
+import chav1961.bt.paint.script.interfaces.TransformWrapper;
 import chav1961.bt.paint.script.intern.interfaces.ExecuteScriptCallback;
 import chav1961.bt.paint.script.intern.parsers.ScriptParserUtil.EntityDescriptor;
 import chav1961.purelib.basic.interfaces.SyntaxTreeInterface;
@@ -34,6 +40,9 @@ public class LocalStack {
 		result.add(new Initials(RectWrapper.class, Rectangle.class, (value)->RectWrapper.of((Rectangle)value)));
 		result.add(new Initials(SizeWrapper.class, Dimension.class, (value)->SizeWrapper.of((Dimension)value)));
 		result.add(new Initials(FontWrapper.class, Font.class, (value)->FontWrapper.of((Font)value)));
+		result.add(new Initials(StrokeWrapper.class, BasicStroke.class, (value)->StrokeWrapper.of((BasicStroke)value)));
+		result.add(new Initials(TransformWrapper.class, AffineTransform.class, (value)->TransformWrapper.of((AffineTransform)value)));
+		result.add(new Initials(ImageWrapper.class, BufferedImage.class, (value)->ImageWrapper.of((BufferedImage)value)));
 		
 		INITIALS = result.toArray(new Initials[result.size()]);
 	}

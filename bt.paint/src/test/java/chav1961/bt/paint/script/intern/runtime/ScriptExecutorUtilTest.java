@@ -1,10 +1,14 @@
 package chav1961.bt.paint.script.intern.runtime;
 
+import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.Point;
 import java.awt.Rectangle;
+import java.awt.Stroke;
+import java.awt.geom.AffineTransform;
+import java.awt.image.BufferedImage;
 import java.io.StringReader;
 
 import org.junit.Assert;
@@ -14,9 +18,12 @@ import chav1961.bt.paint.control.Predefines;
 import chav1961.bt.paint.interfaces.PaintScriptException;
 import chav1961.bt.paint.script.interfaces.ColorWrapper;
 import chav1961.bt.paint.script.interfaces.FontWrapper;
+import chav1961.bt.paint.script.interfaces.ImageWrapper;
 import chav1961.bt.paint.script.interfaces.PointWrapper;
 import chav1961.bt.paint.script.interfaces.RectWrapper;
 import chav1961.bt.paint.script.interfaces.SizeWrapper;
+import chav1961.bt.paint.script.interfaces.StrokeWrapper;
+import chav1961.bt.paint.script.interfaces.TransformWrapper;
 import chav1961.bt.paint.script.intern.interfaces.ExecuteScriptCallback;
 import chav1961.bt.paint.script.intern.interfaces.PaintScriptListInterface;
 import chav1961.bt.paint.script.intern.interfaces.PaintScriptMapInterface;
@@ -162,14 +169,47 @@ public class ScriptExecutorUtilTest {
 
 		// Font
 		names.clear();
-		result = ScriptExecutorUtil.calc(ScriptParserUtil.parseScript(new StringReader("var i : font := font(\"Monospace\",0,12), j : int; begin j := i.getSize() end"), names), names, 
+		result = ScriptExecutorUtil.calc(ScriptParserUtil.parseScript(new StringReader("var i : font := font(\"Monospace\",12), j : int; begin j := i.getSize() end"), names), names, 
 						stack = new LocalStack(names, predef, callback), predef, 0, callback);
 		Assert.assertEquals(12, (long)((long[])stack.getVar(names.seekName("j")))[0]);
 
 		names.clear();
-		result = ScriptExecutorUtil.calc(ScriptParserUtil.parseScript(new StringReader("var i : font; begin i := font(\"Monospace\",0,12) end"), names), names, 
+		result = ScriptExecutorUtil.calc(ScriptParserUtil.parseScript(new StringReader("var i : font; begin i := font(\"Monospace\",12) end"), names), names, 
 						stack = new LocalStack(names, predef, callback), predef, 0, callback);
 		Assert.assertEquals(new Font("Monospace",0,12), (Font)((FontWrapper[])stack.getVar(names.seekName("i")))[0].getFont());
+
+		// Stroke
+		names.clear();
+		result = ScriptExecutorUtil.calc(ScriptParserUtil.parseScript(new StringReader("var i : stroke := stroke(\"SOLID\",12,\"ROUND\",\"ROUND\"), j : int; begin j := i.getLineWidth() end"), names), names, 
+						stack = new LocalStack(names, predef, callback), predef, 0, callback);
+		Assert.assertEquals(12, (long)((long[])stack.getVar(names.seekName("j")))[0]);
+
+		names.clear();
+		result = ScriptExecutorUtil.calc(ScriptParserUtil.parseScript(new StringReader("var i : stroke; begin i := stroke(\"SOLID\",12,\"ROUND\",\"ROUND\") end"), names), names, 
+						stack = new LocalStack(names, predef, callback), predef, 0, callback);
+		Assert.assertEquals(12, ((BasicStroke)((StrokeWrapper[])stack.getVar(names.seekName("i")))[0].getStroke()).getLineWidth(), 0.0001);
+
+		// Transform
+		names.clear();
+		result = ScriptExecutorUtil.calc(ScriptParserUtil.parseScript(new StringReader("var i : transform := transform(), j : bool; begin j := i.isIdentity() end"), names), names, 
+						stack = new LocalStack(names, predef, callback), predef, 0, callback);
+		Assert.assertTrue((boolean)((boolean[])stack.getVar(names.seekName("j")))[0]);
+
+		names.clear();
+		result = ScriptExecutorUtil.calc(ScriptParserUtil.parseScript(new StringReader("var i : transform; begin i := transform(\"rotate(90)\") end"), names), names, 
+						stack = new LocalStack(names, predef, callback), predef, 0, callback);
+		Assert.assertEquals(8, ((AffineTransform)((TransformWrapper[])stack.getVar(names.seekName("i")))[0].getTransform()).getType());
+		
+		// Image
+		names.clear();
+		result = ScriptExecutorUtil.calc(ScriptParserUtil.parseScript(new StringReader("var i : image := image(), j : int; begin j := i.getWidth() end"), names), names, 
+						stack = new LocalStack(names, predef, callback), predef, 0, callback);
+		Assert.assertEquals(1, (long)((long[])stack.getVar(names.seekName("j")))[0]);
+
+		names.clear();
+		result = ScriptExecutorUtil.calc(ScriptParserUtil.parseScript(new StringReader("var i : image; begin i := image(10,10,\"INT_RGB\") end"), names), names, 
+						stack = new LocalStack(names, predef, callback), predef, 0, callback);
+		Assert.assertEquals(1, ((BufferedImage)((ImageWrapper[])stack.getVar(names.seekName("i")))[0].getImage()).getType());
 		
 		// Point
 		names.clear();
@@ -203,7 +243,7 @@ public class ScriptExecutorUtilTest {
 						stack = new LocalStack(names, predef, callback), predef, 0, callback);
 		Assert.assertEquals(new Dimension(10,20), (Dimension)((SizeWrapper[])stack.getVar(names.seekName("i")))[0].getSize());
 		
-		// Rect
+		// Rectangle
 		names.clear();
 		result = ScriptExecutorUtil.calc(ScriptParserUtil.parseScript(new StringReader("var i : rect := rect(10,20,30,40), j : int; begin j := i.getX() end"), names), names, 
 						stack = new LocalStack(names, predef, callback), predef, 0, callback);
@@ -219,4 +259,26 @@ public class ScriptExecutorUtilTest {
 						stack = new LocalStack(names, predef, callback), predef, 0, callback);
 		Assert.assertEquals(new Rectangle(10,20,30,40), (Rectangle)((RectWrapper[])stack.getVar(names.seekName("i")))[0].getRect());
 	}
+
+	@Test
+	public void methodCallTest() throws PaintScriptException, InterruptedException, SyntaxException {
+		final SyntaxTreeInterface	names = new AndOrTree();
+		final Predefines			predef = new Predefines(new String[0]);
+		final ExecuteScriptCallback	callback = (l,n)->{}; 
+		LocalStack					stack = new LocalStack(names, predef, callback);
+		Object						result;
+
+		// Method call
+		names.clear();
+		result = ScriptExecutorUtil.calc(ScriptParserUtil.parseScript(new StringReader("var i : image := image(10,10,\"INT_RGB\"), j : int; begin j := i.getRGB(1,1) end"), names), names, 
+						stack = new LocalStack(names, predef, callback), predef, 0, callback);
+		Assert.assertEquals(0xFF000000, ((long[])stack.getVar(names.seekName("j")))[0]);
+
+		// Method chain call
+		names.clear();
+		result = ScriptExecutorUtil.calc(ScriptParserUtil.parseScript(new StringReader("var i : image := image(10,10,\"INT_RGB\"), j : int; begin j := i.getSubimage(0,0,10,10).getRGB(1,1) end"), names), names, 
+						stack = new LocalStack(names, predef, callback), predef, 0, callback);
+		Assert.assertEquals(0xFF000000, ((long[])stack.getVar(names.seekName("j")))[0]);
+	}
+
 }

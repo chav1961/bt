@@ -60,7 +60,7 @@ public class ImageWrapperImpl implements ImageWrapper {
 	}
 	
 	@Override
-	public Image getImage() throws PaintScriptException {
+	public BufferedImage getImage() throws PaintScriptException {
 		return image;
 	}
 
@@ -92,6 +92,32 @@ public class ImageWrapperImpl implements ImageWrapper {
 		}
 	}
 
+	@Override
+	public Class<BufferedImage> getContentType() {
+		return BufferedImage.class;
+	}
+
+	@Override
+	public BufferedImage getContent() throws PaintScriptException {
+		return getImage();
+	}
+
+	@Override
+	public void setContent(final BufferedImage content) throws PaintScriptException {
+		setImage(content);
+	}
+
+	@Override
+	public ImageWrapper setImage(final BufferedImage image) throws PaintScriptException {
+		if (image == null) {
+			throw new NullPointerException("Image to set can't be null");
+		}
+		else {
+			this.image = image;
+			return this;
+		}
+	}
+	
 	@Override
 	public String getFormat() throws PaintScriptException {
 		return format;
@@ -202,6 +228,18 @@ public class ImageWrapperImpl implements ImageWrapper {
 		else {
 			ImageUtils.draw(op, image, null, parameters);
 			return this;
+		}
+	}
+
+	@Override
+	public Object clone() throws CloneNotSupportedException {
+		final ImageWrapper	result = (ImageWrapper) super.clone();
+		
+		try{result.setImage((BufferedImage) ImageUtils.process(ProcessType.CROP, image, null, new Rectangle(0,0,image.getWidth(),image.getHeight())));
+		
+			return result;
+		} catch (PaintScriptException e) {
+			throw new CloneNotSupportedException(e.getLocalizedMessage());
 		}
 	}
 	

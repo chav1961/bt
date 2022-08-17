@@ -495,10 +495,10 @@ public class Console {
 		
 		switch (dir) {
 			case cw		:
-				result = ImageWrapper.of(ImageUtils.process(ProcessType.ROTATE_CLOCKWISE, iw.getImage(), null));
+				result = ImageWrapper.of((BufferedImage)ImageUtils.process(ProcessType.ROTATE_CLOCKWISE, iw.getImage(), null));
 				break;
 			case ccw	:
-				result = ImageWrapper.of(ImageUtils.process(ProcessType.ROTATE_COUNTERCLOCKWISE, iw.getImage(), null));
+				result = ImageWrapper.of((BufferedImage)ImageUtils.process(ProcessType.ROTATE_COUNTERCLOCKWISE, iw.getImage(), null));
 				break;
 			default		:
 				throw new UnsupportedOperationException("Rotate direction ["+dir+"] is not supported yet");  
@@ -513,10 +513,10 @@ public class Console {
 		
 		switch (dir) {
 			case hor	:
-				result = ImageWrapper.of(ImageUtils.process(ProcessType.MIRROR_HORIZONTAL, iw.getImage(), null));
+				result = ImageWrapper.of((BufferedImage)ImageUtils.process(ProcessType.MIRROR_HORIZONTAL, iw.getImage(), null));
 				break;
 			case vert	:
-				result = ImageWrapper.of(ImageUtils.process(ProcessType.MIRROR_VERTICAL, iw.getImage(), null));
+				result = ImageWrapper.of((BufferedImage)ImageUtils.process(ProcessType.MIRROR_VERTICAL, iw.getImage(), null));
 				break;
 			default		:
 				throw new UnsupportedOperationException("Mirror direction ["+dir+"] is not supported yet");  
@@ -527,7 +527,7 @@ public class Console {
 
 	private static String crop(final Predefines predef, final Rectangle rect) throws PaintScriptException {
 		final ImageWrapper	iw = predef.getPredefined(Predefines.PREDEF_CANVAS, CanvasWrapper.class).getImage();
-		final ImageWrapper	result = ImageWrapper.of(ImageUtils.process(ProcessType.CROP, (BufferedImage)iw.getImage(), null, rect));
+		final ImageWrapper	result = ImageWrapper.of((BufferedImage)ImageUtils.process(ProcessType.CROP, (BufferedImage)iw.getImage(), null, rect));
 		
 		predef.getPredefined(Predefines.PREDEF_CANVAS, CanvasWrapper.class).setImage(result);
 		return OK;
@@ -535,7 +535,7 @@ public class Console {
 
 	private static String scale(final Predefines predef, final int newWidth, final int newHeight) throws PaintScriptException {
 		final ImageWrapper	iw = predef.getPredefined(Predefines.PREDEF_CANVAS, CanvasWrapper.class).getImage();
-		final ImageWrapper	result = ImageWrapper.of(ImageUtils.process(ProcessType.SCALE, (BufferedImage)iw.getImage(), null, newWidth, newHeight));
+		final ImageWrapper	result = ImageWrapper.of((BufferedImage)ImageUtils.process(ProcessType.SCALE, (BufferedImage)iw.getImage(), null, newWidth, newHeight));
 		
 		predef.getPredefined(Predefines.PREDEF_CANVAS, CanvasWrapper.class).setImage(result);
 		return OK;
@@ -548,10 +548,10 @@ public class Console {
 		
 		switch (anchor) {
 			case center		:
-				result = ImageWrapper.of(ImageUtils.process(ProcessType.RESIZE, (BufferedImage)iw.getImage(), null, newWidth, newHeight, cw.getColor(), true));
+				result = ImageWrapper.of((BufferedImage)ImageUtils.process(ProcessType.RESIZE, (BufferedImage)iw.getImage(), null, newWidth, newHeight, cw.getColor(), true));
 				break;
 			case unknown	:
-				result = ImageWrapper.of(ImageUtils.process(ProcessType.RESIZE, (BufferedImage)iw.getImage(), null, newWidth, newHeight, cw.getColor(), false));
+				result = ImageWrapper.of((BufferedImage)ImageUtils.process(ProcessType.RESIZE, (BufferedImage)iw.getImage(), null, newWidth, newHeight, cw.getColor(), false));
 				break;
 			default :
 				throw new PaintScriptException("Anchor type [] doesn't support, 'center' in available only"); 
@@ -563,7 +563,7 @@ public class Console {
 	
 	private static String gray(final Predefines predef) throws PaintScriptException {
 		final ImageWrapper	iw = predef.getPredefined(Predefines.PREDEF_CANVAS, CanvasWrapper.class).getImage();
-		final ImageWrapper	result = ImageWrapper.of(ImageUtils.process(ProcessType.TO_GRAYSCALE, (BufferedImage)iw.getImage(), null));
+		final ImageWrapper	result = ImageWrapper.of((BufferedImage)ImageUtils.process(ProcessType.TO_GRAYSCALE, (BufferedImage)iw.getImage(), null));
 		
 		predef.getPredefined(Predefines.PREDEF_CANVAS, CanvasWrapper.class).setImage(result);
 		return OK;
@@ -571,7 +571,7 @@ public class Console {
 
 	private static String transparent(final Predefines predef, final Color color, final boolean except) throws PaintScriptException {
 		final ImageWrapper	iw = predef.getPredefined(Predefines.PREDEF_CANVAS, CanvasWrapper.class).getImage();
-		final ImageWrapper	result = ImageWrapper.of(ImageUtils.process(ProcessType.TO_TRANSPARENT, (BufferedImage)iw.getImage(), null, color, except));
+		final ImageWrapper	result = ImageWrapper.of((BufferedImage)ImageUtils.process(ProcessType.TO_TRANSPARENT, (BufferedImage)iw.getImage(), null, color, except));
 		
 		predef.getPredefined(Predefines.PREDEF_CANVAS, CanvasWrapper.class).setImage(result);
 		return OK;
@@ -630,7 +630,7 @@ public class Console {
 	private static String pasteImage(final Predefines predef, final ImageWrapper iwFrom, final int xTo, final int yTo) throws PaintScriptException {
 		final ImageWrapper	iwTo = predef.getPredefined(Predefines.PREDEF_CANVAS, CanvasWrapper.class).getImage();
 		final Rectangle		rect = new Rectangle(xTo, yTo, iwFrom.getImage().getWidth(null), iwFrom.getImage().getHeight(null));
-		final ImageWrapper	result = ImageWrapper.of(ImageUtils.process(ProcessType.INSERT, iwTo.getImage(), null, rect, iwFrom.getImage()));
+		final ImageWrapper	result = ImageWrapper.of((BufferedImage)ImageUtils.process(ProcessType.INSERT, iwTo.getImage(), null, rect, iwFrom.getImage()));
 		
 		predef.getPredefined(Predefines.PREDEF_CANVAS, CanvasWrapper.class).setImage(result);
 		return OK;
@@ -639,7 +639,7 @@ public class Console {
 	private static String pasteImageScaled(final Predefines predef, final ImageWrapper iwFrom, final int xFrom, final int yFrom, final int xToOrWidth, final int yToOrHeight, final boolean useAsSize) throws PaintScriptException {
 		final ImageWrapper	iwTo = predef.getPredefined(Predefines.PREDEF_CANVAS, CanvasWrapper.class).getImage();
 		final Rectangle		rect = new Rectangle(xFrom, yFrom, useAsSize ? xToOrWidth : xToOrWidth - xFrom, useAsSize ? yToOrHeight : yToOrHeight - yFrom);
-		final ImageWrapper	result = ImageWrapper.of(ImageUtils.process(ProcessType.INSERT, iwTo.getImage(), null, rect, iwFrom.getImage()));
+		final ImageWrapper	result = ImageWrapper.of((BufferedImage)ImageUtils.process(ProcessType.INSERT, iwTo.getImage(), null, rect, iwFrom.getImage()));
 		
 		predef.getPredefined(Predefines.PREDEF_CANVAS, CanvasWrapper.class).setImage(result);
 		return OK;

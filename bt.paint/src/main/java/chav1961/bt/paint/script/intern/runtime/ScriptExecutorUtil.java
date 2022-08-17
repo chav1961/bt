@@ -1,5 +1,6 @@
 package chav1961.bt.paint.script.intern.runtime;
 
+import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Font;
@@ -7,6 +8,7 @@ import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.Stroke;
 import java.awt.geom.AffineTransform;
+import java.awt.image.BufferedImage;
 import java.lang.reflect.Array;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
@@ -21,6 +23,11 @@ import java.util.Set;
 import chav1961.bt.paint.control.Predefines;
 import chav1961.bt.paint.interfaces.PaintScriptException;
 import chav1961.bt.paint.script.interfaces.ContentWrapper;
+import chav1961.bt.paint.script.interfaces.ImageType;
+import chav1961.bt.paint.script.interfaces.StrokeWrapper;
+import chav1961.bt.paint.script.interfaces.StrokeWrapper.LineCaps;
+import chav1961.bt.paint.script.interfaces.StrokeWrapper.LineJoin;
+import chav1961.bt.paint.script.interfaces.StrokeWrapper.LineStroke;
 import chav1961.bt.paint.script.intern.interfaces.ExecuteScriptCallback;
 import chav1961.bt.paint.script.intern.interfaces.PaintScriptListInterface;
 import chav1961.bt.paint.script.intern.interfaces.PaintScriptMapInterface;
@@ -32,6 +39,7 @@ import chav1961.bt.paint.script.intern.parsers.ScriptParserUtil.Lexema;
 import chav1961.bt.paint.script.intern.parsers.ScriptParserUtil.OperatorPriorities;
 import chav1961.bt.paint.script.intern.parsers.ScriptParserUtil.OperatorTypes;
 import chav1961.bt.paint.script.intern.parsers.ScriptParserUtil.SyntaxNodeType;
+import chav1961.purelib.basic.CSSUtils;
 import chav1961.purelib.basic.SequenceIterator;
 import chav1961.purelib.basic.exceptions.ContentException;
 import chav1961.purelib.basic.exceptions.SyntaxException;
@@ -39,6 +47,7 @@ import chav1961.purelib.basic.interfaces.SyntaxTreeInterface;
 import chav1961.purelib.cdb.CompilerUtils;
 import chav1961.purelib.cdb.SyntaxNode;
 import chav1961.purelib.sql.SQLUtils;
+import chav1961.purelib.ui.swing.terminal.TermUtils.LineStyle;
 
 public class ScriptExecutorUtil {
 	public static Object execute(final SyntaxNode node, final SyntaxTreeInterface<EntityDescriptor> names, final Predefines predef, final int depth, final int level) throws PaintScriptException, InterruptedException {
@@ -417,6 +426,8 @@ public class ScriptExecutorUtil {
 							return SQLUtils.convert(long.class, suffix);
 						case TO_STR		:
 							return SQLUtils.convert(String.class, suffix).toCharArray();
+						case TO_BOOL		:
+							return SQLUtils.convert(boolean.class, suffix);
 						default:
 							throw new UnsupportedOperationException("Operator type ["+node.cargo+"] is not supported here"); 
 					}
@@ -453,7 +464,13 @@ public class ScriptExecutorUtil {
 							final Number	size = (Number)calc(node.children[1], names, stack, predef, level, callback);
 							final Number	style = (Number)calc(node.children[2], names, stack, predef, level, callback);
 							
-							return new Font(new String(family), size.intValue(), style.intValue());
+							return new Font(new String(family), style.intValue(), size.intValue());
+						}
+						else if (node.children.length == 2) {
+							final char[]	family = (char[])calc(node.children[0], names, stack, predef, level, callback);
+							final Number	size = (Number)calc(node.children[1], names, stack, predef, level, callback);
+							
+							return new Font(new String(family), 0, size.intValue());
 						}
 						else if (node.children.length == 1) {
 							final char[]	descr = (char[])calc(node.children[0], names, stack, predef, level, callback);
@@ -463,7 +480,17 @@ public class ScriptExecutorUtil {
 						break;
 					case FUNC:
 						break;
-					case IMAGE:
+					case IMAGE	:
+						if (node.children.length == 3) {
+							final Number	width = (Number)calc(node.children[0], names, stack, predef, level, callback);
+							final Number	height = (Number)calc(node.children[1], names, stack, predef, level, callback);
+							final char[]	type = (char[])calc(node.children[2], names, stack, predef, level, callback);
+							
+							return new BufferedImage(width.intValue(), height.intValue(), ImageType.valueOf(new String(type)).getType());
+						}
+						else if (node.children.length == 0) {
+							return new BufferedImage(1,1,BufferedImage.TYPE_INT_RGB);
+						}
 						break;
 					case MAP	:
 						final PaintScriptMapInterface	psmi = PaintScriptMapInterface.Factory.newInstance(((ArrayDescriptor)node.cargo).contentType);
@@ -507,10 +534,34 @@ public class ScriptExecutorUtil {
 						}
 						break;
 					case STROKE:
+						if (node.children.length == 4) {
+							final char[]		style = (char[])calc(node.children[0], names, stack, predef, level, callback);
+							final Number		width = (Number)calc(node.children[1], names, stack, predef, level, callback);
+							final char[]		caps = (char[])calc(node.children[2], names, stack, predef, level, callback);
+							final char[]		join  = (char[])calc(node.children[3], names, stack, predef, level, callback);
+							final StrokeWrapper	sw = StrokeWrapper.of(new BasicStroke());
+							
+							sw.setStyle(LineStroke.valueOf(new String(style)));
+							sw.setWidth(width.intValue());
+							sw.setCaps(LineCaps.valueOf(new String(caps)));
+							sw.setJoin(LineJoin.valueOf(new String(join)));
+							return sw.getStroke();
+						}
 						break;
 					case STRUCTURE:
 						break;
-					case TRANSFORM:
+					case TRANSFORM	:
+						if (node.children.length == 1) {
+							final char[]	transform = (char[])calc(node.children[0], names, stack, predef, level, callback);
+							
+							try{return CSSUtils.asTransform(new String(transform));
+							} catch (SyntaxException exc) {
+								throw new PaintScriptException(exc.getLocalizedMessage(), exc); 
+							}
+						}
+						else if (node.children.length == 0) {
+							return new AffineTransform();
+						}
 						break;
 					case UNKNOWN:
 						break;
@@ -540,7 +591,18 @@ public class ScriptExecutorUtil {
 								accTarget = ((ContentWrapper[])accTarget)[0].getContent();
 							}
 							if (item.children.length > 0) {
-								throw new UnsupportedOperationException();
+								final Object[]		parameters = new Object[item.children.length];
+								final Class<?>[]	types = ((Method)item.cargo).getParameterTypes();
+								
+								for (int index = 0; index < types.length; index++) {
+									parameters[index] = convert(calc(item.children[index], names, stack, predef, level, callback), types[index]);
+								}
+								try{accTarget = ((Method)item.cargo).invoke(accTarget, parameters);
+								} catch (IllegalAccessException exc) {
+									throw new PaintScriptException(new SyntaxException(node.row, node.col, "Method call error: "+exc.getLocalizedMessage(), exc)); 
+								} catch (InvocationTargetException exc) {
+									throw new PaintScriptException(new SyntaxException(node.row, node.col, "Method call error: "+exc.getTargetException().getLocalizedMessage(), exc.getTargetException())); 
+								}
 							}
 							else {
 								try{accTarget = ((Method)item.cargo).invoke(accTarget);
@@ -714,7 +776,7 @@ public class ScriptExecutorUtil {
 		return 0;
 	}
 
-	private static <T> T convert(final Object instance, final Class<T> awaited) {
+	private static <T> T convert(final Object instance, final Class<T> awaited) throws PaintScriptException {
 		if (instance == null) {
 			return null;
 		}
@@ -725,7 +787,11 @@ public class ScriptExecutorUtil {
 			return (T)instance;
 		}
 		else {
-			throw new UnsupportedOperationException();
+			try{
+				return SQLUtils.convert(awaited, instance);
+			} catch (ContentException exc) {
+				throw new PaintScriptException("Conversion error: "+exc.getMessage(), exc);
+			}
 		}
 	}
 

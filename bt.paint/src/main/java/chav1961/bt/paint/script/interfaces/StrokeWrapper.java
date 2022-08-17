@@ -8,7 +8,7 @@ import chav1961.bt.paint.interfaces.PaintScriptException;
 import chav1961.bt.paint.script.StrokeWrapperImpl;
 import chav1961.purelib.basic.exceptions.SyntaxException;
 
-public interface StrokeWrapper {
+public interface StrokeWrapper extends ContentWrapper<BasicStroke> {
 	public static enum LineStroke {
 		SOLID, 
 		DASHED, 
@@ -80,15 +80,15 @@ public interface StrokeWrapper {
 		}
 	}
 	
-	Stroke getStroke();
+	BasicStroke getStroke();
 	StrokeWrapper setWidth(int width) throws PaintScriptException;
 	StrokeWrapper setStyle(LineStroke style) throws PaintScriptException;
 	StrokeWrapper setCaps(LineCaps style) throws PaintScriptException;
 	StrokeWrapper setJoin(LineJoin style) throws PaintScriptException;
-	StrokeWrapper setStroke(Stroke stroke);
+	StrokeWrapper setStroke(BasicStroke stroke);
 	StrokeWrapper setStroke(String stroke) throws PaintScriptException;
 
-	static StrokeWrapper of(final Stroke stroke) {
+	static StrokeWrapper of(final BasicStroke stroke) {
 		return new StrokeWrapperImpl(stroke);
 	}
 	

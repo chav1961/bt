@@ -54,7 +54,7 @@ public class BufferWrapperImpl implements BufferWrapper {
 			throw new NullPointerException("Rect to get image can't be null");
 		}
 		else if (hasImage()) {
-			return ImageWrapper.of(ImageUtils.process(ProcessType.CROP, image, null, rect));
+			return ImageWrapper.of((BufferedImage)ImageUtils.process(ProcessType.CROP, image, null, rect));
 		}
 		else {
 			throw new IllegalStateException("Buffer has no image to call this method");

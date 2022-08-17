@@ -1,6 +1,5 @@
 package chav1961.bt.paint.script.interfaces;
 
-import java.awt.Image;
 import java.awt.image.BufferedImage;
 
 import chav1961.bt.paint.control.ImageUtils.DrawingType;
@@ -8,13 +7,14 @@ import chav1961.bt.paint.control.ImageUtils.ProcessType;
 import chav1961.bt.paint.interfaces.PaintScriptException;
 import chav1961.bt.paint.script.ImageWrapperImpl;
 
-public interface ImageWrapper {
+public interface ImageWrapper extends ContentWrapper<BufferedImage>{
 	public static enum SetOptions {
 		IDENTITY
 	}
 	
-	Image getImage() throws PaintScriptException;
+	BufferedImage getImage() throws PaintScriptException;
 	ImageWrapper getImage(RectWrapper wrapper) throws PaintScriptException;
+	ImageWrapper setImage(BufferedImage image) throws PaintScriptException;
 	ImageWrapper setImage(RectWrapper wrapper, ImageWrapper image, ImageWrapper.SetOptions... options) throws PaintScriptException;
 	String getFormat() throws PaintScriptException;
 	ImageWrapper setFormat(String format) throws PaintScriptException;
@@ -28,7 +28,7 @@ public interface ImageWrapper {
 	ImageWrapper draw(DrawingType op, Object... parameters) throws PaintScriptException;
 	ImageWrapper fill(DrawingType op, Object... parameters) throws PaintScriptException;
 	
-	static ImageWrapper of(Image image) {
-		return new ImageWrapperImpl((BufferedImage)image);
+	static ImageWrapper of(BufferedImage image) {
+		return new ImageWrapperImpl(image);
 	}
 }

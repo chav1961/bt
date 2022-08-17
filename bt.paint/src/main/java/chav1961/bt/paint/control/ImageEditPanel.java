@@ -211,7 +211,7 @@ public class ImageEditPanel extends JPanel implements LocalizerOwner, LocaleChan
 
 	@Override
 	public ImageWrapper getImage() throws PaintScriptException {
-		return ImageWrapper.of(canvas.getBackgroundImage());
+		return ImageWrapper.of((BufferedImage)canvas.getBackgroundImage());
 	}
 
 	@Override
@@ -233,7 +233,7 @@ public class ImageEditPanel extends JPanel implements LocalizerOwner, LocaleChan
 			throw new IllegalStateException("Canvas doesn't have any image to use this method"); 
 		}
 		else {
-			return ImageWrapper.of(ImageUtils.cropImage((BufferedImage)canvas.getBackgroundImage(), rect.getRect(), null));
+			return ImageWrapper.of((BufferedImage)ImageUtils.cropImage((BufferedImage)canvas.getBackgroundImage(), rect.getRect(), null));
 		}
 	}
 

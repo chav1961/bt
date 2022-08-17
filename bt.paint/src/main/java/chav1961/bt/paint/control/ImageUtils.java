@@ -225,7 +225,7 @@ public class ImageUtils {
 		}
 	}	
 	
-	public static Stroke buildStroke(final int lineThickness, final LineStroke lineStroke, final LineCaps caps, final LineJoin join) {
+	public static BasicStroke buildStroke(final int lineThickness, final LineStroke lineStroke, final LineCaps caps, final LineJoin join) {
 		switch (lineStroke) {
 			case DASHED	:
 				return new BasicStroke(lineThickness, caps.getCapsType(), join.getJoinType(), lineThickness, new float[] {3 * lineThickness}, 0);
@@ -239,7 +239,7 @@ public class ImageUtils {
 	}
 
 	// [N] {solid|dashed|dotted} [{butt|round|square} [{miter|round|bevel}]]
-	public static Stroke buildStroke(final String stroke) throws SyntaxException {
+	public static BasicStroke buildStroke(final String stroke) throws SyntaxException {
 		if (stroke == null || stroke.isEmpty()) {
 			throw new IllegalArgumentException("Stroke string can't be null or  empty");
 		}

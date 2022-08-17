@@ -439,7 +439,7 @@ public class Application extends JFrame implements NodeMetadataOwner, LocaleChan
 
 	@OnAction("action:/cut")
     public void cut() {
-		try{predef.getPredefined(Predefines.PREDEF_CLIPBOARD, ClipboardWrapper.class).setImage(ImageWrapper.of(panel.cutSelectedImage()));
+		try{predef.getPredefined(Predefines.PREDEF_CLIPBOARD, ClipboardWrapper.class).setImage(ImageWrapper.of((BufferedImage)panel.cutSelectedImage()));
 		} catch (PaintScriptException e) {
 			getLogger().message(Severity.error,e.getLocalizedMessage());
 		}
@@ -447,7 +447,7 @@ public class Application extends JFrame implements NodeMetadataOwner, LocaleChan
 
 	@OnAction("action:/copy")
     public void copy() {
-		try{predef.getPredefined(Predefines.PREDEF_CLIPBOARD, ClipboardWrapper.class).setImage(ImageWrapper.of(panel.getSelectedImage()));
+		try{predef.getPredefined(Predefines.PREDEF_CLIPBOARD, ClipboardWrapper.class).setImage(ImageWrapper.of((BufferedImage)panel.getSelectedImage()));
 		} catch (PaintScriptException e) {
 			getLogger().message(Severity.error,e.getLocalizedMessage());
 		}
@@ -929,10 +929,10 @@ public class Application extends JFrame implements NodeMetadataOwner, LocaleChan
 								final Image	image = ImageIO.read(System.in);
 								
 								if (root != null) {
-									processImage(ImageWrapper.of(image), root, predef);
+									processImage(ImageWrapper.of((BufferedImage)image), root, predef);
 								}
 								else {
-									processImage(ImageWrapper.of(image), commands, predef);
+									processImage(ImageWrapper.of((BufferedImage)image), commands, predef);
 								}
 								startGUI(ApplicationMode.IN_OUT, xda, localizer, predef);
 							}

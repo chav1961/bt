@@ -1,6 +1,7 @@
 package chav1961.bt.paint.script.intern.parsers;
 
 
+import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Font;
@@ -36,7 +37,6 @@ import chav1961.bt.paint.script.interfaces.StrokeWrapper;
 import chav1961.bt.paint.script.interfaces.SystemWrapper;
 import chav1961.bt.paint.script.interfaces.TransformWrapper;
 import chav1961.bt.paint.script.intern.interfaces.LexTypes;
-import chav1961.bt.paint.script.intern.interfaces.PaintScriptCollectionInterface;
 import chav1961.bt.paint.script.intern.interfaces.PaintScriptListInterface;
 import chav1961.bt.paint.script.intern.interfaces.PaintScriptMapInterface;
 import chav1961.purelib.basic.AndOrTree;
@@ -94,6 +94,7 @@ import chav1961.purelib.cdb.SyntaxNode;
 public class ScriptParserUtil {
 	private static final SyntaxTreeInterface<Keywords>		KEYWORDS = new AndOrTree<>();
 	private static final Map<Keywords, EntityDescriptor>	PREDEFINED = new HashMap<>();
+	private static final Class<?>[]							EMPTY_CLASS_LIST = new Class<?>[0];
 
 	private static enum EntityType {
 		VAR,
@@ -112,9 +113,9 @@ public class ScriptParserUtil {
 		RECT(RectWrapper.class, RectWrapper.class, Rectangle.class, RectWrapper.of(new Rectangle())),
 		SIZE(SizeWrapper.class, SizeWrapper.class, Dimension.class, SizeWrapper.of(new Dimension())),
 		FONT(FontWrapper.class, FontWrapper.class, Font.class, FontWrapper.of(Font.decode(null))),
-		STROKE(StrokeWrapper.class, StrokeWrapper.class, Stroke.class),
-		TRANSFORM(TransformWrapper.class, TransformWrapper.class, AffineTransform.class),
-		IMAGE(ImageWrapper.class, ImageWrapper.class, BufferedImage.class),
+		STROKE(StrokeWrapper.class, StrokeWrapper.class, BasicStroke.class, StrokeWrapper.of(new BasicStroke())),
+		TRANSFORM(TransformWrapper.class, TransformWrapper.class, AffineTransform.class, TransformWrapper.of(new AffineTransform())),
+		IMAGE(ImageWrapper.class, ImageWrapper.class, BufferedImage.class, ImageWrapper.of(new BufferedImage(1,1,BufferedImage.TYPE_INT_RGB))),
 		ARRAY(PaintScriptListInterface.class),
 		MAP(PaintScriptMapInterface.class),
 		STRUCTURE(null),
@@ -1384,7 +1385,7 @@ loop:	for (;;) {
 				final EntityDescriptor	desc = names.getCargo(data[from].getLongAssociated());
 				
 				if (desc == null) {
-					throw new SyntaxException(data[from].getRow(), data[from].getCol(), "Name is not declared");
+					throw new SyntaxException(data[from].getRow(), data[from].getCol(), "Name ["+names.getName(data[from].getLongAssociated())+"] is not declared");
 				}
 				else {
 					from = buildRightAccess(data, from, desc, names, root);
@@ -1418,93 +1419,97 @@ loop:	for (;;) {
 				
 				switch (data[from].getKeyword()) {
 					case ARRAY	:	// array(item,...)
-						if (data[++from].getType() == LexTypes.OPEN) {
-							final List<SyntaxNode<SyntaxNodeType, SyntaxNode<SyntaxNodeType, ?>>>	arguments = new ArrayList<>();
-							
-							if (data[from].getType() != LexTypes.CLOSE) {
-								do {final SyntaxNode<SyntaxNodeType, SyntaxNode<SyntaxNodeType, ?>>	item = (SyntaxNode<SyntaxNodeType, SyntaxNode<SyntaxNodeType, ?>>) root.clone();
-								
-									from = buildExpression(data, from + 1, names, item); 
-									arguments.add(item);
-								} while (data[from].getType() == LexTypes.COMMA);
-								if (data[from].getType() == LexTypes.CLOSE) {
-									from++;
-								}
-								else {
-									throw new SyntaxException(data[from].getRow(), data[from].getCol(), "Missing ')'");
-								}
-							}
-							else {
-								from++;
-							}
-							root.cargo = new ArrayDescriptor(DataTypes.ARRAY);
-							root.children = arguments.toArray(new SyntaxNode[arguments.size()]);
-						}
-						else {
-							throw new SyntaxException(data[from].getRow(), data[from].getCol(), "Missing '('");
-						}
+						from = collectConstructorParameters(data, from, names, root, DataTypes.ARRAY);
+//						if (data[++from].getType() == LexTypes.OPEN) {
+//							final List<SyntaxNode<SyntaxNodeType, SyntaxNode<SyntaxNodeType, ?>>>	arguments = new ArrayList<>();
+//							
+//							if (data[from + 1].getType() != LexTypes.CLOSE) {
+//								do {final SyntaxNode<SyntaxNodeType, SyntaxNode<SyntaxNodeType, ?>>	item = (SyntaxNode<SyntaxNodeType, SyntaxNode<SyntaxNodeType, ?>>) root.clone();
+//								
+//									from = buildExpression(data, from + 1, names, item); 
+//									arguments.add(item);
+//								} while (data[from].getType() == LexTypes.COMMA);
+//								if (data[from].getType() == LexTypes.CLOSE) {
+//									from++;
+//								}
+//								else {
+//									throw new SyntaxException(data[from].getRow(), data[from].getCol(), "Missing ')'");
+//								}
+//							}
+//							else {
+//								from += 2;
+//							}
+//							root.cargo = new ArrayDescriptor(DataTypes.ARRAY);
+//							root.children = arguments.toArray(new SyntaxNode[arguments.size()]);
+//						}
+//						else {
+//							throw new SyntaxException(data[from].getRow(), data[from].getCol(), "Missing '('");
+//						}
 						break;
 					case COLOR	:	// color(int)|color("str")|color(int,int,int)
-						if (data[++from].getType() == LexTypes.OPEN) {
-							final List<SyntaxNode<SyntaxNodeType, SyntaxNode<SyntaxNodeType, ?>>>	arguments = new ArrayList<>();
-							
-							if (data[from].getType() != LexTypes.CLOSE) {
-								do {final SyntaxNode<SyntaxNodeType, SyntaxNode<SyntaxNodeType, ?>>	item = (SyntaxNode<SyntaxNodeType, SyntaxNode<SyntaxNodeType, ?>>) root.clone();
-								
-									from = buildExpression(data, from + 1, names, item); 
-									arguments.add(item);
-								} while (data[from].getType() == LexTypes.COMMA);
-								if (data[from].getType() == LexTypes.CLOSE) {
-									from++;
-								}
-								else {
-									throw new SyntaxException(data[from].getRow(), data[from].getCol(), "Missing ')'");
-								}
-							}
-							else {
-								from++;
-							}
-							root.cargo = new ArrayDescriptor(DataTypes.COLOR);
-							root.children = arguments.toArray(new SyntaxNode[arguments.size()]);
-						}
-						else {
-							throw new SyntaxException(data[from].getRow(), data[from].getCol(), "Missing '('");
-						}
+						from = collectConstructorParameters(data, from, names, root, DataTypes.COLOR);
+//						if (data[++from].getType() == LexTypes.OPEN) {
+//							final List<SyntaxNode<SyntaxNodeType, SyntaxNode<SyntaxNodeType, ?>>>	arguments = new ArrayList<>();
+//							
+//							if (data[from + 1].getType() != LexTypes.CLOSE) {
+//								do {final SyntaxNode<SyntaxNodeType, SyntaxNode<SyntaxNodeType, ?>>	item = (SyntaxNode<SyntaxNodeType, SyntaxNode<SyntaxNodeType, ?>>) root.clone();
+//								
+//									from = buildExpression(data, from + 1, names, item); 
+//									arguments.add(item);
+//								} while (data[from].getType() == LexTypes.COMMA);
+//								if (data[from].getType() == LexTypes.CLOSE) {
+//									from++;
+//								}
+//								else {
+//									throw new SyntaxException(data[from].getRow(), data[from].getCol(), "Missing ')'");
+//								}
+//							}
+//							else {
+//								from += 2;
+//							}
+//							root.cargo = new ArrayDescriptor(DataTypes.COLOR);
+//							root.children = arguments.toArray(new SyntaxNode[arguments.size()]);
+//						}
+//						else {
+//							throw new SyntaxException(data[from].getRow(), data[from].getCol(), "Missing '('");
+//						}
 						break;
 					case FONT	:	// font("family",size,style)
-						if (data[++from].getType() == LexTypes.OPEN) {
-							final List<SyntaxNode<SyntaxNodeType, SyntaxNode<SyntaxNodeType, ?>>>	arguments = new ArrayList<>();
-							
-							if (data[from].getType() != LexTypes.CLOSE) {
-								do {final SyntaxNode<SyntaxNodeType, SyntaxNode<SyntaxNodeType, ?>>	item = (SyntaxNode<SyntaxNodeType, SyntaxNode<SyntaxNodeType, ?>>) root.clone();
-								
-									from = buildExpression(data, from + 1, names, item); 
-									arguments.add(item);
-								} while (data[from].getType() == LexTypes.COMMA);
-								if (data[from].getType() == LexTypes.CLOSE) {
-									from++;
-								}
-								else {
-									throw new SyntaxException(data[from].getRow(), data[from].getCol(), "Missing ')'");
-								}
-							}
-							else {
-								from++;
-							}
-							root.cargo = new ArrayDescriptor(DataTypes.FONT);
-							root.children = arguments.toArray(new SyntaxNode[arguments.size()]);
-						}
-						else {
-							throw new SyntaxException(data[from].getRow(), data[from].getCol(), "Missing '('");
-						}
+						from = collectConstructorParameters(data, from, names, root, DataTypes.FONT);
+//						if (data[++from].getType() == LexTypes.OPEN) {
+//							final List<SyntaxNode<SyntaxNodeType, SyntaxNode<SyntaxNodeType, ?>>>	arguments = new ArrayList<>();
+//							
+//							if (data[from + 1].getType() != LexTypes.CLOSE) {
+//								do {final SyntaxNode<SyntaxNodeType, SyntaxNode<SyntaxNodeType, ?>>	item = (SyntaxNode<SyntaxNodeType, SyntaxNode<SyntaxNodeType, ?>>) root.clone();
+//								
+//									from = buildExpression(data, from + 1, names, item); 
+//									arguments.add(item);
+//								} while (data[from].getType() == LexTypes.COMMA);
+//								if (data[from].getType() == LexTypes.CLOSE) {
+//									from++;
+//								}
+//								else {
+//									throw new SyntaxException(data[from].getRow(), data[from].getCol(), "Missing ')'");
+//								}
+//							}
+//							else {
+//								from += 2;
+//							}
+//							root.cargo = new ArrayDescriptor(DataTypes.FONT);
+//							root.children = arguments.toArray(new SyntaxNode[arguments.size()]);
+//						}
+//						else {
+//							throw new SyntaxException(data[from].getRow(), data[from].getCol(), "Missing '('");
+//						}
 						break;
 					case IMAGE	:	// image(width,height,type)
+						from = collectConstructorParameters(data, from, names, root, DataTypes.IMAGE);
 						break;
 					case MAP	:	// map("key":value,...)
 						if (data[++from].getType() == LexTypes.OPEN) {
 							final List<SyntaxNode<SyntaxNodeType, SyntaxNode<SyntaxNodeType, ?>>>	arguments = new ArrayList<>();
 							
-							if (data[from].getType() != LexTypes.CLOSE) {
+							if (data[from + 1].getType() != LexTypes.CLOSE) {
 								do {final SyntaxNode<SyntaxNodeType, SyntaxNode<SyntaxNodeType, ?>>	item = (SyntaxNode<SyntaxNodeType, SyntaxNode<SyntaxNodeType, ?>>) root.clone();
 								
 									from = buildExpression(data, from + 1, names, item);
@@ -1524,7 +1529,7 @@ loop:	for (;;) {
 								}
 							}
 							else {
-								from++;
+								from += 2;
 							}
 							root.cargo = new ArrayDescriptor(DataTypes.MAP);
 							root.children = arguments.toArray(new SyntaxNode[arguments.size()]);
@@ -1534,89 +1539,144 @@ loop:	for (;;) {
 						}
 						break;
 					case POINT	:	// point(int,int)
-						if (data[++from].getType() == LexTypes.OPEN) {
-							final List<SyntaxNode<SyntaxNodeType, SyntaxNode<SyntaxNodeType, ?>>>	arguments = new ArrayList<>();
-							
-							if (data[from].getType() != LexTypes.CLOSE) {
-								do {final SyntaxNode<SyntaxNodeType, SyntaxNode<SyntaxNodeType, ?>>	item = (SyntaxNode<SyntaxNodeType, SyntaxNode<SyntaxNodeType, ?>>) root.clone();
-								
-									from = buildExpression(data, from + 1, names, item); 
-									arguments.add(item);
-								} while (data[from].getType() == LexTypes.COMMA);
-								if (data[from].getType() == LexTypes.CLOSE) {
-									from++;
-								}
-								else {
-									throw new SyntaxException(data[from].getRow(), data[from].getCol(), "Missing ')'");
-								}
-							}
-							else {
-								from++;
-							}
-							root.cargo = new ArrayDescriptor(DataTypes.POINT);
-							root.children = arguments.toArray(new SyntaxNode[arguments.size()]);
-						}
-						else {
-							throw new SyntaxException(data[from].getRow(), data[from].getCol(), "Missing '('");
-						}
+						from = collectConstructorParameters(data, from, names, root, DataTypes.POINT);
+//						if (data[++from].getType() == LexTypes.OPEN) {
+//							final List<SyntaxNode<SyntaxNodeType, SyntaxNode<SyntaxNodeType, ?>>>	arguments = new ArrayList<>();
+//							
+//							if (data[from + 1].getType() != LexTypes.CLOSE) {
+//								do {final SyntaxNode<SyntaxNodeType, SyntaxNode<SyntaxNodeType, ?>>	item = (SyntaxNode<SyntaxNodeType, SyntaxNode<SyntaxNodeType, ?>>) root.clone();
+//								
+//									from = buildExpression(data, from + 1, names, item); 
+//									arguments.add(item);
+//								} while (data[from].getType() == LexTypes.COMMA);
+//								if (data[from].getType() == LexTypes.CLOSE) {
+//									from++;
+//								}
+//								else {
+//									throw new SyntaxException(data[from].getRow(), data[from].getCol(), "Missing ')'");
+//								}
+//							}
+//							else {
+//								from += 2;
+//							}
+//							root.cargo = new ArrayDescriptor(DataTypes.POINT);
+//							root.children = arguments.toArray(new SyntaxNode[arguments.size()]);
+//						}
+//						else {
+//							throw new SyntaxException(data[from].getRow(), data[from].getCol(), "Missing '('");
+//						}
 						break;
 					case RECT	:	// rect(x,y,width,height)|rect(point(...),size(...))
-						if (data[++from].getType() == LexTypes.OPEN) {
-							final List<SyntaxNode<SyntaxNodeType, SyntaxNode<SyntaxNodeType, ?>>>	arguments = new ArrayList<>();
-							
-							if (data[from].getType() != LexTypes.CLOSE) {
-								do {final SyntaxNode<SyntaxNodeType, SyntaxNode<SyntaxNodeType, ?>>	item = (SyntaxNode<SyntaxNodeType, SyntaxNode<SyntaxNodeType, ?>>) root.clone();
-								
-									from = buildExpression(data, from + 1, names, item); 
-									arguments.add(item);
-								} while (data[from].getType() == LexTypes.COMMA);
-								if (data[from].getType() == LexTypes.CLOSE) {
-									from++;
-								}
-								else {
-									throw new SyntaxException(data[from].getRow(), data[from].getCol(), "Missing ')'");
-								}
-							}
-							else {
-								from++;
-							}
-							root.cargo = new ArrayDescriptor(DataTypes.RECT);
-							root.children = arguments.toArray(new SyntaxNode[arguments.size()]);
-						}
-						else {
-							throw new SyntaxException(data[from].getRow(), data[from].getCol(), "Missing '('");
-						}
+						from = collectConstructorParameters(data, from, names, root, DataTypes.RECT);
+//						if (data[++from].getType() == LexTypes.OPEN) {
+//							final List<SyntaxNode<SyntaxNodeType, SyntaxNode<SyntaxNodeType, ?>>>	arguments = new ArrayList<>();
+//							
+//							if (data[from + 1].getType() != LexTypes.CLOSE) {
+//								do {final SyntaxNode<SyntaxNodeType, SyntaxNode<SyntaxNodeType, ?>>	item = (SyntaxNode<SyntaxNodeType, SyntaxNode<SyntaxNodeType, ?>>) root.clone();
+//								
+//									from = buildExpression(data, from + 1, names, item); 
+//									arguments.add(item);
+//								} while (data[from].getType() == LexTypes.COMMA);
+//								if (data[from].getType() == LexTypes.CLOSE) {
+//									from++;
+//								}
+//								else {
+//									throw new SyntaxException(data[from].getRow(), data[from].getCol(), "Missing ')'");
+//								}
+//							}
+//							else {
+//								from += 2;
+//							}
+//							root.cargo = new ArrayDescriptor(DataTypes.RECT);
+//							root.children = arguments.toArray(new SyntaxNode[arguments.size()]);
+//						}
+//						else {
+//							throw new SyntaxException(data[from].getRow(), data[from].getCol(), "Missing '('");
+//						}
 						break;
 					case SIZE	:	// size(width,height)
-						if (data[++from].getType() == LexTypes.OPEN) {
-							final List<SyntaxNode<SyntaxNodeType, SyntaxNode<SyntaxNodeType, ?>>>	arguments = new ArrayList<>();
-							
-							if (data[from].getType() != LexTypes.CLOSE) {
-								do {final SyntaxNode<SyntaxNodeType, SyntaxNode<SyntaxNodeType, ?>>	item = (SyntaxNode<SyntaxNodeType, SyntaxNode<SyntaxNodeType, ?>>) root.clone();
-								
-									from = buildExpression(data, from + 1, names, item); 
-									arguments.add(item);
-								} while (data[from].getType() == LexTypes.COMMA);
-								if (data[from].getType() == LexTypes.CLOSE) {
-									from++;
-								}
-								else {
-									throw new SyntaxException(data[from].getRow(), data[from].getCol(), "Missing ')'");
-								}
-							}
-							else {
-								from++;
-							}
-							root.cargo = new ArrayDescriptor(DataTypes.SIZE);
-							root.children = arguments.toArray(new SyntaxNode[arguments.size()]);
-						}
-						else {
-							throw new SyntaxException(data[from].getRow(), data[from].getCol(), "Missing '('");
-						}
+						from = collectConstructorParameters(data, from, names, root, DataTypes.SIZE);
+//						if (data[++from].getType() == LexTypes.OPEN) {
+//							final List<SyntaxNode<SyntaxNodeType, SyntaxNode<SyntaxNodeType, ?>>>	arguments = new ArrayList<>();
+//							
+//							if (data[from + 1].getType() != LexTypes.CLOSE) {
+//								do {final SyntaxNode<SyntaxNodeType, SyntaxNode<SyntaxNodeType, ?>>	item = (SyntaxNode<SyntaxNodeType, SyntaxNode<SyntaxNodeType, ?>>) root.clone();
+//								
+//									from = buildExpression(data, from + 1, names, item); 
+//									arguments.add(item);
+//								} while (data[from].getType() == LexTypes.COMMA);
+//								if (data[from].getType() == LexTypes.CLOSE) {
+//									from++;
+//								}
+//								else {
+//									throw new SyntaxException(data[from].getRow(), data[from].getCol(), "Missing ')'");
+//								}
+//							}
+//							else {
+//								from += 2;
+//							}
+//							root.cargo = new ArrayDescriptor(DataTypes.SIZE);
+//							root.children = arguments.toArray(new SyntaxNode[arguments.size()]);
+//						}
+//						else {
+//							throw new SyntaxException(data[from].getRow(), data[from].getCol(), "Missing '('");
+//						}
 						break;
 					case STROKE	:	// stroke(width,style,style)
+						from = collectConstructorParameters(data, from, names, root, DataTypes.STROKE);
+//						if (data[++from].getType() == LexTypes.OPEN) {
+//							final List<SyntaxNode<SyntaxNodeType, SyntaxNode<SyntaxNodeType, ?>>>	arguments = new ArrayList<>();
+//							
+//							if (data[from + 1].getType() != LexTypes.CLOSE) {
+//								do {final SyntaxNode<SyntaxNodeType, SyntaxNode<SyntaxNodeType, ?>>	item = (SyntaxNode<SyntaxNodeType, SyntaxNode<SyntaxNodeType, ?>>) root.clone();
+//								
+//									from = buildExpression(data, from + 1, names, item); 
+//									arguments.add(item);
+//								} while (data[from].getType() == LexTypes.COMMA);
+//								if (data[from].getType() == LexTypes.CLOSE) {
+//									from++;
+//								}
+//								else {
+//									throw new SyntaxException(data[from].getRow(), data[from].getCol(), "Missing ')'");
+//								}
+//							}
+//							else {
+//								from += 2;
+//							}
+//							root.cargo = new ArrayDescriptor(DataTypes.STROKE);
+//							root.children = arguments.toArray(new SyntaxNode[arguments.size()]);
+//						}
+//						else {
+//							throw new SyntaxException(data[from].getRow(), data[from].getCol(), "Missing '('");
+//						}
 						break;
 					case TRANSFORM	:	// transform(v1,v2,v3,v4,v5,v6)|transform()
+						from = collectConstructorParameters(data, from, names, root, DataTypes.TRANSFORM);
+//						if (data[++from].getType() == LexTypes.OPEN) {
+//							final List<SyntaxNode<SyntaxNodeType, SyntaxNode<SyntaxNodeType, ?>>>	arguments = new ArrayList<>();
+//							
+//							if (data[from + 1].getType() != LexTypes.CLOSE) {
+//								do {final SyntaxNode<SyntaxNodeType, SyntaxNode<SyntaxNodeType, ?>>	item = (SyntaxNode<SyntaxNodeType, SyntaxNode<SyntaxNodeType, ?>>) root.clone();
+//								
+//									from = buildExpression(data, from + 1, names, item); 
+//									arguments.add(item);
+//								} while (data[from].getType() == LexTypes.COMMA);
+//								if (data[from].getType() == LexTypes.CLOSE) {
+//									from++;
+//								}
+//								else {
+//									throw new SyntaxException(data[from].getRow(), data[from].getCol(), "Missing ')'");
+//								}
+//							}
+//							else {
+//								from += 2;
+//							}
+//							root.cargo = new ArrayDescriptor(DataTypes.TRANSFORM);
+//							root.children = arguments.toArray(new SyntaxNode[arguments.size()]);
+//						}
+//						else {
+//							throw new SyntaxException(data[from].getRow(), data[from].getCol(), "Missing '('");
+//						}
 						break;
 					default	:
 						throw new SyntaxException(data[from].getRow(), data[from].getCol(), "Illegal type reference");
@@ -1633,7 +1693,36 @@ loop:	for (;;) {
 		}
 		return from;
 	}
-		
+
+	private static int collectConstructorParameters(final Lexema[] data, int from, final SyntaxTreeInterface<EntityDescriptor> names, final SyntaxNode<SyntaxNodeType, SyntaxNode<SyntaxNodeType, ?>> root, final DataTypes type) throws SyntaxException {
+		if (data[++from].getType() == LexTypes.OPEN) {
+			final List<SyntaxNode<SyntaxNodeType, SyntaxNode<SyntaxNodeType, ?>>>	arguments = new ArrayList<>();
+			
+			if (data[from + 1].getType() != LexTypes.CLOSE) {
+				do {final SyntaxNode<SyntaxNodeType, SyntaxNode<SyntaxNodeType, ?>>	item = (SyntaxNode<SyntaxNodeType, SyntaxNode<SyntaxNodeType, ?>>) root.clone();
+				
+					from = buildExpression(data, from + 1, names, item); 
+					arguments.add(item);
+				} while (data[from].getType() == LexTypes.COMMA);
+				if (data[from].getType() == LexTypes.CLOSE) {
+					from++;
+				}
+				else {
+					throw new SyntaxException(data[from].getRow(), data[from].getCol(), "Missing ')'");
+				}
+			}
+			else {
+				from += 2;
+			}
+			root.cargo = new ArrayDescriptor(type);
+			root.children = arguments.toArray(new SyntaxNode[arguments.size()]);
+		}
+		else {
+			throw new SyntaxException(data[from].getRow(), data[from].getCol(), "Missing '('");
+		}
+		return from;
+	}
+	
 	private static int buildRightAccess(final Lexema[] data, int from, final EntityDescriptor desc, final SyntaxTreeInterface<EntityDescriptor> names, final SyntaxNode<SyntaxNodeType, SyntaxNode<SyntaxNodeType, ?>> root) throws SyntaxException {
 		return buildRightAccess(data, from, desc, desc.getDataTypes(), names, root);
 	}
@@ -1660,6 +1749,7 @@ loop:	for (;;) {
 					methodAccess.value = data[from].getLongAssociated();
 					
 					if (data[from + 2].getType() != LexTypes.CLOSE) {
+						from++;
 						do {final SyntaxNode<SyntaxNodeType, SyntaxNode<SyntaxNodeType, ?>>	parameterValue = (SyntaxNode<SyntaxNodeType, SyntaxNode<SyntaxNodeType, ?>>) root.clone();
 							from = buildExpression(data, from + 1, names, parameterValue);
 							parameters.add(parameterValue);
@@ -1679,7 +1769,7 @@ loop:	for (;;) {
 						boolean				found = false;
 						
 						for (Method m : current.get(0).getMethods()) {
-							if (names.seekName(m.getName()) == methodAccess.value && Arrays.equals(m.getParameterTypes(), signature)) {
+							if (names.seekName(m.getName()) == methodAccess.value && isSignatureCompatible(m.getParameterTypes(), signature)) {
 								methodAccess.cargo = m;
 								classFound = m.getReturnType();
 								found = true;
@@ -1782,6 +1872,27 @@ loop:	for (;;) {
 	}	
 
 	
+	private static boolean isSignatureCompatible(final Class<?>[] source, final Class<?>[] template) {
+		if (source.length != template.length) {
+			return false;
+		}
+		else {
+			for (int index = 0; index < source.length; index++) {
+				if (!source[index].isAssignableFrom(template[index])) {
+					if (template[index] == long.class || template[index] == double.class) {
+						if (!source[index].isPrimitive()) {
+							return false;
+						}
+					}
+					else {
+						return false;
+					}
+				}
+			}
+			return true;
+		}
+	}
+
 	private static int buildLeftAccess(final Lexema[] data, int from, final EntityDescriptor desc, final SyntaxTreeInterface<EntityDescriptor> names, final SyntaxNode<SyntaxNodeType, SyntaxNode<SyntaxNodeType, ?>> root) throws SyntaxException {
 		return buildLeftAccess(data, from, desc, desc.getDataTypes(), names, root);
 	}
@@ -1901,12 +2012,16 @@ loop:	for (;;) {
 	}	
 	
 	private static Class<?>[] buildSignature(final SyntaxNode... children) {
-		// TODO Auto-generated method stub
 		if (children.length == 0) {
-			return new Class<?>[0];
+			return EMPTY_CLASS_LIST;
 		}
 		else {
-			return null;
+			final Class<?>[]	result = new Class<?>[children.length];
+			
+			for (int index = 0; index < result.length; index++) {
+				result[index] = getValueType(children[index]);
+			}
+			return result;
 		}
 	}
 
@@ -2019,6 +2134,11 @@ loop:	for (;;) {
 							convert(node.children[2], long.class);
 							((ArrayDescriptor)node.cargo).contentType = (Class<Object>) awaited;
 						}
+						else if (node.children.length == 2) {
+							convert(node.children[0], char[].class);
+							convert(node.children[1], long.class);
+							((ArrayDescriptor)node.cargo).contentType = (Class<Object>) awaited;
+						}
 						else if (node.children.length == 1) {
 							convert(node.children[0], char[].class);
 							((ArrayDescriptor)node.cargo).contentType = (Class<Object>) awaited;
@@ -2030,6 +2150,18 @@ loop:	for (;;) {
 					case FUNC		:
 						break;
 					case IMAGE		:
+						if (node.children.length == 3) {
+							convert(node.children[0], long.class);
+							convert(node.children[1], long.class);
+							convert(node.children[2], char[].class);
+							((ArrayDescriptor)node.cargo).contentType = (Class<Object>) awaited;
+						}
+						else if (node.children.length == 0) {
+							((ArrayDescriptor)node.cargo).contentType = (Class<Object>) awaited;
+						}
+						else {
+							throw new SyntaxException(node.row, node.row, "Invalid constructor for type Image, only Image(int, int, str) or Image() are available"); 
+						}
 						break;
 					case MAP		:
 						for (int index = 0; index < node.children.length; index += 2) {
@@ -2079,10 +2211,30 @@ loop:	for (;;) {
 						}
 						break;
 					case STROKE		:
+						if (node.children.length == 4) {
+							convert(node.children[0], char[].class);
+							convert(node.children[1], long.class);
+							convert(node.children[2], char[].class);
+							convert(node.children[3], char[].class);
+							((ArrayDescriptor)node.cargo).contentType = (Class<Object>) awaited;
+						}
+						else {
+							throw new SyntaxException(node.row, node.row, "Invalid constructor for type Stroke, only Stroke(str, int, str, str) are available"); 
+						}
 						break;
 					case STRUCTURE	:
 						break;
 					case TRANSFORM	:
+						if (node.children.length == 1) {
+							convert(node.children[0], char[].class);
+							((ArrayDescriptor)node.cargo).contentType = (Class<Object>) awaited;
+						}
+						else if (node.children.length == 0) {
+							((ArrayDescriptor)node.cargo).contentType = (Class<Object>) awaited;
+						}
+						else {
+							throw new SyntaxException(node.row, node.row, "Invalid constructor for type Transform, only Transform(str) and Transform() are available"); 
+						}
 						break;
 					default:
 						throw new UnsupportedOperationException("Data type ["+((ArrayDescriptor)node.cargo).dataType+"] is not supported yet");
