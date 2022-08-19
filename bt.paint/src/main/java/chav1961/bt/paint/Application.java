@@ -483,7 +483,8 @@ public class Application extends JFrame implements NodeMetadataOwner, LocaleChan
     public void customFilters() {
 		final FilterMatrixTable	fmt = new FilterMatrixTable(3);
 		
-		fmt.setPreferredSize(new Dimension(400,400));
+		fmt.setPreferredSize(new Dimension(300, 60));
+		fmt.requestFocusInWindow();
 		switch (new JLocalizedOptionPane(localizer).confirm(this, fmt, KEY_APPLICATION_CUSTOM_FILTER_TYPE_ITEMS, JOptionPane.PLAIN_MESSAGE, JOptionPane.OK_CANCEL_OPTION)) {
 			case JOptionPane.OK_OPTION :
 				processFilter(fmt.getMaxtrix());

@@ -8,8 +8,7 @@ public class FilterMatrixTable extends JTable {
 	private static final long 	serialVersionUID = 1L;
 	
 	private final int			size;
-	private final Float[][]		content;
-	private final String[]		columns;
+	private final float[][]		content;
 	private final TableModel	model;
 	
 	public FilterMatrixTable(final int size) {
@@ -18,21 +17,8 @@ public class FilterMatrixTable extends JTable {
 		}
 		else {
 			this.size = size;
-			this.content = new Float[size][size];
-			this.columns = new String[size];
-			for (int x = 0; x < size; x++) {
-				columns[x] = ""+(x+1);
-				for (int y = 0; y < size; y++) {
-					content[x][y] = 0f;
-				}
-			}
-			this.model = new DefaultTableModel(content, columns) {
-								@Override
-								public void setValueAt(Object aValue, int row, int column) {
-									content[row][column] = (Float)aValue;
-									super.setValueAt(aValue, row, column);
-								}
-							};
+			this.content = new float[size][size];
+			this.model = new FloatTableModel(content);
 			setModel(model);
 		}
 	}
@@ -47,5 +33,51 @@ public class FilterMatrixTable extends JTable {
 			}
 		}
 		return result;
+	}
+	
+	private static class FloatTableModel extends DefaultTableModel {
+		private static final long 	serialVersionUID = 1L;
+		
+		private final float[][]		content;
+		
+		private FloatTableModel(final float[][] content) {
+			this.content = content; 
+		}
+		
+		@Override
+		public int getRowCount() {
+			return content == null ? 0 : content.length;
+		}
+
+		@Override
+		public int getColumnCount() {
+			return content[0].length;
+		}
+
+		@Override
+		public String getColumnName(final int columnIndex) {
+			return "#"+(columnIndex+1);
+		}
+
+		@Override
+		public Class<Float> getColumnClass(final int columnIndex) {
+			return Float.class;
+		}
+
+		@Override
+		public boolean isCellEditable(final int rowIndex, final int columnIndex) {
+			return true;
+		}
+
+		@Override
+		public Object getValueAt(final int rowIndex, final int columnIndex) {
+			return Float.valueOf(content[rowIndex][columnIndex]);
+		}
+
+		@Override
+		public void setValueAt(Object aValue, int rowIndex, int columnIndex) {
+			content[rowIndex][columnIndex] = ((Number)aValue).floatValue();
+			fireTableCellUpdated(rowIndex, columnIndex);
+		}
 	}
 }
