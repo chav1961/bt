@@ -38,7 +38,7 @@ import chav1961.purelib.ui.ColorPair;
 
 public class ImageUtils {
 	public static enum ProcessType {
-		FILL, CROP, RESIZE, SCALE, ROTATE_CLOCKWISE, ROTATE_COUNTERCLOCKWISE, MIRROR_HORIZONTAL, MIRROR_VERTICAL, TO_GRAYSCALE, TO_TRANSPARENT, INSERT 
+		FILL, CROP, RESIZE, SCALE, ROTATE_CLOCKWISE, ROTATE_COUNTERCLOCKWISE, MIRROR_HORIZONTAL, MIRROR_VERTICAL, TO_GRAYSCALE, TO_TRANSPARENT, INSERT, FILTER 
 	}
 
 	public static enum DrawingType {
@@ -130,6 +130,13 @@ public class ImageUtils {
 					}
 					else {
 						throw new IllegalArgumentException("[INSERT] mode must have rectangle and image in the parameters list"); 
+					}
+				case FILTER				:
+					if (checkParameterTypes(parameters, Rectangle.class, float[].class)) {
+						return filterImage((BufferedImage)source, (Rectangle)parameters[0], (float[])parameters[1], observer);
+					}
+					else {
+						throw new IllegalArgumentException("[FILTER] mode must have rectangle and filter matrix in the parameters list"); 
 					}
 				default	:
 					throw new UnsupportedOperationException("Process type ["+type+"] is not supported yet"); 
@@ -425,6 +432,53 @@ public class ImageUtils {
 		g2d.drawImage(insertion, rect.x, rect.y, rect.x+rect.width, rect.y+rect.height, 0, 0, insertion.getWidth(), insertion.getHeight(), observer);
 		g2d.dispose();
 		return source;
+	}
+
+	static Image filterImage(final BufferedImage source, final Rectangle rectangle, final float[] filter, final ImageObserver observer) {
+		final int	filterSize = (int)Math.sqrt(filter.length);
+		
+		if (filterSize * filterSize != filter.length) {
+			throw new IllegalArgumentException("Filter matrix is not a square matrix"); 
+		}
+		else if (filterSize % 2 == 0) {
+			throw new IllegalArgumentException("Filter matrix size must be odd"); 
+		}
+		else {
+			final int	maxX = rectangle.width, maxY = rectangle.height;
+			final int	halfSize = filterSize / 2, fstart = - halfSize, fend = halfSize, scanSize = rectangle.width + 2 * halfSize;
+			final int[]	pixels = new int[scanSize * (2 * filterSize + source.getHeight())];
+			final int[]	target = new int[pixels.length];
+			
+			source.getRGB(rectangle.x, rectangle.y, rectangle.width, rectangle.height, pixels, halfSize + scanSize * halfSize, scanSize);
+			for (int y = 0; y < maxY; y++) {
+				for (int x = 0; x < maxX; x++) {
+					final int	currentPixel = pixels[(y + halfSize) * scanSize + (x + halfSize)];
+					float sumR = 0, sumG = 0, sumB = 0;
+					
+					for (int fy = fstart; fy < fend; fy++) {
+						for (int fx = fstart; fx < fend; fx++) {
+							final int	effectiveX = halfSize + x + fx; 
+							final int	effectiveY = halfSize + y + fy;
+							final int	pixel = pixels[effectiveY * scanSize + effectiveX] & 0xFFFFFF;
+							final float	k = filter[(fy + halfSize) * filterSize + (fx + halfSize)];
+							
+							sumR += ((pixel & 0xFF0000) >> 16) * k;
+							sumG += ((pixel & 0xFF00) >> 8) * k;
+							sumB += ((pixel & 0xFF) >> 0) * k;
+						}
+					}
+					final int	result = (currentPixel & 0xFF000000) 
+											| (Math.round(sumR) << 16) & 0xFF0000
+											| (Math.round(sumG) << 8) & 0xFF00
+											| (Math.round(sumB) << 0) & 0xFF;
+					
+					target[(y + halfSize) * scanSize + (x + halfSize)] = result; 
+				}
+			}
+			source.setRGB(rectangle.x, rectangle.y, rectangle.width, rectangle.height, target, halfSize + scanSize * halfSize, scanSize);
+			return source;
+		}
+		
 	}
 	
 	static void rectDraw(final BufferedImage source, final Rectangle rect, final Color color, final Stroke stroke, final ImageObserver observer) {

@@ -1,7 +1,6 @@
 package chav1961.bt.paint;
 
 import java.awt.BorderLayout;
-
 import java.awt.Dimension;
 import java.awt.Image;
 import java.awt.Rectangle;
@@ -10,7 +9,6 @@ import java.awt.image.BufferedImage;
 import java.awt.image.RenderedImage;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
@@ -19,7 +17,6 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.Reader;
-import java.io.StringReader;
 import java.io.Writer;
 import java.net.URI;
 import java.util.Hashtable;
@@ -49,6 +46,7 @@ import chav1961.bt.paint.control.ImageUtils.ProcessType;
 import chav1961.bt.paint.control.Predefines;
 import chav1961.bt.paint.dialogs.AskImageSize;
 import chav1961.bt.paint.dialogs.AskSettings;
+import chav1961.bt.paint.dialogs.FilterMatrixTable;
 import chav1961.bt.paint.interfaces.PaintScriptException;
 import chav1961.bt.paint.script.CanvasWrapperImpl;
 import chav1961.bt.paint.script.ImageWrapperImpl;
@@ -58,6 +56,7 @@ import chav1961.bt.paint.script.interfaces.CanvasWrapper;
 import chav1961.bt.paint.script.interfaces.ClipboardWrapper;
 import chav1961.bt.paint.script.interfaces.ImageWrapper;
 import chav1961.bt.paint.script.interfaces.SystemWrapper;
+import chav1961.bt.paint.script.intern.DebuggerPanel;
 import chav1961.bt.paint.script.intern.runtime.ScriptUtils;
 import chav1961.bt.paint.utils.ApplicationUtils;
 import chav1961.purelib.basic.ArgParser;
@@ -93,7 +92,6 @@ import chav1961.purelib.ui.swing.useful.JFileSelectionDialog.FilterCallback;
 import chav1961.purelib.ui.swing.useful.JLocalizedOptionPane;
 import chav1961.purelib.ui.swing.useful.JStateString;
 import chav1961.purelib.ui.swing.useful.interfaces.FileContentChangedEvent;
-import chav1961.bt.paint.script.intern.DebuggerPanel;
 
 public class Application extends JFrame implements NodeMetadataOwner, LocaleChangeListener, LoggerFacadeOwner, LocalizerOwner, AutoCloseable {
 	private static final long 		serialVersionUID = 1083999598002477077L;
@@ -122,7 +120,11 @@ public class Application extends JFrame implements NodeMetadataOwner, LocaleChan
 	private static final String		KEY_APPLICATION_HELP_CONTENT = "chav1961.bt.paint.Application.help.content";
 	private static final String		KEY_APPLICATION_END_BATCH_TITLE = "chav1961.bt.paint.Application.endbatch.title";
 	private static final String		KEY_APPLICATION_END_BATCH_CONTENT = "chav1961.bt.paint.Application.endbatch.content";
+	private static final String		KEY_APPLICATION_CUSTOM_FILTER_TYPE_ITEMS = "chav1961.bt.paint.Application.customfilter.typeItems";
 
+	private static final String		KEY_UNDO_FILTER = "chav1961.bt.paint.editor.ImageEditPanel.undo.filter";
+	private static final String		KEY_REDO_FILTER = "chav1961.bt.paint.editor.ImageEditPanel.redo.filter";
+	
 	public static enum ApplicationMode {
 		IN_OUT,
 		BATCH,
@@ -459,6 +461,36 @@ public class Application extends JFrame implements NodeMetadataOwner, LocaleChan
 		} catch (PaintScriptException e) {
 			getLogger().message(Severity.error,e.getLocalizedMessage());
 		}
+	}	
+	
+	@OnAction("action:/filters")
+    public void filters(final Hashtable<String,String[]> matrix) throws IOException {
+		if (matrix.containsKey("matrix")) {
+			final String[]	items = matrix.get("matrix")[0].split("\\,");
+			final float[]	floatItems = new float[items.length];
+			
+			for (int index = 0; index < floatItems.length; index++) {
+				floatItems[index] = Float.valueOf(items[index]);
+			}
+			processFilter(floatItems);
+		}
+		else {
+			getLogger().message(Severity.error,"Mandatory parameter 'matrix' is missing");
+		}
+	}	
+	
+	@OnAction("action:/customfilters")
+    public void customFilters() {
+		final FilterMatrixTable	fmt = new FilterMatrixTable(3);
+		
+		fmt.setPreferredSize(new Dimension(400,400));
+		switch (new JLocalizedOptionPane(localizer).confirm(this, fmt, KEY_APPLICATION_CUSTOM_FILTER_TYPE_ITEMS, JOptionPane.PLAIN_MESSAGE, JOptionPane.OK_CANCEL_OPTION)) {
+			case JOptionPane.OK_OPTION :
+				processFilter(fmt.getMaxtrix());
+				break;
+			default :
+				break;
+		}		
 	}	
 	
 	@OnAction("action:/find")
@@ -823,6 +855,15 @@ public class Application extends JFrame implements NodeMetadataOwner, LocaleChan
 
 	private void assignBatchSource(final Exchanger<Object> ex) {
 		this.batchSource = ex;
+	}
+
+	private void processFilter(final float[] filter) {
+		try{panel.startImageAction(KEY_UNDO_FILTER, KEY_REDO_FILTER);
+			panel.processFilter(filter);
+			panel.endImageAction(KEY_UNDO_FILTER, KEY_REDO_FILTER);	
+		} catch (PaintScriptException exc) {
+			SwingUtils.getNearestLogger(this).message(Severity.error, exc, exc.getLocalizedMessage());
+		}
 	}
 	
 	private void fillLocalizedStrings() {

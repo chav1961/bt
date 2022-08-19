@@ -19,6 +19,7 @@
 		<key name="chav1961.bt.paint.Application.message.image.stored">Image stored to %1$s</key>
 		<key name="chav1961.bt.paint.Application.endbatch.title">Batch processing completed</key>
 		<key name="chav1961.bt.paint.Application.endbatch.content">All files in the batch are processed. Quit from application?</key>
+		<key name="chav1961.bt.paint.Application.customfilter.typeItems">Type items for custom filter</key>		
 		<key name="chav1961.bt.paint.Application.help.title">About...</key>
 		<key name="chav1961.bt.paint.Application.help.content">uri(aboutApplication.cre)</key>
 
@@ -51,6 +52,22 @@
 		<key name="menu.main.edit.copy.tt">Copy selected area into clipboard</key>
 		<key name="menu.main.edit.paste">Paste</key>
 		<key name="menu.main.edit.paste.tt">Paste selected area from clipboard</key>
+		<key name="menu.main.edit.filters">Filters</key>
+		<key name="menu.main.edit.filters.tt">Filters</key>
+		<key name="menu.main.edit.filters.rangeX">X range</key>
+		<key name="menu.main.edit.filters.rangeX.tt">X range</key>
+		<key name="menu.main.edit.filters.rangeY">Y range</key>
+		<key name="menu.main.edit.filters.rangeY.tt">Y range</key>
+		<key name="menu.main.edit.filters.range">Range</key>
+		<key name="menu.main.edit.filters.range.tt">Range</key>
+		<key name="menu.main.edit.filters.sharp">Sharp</key>
+		<key name="menu.main.edit.filters.sharp.tt">Sharp</key>
+		<key name="menu.main.edit.filters.smooth">Smooth</key>
+		<key name="menu.main.edit.filters.smooth.tt">Smooth</key>
+		<key name="menu.main.edit.filters.smoothGaussian">Gaussian smooth</key>
+		<key name="menu.main.edit.filters.smoothGaussian.tt">Gaussian smooth</key>
+		<key name="menu.main.edit.filters.custom">Custom</key>
+		<key name="menu.main.edit.filters.custom.tt">Custom</key>
 		<key name="menu.main.edit.find">Find</key>
 		<key name="menu.main.edit.find.tt">Find fragment(s) on the image</key>
 		<key name="menu.main.edit.replace">Find &amp; replace</key>
@@ -220,6 +237,8 @@
 		<key name="chav1961.bt.paint.editor.ImageEditPanel.redo.change.font">redo font selection</key>
 		<key name="chav1961.bt.paint.editor.ImageEditPanel.undo.change.stroke">undo line style selection</key>
 		<key name="chav1961.bt.paint.editor.ImageEditPanel.redo.change.stroke">redo line style selection</key>
+		<key name="chav1961.bt.paint.editor.ImageEditPanel.undo.filter">undo filter</key>
+		<key name="chav1961.bt.paint.editor.ImageEditPanel.redo.filter">redo filter</key>
 
 <!-- DebuggerPanel class localization -->
 		<key name="debug.file.clean">Clean</key>
@@ -310,6 +329,7 @@
 		<key name="chav1961.bt.paint.Application.message.image.stored">Картинка сохранена в файл %1$s</key>
 		<key name="chav1961.bt.paint.Application.endbatch.title">Пакетная обработка завершен</key>
 		<key name="chav1961.bt.paint.Application.endbatch.content">Все файлы из пакета обработаны. Завершить работу приложения?</key>
+		<key name="chav1961.bt.paint.Application.customfilter.typeItems">Введите значения пользовательского фильтра</key>		
 		<key name="chav1961.bt.paint.Application.help.title">О программе</key>
 		<key name="chav1961.bt.paint.Application.help.content">uri(aboutApplication.cre)</key>
 		
@@ -342,6 +362,22 @@
 		<key name="menu.main.edit.copy.tt">Копировать выделенный участок изображения</key>
 		<key name="menu.main.edit.paste">Вставить</key>
 		<key name="menu.main.edit.paste.tt">Вставить изображение из буфера обмена</key>
+		<key name="menu.main.edit.filters">Фильтры</key>
+		<key name="menu.main.edit.filters.tt">Фильтры</key>
+		<key name="menu.main.edit.filters.rangeX">Горизонтальные границы</key>
+		<key name="menu.main.edit.filters.rangeX.tt">Горизонтальные границы</key>
+		<key name="menu.main.edit.filters.rangeY">Вертикальные границы</key>
+		<key name="menu.main.edit.filters.rangeY.tt">Вертикальные границы</key>
+		<key name="menu.main.edit.filters.range">Общие границы</key>
+		<key name="menu.main.edit.filters.range.tt">Общие границы</key>
+		<key name="menu.main.edit.filters.sharp">Четкость</key>
+		<key name="menu.main.edit.filters.sharp.tt">Четкость</key>
+		<key name="menu.main.edit.filters.smooth">Размытие</key>
+		<key name="menu.main.edit.filters.smooth.tt">Размытие</key>
+		<key name="menu.main.edit.filters.smoothGaussian">Размытие Гаусса</key>
+		<key name="menu.main.edit.filters.smoothGaussian.tt">Размытие Гаусса</key>
+		<key name="menu.main.edit.filters.custom">Ручной</key>
+		<key name="menu.main.edit.filters.custom.tt">Ручной</key>
 		<key name="menu.main.edit.find">Найти</key>
 		<key name="menu.main.edit.find.tt">Найти фрагмент(ы) на изображении</key>
 		<key name="menu.main.edit.replace">Найти и заменить</key>
@@ -519,6 +555,8 @@
 		<key name="chav1961.bt.paint.editor.ImageEditPanel.redo.change.font">восстановить выбор шрифта</key>
 		<key name="chav1961.bt.paint.editor.ImageEditPanel.undo.change.stroke">отменить выбор стиля линий</key>
 		<key name="chav1961.bt.paint.editor.ImageEditPanel.redo.change.stroke">восстановить выбор стиля линий</key>
+		<key name="chav1961.bt.paint.editor.ImageEditPanel.undo.filter">отменить фильтр</key>
+		<key name="chav1961.bt.paint.editor.ImageEditPanel.redo.filter">применить фильтр</key>
 		
 <!-- Локализация класса AskImageSize -->
 		<key name="askimagesize.title">Задайте размер изображения</key>

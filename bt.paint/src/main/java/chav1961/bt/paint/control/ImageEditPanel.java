@@ -81,27 +81,6 @@ public class ImageEditPanel extends JPanel implements LocalizerOwner, LocaleChan
 	
 	private static final String				KEY_SELECT_COLOR = "chav1961.bt.paint.editor.ImageEditPanel.selectColor";
 
-//	private static final String				KEY_UNDO_CROP = "chav1961.bt.paint.editor.ImageEditPanel.undo.crop";
-//	private static final String				KEY_REDO_CROP = "chav1961.bt.paint.editor.ImageEditPanel.redo.crop";
-//	private static final String				KEY_UNDO_RESIZE = "chav1961.bt.paint.editor.ImageEditPanel.undo.resize";
-//	private static final String				KEY_REDO_RESIZE = "chav1961.bt.paint.editor.ImageEditPanel.redo.resize";
-//	private static final String				KEY_UNDO_ROTATE = "chav1961.bt.paint.editor.ImageEditPanel.undo.rotate";
-//	private static final String				KEY_REDO_ROTATE = "chav1961.bt.paint.editor.ImageEditPanel.redo.rotate";
-//	private static final String				KEY_UNDO_REFLECT = "chav1961.bt.paint.editor.ImageEditPanel.undo.reflect";
-//	private static final String				KEY_REDO_REFLECT = "chav1961.bt.paint.editor.ImageEditPanel.redo.reflect";
-//	private static final String				KEY_UNDO_GRAYSCALE = "chav1961.bt.paint.editor.ImageEditPanel.undo.grayscale";
-//	private static final String				KEY_REDO_GRAYSCALE = "chav1961.bt.paint.editor.ImageEditPanel.redo.grayscale";
-//	private static final String				KEY_UNDO_TRANSPARENCY = "chav1961.bt.paint.editor.ImageEditPanel.undo.transparency";
-//	private static final String				KEY_REDO_TRANSPARENCY = "chav1961.bt.paint.editor.ImageEditPanel.redo.transparency";
-//	private static final String				KEY_UNDO_DRAW_ELLIPSE = "chav1961.bt.paint.editor.ImageEditPanel.undo.draw.ellipse";
-//	private static final String				KEY_REDO_DRAW_ELLIPSE = "chav1961.bt.paint.editor.ImageEditPanel.redo.draw.ellipse";
-//	private static final String				KEY_UNDO_DRAW_LINE = "chav1961.bt.paint.editor.ImageEditPanel.undo.draw.line";
-//	private static final String				KEY_REDO_DRAW_LINE = "chav1961.bt.paint.editor.ImageEditPanel.redo.draw.line";
-//	private static final String				KEY_UNDO_DRAW_PATH = "chav1961.bt.paint.editor.ImageEditPanel.undo.draw.path";
-//	private static final String				KEY_REDO_DRAW_PATH = "chav1961.bt.paint.editor.ImageEditPanel.redo.draw.path";
-//	private static final String				KEY_UNDO_DRAW_RECT = "chav1961.bt.paint.editor.ImageEditPanel.undo.draw.rect";
-//	private static final String				KEY_REDO_DRAW_RECT = "chav1961.bt.paint.editor.ImageEditPanel.redo.draw.rect";
-	
 	static {
 		try(final InputStream				is = ImageEditPanel.class.getResourceAsStream("imageeditpanel.xml")) {
 
@@ -523,14 +502,12 @@ public class ImageEditPanel extends JPanel implements LocalizerOwner, LocaleChan
 	public void crop() throws IOException {
 		if (lastSelection != null) {
 			final Image			current = canvas.getBackgroundImage();
-//			final byte[]		before = ImageUndoEdit.packImage(current);
-//
+
 			removeAnyChild();
 			canvas.getSelectionManager().setSelectionStyle(SelectionStyle.RECTANGLE);
 			canvas.getSelectionManager().enableSelection(true);
 			canvas.getSelectionManager().setVisible(true);
 			canvas.setBackgroundImage(ImageUtils.cropImage((BufferedImage) current, lastSelection, null));
-//			fireUndo(new ImageUndoEdit(KEY_UNDO_CROP, KEY_REDO_CROP, before, ImageUndoEdit.packImage(canvas.getBackgroundImage()), (i)->canvas.setBackgroundImage(i)));
 			lastSelection = null; 
 		}
 	}
@@ -541,11 +518,9 @@ public class ImageEditPanel extends JPanel implements LocalizerOwner, LocaleChan
 		
 			if (ApplicationUtils.ask(air, getLocalizer(), 300, 145)) {
 				final Image			current = canvas.getBackgroundImage();
-//				final byte[]		before = ImageUndoEdit.packImage(current);
-//				
+				
 				removeAnyChild();
 				canvas.setBackgroundImage(ImageUtils.resizeImage((BufferedImage) current, air.width, air.height, canvas.getBackground(), air.stretchContent, air.fromCenter, null));
-//				fireUndo(new ImageUndoEdit(KEY_UNDO_RESIZE, KEY_REDO_RESIZE, before, ImageUndoEdit.packImage(canvas.getBackgroundImage()), (i)->canvas.setBackgroundImage(i)));
 			}
 		} catch (ContentException e) {
 			SwingUtils.getNearestLogger(this).message(Severity.error, e.getLocalizedMessage());
@@ -555,47 +530,38 @@ public class ImageEditPanel extends JPanel implements LocalizerOwner, LocaleChan
 	@OnAction("action:/rotate")
 	public void rotate() throws IOException {
 		final Image			current = canvas.getBackgroundImage();
-//		final byte[]		before = ImageUndoEdit.packImage(current);
 		
 		removeAnyChild();
 		canvas.setBackgroundImage(ImageUtils.rotateImage((BufferedImage) current, false, null));
-//		fireUndo(new ImageUndoEdit(KEY_UNDO_ROTATE, KEY_REDO_ROTATE, before, ImageUndoEdit.packImage(canvas.getBackgroundImage()), (i)->canvas.setBackgroundImage(i)));
 	}
 	
 	@OnAction("action:/reflectVert")
 	public void reflectV() throws IOException {
 		final Image			current = canvas.getBackgroundImage();
-//		final byte[]		before = ImageUndoEdit.packImage(current);
 
 		removeAnyChild();
 		canvas.setBackgroundImage(ImageUtils.mirrorImage((BufferedImage) current, false, null));
-//		fireUndo(new ImageUndoEdit(KEY_UNDO_REFLECT, KEY_REDO_REFLECT, before, ImageUndoEdit.packImage(canvas.getBackgroundImage()), (i)->canvas.setBackgroundImage(i)));
 	}
 	
 	@OnAction("action:/reflectHor")
 	public void reflectH() throws IOException {
 		final Image			current = canvas.getBackgroundImage();
-//		final byte[]		before = ImageUndoEdit.packImage(current);
 		
 		removeAnyChild();
 		canvas.setBackgroundImage(ImageUtils.mirrorImage((BufferedImage) current, true, null));
-//		fireUndo(new ImageUndoEdit(KEY_UNDO_REFLECT, KEY_REDO_REFLECT, before, ImageUndoEdit.packImage(canvas.getBackgroundImage()), (i)->canvas.setBackgroundImage(i)));
 	}
 
 	@OnAction("action:/toGrayScale")
 	public void toGrayScale() throws IOException {
 		final Image			current = canvas.getBackgroundImage();
-//		final byte[]		before = ImageUndoEdit.packImage(current);
 		
 		removeAnyChild();
 		canvas.setBackgroundImage(ImageUtils.grayScaleImage((BufferedImage) current, null));
-//		fireUndo(new ImageUndoEdit(KEY_UNDO_GRAYSCALE, KEY_REDO_GRAYSCALE, before, ImageUndoEdit.packImage(canvas.getBackgroundImage()), (i)->canvas.setBackgroundImage(i)));
 	}
 	
 	@OnAction("action:/transparency")
 	public void makeTransparent() throws IOException {
 		final Image			current = canvas.getBackgroundImage();
-//		final byte[]		before = ImageUndoEdit.packImage(current);
 		
 		removeAnyChild();
 		if (foregroundNow) {
@@ -604,7 +570,6 @@ public class ImageEditPanel extends JPanel implements LocalizerOwner, LocaleChan
 		else {
 			canvas.setBackgroundImage(ImageUtils.transparentImage((BufferedImage) current, canvas.getBackground(), true, null));
 		}
-//		fireUndo(new ImageUndoEdit(KEY_UNDO_TRANSPARENCY, KEY_REDO_TRANSPARENCY, before, ImageUndoEdit.packImage(canvas.getBackgroundImage()), (i)->canvas.setBackgroundImage(i)));
 	}
 	
 	@OnAction("action:/settings.font")
@@ -640,6 +605,12 @@ public class ImageEditPanel extends JPanel implements LocalizerOwner, LocaleChan
 		fillingOn = !fillingOn;
 	}
 
+	public void processFilter(final float[] filter) throws PaintScriptException {
+		final Rectangle		rect = new Rectangle(0, 0, getImage().getImage().getWidth(), getImage().getImage().getHeight()); 
+			
+		ImageUtils.filterImage((BufferedImage)getImage().getImage(), rect, filter, null);
+	}
+	
 	public void setImage(final Image image) {
 		if (image == null) {
 			throw new NullPointerException("Image to set can't be null");
@@ -717,84 +688,75 @@ public class ImageEditPanel extends JPanel implements LocalizerOwner, LocaleChan
     		waitColorExtraction = false;
 		}
 		else {
-//			try {
-				final Image		current = canvas.getBackgroundImage();
-//				final byte[]	before = ImageUndoEdit.packImage(current);
-				
-				switch (getCurrentDrawingMode()) {
-					case BRUSH	:
-						break;
-					case ELLIPSE:
-						if (fillingOn) {
-							ImageUtils.ellipseDraw((BufferedImage)canvas.getBackgroundImage(), (Rectangle)parameters[0], new ColorPair(canvas.getForeground(), canvas.getBackground())
-								, ImageUtils.buildStroke(canvas.getLineThickness(), canvas.getLineStroke(), canvas.getLineCaps(), canvas.getLineJoin()), null);
-						}
-						else {
-							ImageUtils.ellipseDraw((BufferedImage)canvas.getBackgroundImage(), (Rectangle)parameters[0], canvas.getForeground()
-								, ImageUtils.buildStroke(canvas.getLineThickness(), canvas.getLineStroke(), canvas.getLineCaps(), canvas.getLineJoin()), null);
-						}
-						SwingUtilities.invokeLater(()->{
-								canvas.getSelectionManager().setSelectionStyle(SelectionStyle.RECTANGLE);
-								canvas.getSelectionManager().enableSelection(true);
-						});
-//						fireUndo(new ImageUndoEdit(KEY_UNDO_DRAW_ELLIPSE, KEY_REDO_DRAW_ELLIPSE, before, ImageUndoEdit.packImage(canvas.getBackgroundImage()), (i)->canvas.setBackgroundImage(i)));
-						break;
-					case FILL	:
-						break;
-					case LINE	:
-						ImageUtils.lineDraw((BufferedImage)canvas.getBackgroundImage(), start,end, canvas.getForeground()
-								, ImageUtils.buildStroke(canvas.getLineThickness(), canvas.getLineStroke(), canvas.getLineCaps(), canvas.getLineJoin()), null);
-						SwingUtilities.invokeLater(()->{
-								canvas.getSelectionManager().setSelectionStyle(SelectionStyle.LINE);
-								canvas.getSelectionManager().enableSelection(true);
-						});
-//						fireUndo(new ImageUndoEdit(KEY_UNDO_DRAW_LINE, KEY_REDO_DRAW_LINE, before, ImageUndoEdit.packImage(canvas.getBackgroundImage()), (i)->canvas.setBackgroundImage(i)));
-						break;
-					case PEN	:
-						ImageUtils.pathDraw((BufferedImage)canvas.getBackgroundImage(), (GeneralPath)parameters[0], canvas.getForeground()
-								, ImageUtils.buildStroke(canvas.getLineThickness(), canvas.getLineStroke(), canvas.getLineCaps(), canvas.getLineJoin()), null);
-						SwingUtilities.invokeLater(()->{
-								canvas.getSelectionManager().setSelectionStyle(SelectionStyle.PATH);
-								canvas.getSelectionManager().enableSelection(true);
-						});
-//						fireUndo(new ImageUndoEdit(KEY_UNDO_DRAW_PATH, KEY_REDO_DRAW_PATH, before, ImageUndoEdit.packImage(canvas.getBackgroundImage()), (i)->canvas.setBackgroundImage(i)));
-						break;
-					case RECT	:
-						if (fillingOn) {
-							ImageUtils.rectDraw((BufferedImage)canvas.getBackgroundImage(), (Rectangle)parameters[0], new ColorPair(canvas.getForeground(), canvas.getBackground())
-								, ImageUtils.buildStroke(canvas.getLineThickness(), canvas.getLineStroke(), canvas.getLineCaps(), canvas.getLineJoin()), null);
-						}
-						else {
-							ImageUtils.rectDraw((BufferedImage)canvas.getBackgroundImage(), (Rectangle)parameters[0], canvas.getForeground()
-								, ImageUtils.buildStroke(canvas.getLineThickness(), canvas.getLineStroke(), canvas.getLineCaps(), canvas.getLineJoin()), null);
-						}
-						SwingUtilities.invokeLater(()->{
-								canvas.getSelectionManager().setSelectionStyle(SelectionStyle.RECTANGLE);
-								canvas.getSelectionManager().enableSelection(true);
-						});
-//						fireUndo(new ImageUndoEdit(KEY_UNDO_DRAW_RECT, KEY_REDO_DRAW_RECT, before, ImageUndoEdit.packImage(canvas.getBackgroundImage()), (i)->canvas.setBackgroundImage(i)));
-						break;
-					case SELECT	:
-						lastSelection = new Rectangle((Rectangle)parameters[0]);
-						refreshMenuState();
-						break;
-					case TEXT	:
-						this.rta = new ResizableTextArea(canvas.getForeground(), canvas.getFont(), (Rectangle)parameters[0]);
+			final Image		current = canvas.getBackgroundImage();
+			
+			switch (getCurrentDrawingMode()) {
+				case BRUSH	:
+					break;
+				case ELLIPSE:
+					if (fillingOn) {
+						ImageUtils.ellipseDraw((BufferedImage)canvas.getBackgroundImage(), (Rectangle)parameters[0], new ColorPair(canvas.getForeground(), canvas.getBackground())
+							, ImageUtils.buildStroke(canvas.getLineThickness(), canvas.getLineStroke(), canvas.getLineCaps(), canvas.getLineJoin()), null);
+					}
+					else {
+						ImageUtils.ellipseDraw((BufferedImage)canvas.getBackgroundImage(), (Rectangle)parameters[0], canvas.getForeground()
+							, ImageUtils.buildStroke(canvas.getLineThickness(), canvas.getLineStroke(), canvas.getLineCaps(), canvas.getLineJoin()), null);
+					}
+					SwingUtilities.invokeLater(()->{
+							canvas.getSelectionManager().setSelectionStyle(SelectionStyle.RECTANGLE);
+							canvas.getSelectionManager().enableSelection(true);
+					});
+					break;
+				case FILL	:
+					break;
+				case LINE	:
+					ImageUtils.lineDraw((BufferedImage)canvas.getBackgroundImage(), start,end, canvas.getForeground()
+							, ImageUtils.buildStroke(canvas.getLineThickness(), canvas.getLineStroke(), canvas.getLineCaps(), canvas.getLineJoin()), null);
+					SwingUtilities.invokeLater(()->{
+							canvas.getSelectionManager().setSelectionStyle(SelectionStyle.LINE);
+							canvas.getSelectionManager().enableSelection(true);
+					});
+					break;
+				case PEN	:
+					ImageUtils.pathDraw((BufferedImage)canvas.getBackgroundImage(), (GeneralPath)parameters[0], canvas.getForeground()
+							, ImageUtils.buildStroke(canvas.getLineThickness(), canvas.getLineStroke(), canvas.getLineCaps(), canvas.getLineJoin()), null);
+					SwingUtilities.invokeLater(()->{
+							canvas.getSelectionManager().setSelectionStyle(SelectionStyle.PATH);
+							canvas.getSelectionManager().enableSelection(true);
+					});
+					break;
+				case RECT	:
+					if (fillingOn) {
+						ImageUtils.rectDraw((BufferedImage)canvas.getBackgroundImage(), (Rectangle)parameters[0], new ColorPair(canvas.getForeground(), canvas.getBackground())
+							, ImageUtils.buildStroke(canvas.getLineThickness(), canvas.getLineStroke(), canvas.getLineCaps(), canvas.getLineJoin()), null);
+					}
+					else {
+						ImageUtils.rectDraw((BufferedImage)canvas.getBackgroundImage(), (Rectangle)parameters[0], canvas.getForeground()
+							, ImageUtils.buildStroke(canvas.getLineThickness(), canvas.getLineStroke(), canvas.getLineCaps(), canvas.getLineJoin()), null);
+					}
+					SwingUtilities.invokeLater(()->{
+							canvas.getSelectionManager().setSelectionStyle(SelectionStyle.RECTANGLE);
+							canvas.getSelectionManager().enableSelection(true);
+					});
+					break;
+				case SELECT	:
+					lastSelection = new Rectangle((Rectangle)parameters[0]);
+					refreshMenuState();
+					break;
+				case TEXT	:
+					this.rta = new ResizableTextArea(canvas.getForeground(), canvas.getFont(), (Rectangle)parameters[0]);
 
-						canvas.add(rta);
-						SwingUtilities.invokeLater(()->{
-								canvas.getSelectionManager().setSelectionStyle(SelectionStyle.RECTANGLE);
-								canvas.getSelectionManager().enableSelection(true);
-						});
-						break;
-					case UNKNOWN:
-						break;
-					default:
-						break;
-				}
-//			} catch (IOException exc) {
-//				SwingUtils.getNearestLogger(this).message(Severity.error, exc, exc.getLocalizedMessage());
-//			}
+					canvas.add(rta);
+					SwingUtilities.invokeLater(()->{
+							canvas.getSelectionManager().setSelectionStyle(SelectionStyle.RECTANGLE);
+							canvas.getSelectionManager().enableSelection(true);
+					});
+					break;
+				case UNKNOWN:
+					break;
+				default:
+					break;
+			}
 		}
 	}
 	
@@ -1017,4 +979,5 @@ public class ImageEditPanel extends JPanel implements LocalizerOwner, LocaleChan
 	
 	private void fillLocalizedStrings() {
 	}
+
 }

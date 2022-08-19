@@ -22,6 +22,17 @@
 			<app:item name="menu.main.edit.copy" caption="menu.main.edit.copy" tooltip="menu.main.edit.copy.tt" action="copy"/>
 			<app:item name="menu.main.edit.paste" caption="menu.main.edit.paste" tooltip="menu.main.edit.paste.tt" action="paste"/>
 			<app:separator/>
+			<app:submenu name="menu.main.edit.filters" caption="menu.main.edit.filters" tooltip="menu.main.edit.filters.tt">
+				<app:item name="menu.main.edit.filters.rangeX" caption="menu.main.edit.filters.rangeX" tooltip="menu.main.edit.filters.rangeX.tt" action="filters?matrix=0,0,0,0,0,0,0,0,0"/>
+				<app:item name="menu.main.edit.filters.rangeY" caption="menu.main.edit.filters.rangeY" tooltip="menu.main.edit.filters.rangeY.tt" action="filters?matrix=0,0,0,0,0,0,0,0,0"/>
+				<app:item name="menu.main.edit.filters.range" caption="menu.main.edit.filters.range" tooltip="menu.main.edit.filters.range.tt" action="filters?matrix=0,0,0,0,0,0,0,0,0"/>
+				<app:item name="menu.main.edit.filters.sharp" caption="menu.main.edit.filters.sharp" tooltip="menu.main.edit.filters.sharp.tt" action="filters?matrix=0,0,0,0,0,0,0,0,0"/>
+				<app:item name="menu.main.edit.filters.smooth" caption="menu.main.edit.filters.smooth" tooltip="menu.main.edit.filters.smooth.tt" action="filters?matrix=0,0,0,0,0,0,0,0,0"/>
+				<app:item name="menu.main.edit.filters.smoothGaussian" caption="menu.main.edit.filters.smoothGaussian" tooltip="menu.main.edit.filters.smoothGaussian.tt" action="filters?matrix=0,0,0,0,0,0,0,0,0"/>
+				<app:separator/>
+				<app:item name="menu.main.edit.filters.custom" caption="menu.main.edit.filters.custom" tooltip="menu.main.edit.filters.custom.tt" action="customfilters"/>
+			</app:submenu>
+			<app:separator/>
 			<app:item name="menu.main.edit.find" caption="menu.main.edit.find" tooltip="menu.main.edit.find.tt" action="find"/>
 			<app:item name="menu.main.edit.replace" caption="menu.main.edit.replace" tooltip="menu.main.edit.replace.tt" action="replace"/>
 		</app:submenu>

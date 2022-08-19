@@ -118,6 +118,17 @@ public class ImageUtilsTest {
 	}
 
 	@Test
+	public void filterImageTest() {	
+		// Fill 100x100 with BLACK, fill 50x50 at center with WHITE, filter it with half-alpha filter and test 50x50 at center with GRAY 
+		final BufferedImage	bi = createImage(100,100,Color.BLACK);
+		final Rectangle		rect = new Rectangle(25,25,50,50); 
+		
+		fill(bi, rect, Color.WHITE);
+		Assert.assertTrue(compareImageContent((BufferedImage) cutImage((BufferedImage)ImageUtils.filterImage(bi, rect, new float[] {0, 0, 0, 0, 0.5f, 0, 0, 0, 0}, null), rect), Color.GRAY));
+	}
+	
+	
+	@Test
 	public void conversionImageTest() {	
 	}
 	
