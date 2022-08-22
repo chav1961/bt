@@ -609,6 +609,7 @@ public class ImageEditPanel extends JPanel implements LocalizerOwner, LocaleChan
 		final Rectangle		rect = new Rectangle(0, 0, getImage().getImage().getWidth(), getImage().getImage().getHeight()); 
 			
 		ImageUtils.filterImage((BufferedImage)getImage().getImage(), rect, filter, null);
+		refreshContent();
 	}
 	
 	public void setImage(final Image image) {
