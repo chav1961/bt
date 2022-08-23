@@ -2,7 +2,13 @@ package chav1961.bt.paint.dialogs;
 
 import javax.swing.JTable;
 import javax.swing.table.DefaultTableModel;
+import javax.swing.table.TableCellRenderer;
 import javax.swing.table.TableModel;
+
+import chav1961.bt.paint.interfaces.PaintScriptException;
+import chav1961.purelib.basic.exceptions.EnvironmentException;
+import chav1961.purelib.model.FieldFormat;
+import chav1961.purelib.ui.swing.SwingUtils;
 
 public class FilterMatrixTable extends JTable {
 	private static final long 	serialVersionUID = 1L;
@@ -11,7 +17,7 @@ public class FilterMatrixTable extends JTable {
 	private final float[][]		content;
 	private final TableModel	model;
 	
-	public FilterMatrixTable(final int size) {
+	public FilterMatrixTable(final int size) throws PaintScriptException {
 		if (size < 0 || size % 2 == 0) {
 			throw new IllegalArgumentException("Size ["+size+"] must be positive odd");
 		}
@@ -19,6 +25,10 @@ public class FilterMatrixTable extends JTable {
 			this.size = size;
 			this.content = new float[size][size];
 			this.model = new FloatTableModel(content);
+			try{this.setDefaultRenderer(Float.class, SwingUtils.getCellRenderer(Float.class, new FieldFormat(Float.class, "10.4s"), TableCellRenderer.class));
+			} catch (EnvironmentException  exc) {
+				throw new PaintScriptException(exc); 
+			}
 			setModel(model);
 		}
 	}

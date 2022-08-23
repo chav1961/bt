@@ -470,7 +470,7 @@ public class Application extends JFrame implements NodeMetadataOwner, LocaleChan
 			final float[]	floatItems = new float[items.length];
 			
 			for (int index = 0; index < floatItems.length; index++) {
-				floatItems[index] = Float.valueOf(items[index]);
+				floatItems[index] = Float.valueOf(items[index].trim());
 			}
 			processFilter(floatItems);
 		}
@@ -480,7 +480,7 @@ public class Application extends JFrame implements NodeMetadataOwner, LocaleChan
 	}	
 	
 	@OnAction("action:/customfilters")
-    public void customFilters() {
+    public void customFilters() throws PaintScriptException {
 		final FilterMatrixTable	fmt = new FilterMatrixTable(3);
 		
 		fmt.setPreferredSize(new Dimension(300, 60));
