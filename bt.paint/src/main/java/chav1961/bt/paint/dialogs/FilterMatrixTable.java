@@ -2,6 +2,7 @@ package chav1961.bt.paint.dialogs;
 
 import javax.swing.JTable;
 import javax.swing.table.DefaultTableModel;
+import javax.swing.table.TableCellEditor;
 import javax.swing.table.TableCellRenderer;
 import javax.swing.table.TableModel;
 
@@ -25,7 +26,9 @@ public class FilterMatrixTable extends JTable {
 			this.size = size;
 			this.content = new float[size][size];
 			this.model = new FloatTableModel(content);
-			try{this.setDefaultRenderer(Float.class, SwingUtils.getCellRenderer(Float.class, new FieldFormat(Float.class, "10.4s"), TableCellRenderer.class));
+			
+			try{this.setDefaultRenderer(Float.class, SwingUtils.getCellRenderer(Float.class, new FieldFormat(Float.class, "10.4ms"), TableCellRenderer.class));
+				this.setDefaultEditor(Float.class, SwingUtils.getCellEditor(Float.class, new FieldFormat(Float.class, "10.4ms"), TableCellEditor.class));
 			} catch (EnvironmentException  exc) {
 				throw new PaintScriptException(exc); 
 			}
@@ -86,7 +89,15 @@ public class FilterMatrixTable extends JTable {
 
 		@Override
 		public void setValueAt(Object aValue, int rowIndex, int columnIndex) {
-			content[rowIndex][columnIndex] = ((Number)aValue).floatValue();
+			if (aValue instanceof Number) {
+				content[rowIndex][columnIndex] = ((Number)aValue).floatValue();
+			}
+			else if (aValue instanceof String) {
+				content[rowIndex][columnIndex] = Float.valueOf(aValue.toString()).floatValue();
+			}
+			else {
+				throw new UnsupportedOperationException(); 
+			}
 			fireTableCellUpdated(rowIndex, columnIndex);
 		}
 	}
