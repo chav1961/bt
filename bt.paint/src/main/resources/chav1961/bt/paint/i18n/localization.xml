@@ -19,7 +19,8 @@
 		<key name="chav1961.bt.paint.Application.message.image.stored">Image stored to %1$s</key>
 		<key name="chav1961.bt.paint.Application.endbatch.title">Batch processing completed</key>
 		<key name="chav1961.bt.paint.Application.endbatch.content">All files in the batch are processed. Quit from application?</key>
-		<key name="chav1961.bt.paint.Application.customfilter.typeItems">Type items for custom filter</key>		
+		<key name="chav1961.bt.paint.Application.customfilter.typeItems">Type items for custom filter</key>
+		<key name="chav1961.bt.paint.Application.player.enterSubstitutions">Type substitution values for variables</key>
 		<key name="chav1961.bt.paint.Application.help.title">About...</key>
 		<key name="chav1961.bt.paint.Application.help.content">uri(aboutApplication.cre)</key>
 
@@ -308,6 +309,10 @@
 		<key name="asksettings.plugindir.tt">Folder with plugins</key>
 		<key name="asksettings.imagesdir">Default image folder</key>
 		<key name="asksettings.imagesdir.tt">Default image folder</key>
+
+<!-- SubstitutionTable class localization -->
+		<key name="chav1961.bt.paint.dialogs.SubstitutionTable.key">Name</key>
+		<key name="chav1961.bt.paint.dialogs.SubstitutionTable.value">Value</key>
 		 
 	</lang>
 	<lang name="ru">
@@ -330,6 +335,7 @@
 		<key name="chav1961.bt.paint.Application.endbatch.title">Пакетная обработка завершен</key>
 		<key name="chav1961.bt.paint.Application.endbatch.content">Все файлы из пакета обработаны. Завершить работу приложения?</key>
 		<key name="chav1961.bt.paint.Application.customfilter.typeItems">Введите значения пользовательского фильтра</key>		
+		<key name="chav1961.bt.paint.Application.player.enterSubstitutions">Введите значения подстановочных переменных</key>
 		<key name="chav1961.bt.paint.Application.help.title">О программе</key>
 		<key name="chav1961.bt.paint.Application.help.content">uri(aboutApplication.cre)</key>
 		
@@ -618,6 +624,10 @@
 		<key name="asksettings.plugindir.tt">Папка с подсоединяемыми дополнениями</key>
 		<key name="asksettings.imagesdir">Папка для картинок по умолчанию</key>
 		<key name="asksettings.imagesdir.tt">Папка, где в первую очередб юудут искаться картинки</key>
+		
+<!-- Локализация класса SubstitutionTable -->
+		<key name="chav1961.bt.paint.dialogs.SubstitutionTable.key">Переменная</key>
+		<key name="chav1961.bt.paint.dialogs.SubstitutionTable.value">Значение</key>
 		
 	</lang>
 </localization>

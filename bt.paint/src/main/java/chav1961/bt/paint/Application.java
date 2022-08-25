@@ -47,6 +47,7 @@ import chav1961.bt.paint.control.Predefines;
 import chav1961.bt.paint.dialogs.AskImageSize;
 import chav1961.bt.paint.dialogs.AskSettings;
 import chav1961.bt.paint.dialogs.FilterMatrixTable;
+import chav1961.bt.paint.dialogs.SubstitutionTable;
 import chav1961.bt.paint.interfaces.PaintScriptException;
 import chav1961.bt.paint.script.CanvasWrapperImpl;
 import chav1961.bt.paint.script.ImageWrapperImpl;
@@ -60,6 +61,7 @@ import chav1961.bt.paint.script.intern.DebuggerPanel;
 import chav1961.bt.paint.script.intern.runtime.ScriptUtils;
 import chav1961.bt.paint.utils.ApplicationUtils;
 import chav1961.purelib.basic.ArgParser;
+import chav1961.purelib.basic.CharUtils;
 import chav1961.purelib.basic.PureLibSettings;
 import chav1961.purelib.basic.SubstitutableProperties;
 import chav1961.purelib.basic.Utils;
@@ -121,6 +123,7 @@ public class Application extends JFrame implements NodeMetadataOwner, LocaleChan
 	private static final String		KEY_APPLICATION_END_BATCH_TITLE = "chav1961.bt.paint.Application.endbatch.title";
 	private static final String		KEY_APPLICATION_END_BATCH_CONTENT = "chav1961.bt.paint.Application.endbatch.content";
 	private static final String		KEY_APPLICATION_CUSTOM_FILTER_TYPE_ITEMS = "chav1961.bt.paint.Application.customfilter.typeItems";
+	private static final String		KEY_APPLICATION_PLAYER_ENTER_SUBSTITUTIONS = "chav1961.bt.paint.Application.player.enterSubstitutions";
 
 	private static final String		KEY_UNDO_FILTER = "chav1961.bt.paint.editor.ImageEditPanel.undo.filter";
 	private static final String		KEY_REDO_FILTER = "chav1961.bt.paint.editor.ImageEditPanel.redo.filter";
@@ -538,7 +541,7 @@ public class Application extends JFrame implements NodeMetadataOwner, LocaleChan
 			if (scriptManipulator.openFile()) {
 				processScript(scriptManipulator.file, scriptManipulator.sb.toString());
 			}
-		} catch (IOException exc) {
+		} catch (IOException | PaintScriptException exc) {
 			getLogger().message(Severity.error, exc, exc.getLocalizedMessage());
 		}
 	}	
@@ -547,7 +550,7 @@ public class Application extends JFrame implements NodeMetadataOwner, LocaleChan
 		try{if (scriptManipulator.openLRUFile(file)) {
 				processScript(scriptManipulator.file, scriptManipulator.sb.toString());
 			}
-		} catch (IOException exc) {
+		} catch (IOException | PaintScriptException exc) {
 			getLogger().message(Severity.error, exc, exc.getLocalizedMessage());
 		}
 	}	
@@ -811,7 +814,7 @@ public class Application extends JFrame implements NodeMetadataOwner, LocaleChan
 		}
 	}
 
-	private void processScript(final String fileName, final String script) {
+	private void processScript(final String fileName, final String script) throws PaintScriptException {
 		if (fileName.endsWith(".cmd")) {
 			processConsoleScript(script);
 		}
@@ -823,11 +826,28 @@ public class Application extends JFrame implements NodeMetadataOwner, LocaleChan
 		}
 	}
 	
-	private void processConsoleScript(final String script) {
+	private void processConsoleScript(final String script) throws PaintScriptException {
+		final SubstitutableProperties	props = new SubstitutableProperties();
+		
+		if (script.contains("${")) {	// Extract all keys if exist
+			CharUtils.substitute("", script, (k)->{props.setProperty(k, ""); return "";});
+			
+			final SubstitutionTable		table = new SubstitutionTable(localizer, props);
+			
+			table.setPreferredSize(new Dimension(300, 60));
+			table.requestFocusInWindow();
+			switch (new JLocalizedOptionPane(localizer).confirm(this, table, KEY_APPLICATION_PLAYER_ENTER_SUBSTITUTIONS, JOptionPane.PLAIN_MESSAGE, JOptionPane.OK_CANCEL_OPTION)) {
+				case JOptionPane.OK_OPTION :
+					break;
+				default :
+					return;
+			}		
+		}
+		
 		final Thread	t = new Thread(()->{
 							for (String item : script.split("\n")) {
 								try{
-									predef.getPredefined(Predefines.PREDEF_SYSTEM, SystemWrapper.class).console(item, predef);
+									predef.getPredefined(Predefines.PREDEF_SYSTEM, SystemWrapper.class).console(CharUtils.substitute("script", item, (k)->props.getProperty(k)), predef);
 								} catch (PaintScriptException | SyntaxException exc) {
 									getLogger().message(Severity.error, exc, exc.getLocalizedMessage());
 								}

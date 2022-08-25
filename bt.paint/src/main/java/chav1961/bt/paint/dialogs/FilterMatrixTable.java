@@ -1,5 +1,6 @@
 package chav1961.bt.paint.dialogs;
 
+
 import javax.swing.JTable;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableCellEditor;
