@@ -12,14 +12,14 @@ import chav1961.purelib.basic.exceptions.EnvironmentException;
 import chav1961.purelib.model.FieldFormat;
 import chav1961.purelib.ui.swing.SwingUtils;
 
-public class FilterMatrixTable extends JTable {
+public class AskFilterMatrixTable extends JTable {
 	private static final long 	serialVersionUID = 1L;
 	
 	private final int			size;
 	private final float[][]		content;
 	private final TableModel	model;
 	
-	public FilterMatrixTable(final int size) throws PaintScriptException {
+	public AskFilterMatrixTable(final int size) throws PaintScriptException {
 		if (size < 0 || size % 2 == 0) {
 			throw new IllegalArgumentException("Size ["+size+"] must be positive odd");
 		}

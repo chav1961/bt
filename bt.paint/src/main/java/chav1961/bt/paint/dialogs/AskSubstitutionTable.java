@@ -14,7 +14,7 @@ import chav1961.purelib.basic.exceptions.EnvironmentException;
 import chav1961.purelib.i18n.interfaces.Localizer;
 import chav1961.purelib.ui.swing.SwingUtils;
 
-public class SubstitutionTable extends JTable {
+public class AskSubstitutionTable extends JTable {
 	private static final long 		serialVersionUID = 1L;
 	
 	private static final String		KEY_TABLE_KEY = "chav1961.bt.paint.dialogs.SubstitutionTable.key";
@@ -24,7 +24,7 @@ public class SubstitutionTable extends JTable {
 	private final SubstitutableProperties	props;
 	private final TableModel				model;
 	
-	public SubstitutionTable(final Localizer localizer, final SubstitutableProperties props) throws PaintScriptException {
+	public AskSubstitutionTable(final Localizer localizer, final SubstitutableProperties props) throws PaintScriptException {
 		if (localizer == null) {
 			throw new NullPointerException("Localizer can't be null");
 		}

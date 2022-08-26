@@ -310,9 +310,39 @@
 		<key name="asksettings.imagesdir">Default image folder</key>
 		<key name="asksettings.imagesdir.tt">Default image folder</key>
 
-<!-- SubstitutionTable class localization -->
+<!-- AskSubstitutionTable class localization -->
 		<key name="chav1961.bt.paint.dialogs.SubstitutionTable.key">Name</key>
 		<key name="chav1961.bt.paint.dialogs.SubstitutionTable.value">Value</key>
+		 
+<!-- AskFind class localization -->
+		<key name="askfind.title">Find</key>
+		<key name="askfind.title.tt">Find image</key>
+		<key name="askfind.title.help">Find image</key>
+		<key name="askfind.image">Fragment</key>
+		<key name="askfind.image.tt">Fragment to find</key>
+		<key name="askfind.scaled">Scalable</key>
+		<key name="askfind.scaled.tt">Consider the difference in scale</key>
+		<key name="askfind.rotated">Rotatable</key>
+		<key name="askfind.rotated.tt">Consider a small turn (up to 10 degrees)</key>
+
+<!-- AskFindAndReplace class localization -->
+		<key name="askfindandreplace.title">Find &amp; replace</key>
+		<key name="askfindandreplace.title.tt">Find and replace image</key>
+		<key name="askfindandreplace.title.help">Find and replace image</key>
+		<key name="askfindandreplace.image">Fragment</key>
+		<key name="askfindandreplace.image.tt">Fragment to find</key>
+		<key name="askfindandreplace.scaled">Scalable</key>
+		<key name="askfindandreplace.scaled.tt">Consider the difference in scale</key>
+		<key name="askfindandreplace.rotated">Rotatable</key>
+		<key name="askfindandreplace.rotated.tt">Consider a small turn (up to 10 degrees)</key>
+		<key name="askfindandreplace.replacedimage">Replace to...</key>
+		<key name="askfindandreplace.replacedimage.tt">Image for replacing</key>
+		<key name="askfindandreplace.fit">Fit into found</key>
+		<key name="askfindandreplace.fit.tt">Find image to replace into ranges found</key>
+		<key name="askfindandreplace.proportional">Proportional</key>
+		<key name="askfindandreplace.proportional.tt">Keep proportions on fit</key>
+		<key name="askfindandreplace.replaceAll">Replace all</key>
+		<key name="askfindandreplace.replaceAll.tt">Replace all occurences</key>
 		 
 	</lang>
 	<lang name="ru">
@@ -625,9 +655,39 @@
 		<key name="asksettings.imagesdir">Папка для картинок по умолчанию</key>
 		<key name="asksettings.imagesdir.tt">Папка, где в первую очередб юудут искаться картинки</key>
 		
-<!-- Локализация класса SubstitutionTable -->
+<!-- Локализация класса AskSubstitutionTable -->
 		<key name="chav1961.bt.paint.dialogs.SubstitutionTable.key">Переменная</key>
 		<key name="chav1961.bt.paint.dialogs.SubstitutionTable.value">Значение</key>
 		
+<!-- Локализация класса AskFind -->
+		<key name="askfind.title">Поиск</key>
+		<key name="askfind.title.tt">Поиск изображения</key>
+		<key name="askfind.title.help">Поиск изображения</key>
+		<key name="askfind.image">Фрагмент</key>
+		<key name="askfind.image.tt">Искомый фрагмент</key>
+		<key name="askfind.scaled">Масштабирование</key>
+		<key name="askfind.scaled.tt">Учитывать возможную разницу масштабов</key>
+		<key name="askfind.rotated">Поворот</key>
+		<key name="askfind.rotated.tt">Учитывать возможный небольшой поворот (в пределах 10 градусов)</key>
+		
+<!-- Локализация класса AskFindAndReplace -->
+		<key name="askfindandreplace.title">Поиск и замена</key>
+		<key name="askfindandreplace.title.tt">Поиск и замена изображения</key>
+		<key name="askfindandreplace.title.help">Поиск и замена изображения</key>
+		<key name="askfindandreplace.image">Фрагмент</key>
+		<key name="askfindandreplace.image.tt">Искомый фрагмент</key>
+		<key name="askfindandreplace.scaled">Масштабирование</key>
+		<key name="askfindandreplace.scaled.tt">Учитывать возможную разницу масштабов</key>
+		<key name="askfindandreplace.rotated">Поворот</key>
+		<key name="askfindandreplace.rotated.tt">Учитывать возможный небольшой поворот (в пределах 10 градусов)</key>
+		<key name="askfindandreplace.replacedimage">Заменить на...</key>
+		<key name="askfindandreplace.replacedimage.tt">Изображение для замены</key>
+		<key name="askfindandreplace.fit">Вписать в найденное</key>
+		<key name="askfindandreplace.fit.tt">При замене вписать изображение в границы найденного</key>
+		<key name="askfindandreplace.proportional">Пропорционально</key>
+		<key name="askfindandreplace.proportional.tt">При вписывании сохранять пропорции изображения</key>
+		<key name="askfindandreplace.replaceAll">Заменить все</key>
+		<key name="askfindandreplace.replaceAll.tt">Заменить все найденные фрагменты</key>
+
 	</lang>
 </localization>

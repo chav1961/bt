@@ -46,8 +46,10 @@ import chav1961.bt.paint.control.ImageUtils.ProcessType;
 import chav1961.bt.paint.control.Predefines;
 import chav1961.bt.paint.dialogs.AskImageSize;
 import chav1961.bt.paint.dialogs.AskSettings;
-import chav1961.bt.paint.dialogs.FilterMatrixTable;
-import chav1961.bt.paint.dialogs.SubstitutionTable;
+import chav1961.bt.paint.dialogs.AskFilterMatrixTable;
+import chav1961.bt.paint.dialogs.AskFind;
+import chav1961.bt.paint.dialogs.AskFindAndReplace;
+import chav1961.bt.paint.dialogs.AskSubstitutionTable;
 import chav1961.bt.paint.interfaces.PaintScriptException;
 import chav1961.bt.paint.script.CanvasWrapperImpl;
 import chav1961.bt.paint.script.ImageWrapperImpl;
@@ -484,7 +486,7 @@ public class Application extends JFrame implements NodeMetadataOwner, LocaleChan
 	
 	@OnAction("action:/customfilters")
     public void customFilters() throws PaintScriptException {
-		final FilterMatrixTable	fmt = new FilterMatrixTable(3);
+		final AskFilterMatrixTable	fmt = new AskFilterMatrixTable(3);
 		
 		fmt.setPreferredSize(new Dimension(300, 60));
 		fmt.requestFocusInWindow();
@@ -499,10 +501,26 @@ public class Application extends JFrame implements NodeMetadataOwner, LocaleChan
 	
 	@OnAction("action:/find")
     public void find() {
+		final AskFind	af = new AskFind(getLogger());
+		
+		try{if (ApplicationUtils.ask(af, getLocalizer(), 300, 300)) {
+				// TODO
+			}
+		} catch (ContentException exc) {
+			SwingUtils.getNearestLogger(this).message(Severity.error, exc, exc.getLocalizedMessage());
+		}
 	}	
 	
 	@OnAction("action:/replace")
     public void replace() {
+		final AskFindAndReplace	af = new AskFindAndReplace(getLogger());
+		
+		try{if (ApplicationUtils.ask(af, getLocalizer(), 300, 500)) {
+				// TODO
+			}
+		} catch (ContentException exc) {
+			SwingUtils.getNearestLogger(this).message(Severity.error, exc, exc.getLocalizedMessage());
+		}
 	}
 
 	@OnAction("action:/player.recording")
@@ -832,7 +850,7 @@ public class Application extends JFrame implements NodeMetadataOwner, LocaleChan
 		if (script.contains("${")) {	// Extract all keys if exist
 			CharUtils.substitute("", script, (k)->{props.setProperty(k, ""); return "";});
 			
-			final SubstitutionTable		table = new SubstitutionTable(localizer, props);
+			final AskSubstitutionTable		table = new AskSubstitutionTable(localizer, props);
 			
 			table.setPreferredSize(new Dimension(300, 60));
 			table.requestFocusInWindow();
