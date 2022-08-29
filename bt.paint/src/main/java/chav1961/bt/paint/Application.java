@@ -1,6 +1,7 @@
 package chav1961.bt.paint;
 
 import java.awt.BorderLayout;
+import java.awt.Desktop;
 import java.awt.Dimension;
 import java.awt.Image;
 import java.awt.Rectangle;
@@ -87,6 +88,7 @@ import chav1961.purelib.i18n.interfaces.SupportedLanguages;
 import chav1961.purelib.model.ContentModelFactory;
 import chav1961.purelib.model.interfaces.ContentMetadataInterface;
 import chav1961.purelib.model.interfaces.ContentMetadataInterface.ContentNodeMetadata;
+import chav1961.purelib.nanoservice.NanoServiceFactory;
 import chav1961.purelib.model.interfaces.NodeMetadataOwner;
 import chav1961.purelib.ui.interfaces.LRUPersistence;
 import chav1961.purelib.ui.swing.SwingUtils;
@@ -150,6 +152,7 @@ public class Application extends JFrame implements NodeMetadataOwner, LocaleChan
 	private final ScriptManipulator			scriptManipulator;
 	private final Settings					settings = new Settings(new File("./.bt.paint"));
 
+	private int								helpPort = 0;
 	private volatile Exchanger<Object>		batchSource = null;
 	private volatile JMenuBar				menuBar;
 	private String							lastFile = null;
@@ -196,7 +199,7 @@ public class Application extends JFrame implements NodeMetadataOwner, LocaleChan
 			}
 	        
 	        this.panel = new ImageEditPanel(localizer);
-	        this.state = new JStateString(localizer);
+	        this.state = new JStateString(localizer, 100);
 
 			this.imageManipulator = new ImageManipulator(this.state, this.fsi, this.localizer
 								,()->{return new InputStream() {@Override public int read() throws IOException {return -1;}};}
@@ -279,6 +282,15 @@ public class Application extends JFrame implements NodeMetadataOwner, LocaleChan
 		return xda.getRoot();
 	}
 
+	public int getHelpPort() {
+		return helpPort;
+	}
+	
+	public void setHelpPort(final int helpPort) {
+		this.helpPort = helpPort;
+	}
+	
+	
 	@OnAction("action:/newImage")
     public void newImage() {
 		try{if (imageManipulator.newFile()) {
@@ -611,11 +623,21 @@ public class Application extends JFrame implements NodeMetadataOwner, LocaleChan
 
 	@OnAction("action:/overview")
 	public void overview() {
+		if (Desktop.isDesktopSupported()) {
+			try{Desktop.getDesktop().browse(URI.create("http://localhost:"+getHelpPort()+"/static/index.cre"));
+			} catch (IOException exc) {
+				exc.printStackTrace();
+			}
+		}
 	}
 	
 	@OnAction("action:/about")
 	public void about() {
 		SwingUtils.showAboutScreen(this, localizer, KEY_APPLICATION_HELP_TITLE, KEY_APPLICATION_HELP_CONTENT, URI.create("root://chav1961.bt.paint.Application/chav1961/bt/paint/avatar.jpg"), new Dimension(640, 400));
+	}
+
+	private Settings getSettings() {
+		return settings;
 	}
 	
 	private void processUndoEvents(final UndoableEditEvent e) {
@@ -865,7 +887,8 @@ public class Application extends JFrame implements NodeMetadataOwner, LocaleChan
 		final Thread	t = new Thread(()->{
 							for (String item : script.split("\n")) {
 								try{
-									predef.getPredefined(Predefines.PREDEF_SYSTEM, SystemWrapper.class).console(CharUtils.substitute("script", item, (k)->props.getProperty(k)), predef);
+									getLogger().message(Severity.info, item); 
+									getLogger().message(Severity.info, predef.getPredefined(Predefines.PREDEF_SYSTEM, SystemWrapper.class).console(CharUtils.substitute("script", item, (k)->props.getProperty(k)), predef));
 								} catch (PaintScriptException | SyntaxException exc) {
 									getLogger().message(Severity.error, exc, exc.getLocalizedMessage());
 								}
@@ -1119,9 +1142,16 @@ public class Application extends JFrame implements NodeMetadataOwner, LocaleChan
 	private static void startGUI(final ApplicationMode mode, final ContentMetadataInterface xda, final Localizer localizer, final Predefines predef) throws InterruptedException, IOException, PaintScriptException {
 		final CountDownLatch	latch = new CountDownLatch(1);
 		
-		try(final Application	app = new Application(mode, xda, localizer, predef, latch)) {
+		try(final Application			app = new Application(mode, xda, localizer, predef, latch);
+			final NanoServiceFactory	service = new NanoServiceFactory(PureLibSettings.SYSTEM_ERR_LOGGER, app.getSettings().getProps())) {
+
+			service.start();
+			app.setHelpPort(service.getServerAddress().getPort());
 			app.setVisible(true);
 			latch.await();
+			service.stop();
+		} catch (ContentException exc) {
+			throw new PaintScriptException(exc);
 		}
 	}
 	
@@ -1132,6 +1162,7 @@ public class Application extends JFrame implements NodeMetadataOwner, LocaleChan
 			new BooleanArg(ARG_RECURSION_FLAG, false, "Process input mask recursively, if types", false),
 			new BooleanArg(ARG_GUI_FLAG, false, "Start GUI after processing. If any arguments are missing, starts GUI automatically", false),
 			new FileArg(ARG_PROPFILE_LOCATION, false, "Property file location", "./.bt.paint.properties"),
+			new IntegerArg(NanoServiceFactory.NANOSERVICE_PORT, false, "Process input mask recursively, if types", 0),
 		};
 		
 		private ApplicationArgParser() {
@@ -1146,6 +1177,11 @@ public class Application extends JFrame implements NodeMetadataOwner, LocaleChan
 		private Settings(final File config) throws IOException {
 			this.file = config;
 			this.props = new SubstitutableProperties();
+			
+			props.setProperty(NanoServiceFactory.NANOSERVICE_PORT, "0");
+			props.setProperty(NanoServiceFactory.NANOSERVICE_ROOT, FileSystemInterface.FILESYSTEM_URI_SCHEME+":xmlReadOnly:root://"+Application.class.getCanonicalName()+"/chav1961/bt/paint/helptree.xml");
+			props.setProperty(NanoServiceFactory.NANOSERVICE_CREOLE_PROLOGUE_URI, Application.class.getResource("prolog.cre").toString()); 
+			props.setProperty(NanoServiceFactory.NANOSERVICE_CREOLE_EPILOGUE_URI, Application.class.getResource("epilog.cre").toString());
 			
 			if (config.exists() && config.isFile() && config.canRead()) {
 				try(final InputStream	is = new FileInputStream(config)) {

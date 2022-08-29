@@ -23,12 +23,18 @@
 			<app:item name="menu.main.edit.paste" caption="menu.main.edit.paste" tooltip="menu.main.edit.paste.tt" action="paste"/>
 			<app:separator/>
 			<app:submenu name="menu.main.edit.filters" caption="menu.main.edit.filters" tooltip="menu.main.edit.filters.tt">
-				<app:item name="menu.main.edit.filters.rangeX" caption="menu.main.edit.filters.rangeX" tooltip="menu.main.edit.filters.rangeX.tt" action="filters?matrix=-1,-2,-1,0,0,0,1,2,1"/>
-				<app:item name="menu.main.edit.filters.rangeY" caption="menu.main.edit.filters.rangeY" tooltip="menu.main.edit.filters.rangeY.tt" action="filters?matrix=-1,0,1,2,0,2,-1,0,1"/>
+				<app:submenu name="menu.main.edit.filters.sobel" caption="menu.main.edit.filters.sobel" tooltip="menu.main.edit.filters.sobel.tt">
+					<app:item name="menu.main.edit.filters.sobel.rangeX" caption="menu.main.edit.filters.sobel.rangeX" tooltip="menu.main.edit.filters.sobel.rangeX.tt" action="filters?matrix=-1,-2,-1,0,0,0,1,2,1"/>
+					<app:item name="menu.main.edit.filters.sobel.rangeY" caption="menu.main.edit.filters.sobel.rangeY" tooltip="menu.main.edit.filters.sobel.rangeY.tt" action="filters?matrix=-1,0,1,-2,0,2,-1,0,1"/>
+				</app:submenu>
+				<app:submenu name="menu.main.edit.filters.scharr" caption="menu.main.edit.filters.scharr" tooltip="menu.main.edit.filters.scharr.tt">
+					<app:item name="menu.main.edit.filters.scharr.rangeX" caption="menu.main.edit.filters.scharr.rangeX" tooltip="menu.main.edit.filters.scharr.rangeX.tt" action="filters?matrix=3,10,3,0,0,0,-3,-10,-3"/>
+					<app:item name="menu.main.edit.filters.scharr.rangeY" caption="menu.main.edit.filters.scharr.rangeY" tooltip="menu.main.edit.filters.scharr.rangeY.tt" action="filters?matrix=3,0,-3,10,0,-10,3,0,-3"/>
+				</app:submenu>
 				<app:item name="menu.main.edit.filters.range" caption="menu.main.edit.filters.range" tooltip="menu.main.edit.filters.range.tt" action="filters?matrix=-1,-1,-1,-1,8,-1,-1,-1,-1"/>
 				<app:item name="menu.main.edit.filters.sharp" caption="menu.main.edit.filters.sharp" tooltip="menu.main.edit.filters.sharp.tt" action="filters?matrix=-1,-4,-1,-4,26,-4,-1,-4,-1"/>
 				<app:item name="menu.main.edit.filters.smooth" caption="menu.main.edit.filters.smooth" tooltip="menu.main.edit.filters.smooth.tt" action="filters?matrix=1,1,1,1,1,1,1,1,1"/>
-				<app:item name="menu.main.edit.filters.smoothGaussian" caption="menu.main.edit.filters.smoothGaussian" tooltip="menu.main.edit.filters.smoothGaussian.tt" action="filters?matrix=1,2,1,2,4,3,1,2,1"/>
+				<app:item name="menu.main.edit.filters.smoothGaussian" caption="menu.main.edit.filters.smoothGaussian" tooltip="menu.main.edit.filters.smoothGaussian.tt" action="filters?matrix=1,2,1,2,4,2,1,2,1"/>
 				<app:separator/>
 				<app:item name="menu.main.edit.filters.custom" caption="menu.main.edit.filters.custom" tooltip="menu.main.edit.filters.custom.tt" action="customfilters"/>
 			</app:submenu>

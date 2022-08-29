@@ -374,13 +374,15 @@ public class SystemWrapperImpl implements SystemWrapper {
 			throw new NullPointerException("Predefined map can't be null");
 		}
 		else if (!command.isEmpty()) {
+			final StringBuilder	sb = new StringBuilder();
+			
 			for (String line : command.split("\n")) {
-				try{Console.processCommand(line, predef);
+				try{sb.append(Console.processCommand(line, predef)).append('\n');
 				} catch (SyntaxException  e) {
 					throw new PaintScriptException(e);
 				}
 			}
-			return "";
+			return sb.toString();
 		}
 		else {
 			return "";

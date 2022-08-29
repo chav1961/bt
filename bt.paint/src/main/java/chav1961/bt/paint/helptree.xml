@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xfs:root xmlns:xfs="http://www.fsys.purelib.chav1961.ru/">
+	<xfs:link name="static" ref="fsys:file:./src/main/resources/static/" />
+	<xfs:link name="styles" ref="fsys:file:./src/main/resources/static/styles/" />
+	<xfs:link name="images" ref="fsys:file:./src/main/resources/static/images/" />
+	<xfs:link name="topics.ru" ref="fsys:file:./src/main/resources/static/topics.ru/" />
+</xfs:root>

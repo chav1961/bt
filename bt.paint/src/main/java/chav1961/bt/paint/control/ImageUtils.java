@@ -444,10 +444,11 @@ public class ImageUtils {
 			throw new IllegalArgumentException("Filter matrix size must be odd"); 
 		}
 		else {
-			final int	maxX = rectangle.width, maxY = rectangle.height;
-			final int	halfSize = filterSize / 2, fstart = - halfSize, fend = halfSize, scanSize = rectangle.width + 2 * halfSize;
-			final int[]	pixels = new int[scanSize * (2 * filterSize + source.getHeight())];
-			final int[]	target = new int[pixels.length];
+			final int		maxX = rectangle.width, maxY = rectangle.height;
+			final int		halfSize = filterSize / 2, fstart = - halfSize, fend = halfSize, scanSize = rectangle.width + 2 * halfSize;
+			final int[]		pixels = new int[scanSize * (2 * filterSize + source.getHeight())];
+			final float[]	targetR = new float[pixels.length], targetG = new float[pixels.length], targetB = new float[pixels.length];   
+			final int[]		target = new int[pixels.length];
 			
 			source.getRGB(rectangle.x, rectangle.y, rectangle.width, rectangle.height, pixels, halfSize + scanSize * halfSize, scanSize);
 			for (int y = 0; y < maxY; y++) {
@@ -467,14 +468,50 @@ public class ImageUtils {
 							sumB += ((pixel & 0xFF) >> 0) * k;
 						}
 					}
-					final int	result = (currentPixel & 0xFF000000) 
-											| (Math.round(sumR) << 16) & 0xFF0000
-											| (Math.round(sumG) << 8) & 0xFF00
-											| (Math.round(sumB) << 0) & 0xFF;
+//					final int	result = (currentPixel & 0xFF000000) 
+//											| (Math.round(sumR) << 16) & 0xFF0000
+//											| (Math.round(sumG) << 8) & 0xFF00
+//											| (Math.round(sumB) << 0) & 0xFF;
+//					
+//					target[(y + halfSize) * scanSize + (x + halfSize)] = result; 
+					final int	result = (currentPixel & 0xFF000000);
 					
 					target[(y + halfSize) * scanSize + (x + halfSize)] = result; 
+					targetR[(y + halfSize) * scanSize + (x + halfSize)] = sumR; 
+					targetG[(y + halfSize) * scanSize + (x + halfSize)] = sumG; 
+					targetB[(y + halfSize) * scanSize + (x + halfSize)] = sumB; 
 				}
 			}
+			
+			float	minR = targetR[0], maxR = minR;
+			float	minG = targetG[0], maxG = minG;
+			float	minB = targetB[0], maxB = minB;
+			
+			for (float item : targetR) {
+				minR = Math.min(minR, item);
+				maxR = Math.max(maxR, item);
+			}
+			for (float item : targetG) {
+				minG = Math.min(minG, item);
+				maxG = Math.max(maxG, item);
+			}
+			for (float item : targetB) {
+				minB = Math.min(minB, item);
+				maxB = Math.max(maxB, item);
+			}
+			final float	min = Math.min(minR, Math.min(minG, minB));
+			final float	max = Math.max(maxR, Math.max(maxG, maxB));
+			final float scale = 255/(max - min);
+
+			for (int index = 0; index < target.length; index++) {
+				final int	result = target[index] 
+										| (Math.round((targetR[index] - min) * scale) << 16) & 0xFF0000
+										| (Math.round((targetG[index] - min) * scale) << 8) & 0xFF00
+										| (Math.round((targetB[index] - min) * scale) << 0) & 0xFF;
+	
+				target[index] = result;
+			}
+			
 			source.setRGB(rectangle.x, rectangle.y, rectangle.width, rectangle.height, target, halfSize + scanSize * halfSize, scanSize);
 			return source;
 		}

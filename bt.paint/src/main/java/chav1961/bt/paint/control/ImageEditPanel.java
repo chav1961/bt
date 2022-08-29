@@ -334,7 +334,7 @@ public class ImageEditPanel extends JPanel implements LocalizerOwner, LocaleChan
 				before = ImageUndoEdit.packImage(canvas.getBackgroundImage());
 			}
 			else {
-				before = new byte[0];
+				before = null;
 			}
 			undoString = beforeActionType;
 			redoString = afterActionType;
@@ -347,7 +347,9 @@ public class ImageEditPanel extends JPanel implements LocalizerOwner, LocaleChan
 	@Override
 	public void endImageAction(final String beforeActionType, final String afterActionType) {
 		if (startUndoable) {
-			try{fireUndo(new ImageUndoEdit(beforeActionType, afterActionType, before, ImageUndoEdit.packImage(canvas.getBackgroundImage()), (i)->canvas.setBackgroundImage(i)));
+			try{if (before != null && canvas.getBackgroundImage() != null) {
+					fireUndo(new ImageUndoEdit(beforeActionType, afterActionType, before, ImageUndoEdit.packImage(canvas.getBackgroundImage()), (i)->canvas.setBackgroundImage(i)));
+				}
 			} catch (IOException exc) {
 				SwingUtils.getNearestLogger(this).message(Severity.error, exc, exc.getLocalizedMessage());
 			} finally {

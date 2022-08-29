@@ -98,6 +98,7 @@ public class Console {
 	
 	private static final SyntaxTreeInterface<CommandItem>	COMMANDS = new AndOrTree<>();
 	private static final String	OK = "ok";
+	private static final String	IMAGE_MISSING = "Image missing in the canvas";
 
 	private static enum CanvasProperties {
 		FORE_COLOR,
@@ -438,143 +439,208 @@ public class Console {
 	}
 
 	private static String drawLine(final Predefines predef, final int xFrom, final int yFrom, final int xTo, final int yTo) throws PaintScriptException {
-		ImageUtils.draw(DrawingType.LINE, predef.getPredefined(Predefines.PREDEF_CANVAS, CanvasWrapper.class).getImage().getImage(), null
-					, new Point(xFrom, yFrom), new Point(xTo, yTo)
-					, predef.getPredefined(Predefines.PREDEF_CANVAS, CanvasWrapper.class).getCanvasForeground().getColor()
-					, predef.getPredefined(Predefines.PREDEF_CANVAS, CanvasWrapper.class).getCanvasStroke().getStroke()); 
-		return OK;
+		if (hasImage(predef)) {
+			ImageUtils.draw(DrawingType.LINE, predef.getPredefined(Predefines.PREDEF_CANVAS, CanvasWrapper.class).getImage().getImage(), null
+						, new Point(xFrom, yFrom), new Point(xTo, yTo)
+						, predef.getPredefined(Predefines.PREDEF_CANVAS, CanvasWrapper.class).getCanvasForeground().getColor()
+						, predef.getPredefined(Predefines.PREDEF_CANVAS, CanvasWrapper.class).getCanvasStroke().getStroke()); 
+			return OK;
+		}
+		else {
+			return IMAGE_MISSING;
+		}
 	}
 
 	private static String drawRect(final Predefines predef, final Rectangle rect, final boolean fill) throws PaintScriptException {
-		ImageUtils.draw(DrawingType.RECT, predef.getPredefined(Predefines.PREDEF_CANVAS, CanvasWrapper.class).getImage().getImage(), null
-				, rect
-				, fill 
-					? new ColorPair(predef.getPredefined(Predefines.PREDEF_CANVAS, CanvasWrapper.class).getCanvasForeground().getColor(), predef.getPredefined(Predefines.PREDEF_CANVAS, CanvasWrapper.class).getCanvasBackground().getColor())
-					: predef.getPredefined(Predefines.PREDEF_CANVAS, CanvasWrapper.class).getCanvasForeground().getColor()
-				, predef.getPredefined(Predefines.PREDEF_CANVAS, CanvasWrapper.class).getCanvasStroke().getStroke()); 
-		return OK;
+		if (hasImage(predef)) {
+			ImageUtils.draw(DrawingType.RECT, predef.getPredefined(Predefines.PREDEF_CANVAS, CanvasWrapper.class).getImage().getImage(), null
+					, rect
+					, fill 
+						? new ColorPair(predef.getPredefined(Predefines.PREDEF_CANVAS, CanvasWrapper.class).getCanvasForeground().getColor(), predef.getPredefined(Predefines.PREDEF_CANVAS, CanvasWrapper.class).getCanvasBackground().getColor())
+						: predef.getPredefined(Predefines.PREDEF_CANVAS, CanvasWrapper.class).getCanvasForeground().getColor()
+					, predef.getPredefined(Predefines.PREDEF_CANVAS, CanvasWrapper.class).getCanvasStroke().getStroke()); 
+			return OK;
+		}
+		else {
+			return IMAGE_MISSING;
+		}
 	}
 	
 	private static String drawEllipse(final Predefines predef, final Rectangle rect, final boolean fill) throws PaintScriptException {
-		ImageUtils.draw(DrawingType.ELLIPSE, predef.getPredefined(Predefines.PREDEF_CANVAS, CanvasWrapper.class).getImage().getImage(), null
-				, rect
-				, fill 
-					? new ColorPair(predef.getPredefined(Predefines.PREDEF_CANVAS, CanvasWrapper.class).getCanvasForeground().getColor(), predef.getPredefined(Predefines.PREDEF_CANVAS, CanvasWrapper.class).getCanvasBackground().getColor())
-					: predef.getPredefined(Predefines.PREDEF_CANVAS, CanvasWrapper.class).getCanvasForeground().getColor()
-				, predef.getPredefined(Predefines.PREDEF_CANVAS, CanvasWrapper.class).getCanvasStroke().getStroke()); 
-		return OK;
+		if (hasImage(predef)) {
+			ImageUtils.draw(DrawingType.ELLIPSE, predef.getPredefined(Predefines.PREDEF_CANVAS, CanvasWrapper.class).getImage().getImage(), null
+					, rect
+					, fill 
+						? new ColorPair(predef.getPredefined(Predefines.PREDEF_CANVAS, CanvasWrapper.class).getCanvasForeground().getColor(), predef.getPredefined(Predefines.PREDEF_CANVAS, CanvasWrapper.class).getCanvasBackground().getColor())
+						: predef.getPredefined(Predefines.PREDEF_CANVAS, CanvasWrapper.class).getCanvasForeground().getColor()
+					, predef.getPredefined(Predefines.PREDEF_CANVAS, CanvasWrapper.class).getCanvasStroke().getStroke()); 
+			return OK;
+		}
+		else {
+			return IMAGE_MISSING;
+		}
 	}
 	
 	private static String drawText(final Predefines predef, final Rectangle rect, final Color color, final String text) throws PaintScriptException {
-		ImageUtils.draw(DrawingType.TEXT, predef.getPredefined(Predefines.PREDEF_CANVAS, CanvasWrapper.class).getImage().getImage(), null, text, rect, color, predef.getPredefined(Predefines.PREDEF_CANVAS, CanvasWrapper.class).getCanvasFont().getFont());
-		return OK;
+		if (hasImage(predef)) {
+			ImageUtils.draw(DrawingType.TEXT, predef.getPredefined(Predefines.PREDEF_CANVAS, CanvasWrapper.class).getImage().getImage(), null, text, rect, color, predef.getPredefined(Predefines.PREDEF_CANVAS, CanvasWrapper.class).getCanvasFont().getFont());
+			return OK;
+		}
+		else {
+			return IMAGE_MISSING;
+		}
 	}
 
 
 	private static String drawText(final Predefines predef, final Rectangle rect, final Color foreground, final Color background, final String text) throws PaintScriptException {
-		ImageUtils.draw(DrawingType.TEXT, predef.getPredefined(Predefines.PREDEF_CANVAS, CanvasWrapper.class).getImage().getImage(), null, text, rect, new ColorPair(foreground,background), predef.getPredefined(Predefines.PREDEF_CANVAS, CanvasWrapper.class).getCanvasFont().getFont());
-		return OK;
+		if (hasImage(predef)) {
+			ImageUtils.draw(DrawingType.TEXT, predef.getPredefined(Predefines.PREDEF_CANVAS, CanvasWrapper.class).getImage().getImage(), null, text, rect, new ColorPair(foreground,background), predef.getPredefined(Predefines.PREDEF_CANVAS, CanvasWrapper.class).getCanvasFont().getFont());
+			return OK;
+		}
+		else {
+			return IMAGE_MISSING;
+		}
 	}
 	
 	private static String drawPath(final Predefines predef, final String path, final boolean fill) throws PaintScriptException { 
-		try{ImageUtils.draw(DrawingType.PEN, predef.getPredefined(Predefines.PREDEF_CANVAS, CanvasWrapper.class).getImage().getImage(), null
-						, SVGUtils.extractCommands(path)
-						, fill 
-							? new ColorPair(predef.getPredefined(Predefines.PREDEF_CANVAS, CanvasWrapper.class).getCanvasForeground().getColor(), predef.getPredefined(Predefines.PREDEF_CANVAS, CanvasWrapper.class).getCanvasBackground().getColor())
-							: predef.getPredefined(Predefines.PREDEF_CANVAS, CanvasWrapper.class).getCanvasForeground().getColor()
-						, predef.getPredefined(Predefines.PREDEF_CANVAS, CanvasWrapper.class).getCanvasStroke().getStroke());
-			return OK;
-		} catch (SyntaxException e) {
-			throw new PaintScriptException(e);
-		} 
+		if (hasImage(predef)) {
+			try{ImageUtils.draw(DrawingType.PEN, predef.getPredefined(Predefines.PREDEF_CANVAS, CanvasWrapper.class).getImage().getImage(), null
+							, SVGUtils.extractCommands(path)
+							, fill 
+								? new ColorPair(predef.getPredefined(Predefines.PREDEF_CANVAS, CanvasWrapper.class).getCanvasForeground().getColor(), predef.getPredefined(Predefines.PREDEF_CANVAS, CanvasWrapper.class).getCanvasBackground().getColor())
+								: predef.getPredefined(Predefines.PREDEF_CANVAS, CanvasWrapper.class).getCanvasForeground().getColor()
+							, predef.getPredefined(Predefines.PREDEF_CANVAS, CanvasWrapper.class).getCanvasStroke().getStroke());
+				return OK;
+			} catch (SyntaxException e) {
+				throw new PaintScriptException(e);
+			} 
+		}
+		else {
+			return IMAGE_MISSING;
+		}
 	}
 
 	private static String rotate(final Predefines predef, final RotateDirection dir) throws PaintScriptException {
-		final ImageWrapper	iw = predef.getPredefined(Predefines.PREDEF_CANVAS, CanvasWrapper.class).getImage();
-		final ImageWrapper	result;
-		
-		switch (dir) {
-			case cw		:
-				result = ImageWrapper.of((BufferedImage)ImageUtils.process(ProcessType.ROTATE_CLOCKWISE, iw.getImage(), null));
-				break;
-			case ccw	:
-				result = ImageWrapper.of((BufferedImage)ImageUtils.process(ProcessType.ROTATE_COUNTERCLOCKWISE, iw.getImage(), null));
-				break;
-			default		:
-				throw new UnsupportedOperationException("Rotate direction ["+dir+"] is not supported yet");  
+		if (hasImage(predef)) {
+			final ImageWrapper	iw = predef.getPredefined(Predefines.PREDEF_CANVAS, CanvasWrapper.class).getImage();
+			final ImageWrapper	result;
+			
+			switch (dir) {
+				case cw		:
+					result = ImageWrapper.of((BufferedImage)ImageUtils.process(ProcessType.ROTATE_CLOCKWISE, iw.getImage(), null));
+					break;
+				case ccw	:
+					result = ImageWrapper.of((BufferedImage)ImageUtils.process(ProcessType.ROTATE_COUNTERCLOCKWISE, iw.getImage(), null));
+					break;
+				default		:
+					throw new UnsupportedOperationException("Rotate direction ["+dir+"] is not supported yet");  
+			}
+			predef.getPredefined(Predefines.PREDEF_CANVAS, CanvasWrapper.class).setImage(result);
+			return OK;
 		}
-		predef.getPredefined(Predefines.PREDEF_CANVAS, CanvasWrapper.class).setImage(result);
-		return OK;
+		else {
+			return IMAGE_MISSING;
+		}
 	}
 	
 	private static String mirror(final Predefines predef, final MirrorDirection dir) throws PaintScriptException {
-		final ImageWrapper	iw = predef.getPredefined(Predefines.PREDEF_CANVAS, CanvasWrapper.class).getImage();
-		final ImageWrapper	result;
-		
-		switch (dir) {
-			case hor	:
-				result = ImageWrapper.of((BufferedImage)ImageUtils.process(ProcessType.MIRROR_HORIZONTAL, iw.getImage(), null));
-				break;
-			case vert	:
-				result = ImageWrapper.of((BufferedImage)ImageUtils.process(ProcessType.MIRROR_VERTICAL, iw.getImage(), null));
-				break;
-			default		:
-				throw new UnsupportedOperationException("Mirror direction ["+dir+"] is not supported yet");  
+		if (hasImage(predef)) {
+			final ImageWrapper	iw = predef.getPredefined(Predefines.PREDEF_CANVAS, CanvasWrapper.class).getImage();
+			final ImageWrapper	result;
+			
+			switch (dir) {
+				case hor	:
+					result = ImageWrapper.of((BufferedImage)ImageUtils.process(ProcessType.MIRROR_HORIZONTAL, iw.getImage(), null));
+					break;
+				case vert	:
+					result = ImageWrapper.of((BufferedImage)ImageUtils.process(ProcessType.MIRROR_VERTICAL, iw.getImage(), null));
+					break;
+				default		:
+					throw new UnsupportedOperationException("Mirror direction ["+dir+"] is not supported yet");  
+			}
+			predef.getPredefined(Predefines.PREDEF_CANVAS, CanvasWrapper.class).setImage(result);
+			return OK;
 		}
-		predef.getPredefined(Predefines.PREDEF_CANVAS, CanvasWrapper.class).setImage(result);
-		return OK;
+		else {
+			return IMAGE_MISSING;
+		}
 	}
 
 	private static String crop(final Predefines predef, final Rectangle rect) throws PaintScriptException {
-		final ImageWrapper	iw = predef.getPredefined(Predefines.PREDEF_CANVAS, CanvasWrapper.class).getImage();
-		final ImageWrapper	result = ImageWrapper.of((BufferedImage)ImageUtils.process(ProcessType.CROP, (BufferedImage)iw.getImage(), null, rect));
-		
-		predef.getPredefined(Predefines.PREDEF_CANVAS, CanvasWrapper.class).setImage(result);
-		return OK;
+		if (hasImage(predef)) {
+			final ImageWrapper	iw = predef.getPredefined(Predefines.PREDEF_CANVAS, CanvasWrapper.class).getImage();
+			final ImageWrapper	result = ImageWrapper.of((BufferedImage)ImageUtils.process(ProcessType.CROP, (BufferedImage)iw.getImage(), null, rect));
+			
+			predef.getPredefined(Predefines.PREDEF_CANVAS, CanvasWrapper.class).setImage(result);
+			return OK;
+		}
+		else {
+			return IMAGE_MISSING;
+		}
 	}
 
 	private static String scale(final Predefines predef, final int newWidth, final int newHeight) throws PaintScriptException {
-		final ImageWrapper	iw = predef.getPredefined(Predefines.PREDEF_CANVAS, CanvasWrapper.class).getImage();
-		final ImageWrapper	result = ImageWrapper.of((BufferedImage)ImageUtils.process(ProcessType.SCALE, (BufferedImage)iw.getImage(), null, newWidth, newHeight));
-		
-		predef.getPredefined(Predefines.PREDEF_CANVAS, CanvasWrapper.class).setImage(result);
-		return OK;
+		if (hasImage(predef)) {
+			final ImageWrapper	iw = predef.getPredefined(Predefines.PREDEF_CANVAS, CanvasWrapper.class).getImage();
+			final ImageWrapper	result = ImageWrapper.of((BufferedImage)ImageUtils.process(ProcessType.SCALE, (BufferedImage)iw.getImage(), null, newWidth, newHeight));
+			
+			predef.getPredefined(Predefines.PREDEF_CANVAS, CanvasWrapper.class).setImage(result);
+			return OK;
+		}
+		else {
+			return IMAGE_MISSING;
+		}
 	}
 
 	private static String resize(final Predefines predef, final int newWidth, final int newHeight, final AnchorPoint anchor) throws PaintScriptException {
-		final ImageWrapper	iw = predef.getPredefined(Predefines.PREDEF_CANVAS, CanvasWrapper.class).getImage();
-		final ColorWrapper	cw = predef.getPredefined(Predefines.PREDEF_CANVAS, CanvasWrapper.class).getCanvasBackground();
-		final ImageWrapper	result;
-		
-		switch (anchor) {
-			case center		:
-				result = ImageWrapper.of((BufferedImage)ImageUtils.process(ProcessType.RESIZE, (BufferedImage)iw.getImage(), null, newWidth, newHeight, cw.getColor(), true));
-				break;
-			case unknown	:
-				result = ImageWrapper.of((BufferedImage)ImageUtils.process(ProcessType.RESIZE, (BufferedImage)iw.getImage(), null, newWidth, newHeight, cw.getColor(), false));
-				break;
-			default :
-				throw new PaintScriptException("Anchor type [] doesn't support, 'center' in available only"); 
-		
+		if (hasImage(predef)) {
+			final ImageWrapper	iw = predef.getPredefined(Predefines.PREDEF_CANVAS, CanvasWrapper.class).getImage();
+			final ColorWrapper	cw = predef.getPredefined(Predefines.PREDEF_CANVAS, CanvasWrapper.class).getCanvasBackground();
+			final ImageWrapper	result;
+			
+			switch (anchor) {
+				case center		:
+					result = ImageWrapper.of((BufferedImage)ImageUtils.process(ProcessType.RESIZE, (BufferedImage)iw.getImage(), null, newWidth, newHeight, cw.getColor(), true));
+					break;
+				case unknown	:
+					result = ImageWrapper.of((BufferedImage)ImageUtils.process(ProcessType.RESIZE, (BufferedImage)iw.getImage(), null, newWidth, newHeight, cw.getColor(), false));
+					break;
+				default :
+					throw new PaintScriptException("Anchor type [] doesn't support, 'center' in available only"); 
+			
+			}
+			predef.getPredefined(Predefines.PREDEF_CANVAS, CanvasWrapper.class).setImage(result);
+			return OK;
 		}
-		predef.getPredefined(Predefines.PREDEF_CANVAS, CanvasWrapper.class).setImage(result);
-		return OK;
+		else {
+			return IMAGE_MISSING;
+		}
 	}
 	
 	private static String gray(final Predefines predef) throws PaintScriptException {
-		final ImageWrapper	iw = predef.getPredefined(Predefines.PREDEF_CANVAS, CanvasWrapper.class).getImage();
-		final ImageWrapper	result = ImageWrapper.of((BufferedImage)ImageUtils.process(ProcessType.TO_GRAYSCALE, (BufferedImage)iw.getImage(), null));
-		
-		predef.getPredefined(Predefines.PREDEF_CANVAS, CanvasWrapper.class).setImage(result);
-		return OK;
+		if (hasImage(predef)) {
+			final ImageWrapper	iw = predef.getPredefined(Predefines.PREDEF_CANVAS, CanvasWrapper.class).getImage();
+			final ImageWrapper	result = ImageWrapper.of((BufferedImage)ImageUtils.process(ProcessType.TO_GRAYSCALE, (BufferedImage)iw.getImage(), null));
+			
+			predef.getPredefined(Predefines.PREDEF_CANVAS, CanvasWrapper.class).setImage(result);
+			return OK;
+		}
+		else {
+			return IMAGE_MISSING;
+		}
 	}
 
 	private static String transparent(final Predefines predef, final Color color, final boolean except) throws PaintScriptException {
-		final ImageWrapper	iw = predef.getPredefined(Predefines.PREDEF_CANVAS, CanvasWrapper.class).getImage();
-		final ImageWrapper	result = ImageWrapper.of((BufferedImage)ImageUtils.process(ProcessType.TO_TRANSPARENT, (BufferedImage)iw.getImage(), null, color, except));
-		
-		predef.getPredefined(Predefines.PREDEF_CANVAS, CanvasWrapper.class).setImage(result);
-		return OK;
+		if (hasImage(predef)) {
+			final ImageWrapper	iw = predef.getPredefined(Predefines.PREDEF_CANVAS, CanvasWrapper.class).getImage();
+			final ImageWrapper	result = ImageWrapper.of((BufferedImage)ImageUtils.process(ProcessType.TO_TRANSPARENT, (BufferedImage)iw.getImage(), null, color, except));
+			
+			predef.getPredefined(Predefines.PREDEF_CANVAS, CanvasWrapper.class).setImage(result);
+			return OK;
+		}
+		else {
+			return IMAGE_MISSING;
+		}
 	}
 
 	private static String fill(final Predefines predef, final int x, final int y, final Color color) {
@@ -586,19 +652,29 @@ public class Console {
 	}
 
 	private static String copyRange(final Predefines predef, final Rectangle rect) throws PaintScriptException {
-		final ImageWrapper		iw = predef.getPredefined(Predefines.PREDEF_CANVAS, CanvasWrapper.class).getImage(RectWrapper.of(rect));
-		final ClipboardWrapper	cbw = predef.getPredefined(Predefines.PREDEF_CLIPBOARD, ClipboardWrapper.class);
-		
-		cbw.setImage(iw);
-		return OK;
+		if (hasImage(predef)) {
+			final ImageWrapper		iw = predef.getPredefined(Predefines.PREDEF_CANVAS, CanvasWrapper.class).getImage(RectWrapper.of(rect));
+			final ClipboardWrapper	cbw = predef.getPredefined(Predefines.PREDEF_CLIPBOARD, ClipboardWrapper.class);
+			
+			cbw.setImage(iw);
+			return OK;
+		}
+		else {
+			return IMAGE_MISSING;
+		}
 	}
 
 	private static String copyAll(final Predefines predef) throws PaintScriptException {
-		final ImageWrapper		iw = predef.getPredefined(Predefines.PREDEF_CANVAS, CanvasWrapper.class).getImage();
-		final ClipboardWrapper	cbw = predef.getPredefined(Predefines.PREDEF_CLIPBOARD, ClipboardWrapper.class);
-		
-		cbw.setImage(iw);
-		return OK;
+		if (hasImage(predef)) {
+			final ImageWrapper		iw = predef.getPredefined(Predefines.PREDEF_CANVAS, CanvasWrapper.class).getImage();
+			final ClipboardWrapper	cbw = predef.getPredefined(Predefines.PREDEF_CLIPBOARD, ClipboardWrapper.class);
+			
+			cbw.setImage(iw);
+			return OK;
+		}
+		else {
+			return IMAGE_MISSING;
+		}
 	}
 
 	private static String pasteClipboard(final Predefines predef, final int xTo, final int yTo) throws PaintScriptException {
@@ -697,6 +773,11 @@ public class Console {
 		return OK;
 	}	
 
+	private static boolean hasImage(final Predefines predef) throws PaintScriptException {
+		return predef.getPredefined(Predefines.PREDEF_CANVAS, CanvasWrapper.class).hasImage();
+	}
+	
+	
 	private static class CommandItem {
 		private static enum CommandType {
 			ImageAction,
