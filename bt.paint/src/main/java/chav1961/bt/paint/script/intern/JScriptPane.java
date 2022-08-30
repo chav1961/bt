@@ -169,7 +169,6 @@ public class JScriptPane extends JTextPaneHighlighter<LexTypes> {
 			return EMPTY; 
 		}
 		else {
-			System.err.println("Prog="+program);
 			try(final Reader						rdr = new StringReader(program)) {
 				final List<HighlightItem<LexTypes>>	result = new ArrayList<>();
 				final List<Lexema>					lex = ScriptParserUtil.parseLex(rdr, new OrdinalSyntaxTree<LexTypes>(), true);
@@ -180,7 +179,6 @@ public class JScriptPane extends JTextPaneHighlighter<LexTypes> {
 								, (content[index + 1].getDispl() + content[index + 1].getCol()) - (content[index].getDispl() + content[index].getCol())
 								, content[index].getType()));
 				}
-				System.err.println("----------------: "+lex);
 				return result.toArray(new HighlightItem[result.size()]);
 			} catch (IOException | SyntaxException e) {
 				return EMPTY;

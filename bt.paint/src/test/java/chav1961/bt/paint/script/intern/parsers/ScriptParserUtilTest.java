@@ -400,12 +400,21 @@ public class ScriptParserUtilTest {
 			Assert.fail("Mandatory exception was not detected (missing '}')");
 		} catch (SyntaxException exc) {
 		}
-
 		
 		try{ScriptParserUtil.buildStatement(buildLex("else", names), 0, names, root);
 			Assert.fail("Mandatory exception was not detected (missing statement)");
 		} catch (SyntaxException exc) {
 		}
+	}	
+
+	@Test
+	public void complexTest() throws SyntaxException {
+		final SyntaxTreeInterface<EntityDescriptor>	names = new AndOrTree<>();
+		final SyntaxNode<SyntaxNodeType, SyntaxNode<SyntaxNodeType, ?>>	root = new SyntaxNode<>(0, 0, SyntaxNodeType.ROOT, 0, null);
+
+		ScriptParserUtil.buildSyntaxTree(buildLex("var k : int; begin k := 10; end;", names), 0, names, root);
+		ScriptParserUtil.printRoot(root);
+		ScriptParserUtil.printNames(names);
 	}	
 	
 	private Lexema[] buildLex(final String string, final SyntaxTreeInterface<?> names) throws SyntaxException {

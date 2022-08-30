@@ -1101,7 +1101,7 @@ loop:	for (;;) {
 								throw new SyntaxException(data[from+1].getRow(), data[from+1].getCol(), "Undeclared variable");
 							}
 							else if (data[from+2].getType() == LexTypes.OPERATOR) {
-								final Class<?>	varAwaited = boolean.class;							
+								final Class<?>	varAwaited = long.class;							
 								
 								switch (data[from+2].getOperatorType()) {
 									case IN 		:
@@ -1137,18 +1137,28 @@ loop:	for (;;) {
 
 												from = buildExpression(data, from + 1, names, forStep);
 												convert(forStep, varAwaited);
-												root.type = SyntaxNodeType.FOR;
-												root.value = varId;
-												root.children = new SyntaxNode[] {forInitial, forTerminal, forStep, forNode};
+												if (data[from].getType() == LexTypes.STATEMENT && data[from].getKeyword() == Keywords.DO) {
+													from = buildStatement(data, from + 1, names, forNode);
+													root.type = SyntaxNodeType.FOR;
+													root.value = varId;
+													root.children = new SyntaxNode[] {forInitial, forTerminal, forStep, forNode};
+												}
+												else {
+													throw new SyntaxException(data[from].getRow(), data[from].getCol(), "Missing 'do'");
+												}
 											}											
-											else {
+											else if (data[from].getType() == LexTypes.STATEMENT && data[from].getKeyword() == Keywords.DO) {
+												from = buildStatement(data, from + 1, names, forNode);
 												root.type = SyntaxNodeType.FOR1;
 												root.value = varId;
 												root.children = new SyntaxNode[] {forInitial, forTerminal, forNode};
 											}
+											else {
+												throw new SyntaxException(data[from].getRow(), data[from].getCol(), "Missing 'do'");
+											}
 										}
 										else {
-											throw new SyntaxException(data[from+1].getRow(), data[from+1].getCol(), "Missing 'while'");
+											throw new SyntaxException(data[from+1].getRow(), data[from+1].getCol(), "Missing 'do'");
 										}
 										break;
 									default :
@@ -1191,6 +1201,7 @@ loop:	for (;;) {
 								root.type = SyntaxNodeType.CASEDEF;
 								root.cargo = caseExpr;
 								root.children = ofList.toArray(new SyntaxNode[ofList.size()]);
+								from++;
 							}
 							else {
 								throw new SyntaxException(data[from+1].getRow(), data[from+1].getCol(), "Missing 'end'");
@@ -1200,6 +1211,7 @@ loop:	for (;;) {
 							root.type = SyntaxNodeType.CASE;
 							root.cargo = caseExpr;
 							root.children = ofList.toArray(new SyntaxNode[ofList.size()]);
+							from++;
 						}
 						else {
 							throw new SyntaxException(data[from+1].getRow(), data[from+1].getCol(), "Missing 'end'");
@@ -1209,22 +1221,24 @@ loop:	for (;;) {
 						if (data[from+1].getType() == LexTypes.CONSTANT && data[from+1].getDataType() == DataTypes.INT) {
 							root.type = SyntaxNodeType.CONTINUE;
 							root.value = data[from+1].getLongAssociated();
-							from++;
+							from += 2;
 						}
 						else {
 							root.type = SyntaxNodeType.CONTINUE;
 							root.value = 1;
+							from++;
 						}
 						break;
 					case BREAK		:
 						if (data[from+1].getType() == LexTypes.CONSTANT && data[from+1].getDataType() == DataTypes.INT) {
 							root.type = SyntaxNodeType.BREAK;
 							root.value = data[from+1].getLongAssociated();
-							from++;
+							from += 2;
 						}
 						else {
 							root.type = SyntaxNodeType.BREAK;
 							root.value = 1;
+							from++;
 						}
 						break;
 					case RETURN		:
@@ -1237,8 +1251,11 @@ loop:	for (;;) {
 						}
 						else {
 							root.type = SyntaxNodeType.RETURN;
+							from++;
 						}
 						break;
+					case END		:
+						return from;
 					default :
 						throw new UnsupportedOperationException("Statement ["+data[from].getKeyword()+"] is not supported yet"); 
 				}
@@ -2437,6 +2454,30 @@ loop:	for (;;) {
 				throw new UnsupportedOperationException(); 
 			}
 		}
+	}
+
+	static void printRoot(final SyntaxNode root) {
+		System.err.println("--- root content: ---");
+		printRoot("",root);
+		System.err.println("--- root end ---");
+	}
+
+	public static void printRoot(final String prefix, final SyntaxNode root) {
+		System.err.println(prefix+root.getType()+" value="+root.value+", cargo="+root.cargo);
+		if (root.children != null) {
+			for (SyntaxNode item : root.children) {
+				printRoot(prefix+"   ", item);
+			}
+		}
+	}
+	
+	public static void printNames(final SyntaxTreeInterface names) {
+		System.err.println("--- names content: ---");
+		names.walk((name, len, id, cargo)->{
+			System.err.println(new String(name,0,len)+": id="+id+", cargo="+cargo);
+			return true;
+		});
+		System.err.println("--- names end ---");
 	}
 	
 	public static class Lexema {

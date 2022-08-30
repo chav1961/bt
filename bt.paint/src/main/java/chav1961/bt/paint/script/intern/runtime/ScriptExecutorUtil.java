@@ -40,6 +40,7 @@ import chav1961.bt.paint.script.intern.parsers.ScriptParserUtil.OperatorPrioriti
 import chav1961.bt.paint.script.intern.parsers.ScriptParserUtil.OperatorTypes;
 import chav1961.bt.paint.script.intern.parsers.ScriptParserUtil.SyntaxNodeType;
 import chav1961.purelib.basic.CSSUtils;
+import chav1961.purelib.basic.CharUtils;
 import chav1961.purelib.basic.SequenceIterator;
 import chav1961.purelib.basic.exceptions.ContentException;
 import chav1961.purelib.basic.exceptions.SyntaxException;
@@ -64,18 +65,17 @@ public class ScriptExecutorUtil {
 		callback.process(level, node);
 		switch ((SyntaxNodeType)node.getType()) {
 			case BREAK		:
-				return new CallResult(CallResult.ResultType.BREAK, (int)node.cargo);
+				return new CallResult(CallResult.ResultType.BREAK, (int)node.value);
 			case CALL		:
 				break;
 			case CASE		:
 				final Object	forCase = calc((SyntaxNode)node.cargo, names, stack, predef, level, callback);
 				
 				for (int index = 0; index < node.children.length; index += 2) {
-					if (compare(forCase, calc(node.children[2*index], names, stack, predef, level, callback)) == 0) {
-						final CallResult 	result = (CallResult)execute(node.children[3], names, stack, predef, depth + 1, level, callback);
+					if (compare(forCase, calc(node.children[index], names, stack, predef, level, callback)) == 0) {
+						final CallResult 	result = (CallResult)execute(node.children[index + 1], names, stack, predef, depth + 1, level, callback);
 						
 						if (result.type.isReturnRequired() && result.level > 0) {
-							result.level--;
 							return result;
 						}
 						else {
@@ -85,45 +85,112 @@ public class ScriptExecutorUtil {
 				}
 				return new CallResult(CallResult.ResultType.ORDINAL);
 			case CASEDEF	:
-				break;
-			case CONTINUE	:
-				return new CallResult(CallResult.ResultType.CONTINUE, (int)node.cargo);
-			case FOR		:
-				final Object	forVar = names.getCargo(node.value);
+				final Object	forCaseDef = calc((SyntaxNode)node.cargo, names, stack, predef, level, callback);
 				
-				for (Object item : buildIterable(node.children[0], node.children[1], node.children[2], names, stack, predef, level, callback)) {
-					// Assign
+				for (int index = 0; index < node.children.length - 1; index += 2) {
+					if (compare(forCaseDef, calc(node.children[index], names, stack, predef, level, callback)) == 0) {
+						final CallResult 	result = (CallResult)execute(node.children[index + 1], names, stack, predef, depth + 1, level, callback);
+						
+						if (result.type.isReturnRequired() && result.level > 0) {
+							return result;
+						}
+						else {
+							return new CallResult(CallResult.ResultType.ORDINAL);
+						}
+					}
+				}
+				final CallResult 	resultDef = (CallResult)execute(node.children[node.children.length - 1], names, stack, predef, depth + 1, level, callback);
+				
+				if (resultDef.type.isReturnRequired() && resultDef.level > 0) {
+					resultDef.level--;
+					return resultDef;
+				}
+				else {
+					return new CallResult(CallResult.ResultType.ORDINAL);
+				}
+			case CONTINUE	:
+				return new CallResult(CallResult.ResultType.CONTINUE, (int)node.value);
+			case FOR		:
+				final EntityDescriptor	forVar = names.getCargo(node.value);
+				
+forLoop:		for (Object item : buildIterable(node.children[0], node.children[1], node.children[2], names, stack, predef, level, callback)) {
+					Array.set(stack.getVar(forVar.id),0,item);
+
 					final CallResult 	result = (CallResult)execute(node.children[3], names, stack, predef, depth + 1, level, callback);
 					
 					if (result.type.isReturnRequired() && result.level > 0) {
 						result.level--;
-						return result;
+						switch (result.type) {
+							case BREAK : case RETURN :
+								return result;
+							case CONTINUE	:
+								if (result.level > 0) {
+									return result;
+								}
+								else {
+									continue forLoop;
+								}
+							case ORDINAL	:
+								break;
+							default	:
+								throw new UnsupportedOperationException("Result type ["+result.type+"] is not implemented yet"); 
+						}
 					}
 				}
 				return new CallResult(CallResult.ResultType.ORDINAL);
 			case FOR1		:
-				final Object	for1Var = names.getCargo(node.value);
+				final EntityDescriptor	for1Var = names.getCargo(node.value);
 				
-				for (Object item : buildIterable(node.children[0], node.children[1], names, stack, predef, level, callback)) {
-					// Assign
+for1Loop:		for (Object item : buildIterable(node.children[0], node.children[1], names, stack, predef, level, callback)) {
+					Array.set(stack.getVar(for1Var.id),0,item);
+
 					final CallResult 	result = (CallResult)execute(node.children[2], names, stack, predef, depth + 1, level, callback);
 					
 					if (result.type.isReturnRequired() && result.level > 0) {
 						result.level--;
-						return result;
+						switch (result.type) {
+							case BREAK : case RETURN :
+								return result;
+							case CONTINUE	:
+								if (result.level > 0) {
+									return result;
+								}
+								else {
+									continue for1Loop;
+								}
+							case ORDINAL	:
+								break;
+							default	:
+								throw new UnsupportedOperationException("Result type ["+result.type+"] is not implemented yet"); 
+						}
 					}
 				}
 				return new CallResult(CallResult.ResultType.ORDINAL);
 			case FORALL		:
-				final Object	forallVar = names.getCargo(node.value);
+				final EntityDescriptor	forallVar = names.getCargo(node.value);
 				
-				for (Object item : buildSimpleIterable((SyntaxNode)node.cargo, names, stack, predef, level, callback)) {
-					// Assign
+forallLoop:		for (Object item : buildSimpleIterable((SyntaxNode)node.cargo, names, stack, predef, level, callback)) {
+					Array.set(stack.getVar(forallVar.id),0,item);
+					
 					final CallResult 	result = (CallResult)execute(node.children[0], names, stack, predef, depth + 1, level, callback);
 					
 					if (result.type.isReturnRequired() && result.level > 0) {
 						result.level--;
-						return result;
+						switch (result.type) {
+							case BREAK : case RETURN :
+								return result;
+							case CONTINUE	:
+								if (result.level > 0) {
+									return result;
+								}
+								else {
+									continue forallLoop;
+								}
+							case ORDINAL	:
+								break;
+							default	:
+								throw new UnsupportedOperationException("Result type ["+result.type+"] is not implemented yet"); 
+						}
 					}
 				}
 				return new CallResult(CallResult.ResultType.ORDINAL);
@@ -132,15 +199,13 @@ public class ScriptExecutorUtil {
 					final CallResult 	result = (CallResult)execute(node.children[0], names, stack, predef, depth + 1, level, callback);
 					
 					if (result.type.isReturnRequired() && result.level > 0) {
-						result.level--;
 						return result;
 					}
 				}
-				else if (node.children[1] != null) {
+				else if (node.children.length > 1 && node.children[1] != null) {
 					final CallResult 	result = (CallResult)execute(node.children[1], names, stack, predef, depth + 1, level, callback);
 					
 					if (result.type.isReturnRequired() && result.level > 0) {
-						result.level--;
 						return result;
 					}
 				}
@@ -154,32 +219,63 @@ public class ScriptExecutorUtil {
 					final CallResult 	result = (CallResult)execute(item, names, stack, predef, depth, level, callback);
 					
 					if (result.type.isReturnRequired() && result.level > 0) {
-						result.level--;
 						return result;
 					}
 				}
 				return new CallResult(CallResult.ResultType.ORDINAL);
 			case UNTIL		:
-				do {final CallResult 	result = (CallResult)execute(node.children[0], names, stack, predef, depth + 1, level, callback);
+untilLoop:		do {final CallResult 	result = (CallResult)execute(node.children[0], names, stack, predef, depth + 1, level, callback);
 				
 					if (result.type.isReturnRequired() && result.level > 0) {
 						result.level--;
-						return result;
+						switch (result.type) {
+							case BREAK : case RETURN :
+								return result;
+							case CONTINUE	:
+								if (result.level > 0) {
+									return result;
+								}
+								else {
+									continue untilLoop;
+								}
+							case ORDINAL	:
+								break;
+							default	:
+								throw new UnsupportedOperationException("Result type ["+result.type+"] is not implemented yet"); 
+						}
 					}
 				} while (convert(calc((SyntaxNode)node.cargo, names, stack, predef, level, callback), boolean.class));
 				
 				return new CallResult(CallResult.ResultType.ORDINAL);
 			case WHILE		:
-				while (convert(calc((SyntaxNode)node.cargo, names, stack, predef, level, callback), boolean.class)) {
+whileLoop:		while (convert(calc((SyntaxNode)node.cargo, names, stack, predef, level, callback), boolean.class)) {
 					final CallResult 	result = (CallResult)execute(node.children[0], names, stack, predef, depth + 1, level, callback);
 					
 					if (result.type.isReturnRequired() && result.level > 0) {
 						result.level--;
-						return result;
+						switch (result.type) {
+							case BREAK : case RETURN :
+								return result;
+							case CONTINUE	:
+								if (result.level > 0) {
+									return result;
+								}
+								else {
+									continue whileLoop;
+								}
+							case ORDINAL	:
+								break;
+							default	:
+								throw new UnsupportedOperationException("Result type ["+result.type+"] is not implemented yet"); 
+						}
 					}
 				}
-				
 				return new CallResult(CallResult.ResultType.ORDINAL);
+			case STRONG_BINARY	:	// Assignment operator
+				if ((OperatorTypes)node.cargo == OperatorTypes.ASSIGNMENT) {
+					calc(node, names, stack, predef, level, callback);
+					return new CallResult(CallResult.ResultType.ORDINAL);
+				}
 			default:
 				throw new UnsupportedOperationException("Node type ["+node.getType()+"] is not supported yet"); 
 		}
@@ -195,8 +291,11 @@ public class ScriptExecutorUtil {
 				if (accVal == null) {
 					throw new PaintScriptException(new SyntaxException(node.row, node.col, "Null value inside...")); 
 				}
-				if (node.children != null) {
+				if (node.children != null && node.children.length > 0) {
 					accVal = processAccess(accVal, node, names, stack, predef, level, callback);
+				}
+				else if (accVal.getClass().isArray()) {
+					accVal = Array.get(accVal, 0);
 				}
 				return accVal;
 			case BINARY			:
@@ -359,27 +458,27 @@ public class ScriptExecutorUtil {
 						return new CallResult(CallResult.ResultType.ORDINAL);
 					case EQ			:
 						leftValue = calc(node.children[0], names, stack, predef, level, callback);
-						rightValue = convert(calc(node.children[0], names, stack, predef, level, callback), leftValue.getClass());
+						rightValue = convert(calc(node.children[1], names, stack, predef, level, callback), leftValue.getClass());
 						return Boolean.valueOf(compare(leftValue, rightValue) == 0);
 					case GE			:
 						leftValue = calc(node.children[0], names, stack, predef, level, callback);
-						rightValue = convert(calc(node.children[0], names, stack, predef, level, callback), leftValue.getClass());
+						rightValue = convert(calc(node.children[1], names, stack, predef, level, callback), leftValue.getClass());
 						return Boolean.valueOf(compare(leftValue, rightValue) >= 0);
 					case GT			:
 						leftValue = calc(node.children[0], names, stack, predef, level, callback);
-						rightValue = convert(calc(node.children[0], names, stack, predef, level, callback), leftValue.getClass());
+						rightValue = convert(calc(node.children[1], names, stack, predef, level, callback), leftValue.getClass());
 						return Boolean.valueOf(compare(leftValue, rightValue) > 0);
 					case LE			:
 						leftValue = calc(node.children[0], names, stack, predef, level, callback);
-						rightValue = convert(calc(node.children[0], names, stack, predef, level, callback), leftValue.getClass());
+						rightValue = convert(calc(node.children[1], names, stack, predef, level, callback), leftValue.getClass());
 						return Boolean.valueOf(compare(leftValue, rightValue) <= 0);
 					case LT			:
 						leftValue = calc(node.children[0], names, stack, predef, level, callback);
-						rightValue = convert(calc(node.children[0], names, stack, predef, level, callback), leftValue.getClass());
+						rightValue = convert(calc(node.children[1], names, stack, predef, level, callback), leftValue.getClass());
 						return Boolean.valueOf(compare(leftValue, rightValue) < 0);
 					case NE			:
 						leftValue = calc(node.children[0], names, stack, predef, level, callback);
-						rightValue = convert(calc(node.children[0], names, stack, predef, level, callback), leftValue.getClass());
+						rightValue = convert(calc(node.children[1], names, stack, predef, level, callback), leftValue.getClass());
 						return Boolean.valueOf(compare(leftValue, rightValue) != 0);
 					case IN			:
 						leftValue = calc(node.children[0], names, stack, predef, level, callback);
@@ -658,7 +757,44 @@ public class ScriptExecutorUtil {
 						((ContentWrapper)Array.get(accTarget, 0)).setContent(value);
 					}
 					else {
-						Array.set(accTarget, 0, value);
+						if (cl.getComponentType().isAssignableFrom(value.getClass())) {
+							Array.set(accTarget, 0, value);
+						}
+						else if (cl.getComponentType().isPrimitive() && !value.getClass().isPrimitive()) {
+							final Object assignValue = value.getClass().isArray() ? Array.get(value, 0) : value; 
+							
+							switch (CompilerUtils.defineClassType(cl.getComponentType())) {
+								case CompilerUtils.CLASSTYPE_BYTE	:
+									Array.setByte(accTarget, 0, ((Number)assignValue).byteValue());
+									break;
+								case CompilerUtils.CLASSTYPE_SHORT	:
+									Array.setShort(accTarget, 0, ((Number)assignValue).shortValue());
+									break;
+								case CompilerUtils.CLASSTYPE_CHAR	:	
+									Array.setChar(accTarget, 0, ((Character)assignValue).charValue());
+									break;
+								case CompilerUtils.CLASSTYPE_INT	:	
+									Array.setInt(accTarget, 0, ((Number)assignValue).intValue());
+									break;
+								case CompilerUtils.CLASSTYPE_LONG	:	
+									Array.setLong(accTarget, 0, ((Number)assignValue).longValue());
+									break;
+								case CompilerUtils.CLASSTYPE_FLOAT	:	
+									Array.setFloat(accTarget, 0, ((Number)assignValue).floatValue());
+									break;
+								case CompilerUtils.CLASSTYPE_DOUBLE	:	
+									Array.setDouble(accTarget, 0, ((Number)assignValue).doubleValue());
+									break;
+								case CompilerUtils.CLASSTYPE_BOOLEAN:
+									Array.setBoolean(accTarget, 0, ((Boolean)assignValue).booleanValue());
+									break;
+								default :
+									throw new UnsupportedAddressTypeException(); 
+							}
+						}
+						else {
+							throw new UnsupportedOperationException();
+						}
 					}
 				}
 				else {
@@ -712,6 +848,9 @@ public class ScriptExecutorUtil {
 		else if (terminalValue > initialValue && stepValue <= 0) {
 			throw new PaintScriptException("For loop error: terminal > initial and step <= 0"); 
 		}
+		else if (stepValue == 0) {
+			throw new PaintScriptException("For loop error: step == 0"); 
+		}
 		else {
 			return new Iterable<Number>() {
 				@Override
@@ -721,12 +860,12 @@ public class ScriptExecutorUtil {
 	
 						@Override
 						public boolean hasNext() {
-							return current <= terminalValue;
+							return stepValue > 0 ? current <= terminalValue : current >= terminalValue;
 						}
 	
 						@Override
 						public Number next() {
-							return Integer.valueOf(current++);
+							return Integer.valueOf(current += stepValue);
 						}
 					};
 				}
@@ -771,9 +910,22 @@ public class ScriptExecutorUtil {
 		}
 	}
 
-	private static int compare(final Object left, final Object right) {
-		// TODO Auto-generated method stub
-		return 0;
+	private static int compare(final Object left, final Object right) throws PaintScriptException {
+		if ((left instanceof Long) && (right instanceof Long)) {
+			return ((Long)left).compareTo((Long)right);
+		}
+		else if ((left instanceof Double) && (right instanceof Double)) {
+			return ((Long)left).compareTo((Long)right);
+		}
+		else if ((left instanceof char[]) && (right instanceof char[])) {
+			return CharUtils.compareTo((char[])left,(char[])right);
+		}
+		else if ((left instanceof Boolean) && (right instanceof Boolean)) {
+			return ((Boolean)left ? 1 : 0) - ((Boolean)right ? 1 : 0); 
+		}
+		else {
+			throw new PaintScriptException("Comparison error: incompatible types ["+left.getClass().getCanonicalName()+"] and ["+right.getClass().getCanonicalName()+"]");
+		}
 	}
 
 	private static <T> T convert(final Object instance, final Class<T> awaited) throws PaintScriptException {

@@ -281,4 +281,161 @@ public class ScriptExecutorUtilTest {
 		Assert.assertEquals(0xFF000000, ((long[])stack.getVar(names.seekName("j")))[0]);
 	}
 
+	@Test
+	public void operatorTest() throws PaintScriptException, InterruptedException, SyntaxException {
+		final SyntaxTreeInterface	names = new AndOrTree();
+		final Predefines			predef = new Predefines(new String[0]);
+		final ExecuteScriptCallback	callback = (l,n)->{}; 
+		LocalStack					stack;
+		Object						result;
+
+		// If test
+		names.clear();
+		result = ScriptExecutorUtil.execute(ScriptParserUtil.parseScript(new StringReader("var i : int := 1, j : int; begin if i = 1 then j := 1 else j := -1 end"), names), 
+					names, stack = new LocalStack(names, predef, callback), predef, 0, 0, callback);
+		Assert.assertEquals(1, ((long[])stack.getVar(names.seekName("j")))[0]);
+		
+		names.clear();
+		result = ScriptExecutorUtil.execute(ScriptParserUtil.parseScript(new StringReader("var i : int := 0, j : int; begin if i = 1 then j := 1 else j := -1 end"), names), 
+					names, stack = new LocalStack(names, predef, callback), predef, 0, 0, callback);
+		Assert.assertEquals(-1, ((long[])stack.getVar(names.seekName("j")))[0]);
+
+		// while test
+		names.clear();
+		result = ScriptExecutorUtil.execute(ScriptParserUtil.parseScript(new StringReader("var i : int, j : int := 10; begin while j >= 0 do j := j - 1 end"), names), 
+					names, stack = new LocalStack(names, predef, callback), predef, 0, 0, callback);
+		Assert.assertEquals(-1, ((long[])stack.getVar(names.seekName("j")))[0]);
+
+		names.clear();
+		result = ScriptExecutorUtil.execute(ScriptParserUtil.parseScript(new StringReader("var i : int, j : int := -10; begin while j >= 0 do j := j - 1 end"), names), 
+					names, stack = new LocalStack(names, predef, callback), predef, 0, 0, callback);
+		Assert.assertEquals(-10, ((long[])stack.getVar(names.seekName("j")))[0]);
+		
+		// until test
+		names.clear();
+		result = ScriptExecutorUtil.execute(ScriptParserUtil.parseScript(new StringReader("var i : int, j : int := 10; begin do j := j - 1 while j >= 0 end"), names), 
+					names, stack = new LocalStack(names, predef, callback), predef, 0, 0, callback);
+		Assert.assertEquals(-1, ((long[])stack.getVar(names.seekName("j")))[0]);
+
+		names.clear();
+		result = ScriptExecutorUtil.execute(ScriptParserUtil.parseScript(new StringReader("var i : int, j : int := -1; begin do j := j - 1 while j >= 0 end"), names), 
+					names, stack = new LocalStack(names, predef, callback), predef, 0, 0, callback);
+		Assert.assertEquals(-2, ((long[])stack.getVar(names.seekName("j")))[0]);
+		
+		// For test
+		names.clear();
+		result = ScriptExecutorUtil.execute(ScriptParserUtil.parseScript(new StringReader("var i : int, j : int := 0; begin for i := 1 to 10 step 2 do j := j + 1; end"), names), 
+					names, stack = new LocalStack(names, predef, callback), predef, 0, 0, callback);
+		Assert.assertEquals(5, ((long[])stack.getVar(names.seekName("j")))[0]);
+		
+		// For1 test
+		names.clear();
+		result = ScriptExecutorUtil.execute(ScriptParserUtil.parseScript(new StringReader("var i : int, j : int := 0; begin for i := 1 to 10 do j := j + 1; end"), names), 
+					names, stack = new LocalStack(names, predef, callback), predef, 0, 0, callback);
+		Assert.assertEquals(10, ((long[])stack.getVar(names.seekName("j")))[0]);
+
+		// Forall test
+		names.clear();
+		result = ScriptExecutorUtil.execute(ScriptParserUtil.parseScript(new StringReader("var i : int, j : int := 0; begin for i in 1,2,3 do j := j + i end"), names), 
+					names, stack = new LocalStack(names, predef, callback), predef, 0, 0, callback);
+		Assert.assertEquals(6, ((long[])stack.getVar(names.seekName("j")))[0]);
+	
+		// case test
+		names.clear();
+		result = ScriptExecutorUtil.execute(ScriptParserUtil.parseScript(new StringReader("var i : int := 1, j : int; begin case i of 1: j := 1 of 2: j := 2 else j := 3 end end"), names), 
+					names, stack = new LocalStack(names, predef, callback), predef, 0, 0, callback);
+		Assert.assertEquals(1, ((long[])stack.getVar(names.seekName("j")))[0]);
+
+		names.clear();
+		result = ScriptExecutorUtil.execute(ScriptParserUtil.parseScript(new StringReader("var i : int := 2, j : int; begin case i of 1: j := 1 of 2: j := 2 else j := 3 end end"), names), 
+					names, stack = new LocalStack(names, predef, callback), predef, 0, 0, callback);
+		Assert.assertEquals(2, ((long[])stack.getVar(names.seekName("j")))[0]);
+
+		names.clear();
+		result = ScriptExecutorUtil.execute(ScriptParserUtil.parseScript(new StringReader("var i : int := 3, j : int; begin case i of 1: j := 1 of 2: j := 2 else j := 3 end end"), names), 
+					names, stack = new LocalStack(names, predef, callback), predef, 0, 0, callback);
+		Assert.assertEquals(3, ((long[])stack.getVar(names.seekName("j")))[0]);
+
+		// Break test
+		names.clear();
+		result = ScriptExecutorUtil.execute(ScriptParserUtil.parseScript(new StringReader("var i : int := 10, j : int := 0; begin while i >= 0 do {j := j + 1; break} end"), names), 
+					names, stack = new LocalStack(names, predef, callback), predef, 0, 0, callback);
+		Assert.assertEquals(1, ((long[])stack.getVar(names.seekName("j")))[0]);
+		
+		names.clear();
+		result = ScriptExecutorUtil.execute(ScriptParserUtil.parseScript(new StringReader("var i : int := 10, j : int := 0; begin do {j := j + 1; break} while i >= 0 end"), names), 
+					names, stack = new LocalStack(names, predef, callback), predef, 0, 0, callback);
+		Assert.assertEquals(1, ((long[])stack.getVar(names.seekName("j")))[0]);
+		
+		names.clear();
+		result = ScriptExecutorUtil.execute(ScriptParserUtil.parseScript(new StringReader("var i : int, j : int := 0; begin for i := 1 to 10 do {j := j + 1; break} end"), names), 
+					names, stack = new LocalStack(names, predef, callback), predef, 0, 0, callback);
+		Assert.assertEquals(1, ((long[])stack.getVar(names.seekName("j")))[0]);
+	
+		names.clear();
+		result = ScriptExecutorUtil.execute(ScriptParserUtil.parseScript(new StringReader("var i : int, j : int := 0; begin for i := 1 to 10 step 1 do {j := j + 1; break} end"), names), 
+					names, stack = new LocalStack(names, predef, callback), predef, 0, 0, callback);
+		Assert.assertEquals(1, ((long[])stack.getVar(names.seekName("j")))[0]);
+
+		names.clear();
+		result = ScriptExecutorUtil.execute(ScriptParserUtil.parseScript(new StringReader("var i : int, j : int := 0; begin for i in 1,2,3,4,5 do {j := j + 1; break} end"), names), 
+					names, stack = new LocalStack(names, predef, callback), predef, 0, 0, callback);
+		Assert.assertEquals(1, ((long[])stack.getVar(names.seekName("j")))[0]);
+
+		names.clear();
+		result = ScriptExecutorUtil.execute(ScriptParserUtil.parseScript(new StringReader("var i : int, j : int := 0; begin for i in 1,2,3,4,5 do {j := j + 1; if i = 1 then break} end"), names), 
+					names, stack = new LocalStack(names, predef, callback), predef, 0, 0, callback);
+		Assert.assertEquals(1, ((long[])stack.getVar(names.seekName("j")))[0]);
+	
+		names.clear();
+		result = ScriptExecutorUtil.execute(ScriptParserUtil.parseScript(new StringReader("var i : int, j : int := 0; begin for i in 1,2,3,4,5 do {j := j + 1; if i <> 1 then j := j + 1 else break} end"), names), 
+					names, stack = new LocalStack(names, predef, callback), predef, 0, 0, callback);
+		Assert.assertEquals(1, ((long[])stack.getVar(names.seekName("j")))[0]);
+
+		names.clear();
+		result = ScriptExecutorUtil.execute(ScriptParserUtil.parseScript(new StringReader("var i : int, i1 : int, j : int := 0; begin for i := 0 to 10 do for i1 := 0 to 10 do {j := j + 1; break 2} end"), names), 
+					names, stack = new LocalStack(names, predef, callback), predef, 0, 0, callback);
+		Assert.assertEquals(1, ((long[])stack.getVar(names.seekName("j")))[0]);
+		
+		// Continue test
+		names.clear();
+		result = ScriptExecutorUtil.execute(ScriptParserUtil.parseScript(new StringReader("var i : int := 10, j : int := 0; begin while i >= 0 do {i := i - 1; j := j + 1; continue} end"), names), 
+					names, stack = new LocalStack(names, predef, callback), predef, 0, 0, callback);
+		Assert.assertEquals(11, ((long[])stack.getVar(names.seekName("j")))[0]);
+		
+		names.clear();
+		result = ScriptExecutorUtil.execute(ScriptParserUtil.parseScript(new StringReader("var i : int := 10, j : int := 0; begin do {i := i - 1; j := j + 1; continue} while i >= 0 end"), names), 
+					names, stack = new LocalStack(names, predef, callback), predef, 0, 0, callback);
+		Assert.assertEquals(11, ((long[])stack.getVar(names.seekName("j")))[0]);
+		
+		names.clear();
+		result = ScriptExecutorUtil.execute(ScriptParserUtil.parseScript(new StringReader("var i : int, j : int := 0; begin for i := 1 to 10 do {j := j + 1; continue} end"), names), 
+					names, stack = new LocalStack(names, predef, callback), predef, 0, 0, callback);
+		Assert.assertEquals(10, ((long[])stack.getVar(names.seekName("j")))[0]);
+	
+		names.clear();
+		result = ScriptExecutorUtil.execute(ScriptParserUtil.parseScript(new StringReader("var i : int, j : int := 0; begin for i := 1 to 10 step 1 do {j := j + 1; continue} end"), names), 
+					names, stack = new LocalStack(names, predef, callback), predef, 0, 0, callback);
+		Assert.assertEquals(10, ((long[])stack.getVar(names.seekName("j")))[0]);
+
+		names.clear();
+		result = ScriptExecutorUtil.execute(ScriptParserUtil.parseScript(new StringReader("var i : int, j : int := 0; begin for i in 1,2,3,4,5 do {j := j + 1; continue} end"), names), 
+					names, stack = new LocalStack(names, predef, callback), predef, 0, 0, callback);
+		Assert.assertEquals(5, ((long[])stack.getVar(names.seekName("j")))[0]);
+
+		names.clear();
+		result = ScriptExecutorUtil.execute(ScriptParserUtil.parseScript(new StringReader("var i : int, j : int := 0; begin for i in 1,2,3,4,5 do {j := j + 1; if i = 1 then continue} end"), names), 
+					names, stack = new LocalStack(names, predef, callback), predef, 0, 0, callback);
+		Assert.assertEquals(5, ((long[])stack.getVar(names.seekName("j")))[0]);
+	
+		names.clear();
+		result = ScriptExecutorUtil.execute(ScriptParserUtil.parseScript(new StringReader("var i : int, j : int := 0; begin for i in 1,2,3,4,5 do {j := j + 1; if i <> 1 then j := j + 1 else continue} end"), names), 
+					names, stack = new LocalStack(names, predef, callback), predef, 0, 0, callback);
+		Assert.assertEquals(9, ((long[])stack.getVar(names.seekName("j")))[0]);
+
+		names.clear();
+		result = ScriptExecutorUtil.execute(ScriptParserUtil.parseScript(new StringReader("var i : int, i1 : int, j : int := 0; begin for i := 0 to 10 do for i1 := 0 to 10 do {j := j + 1; continue 2} end"), names), 
+					names, stack = new LocalStack(names, predef, callback), predef, 0, 0, callback);
+		Assert.assertEquals(11, ((long[])stack.getVar(names.seekName("j")))[0]);
+	}
 }
