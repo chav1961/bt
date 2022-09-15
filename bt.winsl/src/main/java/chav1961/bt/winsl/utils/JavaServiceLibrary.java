@@ -1,7 +1,16 @@
 package chav1961.bt.winsl.utils;
 
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+
+import chav1961.purelib.basic.Utils;
 import chav1961.purelib.basic.exceptions.ContentException;
 import chav1961.purelib.basic.exceptions.EnvironmentException;
+import chav1961.purelib.basic.exceptions.PreparationException;
 
 /**
  * <p>This class is an adapter to Windows service mechanism. It supports both service manipulation (installation, change configuration,
@@ -31,12 +40,20 @@ public class JavaServiceLibrary {
 	public static final int RC_UNKNOWN = 4;
 	
 	static {
-			try{System.loadLibrary("srvmgr");
-	//			System.loadLibrary("JavaServiceLibrary");
-			} catch (UnsatisfiedLinkError err) {
-				System.loadLibrary("srvmgr");
-	//			System.loadLibrary("JavaServiceLibrary32");
+		final File	toPath = new File(System.getProperty("java.io.tmpdir"),"JavaServiceLibrary.dll"); 
+
+		try {
+			try(final InputStream	is = JavaServiceLibrary.class.getResourceAsStream("/JavaServiceLibrary.dll"); 
+				final OutputStream	os = new FileOutputStream(toPath)) {
+				
+				Utils.copyStream(is, os);
+			} catch (IOException e) {
+				throw new PreparationException(e.getLocalizedMessage(), e);
 			}
+			System.load(toPath.getAbsolutePath());
+		} catch (UnsatisfiedLinkError e) {
+			throw new PreparationException(e.getLocalizedMessage(), e);
+		}
 	}
 
 	/**
