@@ -18,6 +18,7 @@ import chav1961.purelib.basic.exceptions.EnvironmentException;
 public class Application {
 	public static final String	MODE_KEY = "mode";	
 	public static final String	CONF_KEY = "conf";	
+	public static final String	DEMO_KEY = "demo";	
 	public static final String	CONFIG_FILE = "./service.conf";	
 
 	public static final String	SERVICENAME_INI = "serviceName";
@@ -178,7 +179,8 @@ public class Application {
 		public ApplicationArgParser() {
 			super(new EnumArg<ApplicationMode>(MODE_KEY,ApplicationMode.class,true,true,"Mode to start application. "+Arrays.toString(ApplicationMode.values())+" are available"),
 			  	  new URIArg(CONF_KEY,false,"config source with service settings ("+CONFIG_FILE+" if not typed)",CONFIG_FILE),
-			  	  new StringArg(SERVICENAME_INI,false,"service name to manage","unknown")
+			  	  new StringArg(SERVICENAME_INI,false,"service name to manage","unknown"),
+			  	  new BooleanArg(DEMO_KEY,false,"prepare demo service",false)
 			);
 		}
 	}
