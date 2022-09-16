@@ -40,10 +40,10 @@ public class JavaServiceLibrary {
 	public static final int RC_UNKNOWN = 4;
 	
 	static {
-		final File	toPath = new File(System.getProperty("java.io.tmpdir"),"JavaServiceLibrary.dll"); 
+		final File	toPath = new File(System.getProperty("java.io.tmpdir"),"srvmgr.dll"); 
 
 		try {
-			try(final InputStream	is = JavaServiceLibrary.class.getResourceAsStream("/JavaServiceLibrary.dll"); 
+			try(final InputStream	is = JavaServiceLibrary.class.getResourceAsStream("/srvmgr.dll"); 
 				final OutputStream	os = new FileOutputStream(toPath)) {
 				
 				Utils.copyStream(is, os);

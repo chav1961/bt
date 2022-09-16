@@ -1,6 +1,9 @@
 package chav1961.bt.winsl;
 
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.OutputStream;
+import java.io.PrintStream;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
@@ -9,6 +12,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ArrayBlockingQueue;
 
+import chav1961.bt.winsl.echoserver.EchoServer;
 import chav1961.bt.winsl.utils.JavaServiceLibrary;
 import chav1961.purelib.basic.ArgParser;
 import chav1961.purelib.basic.CharUtils;
@@ -20,11 +24,11 @@ import chav1961.purelib.basic.exceptions.SyntaxException;
 public class Service {
 	private static final char	EOF = '\0';
 
-	public static void main(String[] args) throws IOException {
+	public static void main(final String[] args) throws IOException {
 		final ArgParser		parser = new ApplicationArgParser();
 		String				serviceNameErr = "unknown";
 
-		try {final ArgParser	ap = parser.parse(false, false, args);
+		try{final ArgParser	ap = parser.parse(false, false, args);
 		
 			if (!System.getProperty("os.name","unknown").toUpperCase().contains("WINDOWS")) {
 				throw new CommandLineParametersException("This application can be used in the Windows-based systems only");
@@ -33,6 +37,11 @@ public class Service {
 			final SubstitutableProperties		sp = Application.getConfiguration(ap.getValue(Application.CONF_KEY, URI.class));
 			final String						serviceName = serviceNameErr = sp.getProperty(Application.SERVICENAME_INI);
 			final ArrayBlockingQueue<Integer>	queue =  new ArrayBlockingQueue<>(10);
+
+			if (ap.getValue(Application.DEMO_KEY, boolean.class)) {
+				sp.setProperty(Application.START_INI, EchoServer.class.getCanonicalName()+".main");
+				sp.setProperty(Application.STOP_INI, EchoServer.class.getCanonicalName()+".terminate");
+			}
 			
 			final Thread	t = new Thread(()->{
 				try{prepareService(serviceName, queue);
@@ -43,6 +52,7 @@ public class Service {
 					}
 				}
 			});
+			t.setDaemon(true);
 			t.start();
 			
 			try{queue.put(JavaServiceLibrary.RC_START);
@@ -179,7 +189,9 @@ loop:			for(;;) {
 
 	static class ApplicationArgParser extends ArgParser {
 		public ApplicationArgParser() {
-			super(new URIArg(Application.CONF_KEY,false,"config source with service settings ("+Application.CONFIG_FILE+" if not typed)","file:/c:/tmp/x.conf"/*Application.CONFIG_FILE*/));
+			super(new URIArg(Application.CONF_KEY,false,"config source with service settings ("+Application.CONFIG_FILE+" if not typed)","file:c:/tmp/x.conf"),
+				  new BooleanArg(Application.DEMO_KEY,false,"prepare demo service",false)
+				);
 		}
 	}
 }

@@ -9,4 +9,6 @@ module chav1961.bt.winsl {
 	requires jdk.httpserver;
 	requires java.compiler;
 	requires jdk.javadoc;
+	
+	exports chav1961.bt.winsl.echoserver; 
 }

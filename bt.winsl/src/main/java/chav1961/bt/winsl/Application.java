@@ -5,6 +5,7 @@ import java.io.InputStream;
 import java.net.URI;
 import java.util.Arrays;
 
+import chav1961.bt.winsl.echoserver.EchoServer;
 import chav1961.bt.winsl.interfaces.ErrorControl;
 import chav1961.bt.winsl.interfaces.StartType;
 import chav1961.bt.winsl.utils.JavaServiceDescriptor;
@@ -14,6 +15,8 @@ import chav1961.purelib.basic.SubstitutableProperties;
 import chav1961.purelib.basic.exceptions.CommandLineParametersException;
 import chav1961.purelib.basic.exceptions.ContentException;
 import chav1961.purelib.basic.exceptions.EnvironmentException;
+
+// java -cp purelib-0.0.6.jar -jar winsl-0.0.1.jar remove -conf file:c:/tmp/service.conf -serviceName testservice
 
 public class Application {
 	public static final String	MODE_KEY = "mode";	
@@ -55,6 +58,11 @@ public class Application {
 		
 			final SubstitutableProperties	sp = getConfiguration(ap.getValue(CONF_KEY, URI.class)); 
 			final String					serviceName = sp.getProperty(SERVICENAME_INI, String.class);
+
+			if (ap.getValue(DEMO_KEY, boolean.class)) {
+				sp.setProperty(START_INI, EchoServer.class.getCanonicalName()+".main");
+				sp.setProperty(STOP_INI, EchoServer.class.getCanonicalName()+".terminate");
+			}
 			
 			switch (ap.getValue(MODE_KEY, ApplicationMode.class)) {
 				case install	:
@@ -75,12 +83,13 @@ public class Application {
 				default	:
 					throw new UnsupportedOperationException("Application mode ["+ap.getValue(MODE_KEY, ApplicationMode.class)+"] is not supported yet");
 			}
+			System.err.println("Action completed successfully");
 		} catch (CommandLineParametersException e) {
-			printError(128,"Command line parameter error: "+e.getLocalizedMessage(),parser.getUsage("winsl"));
+			printError(128, "Command line parameter error: "+e.getLocalizedMessage(), parser.getUsage("winsl"));
 		} catch (ContentException e) {
-			printError(128,"Action error: "+e.getLocalizedMessage(),parser.getUsage("winsl"));
+			printError(128, "Action error: "+e.getLocalizedMessage(), parser.getUsage("winsl"));
 		} catch (IOException | EnvironmentException e) {
-			printError(129,"I/O error processing config URI: "+e.getClass().getSimpleName()+" - "+e.getLocalizedMessage(),parser.getUsage("winsl"));
+			printError(129, e.getLocalizedMessage(), parser.getUsage("winsl"));
 		}
 	}
 
