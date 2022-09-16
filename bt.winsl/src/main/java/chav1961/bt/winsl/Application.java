@@ -34,7 +34,7 @@ public class Application {
 	public static final String	USER_INI = "user";
 	public static final String	PASSWORD_INI = "password";
 
-	private static final Object	INSTALL_MANDATORIES[] = {SERVICENAME_INI, DISPLAYNAME_INI, STARTTYPE_INI, PATH_INI, Service.START_INI}; 
+	private static final Object	INSTALL_MANDATORIES[] = {SERVICENAME_INI, DISPLAYNAME_INI, STARTTYPE_INI, PATH_INI}; 
 	private static final Object	UPDATE_MANDATORIES[] = {SERVICENAME_INI}; 
 	private static final Object	REMOVE_MANDATORIES[] = {SERVICENAME_INI}; 
 	
