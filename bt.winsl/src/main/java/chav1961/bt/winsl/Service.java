@@ -22,6 +22,14 @@ import chav1961.purelib.basic.exceptions.EnvironmentException;
 import chav1961.purelib.basic.exceptions.SyntaxException;
 
 public class Service {
+	public static final String	START_INI = "start";
+	public static final String	PAUSE_INI = "pause";
+	public static final String	RESUME_INI = "resume";
+	public static final String	STOP_INI = "stop";
+	public static final String	IN_REDIRECTION_INI = "inRedirection";
+	public static final String	OUT_REDIRECTION_INI = "outRedirection";
+	public static final String	ERR_REDIRECTION_INI = "errRedirection";
+	
 	private static final char	EOF = '\0';
 
 	public static void main(final String[] args) throws IOException {
@@ -39,8 +47,8 @@ public class Service {
 			final ArrayBlockingQueue<Integer>	queue =  new ArrayBlockingQueue<>(10);
 
 			if (ap.getValue(Application.DEMO_KEY, boolean.class)) {
-				sp.setProperty(Application.START_INI, EchoServer.class.getCanonicalName()+".main");
-				sp.setProperty(Application.STOP_INI, EchoServer.class.getCanonicalName()+".terminate");
+				sp.setProperty(START_INI, EchoServer.class.getCanonicalName()+".main");
+				sp.setProperty(STOP_INI, EchoServer.class.getCanonicalName()+".terminate");
 			}
 			
 			final Thread	t = new Thread(()->{
@@ -60,21 +68,21 @@ public class Service {
 loop:			for(;;) {
 					switch (queue.take()) {
 						case JavaServiceLibrary.RC_START :
-							callService(serviceName,Application.START_INI,sp.getProperty(Application.START_INI));
+							callService(serviceName,START_INI,sp.getProperty(START_INI));
 							break;
 						case JavaServiceLibrary.RC_PAUSE :
-							if (sp.containsKey(Application.PAUSE_INI)) {
-								callService(serviceName,Application.PAUSE_INI,sp.getProperty(Application.PAUSE_INI));
+							if (sp.containsKey(PAUSE_INI)) {
+								callService(serviceName,PAUSE_INI,sp.getProperty(PAUSE_INI));
 							}
 							break;
 						case JavaServiceLibrary.RC_RESUME :
-							if (sp.containsKey(Application.RESUME_INI)) {
-								callService(serviceName,Application.RESUME_INI,sp.getProperty(Application.RESUME_INI));
+							if (sp.containsKey(RESUME_INI)) {
+								callService(serviceName,RESUME_INI,sp.getProperty(RESUME_INI));
 							}
 							break;
 						case JavaServiceLibrary.RC_STOP : 
-							if (sp.containsKey(Application.STOP_INI)) {
-								callService(serviceName,Application.STOP_INI,sp.getProperty(Application.STOP_INI));
+							if (sp.containsKey(STOP_INI)) {
+								callService(serviceName,STOP_INI,sp.getProperty(STOP_INI));
 							}
 							break loop;
 						default : 
@@ -84,6 +92,7 @@ loop:			for(;;) {
 			} finally {
 				unprepareService();
 			}
+			System.exit(0);
 		} catch (CommandLineParametersException e) {
 			printError(128,serviceNameErr,"Command line parameter error: "+e.getLocalizedMessage());
 		} catch (SyntaxException e) {

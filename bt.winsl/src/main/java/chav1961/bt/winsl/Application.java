@@ -34,12 +34,7 @@ public class Application {
 	public static final String	USER_INI = "user";
 	public static final String	PASSWORD_INI = "password";
 
-	public static final String	START_INI = "start";
-	public static final String	PAUSE_INI = "pause";
-	public static final String	RESUME_INI = "resume";
-	public static final String	STOP_INI = "stop";
-	
-	private static final Object	INSTALL_MANDATORIES[] = {SERVICENAME_INI, DISPLAYNAME_INI, STARTTYPE_INI, PATH_INI, START_INI}; 
+	private static final Object	INSTALL_MANDATORIES[] = {SERVICENAME_INI, DISPLAYNAME_INI, STARTTYPE_INI, PATH_INI, Service.START_INI}; 
 	private static final Object	UPDATE_MANDATORIES[] = {SERVICENAME_INI}; 
 	private static final Object	REMOVE_MANDATORIES[] = {SERVICENAME_INI}; 
 	
@@ -60,8 +55,8 @@ public class Application {
 			final String					serviceName = sp.getProperty(SERVICENAME_INI, String.class);
 
 			if (ap.getValue(DEMO_KEY, boolean.class)) {
-				sp.setProperty(START_INI, EchoServer.class.getCanonicalName()+".main");
-				sp.setProperty(STOP_INI, EchoServer.class.getCanonicalName()+".terminate");
+				sp.setProperty(Service.START_INI, EchoServer.class.getCanonicalName()+".main");
+				sp.setProperty(Service.STOP_INI, EchoServer.class.getCanonicalName()+".terminate");
 			}
 			
 			switch (ap.getValue(MODE_KEY, ApplicationMode.class)) {
