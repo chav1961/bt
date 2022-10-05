@@ -15,12 +15,20 @@ public class ImmutableClipperValue extends AbstractClipperValue {
 	}
 
 	@Override
+	public Object get() {
+		return value;
+	}
+	
+	@Override
 	public <T> T get(final Class<T> awaited) throws SyntaxException {
-		if (getType().getNativeClass() != awaited) {
-			throw new SyntaxException(0,0,"Get type ["+awaited+"] is not compatible with stored type ["+getType()+"]");
+		if (getType().getNativeClass() == awaited) {
+			return awaited.cast(value);
+		}
+		else if (awaited == ClipperValue.class) {
+			return (T)this;
 		}
 		else {
-			return (T)value;
+			throw new SyntaxException(0,0,"Get type ["+awaited+"] is not compatible with stored type ["+getType()+"]");
 		}
 	}
 	

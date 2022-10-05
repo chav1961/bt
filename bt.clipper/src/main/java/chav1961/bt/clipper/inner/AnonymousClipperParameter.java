@@ -10,6 +10,7 @@ public class AnonymousClipperParameter implements ClipperParameter {
 	public static final ClipperParameter	ANON_NUMBER = new AnonymousClipperParameter(-1, false, ClipperType.C_Number); 
 	public static final ClipperParameter	ANON_STRING = new AnonymousClipperParameter(-1, false, ClipperType.C_String); 
 	public static final ClipperParameter	ANON_VOID = new AnonymousClipperParameter(-1, false, ClipperType.C_Void); 
+	public static final ClipperParameter	ANON_ANY = new AnonymousClipperParameter(-1, false, ClipperType.C_Any); 
 	
 	private static final long serialVersionUID = 909299429159738445L;
 
@@ -28,6 +29,11 @@ public class AnonymousClipperParameter implements ClipperParameter {
 		return types[0];
 	}
 
+	@Override
+	public Object get() {
+		throw new IllegalStateException("Calling this method is not applicable with the class");
+	}
+	
 	@Override
 	public <T> T get(final Class<T> awaited) throws SyntaxException {
 		throw new IllegalStateException("Calling this method is not applicable with the class");
@@ -59,9 +65,9 @@ public class AnonymousClipperParameter implements ClipperParameter {
 	}
 
 	@Override
-	public boolean isCompatibleWith(ClipperType type) {
+	public boolean isCompatibleWith(final ClipperType type) {
 		for (ClipperType item : getAllSupportedTypes()) {
-			if (type == item) {
+			if (type == item || item == ClipperType.C_Any) {
 				return true;
 			}
 		}

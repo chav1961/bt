@@ -19,6 +19,11 @@ public class MutableClipperValue extends AbstractClipperValue {
 	}
 
 	@Override
+	public Object get() {
+		return value;
+	}
+	
+	@Override
 	public <T> T get(final Class<T> awaited) throws SyntaxException {
 		return (T)value;
 	}

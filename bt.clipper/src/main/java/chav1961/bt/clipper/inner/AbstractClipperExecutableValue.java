@@ -15,6 +15,10 @@ public abstract class AbstractClipperExecutableValue extends AbstractClipperValu
 		super(type);
 	}
 
+	@Override
+	public Object get() {
+		return content;
+	}
 	
 	public <T> T get(Class<T> awaited) throws SyntaxException {
 		if (awaited != byte[].class) {
