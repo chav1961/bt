@@ -5,6 +5,7 @@ import java.util.Arrays;
 import chav1961.bt.clipper.inner.AbstractBuiltinClipperFunction;
 import chav1961.bt.clipper.inner.AnonymousClipperParameter;
 import chav1961.bt.clipper.inner.ImmutableClipperValue;
+import chav1961.bt.clipper.inner.MutableClipperValue;
 import chav1961.bt.clipper.inner.interfaces.ClipperParameter;
 import chav1961.bt.clipper.inner.interfaces.ClipperSyntaxEntity;
 import chav1961.bt.clipper.inner.interfaces.ClipperType;
@@ -102,9 +103,22 @@ public class RuntimeContainer implements FunctionsContainer {
 		public ClipperValue invoke(final int parameterCount, final ClipperValue... parameters) throws ContentException {
 			checkInputParameters(parameterCount, parameters);
 			
-			final ClipperValue[]	from = parameters[0].get(ClipperValue[].class), to = from.clone();
-
+			final ClipperValue[]	from = parameters[0].get(ClipperValue[].class);
+			final ClipperValue[]	to = clone(from);
+			
+			
 			return new ImmutableClipperValue(ClipperType.C_Array, to);
+		}
+
+		private ClipperValue[] clone(final ClipperValue[] source) throws SyntaxException {
+			final ClipperValue[]	result = source.clone();
+			
+			for (int index = 0; index < result.length; index++) {
+				if (result[index] != null && result[index].getType() == ClipperType.C_Array) {
+					result[index] = new MutableClipperValue(ClipperType.C_Array, clone(result[index].get(ClipperValue[].class)));
+				}
+			}
+			return result;
 		}
 	}
 	
