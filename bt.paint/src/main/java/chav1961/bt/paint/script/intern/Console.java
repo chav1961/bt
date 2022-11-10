@@ -643,11 +643,11 @@ public class Console {
 		}
 	}
 
-	private static String fill(final Predefines predef, final int x, final int y, final Color color) {
-//		final ImageWrapper	iw = predef.getPredefined(Predefines.PREDEF_CANVAS, CanvasWrapper.class).getImage();
-//		final ImageWrapper	result = ImageWrapper.of(ImageUtils.process(ProcessType.FILL, (BufferedImage)iw.getImage(), null, color, except));
-//		
-//		predef.getPredefined(Predefines.PREDEF_CANVAS, CanvasWrapper.class).setImage(result);
+	private static String fill(final Predefines predef, final int x, final int y, final Color color) throws PaintScriptException {
+		final ImageWrapper	iw = predef.getPredefined(Predefines.PREDEF_CANVAS, CanvasWrapper.class).getImage();
+		final ImageWrapper	result = ImageWrapper.of((BufferedImage)ImageUtils.process(ProcessType.SPREAD, (BufferedImage)iw.getImage(), null, new Point(x,y), color));
+		
+		predef.getPredefined(Predefines.PREDEF_CANVAS, CanvasWrapper.class).setImage(result);
 		return OK;
 	}
 

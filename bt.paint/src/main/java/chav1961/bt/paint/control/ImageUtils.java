@@ -26,8 +26,11 @@ import java.awt.image.ImageObserver;
 import java.awt.image.RGBImageFilter;
 import java.text.AttributedCharacterIterator;
 import java.text.AttributedString;
+import java.util.Collection;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Set;
 
 import chav1961.bt.paint.script.interfaces.StrokeWrapper.LineCaps;
 import chav1961.bt.paint.script.interfaces.StrokeWrapper.LineJoin;
@@ -38,11 +41,11 @@ import chav1961.purelib.ui.ColorPair;
 
 public class ImageUtils {
 	public static enum ProcessType {
-		FILL, CROP, RESIZE, SCALE, ROTATE_CLOCKWISE, ROTATE_COUNTERCLOCKWISE, MIRROR_HORIZONTAL, MIRROR_VERTICAL, TO_GRAYSCALE, TO_TRANSPARENT, INSERT, FILTER 
+		FILL, SPREAD, CROP, RESIZE, SCALE, ROTATE_CLOCKWISE, ROTATE_COUNTERCLOCKWISE, MIRROR_HORIZONTAL, MIRROR_VERTICAL, TO_GRAYSCALE, TO_TRANSPARENT, INSERT, FILTER 
 	}
 
 	public static enum DrawingType {
-		UNKNOWN, SELECT, PEN, BRUSH, TEXT, LINE, ELLIPSE, RECT, FILL 
+		UNKNOWN, SELECT, PEN, BRUSH, TEXT, LINE, ELLIPSE, RECT, FILL, ERASE 
 	}	
 	
 	public static Image process(final ProcessType type, final Image source, final ImageObserver observer, final Object... parameters) {
@@ -60,6 +63,13 @@ public class ImageUtils {
 					}
 					else {
 						throw new IllegalArgumentException("[FILL] mode must have rectangle item and color in the parameters list"); 
+					}
+				case SPREAD				:
+					if (checkParameterTypes(parameters, Point.class, Color.class)) {
+						return spreadImage((BufferedImage)source, (Point)parameters[0], (Color)parameters[1], observer);
+					}
+					else {
+						throw new IllegalArgumentException("[SPREAD] mode must have point item and color in the parameters list"); 
 					}
 				case CROP				:
 					if (checkParameterTypes(parameters, Rectangle.class)) {
@@ -316,6 +326,16 @@ public class ImageUtils {
 		g2d.fillRect(rectangle.x, rectangle.y, rectangle.width, rectangle.height);
 		g2d.setColor(oldColor);
 		g2d.dispose();
+		return result;
+	}
+
+	static Image spreadImage(final BufferedImage source, final Point point, final Color color, final ImageObserver observer) {
+		final BufferedImage	result = (BufferedImage) cropImage(source, new Rectangle(0, 0, source.getWidth(), source.getHeight()), observer);
+		final int			sourceColor = source.getRGB(point.x, point.y); 
+		
+		if (color.getRGB() != sourceColor) {
+			floodFill(result, point.x, point.y, sourceColor, color.getRGB());
+		}
 		return result;
 	}
 	
@@ -721,40 +741,47 @@ public class ImageUtils {
 		}
 	}
 	
-    private static void floodFill(final BufferedImage image, int sr, int sc, int oldColor, int newColor) {
+    private static void floodFill(final BufferedImage image, int sourceRow, int sourceColumn, int oldColor, int newColor) {
         final List<XY>	queue = new LinkedList<>();
+        final int		width = image.getWidth(), height = image.getHeight();
+        final long[]	bitmap = new long[(width * height) >> 6];
         
-        queue.add(new XY(sr, sc));
+        queue.add(new XY(sourceRow, sourceColumn));
         while (!queue.isEmpty()) {
-            final XY 	p = queue.get(0);
+            final XY 	p = queue.remove(0);
+            final int	x = p.x, y = p.y;
             
-            if (isInside(image, p.x, p.y, oldColor)) {
-                image.setRGB(p.x, p.y, newColor);
+            if (image.getRGB(x, y) == oldColor) {
+                image.setRGB(x, y, newColor);
             }
-            if (isInside(image, p.x - 1, p.y, oldColor)) { // up -> row-1
-                queue.add(new XY(p.x - 1, p.y));
+            if (x > 0 && testAndSet(bitmap, x - 1, width, y) && image.getRGB(x - 1, y) == oldColor) {
+            	queue.add(new XY(x - 1, y));
             }
-            if (isInside(image, p.x + 1, p.y, oldColor)) { // down -> row+1
-                queue.add(new XY(p.x + 1, p.y));
+            if (x < width - 1 && testAndSet(bitmap, x + 1, width, y) && image.getRGB(x + 1, y) == oldColor) {
+            	queue.add(new XY(x + 1, y));
             }
-            if (isInside(image, p.x, p.y - 1, oldColor)) { // left -> col-1
-                queue.add(new XY(p.x, p.y - 1));
+            if (y > 0 && testAndSet(bitmap, x, width, y - 1) && image.getRGB(x, y - 1) == oldColor) {
+            	queue.add(new XY(x, y - 1));
             }
-            if (isInside(image, p.x, p.y + 1, oldColor)) { // right -> col+1
-                queue.add(new XY(p.x, p.y + 1));
+            if (y < height - 1 && testAndSet(bitmap, x, width, y + 1) && image.getRGB(x, y + 1) == oldColor) {
+            	queue.add(new XY(x, y + 1));
             }
         }
     }
 
-    private static boolean isInside(final BufferedImage image, int x, int y, int oldColor) {
-        if (x > -1 && x < image.getWidth() && y > -1 && y < image.getHeight() && image.getRGB(x, y) == oldColor) {
-            return true;
-        }
-        else {
-            return false;
-        }
+    private static boolean testAndSet(final long[] bitmap, final int x, final int width, final int y) {
+    	final int	index = x * width + y, location = index >> 6, shift = index & 0x3F;
+        final long	mark = 1L << shift;
+    	
+    	if ((bitmap[location] & mark) == 0) {
+    		bitmap[location] |= mark;
+    		return true;
+    	}
+    	else {
+    		return false;
+    	}
     }
-	
+    
 	private static void printTransformation(final AffineTransform at, final Rectangle rect) {
 		final Point2D.Float[]	src = new Point2D.Float[] {new Point2D.Float(rect.x,  rect.y), new Point2D.Float(rect.x+rect.width, rect.y+rect.height)};
 		final Point2D.Float[]	dst = new Point2D.Float[2];
@@ -771,5 +798,35 @@ public class ImageUtils {
 	        this.x = x;
 	        this.y = y;
 	    }
+
+		@Override
+		public String toString() {
+			return "XY [x=" + x + ", y=" + y + "]";
+		}
+
+		@Override
+		public int hashCode() {
+			final int prime = 31;
+			int result = 1;
+			result = prime * result + x;
+			result = prime * result + y;
+			return result;
+		}
+
+		@Override
+		public boolean equals(Object obj) {
+			if (this == obj)
+				return true;
+			if (obj == null)
+				return false;
+			if (getClass() != obj.getClass())
+				return false;
+			XY other = (XY) obj;
+			if (x != other.x)
+				return false;
+			if (y != other.y)
+				return false;
+			return true;
+		}
 	}
 }

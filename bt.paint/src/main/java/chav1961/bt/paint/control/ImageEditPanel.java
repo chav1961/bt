@@ -493,6 +493,11 @@ public class ImageEditPanel extends JPanel implements LocalizerOwner, LocaleChan
 				canvas.getSelectionManager().enableSelection(true);
 				canvas.getSelectionManager().setVisible(true);
 				break;
+			case ERASE		:
+				canvas.getSelectionManager().setSelectionStyle(SelectionStyle.RECTANGLE);
+				canvas.getSelectionManager().enableSelection(true);
+				canvas.getSelectionManager().setVisible(true);
+				break;
 			case UNKNOWN	:
 				break;
 			default :
