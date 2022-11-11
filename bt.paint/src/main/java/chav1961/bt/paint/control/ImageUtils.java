@@ -726,22 +726,8 @@ public class ImageUtils {
 		
 		g2d.drawImage(Toolkit.getDefaultToolkit().createImage(new FilteredImageSource(content.getSource(), filter)), 0, 0, observer);
 	}
-	
-	private static boolean checkParameterTypes(final Object[] parameters, final Class<?>... types) {
-		if (parameters.length < types.length) {
-			return false;
-		}
-		else {
-			for(int index = 0; index < types.length; index++) {
-				if (!types[index].isInstance(parameters[index])) {
-					return false;
-				}
-			}
-			return true;
-		}
-	}
-	
-    private static void floodFill(final BufferedImage image, int sourceRow, int sourceColumn, int oldColor, int newColor) {
+
+    static void floodFill(final BufferedImage image, int sourceRow, int sourceColumn, int oldColor, int newColor) {
         final List<XY>	queue = new LinkedList<>();
         final int		width = image.getWidth(), height = image.getHeight();
         final long[]	bitmap = new long[(width * height) >> 6];
@@ -769,6 +755,49 @@ public class ImageUtils {
         }
     }
 
+    static Rectangle quickFind(final BufferedImage source, final BufferedImage template) {
+        final int		width = source.getWidth(), height = source.getHeight();
+        final int		templateWidth = source.getWidth(), templateHeight = source.getHeight();
+        final int[]		content = new int[width * height];
+        final int[]		templateContent = new int[templateWidth * templateHeight];
+        final float[]	values = new float[templateWidth * templateHeight];
+        final float[]	squares = new float[templateWidth * templateHeight];
+        final float[]	delta = new float[templateWidth * templateHeight];
+        
+        source.getRGB(0, 0, width, height, content, 0, 1);
+        template.getRGB(0, 0, templateWidth, templateHeight, templateContent, 0, 1);
+        for(int index = 0; index < templateContent.length; index++) {
+        	float	val = templateContent[index];
+        	
+        	values[index] = val; 
+        	squares[index] = val * val; 
+        }
+        
+        for(int x = 0; x < width - templateWidth; x++) {
+            for(int y = 0; y < height - templateHeight; y++) {
+            	for(int displ = 0; displ < templateContent.length; displ++) {
+            		delta[displ] = content[x*width + y + displ] * values[displ] - squares[displ];
+            	}
+            }
+        }
+        return null;
+    }
+    
+    
+	private static boolean checkParameterTypes(final Object[] parameters, final Class<?>... types) {
+		if (parameters.length < types.length) {
+			return false;
+		}
+		else {
+			for(int index = 0; index < types.length; index++) {
+				if (!types[index].isInstance(parameters[index])) {
+					return false;
+				}
+			}
+			return true;
+		}
+	}
+	
     private static boolean testAndSet(final long[] bitmap, final int x, final int width, final int y) {
     	final int	index = x * width + y, location = index >> 6, shift = index & 0x3F;
         final long	mark = 1L << shift;
