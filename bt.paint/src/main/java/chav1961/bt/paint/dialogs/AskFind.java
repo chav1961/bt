@@ -7,7 +7,6 @@ import chav1961.purelib.basic.interfaces.ModuleAccessor;
 import chav1961.purelib.i18n.interfaces.LocaleResource;
 import chav1961.purelib.i18n.interfaces.LocaleResourceLocation;
 import chav1961.purelib.model.ImageKeeperImpl;
-import chav1961.purelib.model.interfaces.ImageKeeper;
 import chav1961.purelib.ui.interfaces.FormManager;
 import chav1961.purelib.ui.interfaces.Format;
 import chav1961.purelib.ui.interfaces.RefreshMode;
@@ -22,12 +21,12 @@ public class AskFind implements FormManager<Object, AskFind>, ModuleAccessor {
 	public ImageKeeperImpl	image = new ImageKeeperImpl();
 	
 	@LocaleResource(value="askfind.scaled",tooltip="askfind.scaled.tt")
-	@Format("1s")
-	public boolean			findScaled = false;
+	@Format(value="1s",wizardType="slider{minValue=0;maxValue=5;paintTicks=true;paintLabels=true}")
+	public int[]			findScaled = new int[] {1,1};
 
 	@LocaleResource(value="askfind.rotated",tooltip="askfind.rotated.tt")
-	@Format("1s")
-	public boolean			findRotated = false;
+	@Format(value="1s",wizardType="slider{minValue=-5;maxValue=5;paintTicks=true;paintLabels=true}")
+	public int[]			findRotated = new int[] {0,0};
 	
 	public AskFind(final LoggerFacade facade) {
 		if (facade == null) {
