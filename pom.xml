@@ -38,5 +38,6 @@
   	<module>bt.pythonwrapper</module>
   	<module>bt.clipper</module>
   	<module>bt.paint</module>
+  	<module>bt.neuralnetwork</module>
   </modules>
 </project>
