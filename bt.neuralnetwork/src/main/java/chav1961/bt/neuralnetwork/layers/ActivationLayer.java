@@ -57,16 +57,26 @@ public class ActivationLayer implements MatrixNeuralNetworkLayer {
 
 	@Override
 	public int getTargetWidth(final int sourceWidth) {
-		return sourceWidth;
+		if (sourceWidth <= 0) {
+			throw new IllegalArgumentException("Source width ["+sourceWidth+"] must be positive"); 
+		}
+		else {
+			return sourceWidth;
+		}
 	}
 
 	@Override
 	public int getTargetHeight(final int sourceHeight) {
-		return sourceHeight;
+		if (sourceHeight <= 0) {
+			throw new IllegalArgumentException("Source height ["+sourceHeight+"] must be positive"); 
+		}
+		else {
+			return sourceHeight;
+		}
 	}
 
 	@Override
-	public float[] process(final int width, final int height, final float[] source) {
+	public float[] process(final int width, final int height, final float... source) {
 		if (width <= 1) {
 			throw new IllegalArgumentException("Source matrix width ["+width+"] must be greater than 1"); 
 		}

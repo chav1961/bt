@@ -1,6 +1,7 @@
 package chav1961.bt.neuralnetwork.layers;
 
 import chav1961.bt.neuralnetwork.interfaces.MatrixNeuralNetworkLayer;
+import chav1961.bt.neuralnetwork.interfaces.PoolingType;
 
 public class PoolingLayer implements MatrixNeuralNetworkLayer {
 	private final String		name;
@@ -15,77 +16,6 @@ public class PoolingLayer implements MatrixNeuralNetworkLayer {
 		float afterCall();
 	}
 	
-	public static enum PoolingType {
-		SUM_POOLING(new UserDefinedPoolingFunction() {
-					float	sum;
-			
-					@Override
-					public void beforeCall() {
-						sum = 0;
-					}
-		
-					@Override
-					public void call(final int x, final int y, final float value) {
-						sum += value;
-					}
-		
-					@Override
-					public float afterCall() {
-						return sum;
-					}
-				}),
-		MAX_POOLING(new UserDefinedPoolingFunction() {
-					float 	max;
-					
-					@Override
-					public void beforeCall() {
-						max = -Float.MAX_VALUE;
-					}
-		
-					@Override
-					public void call(final int x, final int y, final float value) {
-						max = Math.max(max, value);
-					}
-		
-					@Override
-					public float afterCall() {
-						return Math.max(max, 0);
-					}
-				}),
-		AVERAGE_POOLING(new UserDefinedPoolingFunction() {
-					float	sum;
-					int		count;
-					
-					@Override
-					public void beforeCall() {
-						sum = 0;
-						count = 0;
-					}
-		
-					@Override
-					public void call(final int x, final int y, final float value) {
-						sum += value;
-						count++;
-					}
-		
-					@Override
-					public float afterCall() {
-						return count == 0 ? 0 : sum/ count;
-					}
-				}),
-		USER_DEFINED_POOLING(null);
-		
-		private final UserDefinedPoolingFunction	udpf;
-		
-		private PoolingType(final UserDefinedPoolingFunction udpf) {
-			this.udpf = udpf;
-		}
-		
-		public UserDefinedPoolingFunction getPoolingFunction() {
-			return udpf;
-		}
-	}
-
 	public PoolingLayer(final String layerName, final int width, final int height, final PoolingType pooling) {
 		this(layerName, width, height, pooling, null);
 	}	
@@ -108,7 +38,7 @@ public class PoolingLayer implements MatrixNeuralNetworkLayer {
 			throw new NullPointerException("Pooling type can't be null"); 
 		}
 		else if (pooling == PoolingType.USER_DEFINED_POOLING && call == null) {
-			throw new IllegalArgumentException("Pooling type ["+pooling+"] requires user-defined pooling function parameter"); 
+			throw new NullPointerException("Pooling type ["+pooling+"] requires user-defined pooling function parameter"); 
 		}
 		else if (pooling != PoolingType.USER_DEFINED_POOLING && call != null) {
 			throw new IllegalArgumentException("Pooling type ["+pooling+"] doesn't support user-defined pooling function"); 
@@ -140,16 +70,26 @@ public class PoolingLayer implements MatrixNeuralNetworkLayer {
 
 	@Override
 	public int getTargetWidth(final int sourceWidth) {
-		return sourceWidth / getWidth();
+		if (sourceWidth <= 0) {
+			throw new IllegalArgumentException("Source width ["+sourceWidth+"] must be positive"); 
+		}
+		else {
+			return sourceWidth / getWidth();
+		}
 	}
 
 	@Override
 	public int getTargetHeight(final int sourceHeight) {
-		return sourceHeight / getHeight();
+		if (sourceHeight <= 0) {
+			throw new IllegalArgumentException("Source height ["+sourceHeight+"] must be positive"); 
+		}
+		else {
+			return sourceHeight / getHeight();
+		}
 	}
 
 	@Override
-	public float[] process(final int width, final int height, final float[] source) {
+	public float[] process(final int width, final int height, final float... source) {
 		if (width <= 1) {
 			throw new IllegalArgumentException("Source matrix width ["+width+"] must be greater than 1"); 
 		}
@@ -164,11 +104,12 @@ public class PoolingLayer implements MatrixNeuralNetworkLayer {
 		}
 		else {
 			final int		poolingWidth = getWidth(), poolingHeight = getHeight();
+			final int		targetWidth = getTargetWidth(width) * poolingWidth, targetHeight = getTargetHeight(height) * poolingHeight;
 			final float[]	result = new float[getTargetWidth(width) * getTargetHeight(height)];
 			int				target = 0;
 			
-			for(int y = 0; y < height - poolingHeight; y += poolingHeight) {
-				for(int x = 0; x < width - poolingWidth; x += poolingWidth) {
+			for(int y = 0; y < targetHeight; y += poolingHeight) {
+				for(int x = 0; x < targetWidth; x += poolingWidth) {
 					
 					call.beforeCall();
 					for(int deltaY = 0; deltaY < poolingHeight; deltaY++) {

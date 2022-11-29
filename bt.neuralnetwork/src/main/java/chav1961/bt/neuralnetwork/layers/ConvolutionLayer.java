@@ -25,8 +25,8 @@ public class ConvolutionLayer implements MatrixNeuralNetworkLayer {
 		else if (stride <= 0) {
 			throw new IllegalArgumentException("Layer filter stride ["+stride+"] must be greater than 0"); 
 		}
-		else if (padding <= 0) {
-			throw new IllegalArgumentException("Layer filter padding ["+padding+"] must be greater than 0"); 
+		else if (padding < 0) {
+			throw new IllegalArgumentException("Layer filter padding ["+padding+"] must be greater or equals 0"); 
 		}
 		else if (filter == null) {
 			throw new NullPointerException("Filter array can't be null"); 
@@ -61,16 +61,26 @@ public class ConvolutionLayer implements MatrixNeuralNetworkLayer {
 
 	@Override
 	public int getTargetWidth(final int sourceWidth) {
-		return (sourceWidth - getWidth() + 2 * padding) / stride + 1;
+		if (sourceWidth <= 0) {
+			throw new IllegalArgumentException("Source width ["+sourceWidth+"] must be positive"); 
+		}
+		else {
+			return (sourceWidth - getWidth() + 2 * padding) / stride + 1;
+		}
 	}
 
 	@Override
 	public int getTargetHeight(final int sourceHeight) {
-		return (sourceHeight - getHeight() + 2 * padding) / stride + 1;
+		if (sourceHeight <= 0) {
+			throw new IllegalArgumentException("Source height ["+sourceHeight+"] must be positive"); 
+		}
+		else {
+			return (sourceHeight - getHeight() + 2 * padding) / stride + 1;
+		}
 	}
 	
 	@Override
-	public float[] process(final int width, final int height, final float[] source) {
+	public float[] process(final int width, final int height, final float... source) {
 		if (width <= 1) {
 			throw new IllegalArgumentException("Source matrix width ["+width+"] must be greater than 1"); 
 		}

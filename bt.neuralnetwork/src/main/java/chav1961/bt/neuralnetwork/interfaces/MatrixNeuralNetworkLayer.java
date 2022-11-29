@@ -5,5 +5,5 @@ public interface MatrixNeuralNetworkLayer extends NeuralNetworkLayer {
 	int getHeight();
 	int getTargetWidth(int sourceWidth);
 	int getTargetHeight(int sourceHeight);
-	float[] process(int width, int height, float[] source);
+	float[] process(int width, int height, float... source);
 }
