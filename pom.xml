@@ -39,5 +39,6 @@
   	<module>bt.clipper</module>
   	<module>bt.paint</module>
   	<module>bt.neuralnetwork</module>
+  	<module>bt.keystore</module>
   </modules>
 </project>

@@ -5,7 +5,7 @@
     <artifactId>bt</artifactId>
     <version>0.0.1-SNAPSHOT</version>
   </parent>
-  <artifactId>bt.lightrepo</artifactId>
+  <artifactId>bt.keystore</artifactId>
 	<developers>
 		<developer>
 			<name>Alexander Chernomyrdin aka chav1961</name>
@@ -58,7 +58,7 @@
 	</distributionManagement>
   
      <build>
-       <finalName>starter-0.0.1</finalName>
+       <finalName>keystore-0.0.1</finalName>
         <resources>
             <resource>
                 <directory>src/main/java</directory>
@@ -113,7 +113,6 @@
                        <manifest>
                            <addClasspath>true</addClasspath>
                            <classpathPrefix>./</classpathPrefix>
-                            <mainClass>chav1961.bt.winsl.Application</mainClass>
                        </manifest>
 			            <manifestEntries>
 			            <key>value</key>
@@ -121,30 +120,6 @@
                    </archive>
                </configuration>
            </plugin>
-<!--              <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-shade-plugin</artifactId>
-                <version>2.3</version>
-                <configuration>
-                </configuration>
-                <executions>
-                    <execution>
-                        <phase>package</phase>
-                        <goals>
-                            <goal>shade</goal>
-                        </goals>
-                    </execution>
-                </executions>
-            </plugin>
--->            
-<!-- 	    <plugin>
-	        <artifactId>maven-deploy-plugin</artifactId>
-	        <version>2.8.1</version>
-	        <configuration>
-	               <altDeploymentRepository>internal.repo::default::file://${project.build.directory}/mvn-repo</altDeploymentRepository>
-	        </configuration>
-	    </plugin>
- -->	    
        </plugins>
    </build>
 </project>
