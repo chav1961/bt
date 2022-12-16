@@ -4,7 +4,6 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.security.AuthProvider;
@@ -36,7 +35,6 @@ import javax.security.auth.login.FailedLoginException;
 
 import chav1961.bt.security.keystore.interfaces.KeyStoreControllerException;
 import chav1961.bt.security.keystore.interfaces.KeyStoreType;
-import chav1961.purelib.basic.PureLibSettings;
 import chav1961.purelib.basic.SubstitutableProperties;
 import chav1961.purelib.basic.Utils;
 
@@ -46,7 +44,6 @@ public class KeyStoreController implements AutoCloseable {
     private static final String 		PKCS11_PROVIDER = "PKCS11"; 
     private static final String 		SUN_PKCS11_PROVIDER = "SunPKCS11"; 
     private final static String 		KEYSTORE_FILE_TYPE = "JCEKS"; //"JKS"
-    
     private final static int 			TRIES = 15;
 
     private final KeyStoreType 	type;
@@ -103,6 +100,10 @@ public class KeyStoreController implements AutoCloseable {
     	}
     }
 
+    public KeyStoreController(final SubstitutableProperties configuration, final CallbackHandler callbackHandler) throws KeyStoreControllerException {
+    	this(configuration, SUN_PKCS11_PROVIDER, callbackHandler);
+    }    
+    
     /**
      * Constructor for working with a PKCS#11 keystore
      *
@@ -110,15 +111,18 @@ public class KeyStoreController implements AutoCloseable {
      * @param callbackHandler
      * @throws KeystoreControllerException
      */
-    public KeyStoreController(final SubstitutableProperties configuration, final CallbackHandler callbackHandler) throws KeyStoreControllerException {
+    public KeyStoreController(final SubstitutableProperties configuration, final String providerName, final CallbackHandler callbackHandler) throws KeyStoreControllerException {
     	if (configuration == null) {
-    		throw new NullPointerException("Configuration props can't be null or empty");
+    		throw new NullPointerException("Configuration props can't be null");
+    	}
+    	else if (Utils.checkEmptyOrNullString(providerName)) {
+    		throw new IllegalArgumentException("Configuration provider name can't be null or empty");
     	}
     	else if (callbackHandler == null) {
     		throw new NullPointerException("Callback handler can't be null");
     	}
     	else {
-	        final Provider 	provider = getOrCreatePKCS11Provider(configuration);
+	        final Provider 	provider = getOrCreatePKCS11Provider(configuration, providerName);
 	
 	        try {
 	        	final KeyStore.Builder 	builder = KeyStore.Builder.newInstance(PKCS11_PROVIDER, provider, new KeyStore.CallbackHandlerProtection(callbackHandler));
@@ -180,13 +184,13 @@ public class KeyStoreController implements AutoCloseable {
     	return PKCS11_DEFAULT_PING_KEY_ALIAS;
     }
 
-    private Provider getOrCreatePKCS11Provider(final SubstitutableProperties configuration) throws KeyStoreControllerException {
+    private Provider getOrCreatePKCS11Provider(final SubstitutableProperties configuration, final String providerName) throws KeyStoreControllerException {
         try {
             synchronized (Provider.class) {
                 if (cachedPkcs11Provider != null) {
                     return cachedPkcs11Provider;
                 }
-                Provider provider = tryCreatePKCS11Provider(configuration);
+                Provider provider = tryCreatePKCS11Provider(configuration, providerName);
                 Provider prevProvider = Security.getProvider(provider.getName());
                 
                 if (prevProvider != null) {
@@ -205,11 +209,11 @@ public class KeyStoreController implements AutoCloseable {
         }
     }
 
-    private static Provider tryCreatePKCS11Provider(final SubstitutableProperties config) throws KeyStoreControllerException {
-        try{final Provider p = Security.getProvider(SUN_PKCS11_PROVIDER);
+    private static Provider tryCreatePKCS11Provider(final SubstitutableProperties config, final String providerName) throws KeyStoreControllerException {
+        try{final Provider p = Security.getProvider(providerName);
             
         	if (p == null) {
-                throw new KeyStoreControllerException("PKCS provider ["+SUN_PKCS11_PROVIDER+"] is not installed in your system");
+                throw new KeyStoreControllerException("PKCS provider ["+providerName+"] is not installed in your system");
             }
             else {
             	final StringBuilder	conf = new StringBuilder("--");	// See sun.security.pkcs11.Config sources
