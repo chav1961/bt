@@ -1,4 +1,4 @@
-package chav1961.bt.keystore;
+package chav1961.bt.security.keystore;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -34,8 +34,8 @@ import javax.security.auth.callback.PasswordCallback;
 import javax.security.auth.callback.UnsupportedCallbackException;
 import javax.security.auth.login.FailedLoginException;
 
-import chav1961.bt.keystore.interfaces.KeyStoreControllerException;
-import chav1961.bt.keystore.interfaces.KeyStoreType;
+import chav1961.bt.security.keystore.interfaces.KeyStoreControllerException;
+import chav1961.bt.security.keystore.interfaces.KeyStoreType;
 import chav1961.purelib.basic.PureLibSettings;
 import chav1961.purelib.basic.SubstitutableProperties;
 import chav1961.purelib.basic.Utils;

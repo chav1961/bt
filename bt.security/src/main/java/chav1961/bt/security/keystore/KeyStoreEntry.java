@@ -1,4 +1,4 @@
-package chav1961.bt.keystore;
+package chav1961.bt.security.keystore;
 
 public class KeyStoreEntry {
     private final String alias;

@@ -1,4 +1,4 @@
-package chav1961.bt.keystore;
+package chav1961.bt.security.encription;
 
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
@@ -20,7 +20,7 @@ import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.PBEKeySpec;
 import javax.crypto.spec.SecretKeySpec;
 
-import chav1961.bt.keystore.interfaces.PasswordFormatException;
+import chav1961.bt.security.keystore.interfaces.PasswordFormatException;
 import chav1961.purelib.basic.HexUtils;
 import chav1961.purelib.basic.Utils;
 

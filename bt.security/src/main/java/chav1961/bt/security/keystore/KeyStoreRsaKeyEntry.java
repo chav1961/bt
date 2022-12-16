@@ -1,4 +1,4 @@
-package chav1961.bt.keystore;
+package chav1961.bt.security.keystore;
 
 import java.security.Key;
 import java.security.cert.Certificate;

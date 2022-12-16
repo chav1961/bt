@@ -1,4 +1,4 @@
-package chav1961.bt.keystore;
+package chav1961.bt.security.encription;
 
 import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
@@ -11,7 +11,7 @@ import java.util.EnumMap;
 import java.util.EnumSet;
 import java.util.Set;
 
-import chav1961.bt.keystore.interfaces.PasswordFormatException;
+import chav1961.bt.security.keystore.interfaces.PasswordFormatException;
 
 public final class PasswordHash {           
     private static final int 		SHA_1_MAX_HASH_LENGTH = 16;  

@@ -1,4 +1,4 @@
-package chav1961.bt.keystore.interfaces;
+package chav1961.bt.security.keystore.interfaces;
 
 public class InvalidServerKeystoreSettingsException extends KeyStoreControllerException {
 	private static final long serialVersionUID = -8478560763617143109L;
