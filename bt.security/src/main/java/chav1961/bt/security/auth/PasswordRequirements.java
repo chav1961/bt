@@ -1,9 +1,10 @@
-package chav1961.bt.security.encription;
+package chav1961.bt.security.auth;
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 
+import chav1961.bt.security.interfaces.PasswordHashAlgorithm;
 import chav1961.purelib.basic.Utils;
 
 public class PasswordRequirements {
@@ -16,7 +17,7 @@ public class PasswordRequirements {
     private final boolean 	mustContainDigit;
     private final boolean 	mustContainSpecial;
     private final String 	userName;
-    private final PasswordHash.Algorithm currentPwdHashAlgorithm;
+    private final PasswordHashAlgorithm currentPwdHashAlgorithm;
     private final Collection<String> blackList;
 
     public PasswordRequirements(final long minLen, final boolean mustContainAChar, final boolean mustContainNChar) {
@@ -35,7 +36,7 @@ public class PasswordRequirements {
         this(minLen, mustContainAChar, mustContainACharInMixedCase, mustContainNChar, mustContainSChar, userName, blackList, null);
     }
 
-    public PasswordRequirements(final long minLen, final boolean mustContainAChar, final boolean mustContainACharInMixedCase, final boolean mustContainNChar, final boolean mustContainSChar, final String userName, final Collection<String> blackList, final PasswordHash.Algorithm currentPwdHashAlgorithm) { 
+    public PasswordRequirements(final long minLen, final boolean mustContainAChar, final boolean mustContainACharInMixedCase, final boolean mustContainNChar, final boolean mustContainSChar, final String userName, final Collection<String> blackList, final PasswordHashAlgorithm currentPwdHashAlgorithm) { 
     	this.minLength = minLen;
     	this.mustContainLetter = mustContainAChar;
     	this.mustContainLetterInMixedCase = mustContainACharInMixedCase;
@@ -94,16 +95,16 @@ public class PasswordRequirements {
     	}
     }
 
-    public final PasswordHash.Algorithm getCurrentPwdHashAlgorithm(){
+    public final PasswordHashAlgorithm getCurrentPwdHashAlgorithm(){
         return currentPwdHashAlgorithm;
     }
 
-    public final boolean isPasswordGood(final String password, final Collection<AuthUtils.PwdWeaknessCheckResult> problems) {
+    public final boolean isPasswordGood(final String password, final Collection<PasswordUtils.PasswordWeaknessCheckResult> problems) {
     	if (Utils.checkEmptyOrNullString(password)) {
     		throw new IllegalArgumentException("Password to check can't be null or empty");
     	}
     	else {
-            return AuthUtils.checkPwdWeakness(password, this, problems);
+            return PasswordUtils.checkPasswordWeakness(password, this, problems);
     	}
     }
     

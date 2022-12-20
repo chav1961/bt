@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<localization xmlns="http://www.i18n.purelib.chav1961.ru/">
+	<lang name="en">
+		<key name="chav1961.purelib.sql.model.interfaces.DatabaseManagement.dbversion.dbv_Created">Created</key>
+	</lang>
+	<lang name="ru">
+		<key name="chav1961.purelib.ui.swing.useful.JFontSelectionDialog.sample">Пример шрифта</key>
+	</lang>
+</localization>

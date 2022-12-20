@@ -1,4 +1,4 @@
-package chav1961.bt.security.keystore.interfaces;
+package chav1961.bt.security.interfaces;
 
 public enum KeyStoreType {
     FILE("jceks"),

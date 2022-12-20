@@ -1,6 +1,6 @@
-package chav1961.bt.security.keystore.interfaces;
+package chav1961.bt.security.interfaces;
 
-public class PasswordFormatException extends AuthException {
+public class PasswordFormatException extends SecurityProcessingException {
 	private static final long serialVersionUID = 6678738613672168582L;
 
 	public PasswordFormatException() {

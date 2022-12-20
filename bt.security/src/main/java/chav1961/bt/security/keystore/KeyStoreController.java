@@ -33,8 +33,8 @@ import javax.security.auth.callback.PasswordCallback;
 import javax.security.auth.callback.UnsupportedCallbackException;
 import javax.security.auth.login.FailedLoginException;
 
-import chav1961.bt.security.keystore.interfaces.KeyStoreControllerException;
-import chav1961.bt.security.keystore.interfaces.KeyStoreType;
+import chav1961.bt.security.interfaces.KeyStoreControllerException;
+import chav1961.bt.security.interfaces.KeyStoreType;
 import chav1961.purelib.basic.SubstitutableProperties;
 import chav1961.purelib.basic.Utils;
 
@@ -385,8 +385,7 @@ public class KeyStoreController implements AutoCloseable {
     /**
      * Stores a DES key in keystore
      */
-    public void storeDesKeyEntry(final KeyStoreDesKeyEntry entry, final String alias, final char[] keyPassword)
-            throws KeyStoreControllerException {
+    public void storeDesKeyEntry(final KeyStoreDesKeyEntry entry, final String alias, final char[] keyPassword) throws KeyStoreControllerException {
         try {
             keystore.setKeyEntry(alias, entry.getKey(), keyPassword, null);
         } catch (KeyStoreException e) {

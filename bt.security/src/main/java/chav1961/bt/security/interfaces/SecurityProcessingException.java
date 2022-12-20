@@ -1,21 +1,21 @@
-package chav1961.bt.security.keystore.interfaces;
+package chav1961.bt.security.interfaces;
 
 import chav1961.purelib.basic.exceptions.ContentException;
 
-public class AuthException extends ContentException {
+public class SecurityProcessingException extends ContentException {
 	private static final long serialVersionUID = 7147107352157115851L;
 
 	/**
 	 * <p>Constructor of the class</p>
 	 */
-	public AuthException() {
+	public SecurityProcessingException() {
 	}
 
 	/**
 	 * <p>Constructor of the class</p>
 	 * @param message exception message
 	 */
-	public AuthException(final String message) {
+	public SecurityProcessingException(final String message) {
 		super(message);
 	}
 
@@ -23,7 +23,7 @@ public class AuthException extends ContentException {
 	 * <p>Constructor of the class</p>
 	 * @param cause exception cause
 	 */
-	public AuthException(final Throwable cause) {
+	public SecurityProcessingException(final Throwable cause) {
 		super(cause);
 	}
 
@@ -32,7 +32,7 @@ public class AuthException extends ContentException {
 	 * @param message exception message
 	 * @param cause exception cause
 	 */
-	public AuthException(final String message, final Throwable cause) {
+	public SecurityProcessingException(final String message, final Throwable cause) {
 		super(message, cause);
 	}
 }

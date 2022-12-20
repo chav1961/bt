@@ -1,4 +1,4 @@
-package chav1961.bt.security.keystore.interfaces;
+package chav1961.bt.security.interfaces;
 
 import chav1961.purelib.basic.exceptions.EnvironmentException;
 
