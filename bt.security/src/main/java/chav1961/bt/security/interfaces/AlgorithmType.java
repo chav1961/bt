@@ -3,7 +3,8 @@ package chav1961.bt.security.interfaces;
 import java.util.regex.Pattern;
 
 public enum AlgorithmType {
-	RANDOM_GENERATOR("S");
+	RANDOM_GENERATOR("S"),
+	KEY_STORE("KeyStore");
 	
 	private final Pattern	serviceName;
 	

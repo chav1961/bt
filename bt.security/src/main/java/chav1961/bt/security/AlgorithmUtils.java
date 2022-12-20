@@ -166,6 +166,43 @@ public class AlgorithmUtils {
 		}
 	}
 	
+	public static boolean exists(final AlgorithmType type, final String name) throws NullPointerException, IllegalArgumentException {
+		if (type == null) {
+			throw new NullPointerException("Algorithm type can't be null"); 
+		}
+		else if (Utils.checkEmptyOrNullString(name)) {
+			throw new IllegalArgumentException("Algorithm name can't be null"); 
+		}
+		else {
+			for (Provider provider : getProviders()) {
+				if (exists(provider, type, name)) {
+					return true;
+				}
+			}
+			return false;
+		}
+	}
+
+	public static boolean exists(final Provider provider, final AlgorithmType type, final String name) throws NullPointerException, IllegalArgumentException {
+		if (provider == null) {
+			throw new NullPointerException("Provider can't be null"); 
+		}
+		else if (type == null) {
+			throw new NullPointerException("Algorithm type can't be null"); 
+		}
+		else if (Utils.checkEmptyOrNullString(name)) {
+			throw new IllegalArgumentException("Algorithm name can't be null"); 
+		}
+		else {
+			for(Service s : provider.getServices()) {
+				if (type.getServiceNamePattern().matcher(s.getType()).matches() && s.getAlgorithm().equals(name)) {
+					return true;
+				}
+			}
+			return false;
+		}
+	}
+	
 	public static class AlgorithmDescriptor {
 		private final Provider		provider;
 		private final AlgorithmType	type;
