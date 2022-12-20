@@ -1,13 +1,21 @@
 package chav1961.bt.security.keystore;
 
-public class KeyStoreEntry {
-    private final String alias;
+import chav1961.bt.security.interfaces.KeyStoreEntryType;
 
-    protected KeyStoreEntry(String alias){
+public class KeyStoreEntry {
+    private final String 			alias;
+    private final KeyStoreEntryType	type;
+
+    protected KeyStoreEntry(final String alias, final KeyStoreEntryType type) {
         this.alias = alias;
+        this.type = type;
     }
 
-    public String getAlias(){
+    public String getAlias() {
         return alias;
+    }
+    
+    public KeyStoreEntryType getEntryType() {
+    	return type;
     }
 }
