@@ -35,16 +35,15 @@ import javax.security.auth.login.FailedLoginException;
 
 import chav1961.bt.security.interfaces.KeyStoreControllerException;
 import chav1961.bt.security.interfaces.KeyStoreType;
+import chav1961.bt.security.internal.InternalUtils;
 import chav1961.purelib.basic.SubstitutableProperties;
 import chav1961.purelib.basic.Utils;
 
 public class KeyStoreController implements AutoCloseable {
-    private static final String 		PKCS11_DEFAULT_PING_KEY_ALIAS = "keystore_ping_key";
     private static final Set<String> 	ALGORITHMS_SUPPORTED = Set.of("DES", "DESede", "AES");  
     private static final String 		PKCS11_PROVIDER = "PKCS11"; 
     private static final String 		SUN_PKCS11_PROVIDER = "SunPKCS11"; 
     private final static String 		KEYSTORE_FILE_TYPE = "JCEKS"; //"JKS"
-    private final static int 			TRIES = 15;
 
     private final KeyStoreType 	type;
     private final KeyStore 		keystore;
@@ -129,7 +128,7 @@ public class KeyStoreController implements AutoCloseable {
 	            KeyStoreException 		firstKeyStoreException = null;
 	            KeyStore 				tempKeyStore = null;
 	            
-	            for(int tryNumber = 0; tryNumber < TRIES; tryNumber++) {
+	            for(int tryNumber = 0, maxTries = InternalUtils.PROPS.getProperty(InternalUtils.PROP_DEFAULT_PKCS11_TRIES, int.class); tryNumber < maxTries; tryNumber++) {
 	                try {
 	                	tempKeyStore = builder.getKeyStore();
 	                    break;
@@ -181,17 +180,17 @@ public class KeyStoreController implements AutoCloseable {
     }
 
     protected String getPingKeyAlias() {
-    	return PKCS11_DEFAULT_PING_KEY_ALIAS;
+    	return InternalUtils.PROPS.getProperty(InternalUtils.PROP_DEFAULT_PKCS11_PING_KEY);
     }
 
     private Provider getOrCreatePKCS11Provider(final SubstitutableProperties configuration, final String providerName) throws KeyStoreControllerException {
-        try {
-            synchronized (Provider.class) {
+        try{
+        	synchronized (Provider.class) {
                 if (cachedPkcs11Provider != null) {
                     return cachedPkcs11Provider;
                 }
-                Provider provider = tryCreatePKCS11Provider(configuration, providerName);
-                Provider prevProvider = Security.getProvider(provider.getName());
+                final Provider provider = tryCreatePKCS11Provider(configuration, providerName);
+                final Provider prevProvider = Security.getProvider(provider.getName());
                 
                 if (prevProvider != null) {
                     cachedPkcs11Provider = prevProvider;
@@ -202,8 +201,6 @@ public class KeyStoreController implements AutoCloseable {
                     return provider;
                 }
             }
-        } catch (KeyStoreControllerException ex) {
-            throw ex;
         } catch (Throwable t) {
             throw new KeyStoreControllerException("Unable to initialize PKCS#11 keystore: " + t.getMessage(), t);
         }
@@ -216,7 +213,7 @@ public class KeyStoreController implements AutoCloseable {
                 throw new KeyStoreControllerException("PKCS provider ["+providerName+"] is not installed in your system");
             }
             else {
-            	final StringBuilder	conf = new StringBuilder("--");	// See sun.security.pkcs11.Config sources
+            	final StringBuilder	conf = new StringBuilder("--");	// See sun.security.pkcs11.Config sources for details
                 final Method 		m = p.getClass().getMethod("configure", String.class);
                 
                 for (Entry<Object, Object> item : config.entrySet()) {
@@ -232,7 +229,7 @@ public class KeyStoreController implements AutoCloseable {
     /**
      * Saves a PKCS#11 keystore
      */
-    public void savePkcs11KeyStore(final char[] password) throws KeyStoreControllerException {
+    public void savePKCS11KeyStore(final char[] password) throws KeyStoreControllerException {
         if (type != KeyStoreType.PKCS11) {
             throw new KeyStoreControllerException("savePkcs11KeyStore() should only be called for a PKCS#11 keystore");
         }
@@ -245,7 +242,7 @@ public class KeyStoreController implements AutoCloseable {
         }
     }
 
-    public void saveKeyStoreToFile(final String keystoreFile, final char[] password) throws KeyStoreControllerException {
+    public void saveKeyStore(final String keystoreFile, final char[] password) throws KeyStoreControllerException {
     	if (Utils.checkEmptyOrNullString(keystoreFile)) {
     		throw new IllegalArgumentException("Key store file can't be null or empty");
     	}
@@ -576,15 +573,9 @@ public class KeyStoreController implements AutoCloseable {
         }
     }
 
-    /**
-     * Checks whether the exception was caused by an incorrect password
-     *
-     * @param ex
-     * @return
-     */
     protected static boolean isIncorrectPasswordException(final Exception ex) {
         for (Throwable e = ex; e != null; e = e.getCause()) {
-            if (e instanceof UnrecoverableKeyException || e instanceof FailedLoginException) {
+            if ((e instanceof UnrecoverableKeyException) || (e instanceof FailedLoginException)) {
                 return true;
             }
         }
@@ -622,12 +613,12 @@ public class KeyStoreController implements AutoCloseable {
 
         @Override
         public void handle(final Callback[] callbacks) throws IOException, UnsupportedCallbackException {
-            
         	for (Callback item : callbacks) {
                 if (item instanceof javax.security.auth.callback.PasswordCallback) {
                     ((PasswordCallback)item).setPassword(password);
-                } else {
-                    throw new UnsupportedCallbackException(item, "Unsupperted callback type ["+item.getClass().getCanonicalName()+"]");
+                } 
+                else {
+                    throw new UnsupportedCallbackException(item, "Unsupported callback type ["+item.getClass().getCanonicalName()+"]");
                 }
             }
         }

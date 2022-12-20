@@ -1,8 +1,8 @@
 package chav1961.bt.security.interfaces;
 
-import chav1961.purelib.basic.exceptions.EnvironmentException;
+import chav1961.purelib.basic.exceptions.ContentException;
 
-public class KeyStoreControllerException extends EnvironmentException {
+public class KeyStoreControllerException extends ContentException {
 	private static final long serialVersionUID = 5345405103220321188L;
 
 	/**

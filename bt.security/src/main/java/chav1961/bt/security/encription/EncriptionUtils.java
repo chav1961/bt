@@ -7,7 +7,6 @@ import java.io.Serializable;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
-import java.security.SecureRandom;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.KeySpec;
 
@@ -103,7 +102,7 @@ public class EncriptionUtils {
     public static IvParameterSpec createIinitialVector() {
         final byte[] 	iv = new byte[16];
         
-        new SecureRandom().nextBytes(iv);
+        InternalUtils.RANDOM.nextBytes(iv);
         return new IvParameterSpec(iv);
     }    
 

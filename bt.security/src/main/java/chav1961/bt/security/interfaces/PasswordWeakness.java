@@ -3,8 +3,8 @@ package chav1961.bt.security.interfaces;
 import chav1961.purelib.i18n.interfaces.LocaleResource;
 import chav1961.purelib.i18n.interfaces.LocaleResourceLocation;
 
-@LocaleResourceLocation("i18n:xml:root://chav1961.bt.security.interfaces.PwdWeakness/chav1961/bt.security/i18n/i18n.xml")
-public enum PwdWeakness {
+@LocaleResourceLocation("i18n:xml:root://chav1961.bt.security.interfaces.PasswordWeakness/chav1961/bt.security/i18n/i18n.xml")
+public enum PasswordWeakness {
 	@LocaleResource(value="chav1961.bt.security.interfaces.pwdweakness.allok",tooltip="chav1961.bt.security.interfaces.pwdweakness.allok.tt")
     ALL_OK,
 	@LocaleResource(value="chav1961.bt.security.interfaces.pwdweakness.tooshort",tooltip="chav1961.bt.security.interfaces.pwdweakness.tooshort.tt")
@@ -25,6 +25,6 @@ public enum PwdWeakness {
     ENDS_WITH_FORBIDDEN_CHARS,
 	@LocaleResource(value="chav1961.bt.security.interfaces.pwdweakness.containsforbiddenchars",tooltip="chav1961.bt.security.interfaces.pwdweakness.containsforbiddenchars.tt")
     CONTAIN_FORBIDDEN_CHARS,
-	@LocaleResource(value="chav1961.bt.security.interfaces.pwdweakness.forbidden",tooltip="chav1961.bt.security.interfaces.pwdweakness.forbidden.tt")
-    FORBIDDEN
+	@LocaleResource(value="chav1961.bt.security.interfaces.pwdweakness.inblacklist",tooltip="chav1961.bt.security.interfaces.pwdweakness.inblacklist.tt")
+    IN_BLACKLIST
 }

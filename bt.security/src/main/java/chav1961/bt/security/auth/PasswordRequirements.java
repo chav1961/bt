@@ -4,7 +4,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 
-import chav1961.bt.security.interfaces.PasswordHashAlgorithm;
 import chav1961.purelib.basic.Utils;
 
 public class PasswordRequirements {
@@ -17,7 +16,7 @@ public class PasswordRequirements {
     private final boolean 	mustContainDigit;
     private final boolean 	mustContainSpecial;
     private final String 	userName;
-    private final PasswordHashAlgorithm currentPwdHashAlgorithm;
+    private final String	currentPwdHashAlgorithm;
     private final Collection<String> blackList;
 
     public PasswordRequirements(final long minLen, final boolean mustContainAChar, final boolean mustContainNChar) {
@@ -36,7 +35,7 @@ public class PasswordRequirements {
         this(minLen, mustContainAChar, mustContainACharInMixedCase, mustContainNChar, mustContainSChar, userName, blackList, null);
     }
 
-    public PasswordRequirements(final long minLen, final boolean mustContainAChar, final boolean mustContainACharInMixedCase, final boolean mustContainNChar, final boolean mustContainSChar, final String userName, final Collection<String> blackList, final PasswordHashAlgorithm currentPwdHashAlgorithm) { 
+    public PasswordRequirements(final long minLen, final boolean mustContainAChar, final boolean mustContainACharInMixedCase, final boolean mustContainNChar, final boolean mustContainSChar, final String userName, final Collection<String> blackList, final String currentPwdHashAlgorithm) { 
     	this.minLength = minLen;
     	this.mustContainLetter = mustContainAChar;
     	this.mustContainLetterInMixedCase = mustContainACharInMixedCase;
@@ -47,7 +46,7 @@ public class PasswordRequirements {
         this.currentPwdHashAlgorithm = currentPwdHashAlgorithm;
     }
 
-    private PasswordRequirements(final PasswordRequirements copy, final String userName){
+    private PasswordRequirements(final PasswordRequirements copy, final String userName ){
     	this.minLength = copy.minLength;
     	this.mustContainLetter = copy.mustContainLetter;
     	this.mustContainLetterInMixedCase = copy.mustContainLetterInMixedCase;
@@ -95,7 +94,7 @@ public class PasswordRequirements {
     	}
     }
 
-    public final PasswordHashAlgorithm getCurrentPwdHashAlgorithm(){
+    public final String getCurrentPwdHashAlgorithm(){
         return currentPwdHashAlgorithm;
     }
 

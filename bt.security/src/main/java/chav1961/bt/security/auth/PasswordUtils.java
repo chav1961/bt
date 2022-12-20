@@ -9,7 +9,7 @@ import java.util.List;
 import javax.crypto.SecretKeyFactory;
 import javax.crypto.spec.PBEKeySpec;
 
-import chav1961.bt.security.interfaces.PwdWeakness;
+import chav1961.bt.security.interfaces.PasswordWeakness;
 import chav1961.bt.security.interfaces.SecurityProcessingException;
 import chav1961.bt.security.internal.InternalUtils;
 import chav1961.purelib.basic.Utils;
@@ -92,7 +92,7 @@ public class PasswordUtils {
         
         if (!Utils.checkEmptyOrNullString(userName) && userName.equalsIgnoreCase(password)){
         	if (result != null) {
-                result.add(new PasswordWeaknessCheckResult(PwdWeakness.SAME_AS_USER_NAME, userName ));
+                result.add(new PasswordWeaknessCheckResult(PasswordWeakness.SAME_AS_USER_NAME, userName ));
         	}
             success = false;
         }        
@@ -101,7 +101,7 @@ public class PasswordUtils {
             for (String blackPwd : requirements.getBlackList()) {
                 if (password.equals(blackPwd)){
                 	if (result != null) {
-                		result.add(new PasswordWeaknessCheckResult(PwdWeakness.FORBIDDEN));
+                		result.add(new PasswordWeaknessCheckResult(PasswordWeakness.IN_BLACKLIST));
                 	}
                     success = false;
                 }
@@ -110,16 +110,16 @@ public class PasswordUtils {
                     
                     if (password.matches(regex)) {
                         final String 		withoutAsterisks = blackPwd.replace("*", "");
-                        final PwdWeakness 	weakness;
+                        final PasswordWeakness 	weakness;
                         
                         if (blackPwd.startsWith(withoutAsterisks)){
-                            weakness = PwdWeakness.STARTS_WITH_FORBIDDEN_CHARS;
+                            weakness = PasswordWeakness.STARTS_WITH_FORBIDDEN_CHARS;
                         }
                         else if (blackPwd.endsWith(withoutAsterisks)){
-                            weakness = PwdWeakness.ENDS_WITH_FORBIDDEN_CHARS;                    
+                            weakness = PasswordWeakness.ENDS_WITH_FORBIDDEN_CHARS;                    
                         }
                         else{
-                            weakness = PwdWeakness.CONTAIN_FORBIDDEN_CHARS;                    
+                            weakness = PasswordWeakness.CONTAIN_FORBIDDEN_CHARS;                    
                         }
                     	if (result != null) {
                     		result.add(new PasswordWeaknessCheckResult(weakness, blackPwd.replace("*", " ").trim()));
@@ -134,7 +134,7 @@ public class PasswordUtils {
         
         if (minLength > 0 && password.length() < minLength) {
         	if (result != null) {
-        		result.add(new PasswordWeaknessCheckResult(PwdWeakness.TOO_SHORT, String.valueOf(minLength)));
+        		result.add(new PasswordWeaknessCheckResult(PasswordWeakness.TOO_SHORT, String.valueOf(minLength)));
         	}
             success = false;
         }
@@ -160,26 +160,26 @@ public class PasswordUtils {
             if (requirements.mustContainLetter()) {
                 if (!hasAChars){
                 	if (result != null) {
-                		result.add(new PasswordWeaknessCheckResult(PwdWeakness.ALPHABETIC_CHARS_MISSING));
+                		result.add(new PasswordWeaknessCheckResult(PasswordWeakness.ALPHABETIC_CHARS_MISSING));
                 	}
                     success = false;
                 }
                 if (requirements.mustContainLetterInMixedCase() && (!hasACharsInUpperCase || !hasACharsInLowerCase)){
                 	if (result != null) {
-                		result.add(new PasswordWeaknessCheckResult(PwdWeakness.ALL_ALPHABETIC_CHARS_IN_SAME_CASE));
+                		result.add(new PasswordWeaknessCheckResult(PasswordWeakness.ALL_ALPHABETIC_CHARS_IN_SAME_CASE));
                 	}
                     success = false;
                 }
             }
             if (requirements.mustContainDigit() && !hasNChars) {
             	if (result != null) {
-            		result.add(new PasswordWeaknessCheckResult(PwdWeakness.NUMERIC_CHARS_MISSING));
+            		result.add(new PasswordWeaknessCheckResult(PasswordWeakness.NUMERIC_CHARS_MISSING));
             	}
                 success = false;
             }
             if (requirements.mustContainSpecialChar() && !hasSChars){
             	if (result != null) {
-            		result.add(new PasswordWeaknessCheckResult(PwdWeakness.SPECIAL_CHARS_MISSING));
+            		result.add(new PasswordWeaknessCheckResult(PasswordWeakness.SPECIAL_CHARS_MISSING));
             	}
                 success = false;
             }
@@ -188,23 +188,23 @@ public class PasswordUtils {
     }
     
     public static class PasswordWeaknessCheckResult {
-        public static final PasswordWeaknessCheckResult VALID = new PasswordWeaknessCheckResult(PwdWeakness.ALL_OK);
+        public static final PasswordWeaknessCheckResult VALID = new PasswordWeaknessCheckResult(PasswordWeakness.ALL_OK);
         
-        private final PwdWeakness weakness;
-        private final String details;
+        private final PasswordWeakness	problem;
+        private final String 			details;
         
-        private PasswordWeaknessCheckResult(final PwdWeakness weakness){
-            this.weakness = weakness;
-            details = null;
+        private PasswordWeaknessCheckResult(final PasswordWeakness problem) {
+            this.problem = problem;
+            details = "";
         }
         
-        private PasswordWeaknessCheckResult(final PwdWeakness weakness, final String details) {
-            this.weakness = weakness;
+        private PasswordWeaknessCheckResult(final PasswordWeakness problem, final String details) {
+            this.problem = problem;
             this.details = details;
         }
 
-        public PwdWeakness getWeakness() {
-            return weakness;
+        public PasswordWeakness getProblem() {
+            return problem;
         }
 
         public String getDetails() {
@@ -216,7 +216,7 @@ public class PasswordUtils {
 			final int prime = 31;
 			int result = 1;
 			result = prime * result + ((details == null) ? 0 : details.hashCode());
-			result = prime * result + ((weakness == null) ? 0 : weakness.hashCode());
+			result = prime * result + ((problem == null) ? 0 : problem.hashCode());
 			return result;
 		}
 
@@ -229,13 +229,13 @@ public class PasswordUtils {
 			if (details == null) {
 				if (other.details != null) return false;
 			} else if (!details.equals(other.details)) return false;
-			if (weakness != other.weakness) return false;
+			if (problem != other.problem) return false;
 			return true;
 		}
 
 		@Override
 		public String toString() {
-			return "PasswordWeaknessCheckResult [weakness=" + weakness + ", details=" + details + "]";
+			return "PasswordWeaknessCheckResult [problem=" + problem + ", details=" + details + "]";
 		}
     }
 }
