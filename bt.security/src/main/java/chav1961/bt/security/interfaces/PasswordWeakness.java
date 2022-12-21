@@ -19,12 +19,8 @@ public enum PasswordWeakness {
     SPECIAL_CHARS_MISSING,
 	@LocaleResource(value="chav1961.bt.security.interfaces.pwdweakness.sameasusername",tooltip="chav1961.bt.security.interfaces.pwdweakness.sameasusername.tt")
     SAME_AS_USER_NAME,
-	@LocaleResource(value="chav1961.bt.security.interfaces.pwdweakness.startswithforbiddenchars",tooltip="chav1961.bt.security.interfaces.pwdweakness.startswithforbiddenchars.tt")
-    STARTS_WITH_FORBIDDEN_CHARS,
-	@LocaleResource(value="chav1961.bt.security.interfaces.pwdweakness.endswithforbiddenchars",tooltip="chav1961.bt.security.interfaces.pwdweakness.endswithforbiddenchars.tt")
-    ENDS_WITH_FORBIDDEN_CHARS,
-	@LocaleResource(value="chav1961.bt.security.interfaces.pwdweakness.containsforbiddenchars",tooltip="chav1961.bt.security.interfaces.pwdweakness.containsforbiddenchars.tt")
-    CONTAIN_FORBIDDEN_CHARS,
+	@LocaleResource(value="chav1961.bt.security.interfaces.pwdweakness.containsforbiddensequences",tooltip="chav1961.bt.security.interfaces.pwdweakness.containsforbiddensequences.tt")
+    CONTAIN_FORBIDDEN_SEQUENCES,
 	@LocaleResource(value="chav1961.bt.security.interfaces.pwdweakness.inblacklist",tooltip="chav1961.bt.security.interfaces.pwdweakness.inblacklist.tt")
     IN_BLACKLIST
 }

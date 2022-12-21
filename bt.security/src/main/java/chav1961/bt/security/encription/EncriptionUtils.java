@@ -6,6 +6,7 @@ import java.io.OutputStream;
 import java.io.Serializable;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
+import java.security.InvalidParameterException;
 import java.security.NoSuchAlgorithmException;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.KeySpec;
@@ -24,6 +25,8 @@ import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.PBEKeySpec;
 import javax.crypto.spec.SecretKeySpec;
 
+import chav1961.bt.security.AlgorithmUtils;
+import chav1961.bt.security.AlgorithmUtils.AlgorithmDescriptor;
 import chav1961.bt.security.interfaces.SecurityProcessingException;
 import chav1961.bt.security.internal.InternalUtils;
 import chav1961.purelib.basic.Utils;
@@ -34,25 +37,40 @@ public class EncriptionUtils {
 			throw new IllegalArgumentException("Key size ["+keySize+"] must be positive and must be a multiple of 8");
 		}
 		else {
-			try{final KeyGenerator	keyGenerator = KeyGenerator.getInstance(InternalUtils.PROPS.getProperty(InternalUtils.PROP_CIPHER_TYPE_ALGORITHM));
+			return createSecretKey(InternalUtils.PROPS.getProperty(InternalUtils.PROP_CIPHER_TYPE_ALGORITHM), keySize);
+		}
+	}
+
+	public static SecretKey createSecretKey(final String algorithm, final int keySize) throws SecurityProcessingException {
+		if (Utils.checkEmptyOrNullString(algorithm)) {
+			throw new IllegalArgumentException("Algorithm name can't be null or empty");
+		}
+		else if (keySize <= 0 || keySize % 8 != 0) {
+			throw new IllegalArgumentException("Key size ["+keySize+"] must be positive and must be a multiple of 8");
+		}
+		else {
+			try{final KeyGenerator	keyGenerator = KeyGenerator.getInstance(algorithm);
 			
 		        keyGenerator.init(keySize);
 		        return keyGenerator.generateKey();
+			} catch (InvalidParameterException e) {
+				throw new IllegalArgumentException(e.getLocalizedMessage(), e); 
 			} catch (NoSuchAlgorithmException e) {
 				throw new SecurityProcessingException(e);
 			}
 		}
 	}
-
+	
     public static SecretKey createSecretKeyFromPassword(final char[] password, final byte[] salt) throws SecurityProcessingException {
     	if (password == null || password.length == 0) {
     		throw new IllegalArgumentException("Password can't be null or empty array"); 
     	}
-    	else if (salt == null || salt.length == 0) {
-    		throw new IllegalArgumentException("Salt can't be null or empty array"); 
+    	else if (salt == null) {
+    		throw new NullPointerException("Salt can't be null"); 
     	}
     	else {
-    		return createSecretKeyFromPasswordInternal(InternalUtils.PROPS.getProperty(InternalUtils.PROP_PASSWORD_KEY_ALGORITHM), 
+    		return createSecretKeyFromPasswordInternal(InternalUtils.PROPS.getProperty(InternalUtils.PROP_PASSWORD_KEY_ALGORITHM),
+    				InternalUtils.PROPS.getProperty(InternalUtils.PROP_CIPHER_TYPE_ALGORITHM),
     				password, 
     				salt, 
     				InternalUtils.PROPS.getProperty(InternalUtils.PROP_DEFAULT_ITERATIONS, int.class), 
@@ -60,33 +78,18 @@ public class EncriptionUtils {
     	}
     }
     
-    public static SecretKey createSecretKeyFromPassword(final char[] password, final byte[] salt, final int iterations, final int keySize) throws SecurityProcessingException {
-    	if (password == null || password.length == 0) {
-    		throw new IllegalArgumentException("Password can't be null or empty array"); 
+    public static SecretKey createSecretKeyFromPassword(final String passwordKeyAlgorithm, final String cipherAlgorithm, final char[] password, final byte[] salt, final int iterations, final int keySize) throws SecurityProcessingException {
+    	if (Utils.checkEmptyOrNullString(passwordKeyAlgorithm)) {
+    		throw new IllegalArgumentException("Password key algorithm name can't be null or empty"); 
     	}
-    	else if (salt == null || salt.length == 0) {
-    		throw new IllegalArgumentException("Salt can't be null or empty array"); 
-    	}
-    	else if (iterations <= 0) {
-    		throw new IllegalArgumentException("Number of iterations ["+iterations+"] must be greater than 0"); 
-    	}
-    	else if (keySize <= 0 || keySize % 8 != 0) {
-			throw new IllegalArgumentException("Key size ["+keySize+"] must be positive and must be a multiple of 8");
-    	}
-    	else {
-    		return createSecretKeyFromPasswordInternal(InternalUtils.PROPS.getProperty(InternalUtils.PROP_PASSWORD_KEY_ALGORITHM), password, salt, iterations, keySize);
-    	}
-	}
-
-    public static SecretKey createSecretKeyFromPassword(final String algorithm, final char[] password, final byte[] salt, final int iterations, final int keySize) throws SecurityProcessingException {
-    	if (Utils.checkEmptyOrNullString(algorithm)) {
-    		throw new IllegalArgumentException("Algorithm name can't be null or empty"); 
+    	else if (Utils.checkEmptyOrNullString(cipherAlgorithm)) {
+    		throw new IllegalArgumentException("Cipher algorithm name can't be null or empty"); 
     	}
     	else if (password == null || password.length == 0) {
     		throw new IllegalArgumentException("Password can't be null or empty array"); 
     	}
-    	else if (salt == null || salt.length == 0) {
-    		throw new IllegalArgumentException("Salt can't be null or empty array"); 
+    	else if (salt == null) {
+    		throw new NullPointerException("Salt can't be null"); 
     	}
     	else if (iterations <= 0) {
     		throw new IllegalArgumentException("Number of iterations ["+iterations+"] must be greater than 0"); 
@@ -95,11 +98,11 @@ public class EncriptionUtils {
 			throw new IllegalArgumentException("Key size ["+keySize+"] must be positive and must be a multiple of 8");
     	}
     	else {
-    		return createSecretKeyFromPasswordInternal(algorithm, password, salt, iterations, keySize);
+    		return createSecretKeyFromPasswordInternal(passwordKeyAlgorithm, cipherAlgorithm, password, salt, iterations, keySize);
     	}
     }
     
-    public static IvParameterSpec createIinitialVector() {
+    public static IvParameterSpec generateIinitialVector() {
         final byte[] 	iv = new byte[16];
         
         InternalUtils.RANDOM.nextBytes(iv);
@@ -162,11 +165,11 @@ public class EncriptionUtils {
     	}
 	}
 
-    public static byte[] decrypt(final byte[] input, final SecretKey key, final IvParameterSpec iv) throws NoSuchPaddingException, NoSuchAlgorithmException, InvalidAlgorithmParameterException, InvalidKeyException, BadPaddingException, IllegalBlockSizeException {
+    public static byte[] decrypt(final byte[] input, final SecretKey key, final IvParameterSpec iv) throws SecurityProcessingException {
     	return decrypt(InternalUtils.PROPS.getProperty(InternalUtils.PROP_AES_ENCRYPTION_ALGORITHM), input, key, iv);
     }
     
-    public static byte[] decrypt(final String algorithm, final byte[] input, final SecretKey key, final IvParameterSpec iv) throws NoSuchPaddingException, NoSuchAlgorithmException, InvalidAlgorithmParameterException, InvalidKeyException, BadPaddingException, IllegalBlockSizeException {
+    public static byte[] decrypt(final String algorithm, final byte[] input, final SecretKey key, final IvParameterSpec iv) throws SecurityProcessingException {
     	if (Utils.checkEmptyOrNullString(algorithm)) {
     		throw new IllegalArgumentException("Algorithm name can't be null or empty"); 
     	}
@@ -180,10 +183,13 @@ public class EncriptionUtils {
     		throw new NullPointerException("Initial vector can't be null"); 
     	}
     	else {
-		    final Cipher 	cipher = Cipher.getInstance(algorithm);
-		    
-		    cipher.init(Cipher.DECRYPT_MODE, key, iv);
-		    return cipher.doFinal(input);
+			try {final Cipher 	cipher = Cipher.getInstance(algorithm);
+			
+			    cipher.init(Cipher.DECRYPT_MODE, key, iv);
+			    return cipher.doFinal(input);
+			} catch (NoSuchAlgorithmException | NoSuchPaddingException | InvalidKeyException | InvalidAlgorithmParameterException | IllegalBlockSizeException | BadPaddingException exc) {
+				throw new SecurityProcessingException(exc.getLocalizedMessage(), exc); 
+			}
     	}
 	}
 
@@ -196,7 +202,7 @@ public class EncriptionUtils {
     		throw new IllegalArgumentException("Algorithm name can't be null or empty"); 
     	}
     	else if (input == null) {
-    		throw new IllegalArgumentException("Array to decrypt can't be null or empty"); 
+    		throw new NullPointerException("Object to decrypt can't be null"); 
     	}
     	else if (key == null) {
     		throw new NullPointerException("Secret key can't be null"); 
@@ -271,13 +277,18 @@ public class EncriptionUtils {
     	}
     }
 
-    private static SecretKey createSecretKeyFromPasswordInternal(final String algorithm, final char[] password, final byte[] salt, final int iterations, final int keyLength) throws SecurityProcessingException {
-    	try{final SecretKeyFactory	factory = SecretKeyFactory.getInstance(algorithm);
-		    final KeySpec 			spec = new PBEKeySpec(password, salt, iterations, keyLength);
-		    
-		    return new SecretKeySpec(factory.generateSecret(spec).getEncoded(), InternalUtils.PROPS.getProperty(InternalUtils.PROP_CIPHER_TYPE_ALGORITHM));
-		} catch (NoSuchAlgorithmException | InvalidKeySpecException e) {
-			throw new SecurityProcessingException(e);
-		}
+    private static SecretKey createSecretKeyFromPasswordInternal(final String secretKeyAlgorithm, final String cipherAlgorithm, final char[] password, final byte[] salt, final int iterations, final int keyLength) throws SecurityProcessingException {
+    	for (AlgorithmDescriptor item : AlgorithmUtils.getAlgorithms()) {
+    		if (item.getName().equals(cipherAlgorithm)) {
+    	    	try{final SecretKeyFactory	factory = SecretKeyFactory.getInstance(secretKeyAlgorithm);
+	    		    final KeySpec 			spec = new PBEKeySpec(password, salt, iterations, keyLength);
+	    		    
+	    		    return new SecretKeySpec(factory.generateSecret(spec).getEncoded(), cipherAlgorithm);
+	    		} catch (NoSuchAlgorithmException | InvalidKeySpecException e) {
+	    			throw new SecurityProcessingException(e);
+	    		}
+    		}
+    	}
+    	throw new IllegalArgumentException("Cipher algorithm ["+cipherAlgorithm+"] is not supported by any providers"); 
     }    
 }

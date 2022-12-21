@@ -46,7 +46,7 @@ public class PasswordRequirements {
         this.currentPwdHashAlgorithm = currentPwdHashAlgorithm;
     }
 
-    private PasswordRequirements(final PasswordRequirements copy, final String userName ){
+    private PasswordRequirements(final PasswordRequirements copy, final String userName) {
     	this.minLength = copy.minLength;
     	this.mustContainLetter = copy.mustContainLetter;
     	this.mustContainLetterInMixedCase = copy.mustContainLetterInMixedCase;
@@ -106,8 +106,54 @@ public class PasswordRequirements {
             return PasswordUtils.checkPasswordWeakness(password, this, problems);
     	}
     }
-    
+
     public static PasswordRequirements getDefault() {
         return DEFAULT;
     }
+
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + ((blackList == null) ? 0 : blackList.hashCode());
+		result = prime * result + ((currentPwdHashAlgorithm == null) ? 0 : currentPwdHashAlgorithm.hashCode());
+		result = prime * result + (int) (minLength ^ (minLength >>> 32));
+		result = prime * result + (mustContainDigit ? 1231 : 1237);
+		result = prime * result + (mustContainLetter ? 1231 : 1237);
+		result = prime * result + (mustContainLetterInMixedCase ? 1231 : 1237);
+		result = prime * result + (mustContainSpecial ? 1231 : 1237);
+		result = prime * result + ((userName == null) ? 0 : userName.hashCode());
+		return result;
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj) return true;
+		if (obj == null) return false;
+		if (getClass() != obj.getClass()) return false;
+		PasswordRequirements other = (PasswordRequirements) obj;
+		if (blackList == null) {
+			if (other.blackList != null) return false;
+		} else if (!blackList.equals(other.blackList)) return false;
+		if (currentPwdHashAlgorithm == null) {
+			if (other.currentPwdHashAlgorithm != null) return false;
+		} else if (!currentPwdHashAlgorithm.equals(other.currentPwdHashAlgorithm)) return false;
+		if (minLength != other.minLength) return false;
+		if (mustContainDigit != other.mustContainDigit) return false;
+		if (mustContainLetter != other.mustContainLetter) return false;
+		if (mustContainLetterInMixedCase != other.mustContainLetterInMixedCase) return false;
+		if (mustContainSpecial != other.mustContainSpecial) return false;
+		if (userName == null) {
+			if (other.userName != null) return false;
+		} else if (!userName.equals(other.userName)) return false;
+		return true;
+	}
+
+	@Override
+	public String toString() {
+		return "PasswordRequirements [minLength=" + minLength + ", mustContainLetter=" + mustContainLetter
+				+ ", mustContainLetterInMixedCase=" + mustContainLetterInMixedCase + ", mustContainDigit="
+				+ mustContainDigit + ", mustContainSpecial=" + mustContainSpecial + ", userName=" + userName
+				+ ", currentPwdHashAlgorithm=" + currentPwdHashAlgorithm + ", blackList=" + blackList + "]";
+	}
 }

@@ -51,6 +51,6 @@ public class InternalUtils {
 		} catch (IOException | NoSuchAlgorithmException e) {
 			throw new PreparationException(e.getLocalizedMessage(), e);
 		}
-		PureLibSettings.PURELIB_LOCALIZER.add(Localizer.Factory.newInstance(URI.create("xml:root://"+InternalUtils.class.getCanonicalName()+"/chav1961/bt.security/i18n/i18n.xml")));
+		PureLibSettings.PURELIB_LOCALIZER.add(Localizer.Factory.newInstance(URI.create("i18n:xml:root://"+InternalUtils.class.getCanonicalName()+"/chav1961/bt.security/i18n/i18n.xml")));
 	}
 }
