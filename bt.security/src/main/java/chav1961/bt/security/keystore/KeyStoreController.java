@@ -20,7 +20,9 @@ import java.security.UnrecoverableKeyException;
 import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Enumeration;
+import java.util.HashSet;
 import java.util.Map.Entry;
 import java.util.Set;
 
@@ -33,6 +35,8 @@ import javax.security.auth.callback.PasswordCallback;
 import javax.security.auth.callback.UnsupportedCallbackException;
 import javax.security.auth.login.FailedLoginException;
 
+import chav1961.bt.security.auth.PasswordRequirements;
+import chav1961.bt.security.auth.PasswordUtils;
 import chav1961.bt.security.interfaces.KeyStoreControllerException;
 import chav1961.bt.security.interfaces.KeyStoreType;
 import chav1961.bt.security.internal.InternalUtils;
@@ -43,7 +47,7 @@ public class KeyStoreController implements AutoCloseable {
     private static final Set<String> 	ALGORITHMS_SUPPORTED = Set.of("DES", "DESede", "AES");  
     private static final String 		PKCS11_PROVIDER = "PKCS11"; 
     private static final String 		SUN_PKCS11_PROVIDER = "SunPKCS11"; 
-    private final static String 		KEYSTORE_FILE_TYPE = "JCEKS"; //"JKS"
+    private static final String 		KEYSTORE_FILE_TYPE = "JCEKS"; //"JKS"
 
     private final KeyStoreType 	type;
     private final KeyStore 		keystore;
@@ -177,6 +181,23 @@ public class KeyStoreController implements AutoCloseable {
 
     public KeyStoreType getKeyStoreType() {
         return type;
+    }
+    
+    public String generateUniqueAliasName() throws KeyStoreControllerException {
+    	final Set<String>			blackList = new HashSet<>();
+    	final PasswordRequirements	rq = new PasswordRequirements(8, true, true, true, false, "", blackList, null);
+    	
+loop:  	for(;;) {
+        	final String	alias = new String(PasswordUtils.generateRandomPassword(rq, 10));
+        	
+        	for (String item : getAliases()) {
+        		if (alias.equals(item)) {
+        			blackList.add(alias);
+       				continue loop; 
+        		}
+			}
+        	return alias;
+    	}
     }
 
     protected String getPingKeyAlias() {

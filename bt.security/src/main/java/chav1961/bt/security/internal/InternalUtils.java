@@ -29,6 +29,7 @@ public class InternalUtils {
 		
 	public static final SubstitutableProperties	PROPS;
     public static final Random 					RANDOM;
+    public static final Localizer				LOCALIZER;
     
     private static final String	PROP_DEFAULT_LOCATION_URI = "root://"+InternalUtils.class.getCanonicalName()+"/bt.security.default.properties";
 	
@@ -51,6 +52,7 @@ public class InternalUtils {
 		} catch (IOException | NoSuchAlgorithmException e) {
 			throw new PreparationException(e.getLocalizedMessage(), e);
 		}
-		PureLibSettings.PURELIB_LOCALIZER.add(Localizer.Factory.newInstance(URI.create("i18n:xml:root://"+InternalUtils.class.getCanonicalName()+"/chav1961/bt.security/i18n/i18n.xml")));
+		LOCALIZER = Localizer.Factory.newInstance(URI.create("i18n:xml:root://"+InternalUtils.class.getCanonicalName()+"/chav1961/bt.security/i18n/i18n.xml"));
+		PureLibSettings.PURELIB_LOCALIZER.add(LOCALIZER);
 	}
 }
