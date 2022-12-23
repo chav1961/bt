@@ -6,6 +6,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.net.URI;
 import java.security.AuthProvider;
 import java.security.GeneralSecurityException;
 import java.security.Key;
@@ -23,6 +24,8 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Enumeration;
 import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
 import java.util.Map.Entry;
 import java.util.Set;
 
@@ -42,12 +45,19 @@ import chav1961.bt.security.interfaces.KeyStoreType;
 import chav1961.bt.security.internal.InternalUtils;
 import chav1961.purelib.basic.SubstitutableProperties;
 import chav1961.purelib.basic.Utils;
+import chav1961.purelib.model.FieldFormat;
+import chav1961.purelib.model.MutableContentNodeMetadata;
+import chav1961.purelib.model.interfaces.ContentMetadataInterface.ContentNodeMetadata;
 
-public class KeyStoreController implements AutoCloseable {
+public class KeyStoreController extends KeyStoreItem implements AutoCloseable {
+	private static final String			CONTROLLER_SCHEME = "keystore";
     private static final Set<String> 	ALGORITHMS_SUPPORTED = Set.of("DES", "DESede", "AES");  
     private static final String 		PKCS11_PROVIDER = "PKCS11"; 
     private static final String 		SUN_PKCS11_PROVIDER = "SunPKCS11"; 
     private static final String 		KEYSTORE_FILE_TYPE = "JCEKS"; //"JKS"
+    private static final String			KEY_KEYSTORE_LABEL = "";
+    private static final String			KEY_KEYSTORE_TOOLTIP = "";
+    private static final String			KEY_KEYSTORE_HELP = "";
 
     private final KeyStoreType 	type;
     private final KeyStore 		keystore;
@@ -171,6 +181,27 @@ public class KeyStoreController implements AutoCloseable {
     	}
     }
 
+	@Override
+	public ContentNodeMetadata getNodeMetadata() {
+		return new MutableContentNodeMetadata(keystoreName, 
+					getClass(), 
+					CONTROLLER_SCHEME, 
+					InternalUtils.LOCALIZER.getLocalizerId(), 
+					KEY_KEYSTORE_LABEL, 
+					KEY_KEYSTORE_TOOLTIP, 
+					KEY_KEYSTORE_HELP, 
+					new FieldFormat(getClass()), 
+					URI.create(APP_SCHEME+':'+CONTROLLER_SCHEME+':'+getKeyStoreType().name()+":/"), 
+					URI.create("root://"+getClass().getCanonicalName()+"/chav1961/bt.security/images/keystore.png")) 
+					{{
+						try{for (KeyStoreEntry item : getKeyStoreEntries()) {
+								addChild(item.getNodeMetadata());
+							}
+						} catch (KeyStoreControllerException e) {
+						}
+					}};
+	}
+    
     public String getKeyStoreName() {
         return keystoreName;
     }

@@ -1,10 +1,20 @@
 package chav1961.bt.security.keystore;
 
+import java.net.URI;
 import java.security.Key;
 
 import chav1961.bt.security.interfaces.KeyStoreEntryType;
+import chav1961.bt.security.internal.InternalUtils;
+import chav1961.purelib.model.FieldFormat;
+import chav1961.purelib.model.MutableContentNodeMetadata;
+import chav1961.purelib.model.interfaces.ContentMetadataInterface.ContentNodeMetadata;
 
 public class KeyStoreDesKeyEntry extends KeyStoreEntry {
+	private static final String			DES_KEY_SCHEME = "deskey";
+    private static final String			KEY_DES_KEY_LABEL = "";
+    private static final String			KEY_DES_KEY_TOOLTIP = "";
+    private static final String			KEY_DES_KEY_HELP = "";
+
     private final Key key;
 
     public KeyStoreDesKeyEntry(String alias){
@@ -20,6 +30,20 @@ public class KeyStoreDesKeyEntry extends KeyStoreEntry {
     public Key getKey(){
         return key;
     }
+
+	@Override
+	public ContentNodeMetadata getNodeMetadata() {
+		return new MutableContentNodeMetadata(getAlias(), 
+				getClass(), 
+				DES_KEY_SCHEME, 
+				InternalUtils.LOCALIZER.getLocalizerId(), 
+				KEY_DES_KEY_LABEL, 
+				KEY_DES_KEY_TOOLTIP, 
+				KEY_DES_KEY_HELP, 
+				new FieldFormat(getClass()), 
+				URI.create(APP_SCHEME+':'+DES_KEY_SCHEME+":/"+getAlias()), 
+				URI.create("root://"+getClass().getCanonicalName()+"/chav1961/bt.security/images/DESkey.png"));
+	}
 }
 
 

@@ -54,6 +54,7 @@ import chav1961.bt.security.internal.PasteDialog;
 import chav1961.bt.security.keystore.KeyStoreController;
 import chav1961.bt.security.keystore.KeyStoreDesKeyEntry;
 import chav1961.bt.security.keystore.KeyStoreEntry;
+import chav1961.bt.security.keystore.KeyStoreItem;
 import chav1961.bt.security.keystore.KeyStoreRsaKeyEntry;
 import chav1961.bt.security.keystore.KeyStoreTrustedCertificateEntry;
 import chav1961.bt.security.keystore.KeyStoreUtils;
@@ -101,8 +102,8 @@ public class KeyStoreTree extends JTree {
 			((DefaultTreeModel)getModel()).setRoot(this.root = buildTree(controller));
 			setRootVisible(false);
 			try{
-				setCellRenderer(SwingUtils.getCellRenderer(KeyStoreController.class, new FieldFormat(String.class), TreeCellRenderer.class));
-				setCellEditor(SwingUtils.getCellEditor(KeyStoreController.class, new FieldFormat(String.class), TreeCellEditor.class));
+				setCellRenderer(SwingUtils.getCellRenderer(KeyStoreItem.class, new FieldFormat(String.class), TreeCellRenderer.class));
+				setCellEditor(SwingUtils.getCellEditor(KeyStoreItem.class, new FieldFormat(String.class), TreeCellEditor.class));
 			} catch (EnvironmentException e) {
 				throw new KeyStoreControllerException(e);
 			}

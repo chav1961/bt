@@ -2,7 +2,7 @@ package chav1961.bt.security.keystore;
 
 import chav1961.bt.security.interfaces.KeyStoreEntryType;
 
-public class KeyStoreEntry {
+public abstract class KeyStoreEntry extends KeyStoreItem {
     private final String 			alias;
     private final KeyStoreEntryType	type;
 
