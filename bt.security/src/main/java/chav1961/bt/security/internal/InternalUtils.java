@@ -16,7 +16,11 @@ import chav1961.purelib.i18n.interfaces.Localizer;
 public class InternalUtils {
 	public static final String	PROP_PROPERTY_LOCATION_URI = "bt.security.props.location.uri";
 	
+	public static final String	PROP_MESSAGE_DIGEST_ALGORITHM = "bt.security.messagedigest.algorithm"; 
+	public static final String	PROP_SIGNATURE_ALGORITHM = "bt.security.signature.algorithm"; 
 	public static final String	PROP_SECURERANDOM_ALGORITHM = "bt.security.securerandom.algorithm"; 
+	public static final String	PROP_SYMMETRIC_KEY_ALGORITHM = "bt.security.symmetrickey.algorithm"; 
+	public static final String	PROP_KEYPAIR_ALGORITHM = "bt.security.keypair.algorithm"; 
 	public static final String	PROP_PASSWORD_HASH_ALGORITHM = "bt.security.passwordhash.algorithm"; 
 	public static final String	PROP_PASSWORD_KEY_ALGORITHM = "bt.security.passwordkey.algorithm"; 
 	public static final String	PROP_CIPHER_TYPE_ALGORITHM = "bt.security.ciphertype.algorithm"; 
@@ -28,7 +32,7 @@ public class InternalUtils {
 	public static final String	PROP_DEFAULT_PKCS11_PING_KEY = "bt.security.pkcs11.default.pingkey"; 
 		
 	public static final SubstitutableProperties	PROPS;
-    public static final Random 					RANDOM;
+    public static final SecureRandom 			RANDOM;
     public static final Localizer				LOCALIZER;
     
     private static final String	PROP_DEFAULT_LOCATION_URI = "root://"+InternalUtils.class.getCanonicalName()+"/bt.security.default.properties";
