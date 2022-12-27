@@ -21,6 +21,7 @@ public class InternalUtils {
 	public static final String	PROP_SECURERANDOM_ALGORITHM = "bt.security.securerandom.algorithm"; 
 	public static final String	PROP_SYMMETRIC_KEY_ALGORITHM = "bt.security.symmetrickey.algorithm"; 
 	public static final String	PROP_KEYPAIR_ALGORITHM = "bt.security.keypair.algorithm"; 
+	public static final String	PROP_CERTIFICATE_ALGORITHM = "bt.security.certificate.algorithm"; 
 	public static final String	PROP_PASSWORD_HASH_ALGORITHM = "bt.security.passwordhash.algorithm"; 
 	public static final String	PROP_PASSWORD_KEY_ALGORITHM = "bt.security.passwordkey.algorithm"; 
 	public static final String	PROP_CIPHER_TYPE_ALGORITHM = "bt.security.ciphertype.algorithm"; 
