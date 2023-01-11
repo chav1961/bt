@@ -40,5 +40,6 @@
   	<module>bt.paint</module>
   	<module>bt.neuralnetwork</module>
   	<module>bt.security</module>
+  	<module>bt.audio</module>
   </modules>
 </project>
