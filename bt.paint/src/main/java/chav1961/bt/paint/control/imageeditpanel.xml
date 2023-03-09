@@ -21,6 +21,7 @@
 			<app:item name="menu.main.edit.cut" caption="menu.main.edit.cut" tooltip="menu.main.edit.cut.tt" action="cut"/>
 			<app:item name="menu.main.edit.copy" caption="menu.main.edit.copy" tooltip="menu.main.edit.copy.tt" action="copy"/>
 			<app:item name="menu.main.edit.paste" caption="menu.main.edit.paste" tooltip="menu.main.edit.paste.tt" action="paste"/>
+			<app:item name="menu.main.edit.pasteSvg" caption="menu.main.edit.pasteSvg" tooltip="menu.main.edit.pasteSvg.tt" action="pasteSvg"/>
 			<app:separator/>
 			<app:submenu name="menu.main.edit.filters" caption="menu.main.edit.filters" tooltip="menu.main.edit.filters.tt">
 				<app:submenu name="menu.main.edit.filters.sobel" caption="menu.main.edit.filters.sobel" tooltip="menu.main.edit.filters.sobel.tt">

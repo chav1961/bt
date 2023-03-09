@@ -53,6 +53,8 @@
 		<key name="menu.main.edit.copy.tt">Copy selected area into clipboard</key>
 		<key name="menu.main.edit.paste">Paste</key>
 		<key name="menu.main.edit.paste.tt">Paste selected area from clipboard</key>
+		<key name="menu.main.edit.pasteSvg">Paste SVG</key>
+		<key name="menu.main.edit.pasteSvg.tt">Fill selected area from clipboard, containing SVG content</key>
 		<key name="menu.main.edit.filters">Filters</key>
 		<key name="menu.main.edit.filters.tt">Filters</key>
 		<key name="menu.main.edit.filters.sobel">Sobel operator</key>
@@ -405,7 +407,9 @@
 		<key name="menu.main.edit.copy">Копировать</key>
 		<key name="menu.main.edit.copy.tt">Копировать выделенный участок изображения</key>
 		<key name="menu.main.edit.paste">Вставить</key>
-		<key name="menu.main.edit.paste.tt">Вставить изображение из буфера обмена</key>
+		<key name="menu.main.edit.paste.tt">Вставить изображение из буфера обмена в выделенную область</key>
+		<key name="menu.main.edit.pasteSvg">Вставить SVG</key>
+		<key name="menu.main.edit.pasteSvg.tt">Вставить в выделенную область изображение в формате SVG из буфера обмена</key>
 		<key name="menu.main.edit.filters">Фильтры</key>
 		<key name="menu.main.edit.filters.tt">Фильтры</key>
 		<key name="menu.main.edit.filters.sobel">Оператор Собеля</key>
