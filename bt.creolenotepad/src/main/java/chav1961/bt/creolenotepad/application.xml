@@ -28,8 +28,6 @@
 			<app:builtinSubmenu name="builtin.languages" caption="menu.main.tools.languages" tooltip="menu.main.tools.languages.tt"/>
 		</app:submenu>
 		<app:submenu name="menu.main.help" caption="menu.main.help" tooltip="menu.main.help.tt">
-			<app:item name="menu.main.help.manual" caption="menu.main.help.manual" tooltip="menu.main.help.manual.tt" action="manual"/>
-			<app:separator/>
 			<app:item name="menu.main.help.about" caption="menu.main.help.about" tooltip="menu.main.help.about.tt" action="about"/>
 		</app:submenu>
 	</app:menu>
