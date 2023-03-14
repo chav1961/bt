@@ -67,7 +67,7 @@ public class AbstractStoreManager implements Closeable, Flushable {
 		if (props == null) {
 			throw new NullPointerException("Properties can't be null"); 
 		}
-		else if (!props.containsAllKeys((Object[])MANDATORIES)) {
+		else if (!props.containsAllKeys(MANDATORIES)) {
 			throw new IllegalArgumentException("Properties doesn't contain some mandatory keys. At least "+Arrays.toString(MANDATORIES)+" must be present"); 
 		}
 		else {
