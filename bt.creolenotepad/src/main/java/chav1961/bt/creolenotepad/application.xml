@@ -18,11 +18,15 @@
 			<app:item name="menu.main.edit.undo" caption="menu.main.edit.undo" tooltip="menu.main.edit.undo.tt" action="undo"/>
 			<app:item name="menu.main.edit.redo" caption="menu.main.edit.redo" tooltip="menu.main.edit.redo.tt" action="redo"/>
 			<app:separator/>
+			<app:item name="menu.main.edit.cut" caption="menu.main.edit.cut" tooltip="menu.main.edit.cut.tt" action="cut"/>
+			<app:item name="menu.main.edit.copy" caption="menu.main.edit.copy" tooltip="menu.main.edit.copy.tt" action="copy"/>
+			<app:item name="menu.main.edit.paste" caption="menu.main.edit.paste" tooltip="menu.main.edit.paste.tt" action="paste"/>
+			<app:separator/>
 			<app:item name="menu.main.edit.find" caption="menu.main.edit.find" tooltip="menu.main.edit.find.tt" action="find"/>
 			<app:item name="menu.main.edit.findreplace" caption="menu.main.edit.findreplace" tooltip="menu.main.edit.findreplace.tt" action="findreplace"/>
 		</app:submenu>
 		<app:submenu name="menu.main.tools" caption="menu.main.tools" tooltip="menu.main.tools.tt">
-			<app:item name="menu.main.tools.preview" caption="menu.main.tools.preview" tooltip="menu.main.tools.preview.tt" action="previewProject"/>
+			<app:item name="menu.main.tools.preview" caption="menu.main.tools.preview" tooltip="menu.main.tools.preview.tt" checkable="true" action="previewProject"/>
 			<app:separator/>
 			<app:item name="menu.main.tools.settings" caption="menu.main.tools.settings" tooltip="menu.main.tools.settings.tt" action="settings"/>
 			<app:builtinSubmenu name="builtin.languages" caption="menu.main.tools.languages" tooltip="menu.main.tools.languages.tt"/>
@@ -38,5 +42,23 @@
 		<app:key code="Q" ctrl="true" action="exit"/>
 		<app:key code="P" ctrl="true" action="previewProject"/>
 		<app:key code="F1" action="manual"/>
+	</app:keyset>
+ 	<app:menu id="toolbarmenu">
+		<app:item name="menu.main.edit.cut" caption="menu.main.edit.cut" tooltip="menu.main.edit.cut.tt" action="cut"/>
+		<app:item name="menu.main.edit.copy" caption="menu.main.edit.copy" tooltip="menu.main.edit.copy.tt" action="copy"/>
+		<app:item name="menu.main.edit.paste" caption="menu.main.edit.paste" tooltip="menu.main.edit.paste.tt" action="paste"/>
+		<app:separator/>
+		<app:item name="menu.main.edit.find" caption="menu.main.edit.find" tooltip="menu.main.edit.find.tt" action="find"/>
+		<app:item name="menu.main.edit.findreplace" caption="menu.main.edit.findreplace" tooltip="menu.main.edit.findreplace.tt" action="findreplace"/>
+		<app:separator/>
+		<app:item name="menu.main.tools.preview" caption="menu.main.tools.preview" tooltip="menu.main.tools.preview.tt" checkable="true" action="previewProject"/>
+	</app:menu>
+	<app:keyset id="toolbarmenu.keyset">
+		<app:key code="X" ctrl="true" action="cut"/>
+		<app:key code="C" ctrl="true" action="copy"/>
+		<app:key code="V" ctrl="true" action="paste"/>
+		<app:key code="F" ctrl="true" action="find"/>
+		<app:key code="H" ctrl="true" action="findreplace"/>
+		<app:key code="P" ctrl="true" action="previewProject"/>
 	</app:keyset>
 </app:root>

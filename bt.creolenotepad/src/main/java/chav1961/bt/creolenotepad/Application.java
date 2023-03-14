@@ -2,18 +2,20 @@ package chav1961.bt.creolenotepad;
 
 import java.awt.BorderLayout;
 import java.awt.CardLayout;
+import java.awt.Color;
 import java.awt.Dimension;
+import java.awt.Toolkit;
+import java.awt.datatransfer.DataFlavor;
 import java.io.File;
 import java.io.IOException;
+import java.io.StringWriter;
 import java.net.URI;
 import java.util.Hashtable;
 import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.CountDownLatch;
 
-import javax.crypto.NullCipher;
 import javax.swing.BorderFactory;
-import javax.swing.JComponent;
 import javax.swing.JEditorPane;
 import javax.swing.JFrame;
 import javax.swing.JMenu;
@@ -21,7 +23,10 @@ import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+import javax.swing.JToolBar;
+import javax.swing.SwingUtilities;
 import javax.swing.border.EtchedBorder;
+import javax.swing.undo.UndoManager;
 
 import chav1961.purelib.basic.ArgParser;
 import chav1961.purelib.basic.PureLibSettings;
@@ -32,6 +37,7 @@ import chav1961.purelib.basic.exceptions.LocalizationException;
 import chav1961.purelib.basic.interfaces.LoggerFacade;
 import chav1961.purelib.basic.interfaces.LoggerFacadeOwner;
 import chav1961.purelib.basic.interfaces.LoggerFacade.Severity;
+import chav1961.purelib.enumerations.MarkupOutputFormat;
 import chav1961.purelib.fsys.FileSystemFactory;
 import chav1961.purelib.fsys.interfaces.FileSystemInterface;
 import chav1961.purelib.i18n.LocalizerFactory;
@@ -42,6 +48,7 @@ import chav1961.purelib.model.ContentModelFactory;
 import chav1961.purelib.model.interfaces.ContentMetadataInterface;
 import chav1961.purelib.model.interfaces.ContentMetadataInterface.ContentNodeMetadata;
 import chav1961.purelib.model.interfaces.NodeMetadataOwner;
+import chav1961.purelib.streams.char2char.CreoleWriter;
 import chav1961.purelib.ui.interfaces.LRUPersistence;
 import chav1961.purelib.ui.swing.SwingUtils;
 import chav1961.purelib.ui.swing.interfaces.OnAction;
@@ -58,6 +65,7 @@ public class Application extends JFrame implements AutoCloseable, NodeMetadataOw
 	
 	public static final String			ARG_PROPFILE_LOCATION = "prop";
 
+	public static final String			KEY_APPLICATION_TITLE = "chav1961.bt.creolenotepad.Application.title";
 	public static final String			KEY_APPLICATION_MESSAGE_READY = "chav1961.bt.creolenotepad.Application.message.ready";
 	public static final String			KEY_APPLICATION_MESSAGE_FILE_NOT_EXISTS = "chav1961.bt.creolenotepad.Application.message.file.not.exists";
 	public static final String			KEY_APPLICATION_HELP_TITLE = "chav1961.bt.creolenotepad.Application.help.title";
@@ -71,18 +79,37 @@ public class Application extends JFrame implements AutoCloseable, NodeMetadataOw
 	private static final String			MENU_FILE_SAVE = "menu.main.file.save";
 	private static final String			MENU_FILE_SAVE_AS = "menu.main.file.saveAs";
 	private static final String			MENU_EDIT = "menu.main.edit";
+	private static final String			MENU_EDIT_CUT = "menu.main.edit.cut";
+	private static final String			MENU_EDIT_COPY = "menu.main.edit.copy";
+	private static final String			MENU_EDIT_PASTE = "menu.main.edit.paste";
+	private static final String			MENU_EDIT_FIND = "menu.main.edit.find";
+	private static final String			MENU_EDIT_FIND_REPLACE = "menu.main.edit.findreplace";
+	private static final String			MENU_TOOLS_PREVIEW = "menu.main.tools.preview";
 
 	private static final String[]		MENUS = {
 											MENU_FILE_LRU,
 											MENU_FILE_SAVE,
 											MENU_FILE_SAVE_AS,
-											MENU_EDIT
+											MENU_EDIT,
+											MENU_EDIT_CUT,
+											MENU_EDIT_COPY,
+											MENU_EDIT_PASTE,
+											MENU_EDIT_FIND,
+											MENU_EDIT_FIND_REPLACE,
+											MENU_TOOLS_PREVIEW
 										};
 	
 	private static final long 			FILE_LRU = 1L << 0;
 	private static final long 			FILE_SAVE = 1L << 1;
 	private static final long 			FILE_SAVE_AS = 1L << 2;
-	private static final long 			FILE_EDIT = 1L << 3;
+	private static final long 			EDIT = 1L << 3;
+	private static final long 			EDIT_CUT = 1L << 4;
+	private static final long 			EDIT_COPY = 1L << 5;
+	private static final long 			EDIT_PASTE = 1L << 6;
+	private static final long 			EDIT_FIND = 1L << 7;
+	private static final long 			EDIT_FIND_REPLACE = 1L << 8;
+	private static final long 			TOOLS_PREVIEW = 1L << 9;
+	private static final long 			TOTAL_EDIT = EDIT | EDIT_CUT | EDIT_COPY | EDIT_FIND | EDIT_FIND_REPLACE;
 	
 	
 	private final ContentMetadataInterface	mdi;
@@ -90,6 +117,7 @@ public class Application extends JFrame implements AutoCloseable, NodeMetadataOw
 	private final File						props;
 	private final SubstitutableProperties	properties;
 	private final JMenuBar					menuBar;
+	private final JToolBar					toolbar;
 	private final Localizer					localizer;
 	private final JStateString				state;
 	private final FileSystemInterface		fsi = FileSystemFactory.createFileSystem(URI.create("fsys:file:/"));
@@ -97,11 +125,14 @@ public class Application extends JFrame implements AutoCloseable, NodeMetadataOw
 	private final JFileContentManipulator	fcm;
 	private final CardLayout				cardLayout = new CardLayout();
 	private final JPanel					card = new JPanel(cardLayout);
+	private final UndoManager 				manager = new UndoManager();
 	private final JCreoleEditor				editor = new JCreoleEditor();
 	private final JEditorPane				viewer = new JEditorPane("text/html", "");
 	private final JEnableMaskManipulator	emm;
 	
+	private boolean 						anyOpened = false;
 	private boolean 						contentModified = false;
+	private boolean							inPreview = false;
 	
 	public Application(final ContentMetadataInterface mdi, final CountDownLatch latch, final File props) throws IOException {
 		if (mdi == null) {
@@ -120,10 +151,14 @@ public class Application extends JFrame implements AutoCloseable, NodeMetadataOw
 			this.properties = props.isFile() && props.canRead() ? SubstitutableProperties.of(props) : new SubstitutableProperties();
 			this.localizer = LocalizerFactory.getLocalizer(mdi.getRoot().getLocalizerAssociated());
 			this.menuBar = SwingUtils.toJComponent(mdi.byUIPath(URI.create("ui:/model/navigation.top.mainmenu")), JMenuBar.class);
-			this.emm = new JEnableMaskManipulator(MENUS, menuBar);
+			this.toolbar = SwingUtils.toJComponent(mdi.byUIPath(URI.create("ui:/model/navigation.top.toolbarmenu")), JToolBar.class);
+			this.emm = new JEnableMaskManipulator(MENUS, menuBar, toolbar);
 			
 			PureLibSettings.PURELIB_LOCALIZER.push(localizer);
 			PureLibSettings.PURELIB_LOCALIZER.addLocaleChangeListener(this);
+
+			editor.getDocument().addUndoableEditListener((e)->manager.addEdit(e.getEdit()));
+			viewer.setBackground(Color.LIGHT_GRAY);
 			
 			this.state = new JStateString(localizer);
 			this.persistence = LRUPersistence.of(props, "lru.");
@@ -132,10 +167,18 @@ public class Application extends JFrame implements AutoCloseable, NodeMetadataOw
 			this.fcm.addFileContentChangeListener((e)->processLRU(e));
 			
 			setJMenuBar(menuBar);
+			SwingUtils.assignActionKey(editor, SwingUtils.KS_UNDO, (e)->undo(), SwingUtils.ACTION_UNDO);
+			SwingUtils.assignActionKey(editor, SwingUtils.KS_REDO, (e)->redo(), SwingUtils.ACTION_REDO);
+			SwingUtils.assignActionKey(editor, SwingUtils.KS_FIND, (e)->find(), SwingUtils.ACTION_FIND);
+			SwingUtils.assignActionKey(editor, SwingUtils.KS_FIND_REPLACE, (e)->findReplace(), SwingUtils.ACTION_FIND_REPLACE);
+			SwingUtils.assignActionKey(editor, SwingUtils.KS_PRINT, (e)->previewProject(null), SwingUtils.ACTION_PRINT);
+			SwingUtils.assignActionKey(viewer, SwingUtils.KS_PRINT, (e)->previewProject(null), SwingUtils.ACTION_PRINT);
 			
 			card.add(new JScrollPane(editor), CARD_EDITOR);
 			card.add(new JScrollPane(viewer), CARD_VIEWER);
 			cardLayout.show(card, CARD_EDITOR);
+			toolbar.setFloatable(false);
+			getContentPane().add(toolbar, BorderLayout.NORTH);
 			getContentPane().add(card, BorderLayout.CENTER);
 			getContentPane().add(state, BorderLayout.SOUTH);
 			
@@ -145,10 +188,16 @@ public class Application extends JFrame implements AutoCloseable, NodeMetadataOw
 			SwingUtils.assignExitMethod4MainWindow(this, ()->exit());
 			SwingUtils.centerMainWindow(this, 0.85f);
 	        fillLRU(fcm.getLastUsed());
+
+	        editor.setEditable(false);
+	        viewer.setEditable(false);
+	        
+	        Toolkit.getDefaultToolkit().getSystemClipboard().addFlavorListener((e)->clipboardChanged());	        
 			
 			fillLocalizedStrings();
 		}
 	}
+
 
 	@Override
 	public ContentNodeMetadata getNodeMetadata() {
@@ -163,6 +212,8 @@ public class Application extends JFrame implements AutoCloseable, NodeMetadataOw
 	@Override
 	public void localeChanged(final Locale oldLocale, final Locale newLocale) throws LocalizationException {
 		SwingUtils.refreshLocale(menuBar, oldLocale, newLocale);
+		SwingUtils.refreshLocale(toolbar, oldLocale, newLocale);
+		SwingUtils.refreshLocale(state, oldLocale, newLocale);
 		fillLocalizedStrings();
 	}
 	
@@ -217,10 +268,16 @@ public class Application extends JFrame implements AutoCloseable, NodeMetadataOw
 	
 	@OnAction("action:/undo")
 	public void undo() {
+		if (manager.canUndo()) {
+			manager.undo();
+		}
 	}
 	
 	@OnAction("action:/redo")
 	public void redo() {
+		if (manager.canRedo()) {
+			manager.redo();
+		}
 	}
 	
 	@OnAction("action:/find")
@@ -232,7 +289,30 @@ public class Application extends JFrame implements AutoCloseable, NodeMetadataOw
 	}
 	
 	@OnAction("action:/previewProject")
-	public void previewProject() {
+	public void previewProject(final Hashtable<String,String[]> modes) {
+		inPreview = !inPreview;
+		emm.setCheckMaskTo(TOOLS_PREVIEW, inPreview);
+		if (inPreview) {
+			try(final StringWriter	wr = new StringWriter();
+				final CreoleWriter	cw = new CreoleWriter(wr, MarkupOutputFormat.XML2HTML)) {
+
+				cw.write(editor.getText());
+				cw.write("\n\n");
+				cw.flush();
+				viewer.setText(wr.toString());
+			} catch (IOException e) {
+				getLogger().message(Severity.error, e, e.getLocalizedMessage());
+			} finally {
+				emm.setEnableMaskOff(TOTAL_EDIT);
+				cardLayout.show(card, CARD_VIEWER);
+				SwingUtilities.invokeLater(()->viewer.requestFocusInWindow());
+			}
+		}
+		else {
+			emm.setEnableMaskOn(TOTAL_EDIT);
+			cardLayout.show(card, CARD_EDITOR);
+			SwingUtilities.invokeLater(()->editor.requestFocusInWindow());
+		}
 	}
 	
 	@OnAction("action:/settings")
@@ -270,7 +350,9 @@ public class Application extends JFrame implements AutoCloseable, NodeMetadataOw
 				fillLRU(fcm.getLastUsed());
 				break;
 			case FILE_LOADED 				:
-				emm.setEnableMaskOn(FILE_SAVE_AS);
+		        editor.setEditable(true);
+				emm.setEnableMaskOn(FILE_SAVE_AS | TOTAL_EDIT | TOOLS_PREVIEW);
+				anyOpened = true;
 				contentModified = false;
 				fillTitle();
 				break;
@@ -294,7 +376,9 @@ public class Application extends JFrame implements AutoCloseable, NodeMetadataOw
 				fillTitle();
 				break;
 			case NEW_FILE_CREATED 			:
-				emm.setEnableMaskOn(FILE_SAVE_AS);
+		        editor.setEditable(true);
+				emm.setEnableMaskOn(FILE_SAVE_AS | TOTAL_EDIT | TOOLS_PREVIEW);
+				anyOpened = true;
 				contentModified = false;
 				fillTitle();
 				break;
@@ -320,8 +404,21 @@ public class Application extends JFrame implements AutoCloseable, NodeMetadataOw
 			emm.setEnableMaskOn(FILE_LRU);
 		}
 	}
+
+	private void clipboardChanged() {
+		try{if (Toolkit.getDefaultToolkit().getSystemClipboard().isDataFlavorAvailable(DataFlavor.plainTextFlavor) || Toolkit.getDefaultToolkit().getSystemClipboard().isDataFlavorAvailable(DataFlavor.plainTextFlavor)) {
+				emm.setEnableMaskTo(EDIT_PASTE, anyOpened);
+			}
+			else {
+				emm.setEnableMaskOff(EDIT_PASTE);
+			}
+		} catch (IllegalStateException exc) {
+			emm.setEnableMaskOff(EDIT_PASTE);
+		}
+	}
 	
 	private void fillTitle() {
+		setTitle(localizer.getValue(KEY_APPLICATION_TITLE, (contentModified ? "* " : "") + fcm.getCurrentPathOfTheFile()));
 	}
 	
 	private void fillLocalizedStrings() {

@@ -2,26 +2,9 @@
 <localization xmlns="http://www.i18n.purelib.chav1961.ru/">
 	<lang name="en">
 <!-- Application -->
-		<key name="chav1961.bt.paint.Application.title">(c) 2022, A.V.Chernomyrdin. Simple graphic editor V.R.=0.0 %1$s</key>
-		<key name="application.about.title">About...</key>
-		<key name="application.about.content">uri(about.cre)</key>
-		<key name="chav1961.bt.paint.Application.filter.pngfiles">PNG images</key>
-		<key name="chav1961.bt.paint.Application.filter.jpgfiles">JPEG images</key>
-		<key name="chav1961.bt.paint.Application.filter.giffiles">GIF images</key>
-		<key name="chav1961.bt.paint.Application.filter.bmpfiles">BMP images</key>		
-		<key name="chav1961.bt.paint.Application.filter.cmdfiles">Console commands</key>
-		<key name="chav1961.bt.paint.Application.filter.pscfiles">bt.paint script</key>				
+		<key name="chav1961.bt.creolenotepad.Application.title">(c) 2023, A.V.Chernomyrdin. Simple CREOLE editor V.R.=0.0 %1$s</key>
 		<key name="chav1961.bt.creolenotepad.Application.message.ready">Ready</key>
 		<key name="chav1961.bt.creolenotepad.Application.message.file.not.exists">File(%1$s) is not existst and will be removed from LRU list</key>
-		<key name="chav1961.bt.paint.Application.message.new.name">(&lt;new&gt;)</key>		
-		<key name="chav1961.bt.paint.Application.message.new.image.created">New image created, %1$dx%2$dpx</key>
-		<key name="chav1961.bt.paint.Application.message.image.loading">Image loading...</key>
-		<key name="chav1961.bt.paint.Application.message.image.loaded">Image loaded from %1$s, %2$dx%3$dpx</key>
-		<key name="chav1961.bt.paint.Application.message.image.stored">Image stored to %1$s</key>
-		<key name="chav1961.bt.paint.Application.endbatch.title">Batch processing completed</key>
-		<key name="chav1961.bt.paint.Application.endbatch.content">All files in the batch are processed. Quit from application?</key>
-		<key name="chav1961.bt.paint.Application.customfilter.typeItems">Type items for custom filter</key>
-		<key name="chav1961.bt.paint.Application.player.enterSubstitutions">Type substitution values for variables</key>
 		<key name="chav1961.bt.creolenotepad.Application.help.title">About...</key>
 		<key name="chav1961.bt.creolenotepad.Application.help.content">uri(aboutApplication.cre)</key>
 
@@ -326,26 +309,9 @@
 	</lang>
 	<lang name="ru">
 <!-- Приложение -->
-		<key name="chav1961.bt.paint.Application.title">(c) 2022, А.В.Черномырдин. Простой графический редактор V.R.=0.0 %1$s</key>
-		<key name="application.about.title">О программе...</key>
-		<key name="application.about.content">uri(about.cre)</key>
-		<key name="chav1961.bt.paint.Application.filter.pngfiles">PNG изображения</key>
-		<key name="chav1961.bt.paint.Application.filter.jpgfiles">JPEG изображения</key>
-		<key name="chav1961.bt.paint.Application.filter.giffiles">GIF изображения</key>
-		<key name="chav1961.bt.paint.Application.filter.bmpfiles">BMP изображения</key>
-		<key name="chav1961.bt.paint.Application.filter.cmdfiles">Консольные команды</key>
-		<key name="chav1961.bt.paint.Application.filter.pscfiles">Скрипт bt.paint</key>				
+		<key name="chav1961.bt.creolenotepad.Application.title">(c) 2023, А.В.Черномырдин. Простой редактор CREOLE V.R.=0.0 %1$s</key>
 		<key name="chav1961.bt.creolenotepad.Application.message.ready">Готово</key>
 		<key name="chav1961.bt.creolenotepad.Application.message.file.not.exists">Файл (%1$s) не найден и будет удален из списка последних загруженных</key>
-		<key name="chav1961.bt.paint.Application.message.new.name">(&lt;новый&gt;)</key>		
-		<key name="chav1961.bt.paint.Application.message.new.image.created">Новая картинка создана, %1$dx%2$dтчк</key>		
-		<key name="chav1961.bt.paint.Application.message.image.loading">Загрузка картинки...</key>
-		<key name="chav1961.bt.paint.Application.message.image.loaded">Картинка загружена из файла %1$s, %2$dx%3$dтчк</key>
-		<key name="chav1961.bt.paint.Application.message.image.stored">Картинка сохранена в файл %1$s</key>
-		<key name="chav1961.bt.paint.Application.endbatch.title">Пакетная обработка завершен</key>
-		<key name="chav1961.bt.paint.Application.endbatch.content">Все файлы из пакета обработаны. Завершить работу приложения?</key>
-		<key name="chav1961.bt.paint.Application.customfilter.typeItems">Введите значения пользовательского фильтра</key>		
-		<key name="chav1961.bt.paint.Application.player.enterSubstitutions">Введите значения подстановочных переменных</key>
 		<key name="chav1961.bt.creolenotepad.Application.help.title">О программе</key>
 		<key name="chav1961.bt.creolenotepad.Application.help.content">uri(aboutApplication.cre)</key>
 		
