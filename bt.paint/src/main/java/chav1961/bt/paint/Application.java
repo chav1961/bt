@@ -479,6 +479,14 @@ public class Application extends JFrame implements NodeMetadataOwner, LocaleChan
 			getLogger().message(Severity.error,e.getLocalizedMessage());
 		}
 	}	
+
+	@OnAction("action:/pasteSvg")
+    public void pasteSvg() {
+		try{panel.pasteImage(predef.getPredefined(Predefines.PREDEF_CLIPBOARD, ClipboardWrapper.class).getImage().getImage());
+		} catch (PaintScriptException e) {
+			getLogger().message(Severity.error,e.getLocalizedMessage());
+		}
+	}	
 	
 	@OnAction("action:/filters")
     public void filters(final Hashtable<String,String[]> matrix) throws IOException {

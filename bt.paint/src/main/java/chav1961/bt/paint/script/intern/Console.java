@@ -120,8 +120,8 @@ public class Console {
 				, "line <xFrom::int>,<yFrom::int> [to] <xTo::int>,<yTo::int>"
 				, (p,a)->drawLine(p,(Integer)a[0],(Integer)a[1],(Integer)a[2],(Integer)a[3])
 				, ArgumentType.signedInt, ',', ArgumentType.signedInt, new CharUtils.Optional("to"), ArgumentType.signedInt, ',', ArgumentType.signedInt);
-		COMMANDS.placeName("line", ci);
-		COMMANDS.placeName("l", ci);
+		COMMANDS.placeName((CharSequence)"line", ci);
+		COMMANDS.placeName((CharSequence)"l", ci);
 
 		ci = new CommandItem("rectangle", CommandItem.CommandType.ImageAction
 				, KEY_UNDO_DRAW_RECT
@@ -136,8 +136,8 @@ public class Console {
 					}
 				}
 				, ArgumentType.rectangleRepresentation, new CharUtils.Optional(ArgumentType.Boolean));
-		COMMANDS.placeName("rectangle", ci);
-		COMMANDS.placeName("rect", ci);
+		COMMANDS.placeName((CharSequence)"rectangle", ci);
+		COMMANDS.placeName((CharSequence)"rect", ci);
 
 		ci = new CommandItem("ellipse", CommandItem.CommandType.ImageAction
 				, KEY_UNDO_DRAW_ELLIPSE
@@ -152,8 +152,8 @@ public class Console {
 					}
 				}
 				, ArgumentType.rectangleRepresentation, new CharUtils.Optional(ArgumentType.Boolean));
-		COMMANDS.placeName("ellipse", ci);
-		COMMANDS.placeName("ell", ci);
+		COMMANDS.placeName((CharSequence)"ellipse", ci);
+		COMMANDS.placeName((CharSequence)"ell", ci);
 
 		ci = new CommandItem("text", CommandItem.CommandType.ImageAction
 				, KEY_UNDO_DRAW_TEXT
@@ -168,8 +168,8 @@ public class Console {
 					}
 				}
 				, ArgumentType.rectangleRepresentation, ArgumentType.colorRepresentation, new CharUtils.Optional('/', ArgumentType.colorRepresentation), ArgumentType.raw);
-		COMMANDS.placeName("text", ci);
-		COMMANDS.placeName("t", ci);
+		COMMANDS.placeName((CharSequence)"text", ci);
+		COMMANDS.placeName((CharSequence)"t", ci);
 
 		ci = new CommandItem("path", CommandItem.CommandType.ImageAction
 				, KEY_UNDO_DRAW_PATH
@@ -184,8 +184,8 @@ public class Console {
 					}
 				}
 				, new CharUtils.Optional(ArgumentType.Boolean), ArgumentType.raw);
-		COMMANDS.placeName("path", ci);
-		COMMANDS.placeName("p", ci);
+		COMMANDS.placeName((CharSequence)"path", ci);
+		COMMANDS.placeName((CharSequence)"p", ci);
 
 		ci = new CommandItem("rotate", CommandItem.CommandType.ImageAction
 				, KEY_UNDO_ROTATE
@@ -193,8 +193,8 @@ public class Console {
 				, "rotate {cw|ccw}"
 				, (p,a)->rotate(p,(RotateDirection)a[0])
 				, RotateDirection.class);
-		COMMANDS.placeName("rotate", ci);
-		COMMANDS.placeName("rot", ci);
+		COMMANDS.placeName((CharSequence)"rotate", ci);
+		COMMANDS.placeName((CharSequence)"rot", ci);
 		
 		ci = new CommandItem("mirror", CommandItem.CommandType.ImageAction
 				, KEY_UNDO_REFLECT
@@ -202,8 +202,8 @@ public class Console {
 				, "mirror {hor|vert}"
 				, (p,a)->mirror(p,(MirrorDirection)a[0])
 				, MirrorDirection.class);
-		COMMANDS.placeName("mirror", ci);
-		COMMANDS.placeName("mirror", ci);
+		COMMANDS.placeName((CharSequence)"mirror", ci);
+		COMMANDS.placeName((CharSequence)"mir", ci);
 
 		ci = new CommandItem("scale", CommandItem.CommandType.ImageAction
 				, KEY_UNDO_RESIZE
@@ -211,7 +211,7 @@ public class Console {
 				, "scale <newX::int>[,<newY::int>]"
 				, (p,a)->scale(p,(Integer)a[0],a[1] instanceof Integer ? (Integer)a[1] : (Integer)a[0])
 				, ArgumentType.signedInt, new CharUtils.Optional(',', ArgumentType.signedInt));
-		COMMANDS.placeName("scale", ci);
+		COMMANDS.placeName((CharSequence)"scale", ci);
 
 		ci = new CommandItem("crop", CommandItem.CommandType.ImageAction
 				, KEY_UNDO_CROP
@@ -219,7 +219,7 @@ public class Console {
 				, "crop <rect::Rectangle>"
 				, (p,a)->crop(p, (Rectangle)a[0])
 				, ArgumentType.rectangleRepresentation);
-		COMMANDS.placeName("crop", ci);
+		COMMANDS.placeName((CharSequence)"crop", ci);
 		
 		ci = new CommandItem("resize", CommandItem.CommandType.ImageAction
 				, KEY_UNDO_RESIZE
@@ -227,14 +227,14 @@ public class Console {
 				, "resize <newX::int>,<newY::int> [center]"
 				, (p,a)->resize(p,(Integer)a[0],(Integer)a[1],a[2] instanceof AnchorPoint ? ((AnchorPoint)a[2]) : AnchorPoint.unknown)
 				, ArgumentType.signedInt, ',', ArgumentType.signedInt, new CharUtils.Optional(AnchorPoint.class));
-		COMMANDS.placeName("resize", ci);
+		COMMANDS.placeName((CharSequence)"resize", ci);
 
 		ci = new CommandItem("gray", CommandItem.CommandType.ImageAction
 				, KEY_UNDO_GRAYSCALE
 				, KEY_REDO_GRAYSCALE
 				, "gray"
 				, (p,a)->gray(p));
-		COMMANDS.placeName("gray", ci);
+		COMMANDS.placeName((CharSequence)"gray", ci);
 
 		ci = new CommandItem("transparent", CommandItem.CommandType.ImageAction
 				, KEY_UNDO_TRANSPARENCY
@@ -242,8 +242,8 @@ public class Console {
 				, "transparent [except] <color::color>"
 				, (p,a)->transparent(p,a[0] instanceof CharUtils.Mark ? (Color)a[1] : (Color)a[0], a[0] instanceof CharUtils.Mark)
 				, new CharUtils.Optional("except", new CharUtils.Mark(1)), ArgumentType.colorRepresentation);
-		COMMANDS.placeName("transparent", ci);
-		COMMANDS.placeName("trans", ci);
+		COMMANDS.placeName((CharSequence)"transparent", ci);
+		COMMANDS.placeName((CharSequence)"trans", ci);
 
 		ci = new CommandItem("fill", CommandItem.CommandType.ImageAction 
 				, ""
@@ -251,7 +251,7 @@ public class Console {
 				, "fill <x::int>,<y::int> <color::color>"
 				, (p,a)->fill(p,(Integer)a[0],(Integer)a[1],(Color)a[2])
 				, ArgumentType.signedInt, ',', ArgumentType.signedInt, ArgumentType.colorRepresentation);
-		COMMANDS.placeName("fill", ci);
+		COMMANDS.placeName((CharSequence)"fill", ci);
 
 		ci = new CommandItem("copy", CommandItem.CommandType.Silent
 				, ""
@@ -260,8 +260,8 @@ public class Console {
 				, (p,a)->a[0] instanceof Rectangle ? copyRange(p, (Rectangle)a[0]) : copyAll(p)
 				, new CharUtils.Optional(ArgumentType.rectangleRepresentation)
 				);
-		COMMANDS.placeName("copy", ci);
-		COMMANDS.placeName("cp", ci);
+		COMMANDS.placeName((CharSequence)"copy", ci);
+		COMMANDS.placeName((CharSequence)"cp", ci);
 
 		ci = new CommandItem("paste", CommandItem.CommandType.ImageAction 
 				, KEY_UNDO_PASTE
@@ -286,7 +286,7 @@ public class Console {
 					}
 				}
 				, new CharUtils.Choise(new Object[] {ArgumentType.signedInt, ',', ArgumentType.signedInt}, new Object[] {ArgumentType.rectangleRepresentation}), new CharUtils.Optional("from", ArgumentType.raw));
-		COMMANDS.placeName("paste", ci);
+		COMMANDS.placeName((CharSequence)"paste", ci);
 		
 //		ci = new CommandItem("undo", "undo", (p,a)->drawPath(p,(String)a[0]));
 //		COMMANDS.placeName("undo", ci);
@@ -316,7 +316,7 @@ public class Console {
 				, "new <width::int>,<height::int> <type::ImageType> [<color::color>] "
 				, (p,a)->newImage(p,(Integer)a[0],(Integer)a[1],(ImageType)a[2],(Color)a[3])
 				, ArgumentType.signedInt, ',', ArgumentType.signedInt, ImageType.class, new CharUtils.Optional(ArgumentType.colorRepresentation));
-		COMMANDS.placeName("new", ci);
+		COMMANDS.placeName((CharSequence)"new", ci);
 
 		ci = new CommandItem("load", CommandItem.CommandType.ImageAction
 				, ""
@@ -324,7 +324,7 @@ public class Console {
 				, "load <name::string>"
 				, (p,a)->""
 				, ArgumentType.raw);
-		COMMANDS.placeName("load", ci);
+		COMMANDS.placeName((CharSequence)"load", ci);
 		
 		ci = new CommandItem("foreground", CommandItem.CommandType.PropertyAction
 				, KEY_UNDO_CHANGE_FOREGROUND
@@ -332,8 +332,8 @@ public class Console {
 				, "foreground {<color::color>|<x::int>,<y::int>}"
 				, (p,a)->setProperties(p,CanvasProperties.FORE_COLOR, a[0], a[1])
 				, new CharUtils.Choise(new Object[] {ArgumentType.colorRepresentation}, new Object[] {ArgumentType.signedInt, ',', ArgumentType.signedInt}));
-		COMMANDS.placeName("foreground", ci);
-		COMMANDS.placeName("fore", ci);
+		COMMANDS.placeName((CharSequence)"foreground", ci);
+		COMMANDS.placeName((CharSequence)"fore", ci);
 
 		ci = new CommandItem("background", CommandItem.CommandType.PropertyAction
 				, KEY_UNDO_CHANGE_BACKGROUND
@@ -341,8 +341,8 @@ public class Console {
 				, "background {<color::color>|<x::int>,<y::int>}"
 				, (p,a)->setProperties(p,CanvasProperties.BACK_COLOR, a[0], a[1])
 				, new CharUtils.Choise(new Object[] {ArgumentType.colorRepresentation}, new Object[] {ArgumentType.signedInt, ',', ArgumentType.signedInt}));
-		COMMANDS.placeName("background", ci);
-		COMMANDS.placeName("back", ci);
+		COMMANDS.placeName((CharSequence)"background", ci);
+		COMMANDS.placeName((CharSequence)"back", ci);
 
 		ci = new CommandItem("font", CommandItem.CommandType.PropertyAction
 				, KEY_UNDO_CHANGE_FONT
@@ -350,7 +350,7 @@ public class Console {
 				, "font <family> <size::int> [bold] [italic]"
 				, (p,a)->setProperties(p,CanvasProperties.FONT,(String)a[0])
 				, ArgumentType.raw);
-		COMMANDS.placeName("font", ci);
+		COMMANDS.placeName((CharSequence)"font", ci);
 
 		ci = new CommandItem("stroke", CommandItem.CommandType.PropertyAction
 				, KEY_UNDO_CHANGE_STROKE
@@ -358,8 +358,8 @@ public class Console {
 				, "stroke [<thickness::int>] {solid|dashed|dotted} [{butt|round|square} [{miter|round|bevel}]]"
 				, (p,a)->setProperties(p,CanvasProperties.STROKE,(String)a[0])
 				, ArgumentType.raw);
-		COMMANDS.placeName("stroke", ci);
-		COMMANDS.placeName("str", ci);
+		COMMANDS.placeName((CharSequence)"stroke", ci);
+		COMMANDS.placeName((CharSequence)"str", ci);
 	}
 		
 	public static String processCommand(final String command, final Predefines predef) throws SyntaxException, PaintScriptException {
