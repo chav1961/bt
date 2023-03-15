@@ -24,6 +24,7 @@ import chav1961.purelib.i18n.LocalizerFactory;
 import chav1961.purelib.i18n.interfaces.LocaleResource;
 import chav1961.purelib.i18n.interfaces.LocaleResourceLocation;
 import chav1961.purelib.i18n.interfaces.Localizer;
+import chav1961.purelib.model.FieldFormat;
 import chav1961.purelib.ui.swing.interfaces.SwingItemRenderer;
 
 public class KeyStoreItemRenderer<R> implements SwingItemRenderer<KeyStoreItem, R> {
@@ -46,7 +47,7 @@ public class KeyStoreItemRenderer<R> implements SwingItemRenderer<KeyStoreItem, 
 	}
 
 	@Override
-	public R getRenderer(final Class<R> rendererType, final Object... options) {
+	public R getRenderer(final Class<R> rendererType, final FieldFormat ff, final Object... options) {
 		if (rendererType == null) {
 			throw new NullPointerException("Renderer type can't be null"); 
 		}
@@ -71,5 +72,4 @@ public class KeyStoreItemRenderer<R> implements SwingItemRenderer<KeyStoreItem, 
 			throw new UnsupportedOperationException("Required cell renderer ["+rendererType+"] is not supported yet");
 		}
 	}
-
 }
