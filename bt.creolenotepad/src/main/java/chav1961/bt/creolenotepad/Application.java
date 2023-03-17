@@ -199,9 +199,11 @@ public class Application extends JFrame implements AutoCloseable, NodeMetadataOw
 			state.setBorder(BorderFactory.createEtchedBorder(EtchedBorder.LOWERED));
 
 	        SwingUtils.assignActionListeners(menuBar, this);
+	        SwingUtils.assignActionListeners(toolbar, this);
 			SwingUtils.assignExitMethod4MainWindow(this, ()->exit());
 			SwingUtils.centerMainWindow(this, 0.85f);
 	        emm.setEnableMaskOff(FILE_SAVE | FILE_SAVE_AS | TOTAL_EDIT | TOOLS_PREVIEW);
+	        clipboardChanged();
 	        fillLRU(fcm.getLastUsed());
 
 	        editor.setEditable(false);
@@ -293,6 +295,22 @@ public class Application extends JFrame implements AutoCloseable, NodeMetadataOw
 		if (manager.canRedo()) {
 			manager.redo();
 		}
+	}
+
+	
+	@OnAction("action:/cut")
+	public void cut() {
+		editor.cut();
+	}
+	
+	@OnAction("action:/copy")
+	public void copy() {
+		editor.copy();
+	}
+
+	@OnAction("action:/paste")
+	public void paste() {
+		editor.paste();
 	}
 	
 	@OnAction("action:/find")
@@ -386,9 +404,10 @@ public class Application extends JFrame implements AutoCloseable, NodeMetadataOw
 				break;
 			case FILE_LOADED 				:
 		        editor.setEditable(true);
-				emm.setEnableMaskOn(FILE_SAVE_AS | TOTAL_EDIT | TOOLS_PREVIEW);
 				anyOpened = true;
 				contentModified = false;
+				emm.setEnableMaskOn(FILE_SAVE_AS | TOTAL_EDIT | TOOLS_PREVIEW);
+				clipboardChanged();
 				fillTitle();
 				break;
 			case FILE_STORED 				:
@@ -412,9 +431,10 @@ public class Application extends JFrame implements AutoCloseable, NodeMetadataOw
 				break;
 			case NEW_FILE_CREATED 			:
 		        editor.setEditable(true);
-				emm.setEnableMaskOn(FILE_SAVE_AS | TOTAL_EDIT | TOOLS_PREVIEW);
 				anyOpened = true;
 				contentModified = false;
+				emm.setEnableMaskOn(FILE_SAVE_AS | TOTAL_EDIT | TOOLS_PREVIEW);
+				clipboardChanged();
 				fillTitle();
 				break;
 			default :
