@@ -3,6 +3,7 @@ package chav1961.bt.creolenotepad;
 import java.awt.BorderLayout;
 import java.awt.CardLayout;
 import java.awt.Color;
+import java.awt.Dialog.ModalityType;
 import java.awt.Dimension;
 import java.awt.Toolkit;
 import java.awt.datatransfer.DataFlavor;
@@ -28,14 +29,19 @@ import javax.swing.SwingUtilities;
 import javax.swing.border.EtchedBorder;
 import javax.swing.undo.UndoManager;
 
+import chav1961.bt.creolenotepad.dialogs.Find;
+import chav1961.bt.creolenotepad.dialogs.FindReplace;
+import chav1961.bt.creolenotepad.dialogs.Settings;
 import chav1961.purelib.basic.ArgParser;
 import chav1961.purelib.basic.PureLibSettings;
 import chav1961.purelib.basic.SubstitutableProperties;
 import chav1961.purelib.basic.Utils;
 import chav1961.purelib.basic.exceptions.CommandLineParametersException;
+import chav1961.purelib.basic.exceptions.ContentException;
 import chav1961.purelib.basic.exceptions.LocalizationException;
 import chav1961.purelib.basic.interfaces.LoggerFacade;
 import chav1961.purelib.basic.interfaces.LoggerFacadeOwner;
+import chav1961.purelib.basic.interfaces.ModuleAccessor;
 import chav1961.purelib.basic.interfaces.LoggerFacade.Severity;
 import chav1961.purelib.enumerations.MarkupOutputFormat;
 import chav1961.purelib.fsys.FileSystemFactory;
@@ -49,7 +55,9 @@ import chav1961.purelib.model.interfaces.ContentMetadataInterface;
 import chav1961.purelib.model.interfaces.ContentMetadataInterface.ContentNodeMetadata;
 import chav1961.purelib.model.interfaces.NodeMetadataOwner;
 import chav1961.purelib.streams.char2char.CreoleWriter;
+import chav1961.purelib.ui.interfaces.FormManager;
 import chav1961.purelib.ui.interfaces.LRUPersistence;
+import chav1961.purelib.ui.swing.AutoBuiltForm;
 import chav1961.purelib.ui.swing.SwingUtils;
 import chav1961.purelib.ui.swing.interfaces.OnAction;
 import chav1961.purelib.ui.swing.useful.JCreoleEditor;
@@ -64,7 +72,9 @@ public class Application extends JFrame implements AutoCloseable, NodeMetadataOw
 	private static final long 	serialVersionUID = 1L;
 	
 	public static final String			ARG_PROPFILE_LOCATION = "prop";
-
+	public static final String			LRU_PREFIX = "lru.";
+	public static final String			PROP_CSS_FILE = "cssFile";
+	
 	public static final String			KEY_APPLICATION_TITLE = "chav1961.bt.creolenotepad.Application.title";
 	public static final String			KEY_APPLICATION_MESSAGE_READY = "chav1961.bt.creolenotepad.Application.message.ready";
 	public static final String			KEY_APPLICATION_MESSAGE_FILE_NOT_EXISTS = "chav1961.bt.creolenotepad.Application.message.file.not.exists";
@@ -129,6 +139,8 @@ public class Application extends JFrame implements AutoCloseable, NodeMetadataOw
 	private final JCreoleEditor				editor = new JCreoleEditor();
 	private final JEditorPane				viewer = new JEditorPane("text/html", "");
 	private final JEnableMaskManipulator	emm;
+	private final Find						find;
+	private final FindReplace				findReplace;
 	
 	private boolean 						anyOpened = false;
 	private boolean 						contentModified = false;
@@ -161,7 +173,9 @@ public class Application extends JFrame implements AutoCloseable, NodeMetadataOw
 			viewer.setBackground(Color.LIGHT_GRAY);
 			
 			this.state = new JStateString(localizer);
-			this.persistence = LRUPersistence.of(props, "lru.");
+			this.find = new Find(state, editor);
+			this.findReplace = new FindReplace(state, editor);
+			this.persistence = LRUPersistence.of(props, LRU_PREFIX);
 			this.fcm = new JFileContentManipulator(fsi, localizer, editor, persistence);
 			this.fcm.setFilters(FILE_FILTER);
 			this.fcm.addFileContentChangeListener((e)->processLRU(e));
@@ -185,8 +199,11 @@ public class Application extends JFrame implements AutoCloseable, NodeMetadataOw
 			state.setBorder(BorderFactory.createEtchedBorder(EtchedBorder.LOWERED));
 
 	        SwingUtils.assignActionListeners(menuBar, this);
+	        SwingUtils.assignActionListeners(toolbar, this);
 			SwingUtils.assignExitMethod4MainWindow(this, ()->exit());
 			SwingUtils.centerMainWindow(this, 0.85f);
+	        emm.setEnableMaskOff(FILE_SAVE | FILE_SAVE_AS | TOTAL_EDIT | TOOLS_PREVIEW);
+	        clipboardChanged();
 	        fillLRU(fcm.getLastUsed());
 
 	        editor.setEditable(false);
@@ -279,13 +296,39 @@ public class Application extends JFrame implements AutoCloseable, NodeMetadataOw
 			manager.redo();
 		}
 	}
+
+	
+	@OnAction("action:/cut")
+	public void cut() {
+		editor.cut();
+	}
+	
+	@OnAction("action:/copy")
+	public void copy() {
+		editor.copy();
+	}
+
+	@OnAction("action:/paste")
+	public void paste() {
+		editor.paste();
+	}
 	
 	@OnAction("action:/find")
 	public void find() {
+		try{
+			showModeless(find, localizer, 200, 200);
+		} catch (ContentException e) {
+			getLogger().message(Severity.error, e, e.getLocalizedMessage());
+		}
 	}
 	
 	@OnAction("action:/findreplace")
 	public void findReplace() {
+		try{
+			showModeless(findReplace, localizer, 200, 250);
+		} catch (ContentException e) {
+			getLogger().message(Severity.error, e, e.getLocalizedMessage());
+		}
 	}
 	
 	@OnAction("action:/previewProject")
@@ -317,6 +360,16 @@ public class Application extends JFrame implements AutoCloseable, NodeMetadataOw
 	
 	@OnAction("action:/settings")
 	public void settings() {
+		final Settings	settings = new Settings(state, properties);
+		
+		try{
+			if (ask(settings, localizer, 200, 100)) {
+				settings.storeProperties(properties);
+				properties.store(props);
+			}
+		} catch (ContentException | IOException e) {
+			getLogger().message(Severity.warning, e, e.getLocalizedMessage());
+		}
 	}
 	
 	@OnAction("action:builtin:/builtin.languages")
@@ -351,9 +404,10 @@ public class Application extends JFrame implements AutoCloseable, NodeMetadataOw
 				break;
 			case FILE_LOADED 				:
 		        editor.setEditable(true);
-				emm.setEnableMaskOn(FILE_SAVE_AS | TOTAL_EDIT | TOOLS_PREVIEW);
 				anyOpened = true;
 				contentModified = false;
+				emm.setEnableMaskOn(FILE_SAVE_AS | TOTAL_EDIT | TOOLS_PREVIEW);
+				clipboardChanged();
 				fillTitle();
 				break;
 			case FILE_STORED 				:
@@ -377,9 +431,10 @@ public class Application extends JFrame implements AutoCloseable, NodeMetadataOw
 				break;
 			case NEW_FILE_CREATED 			:
 		        editor.setEditable(true);
-				emm.setEnableMaskOn(FILE_SAVE_AS | TOTAL_EDIT | TOOLS_PREVIEW);
 				anyOpened = true;
 				contentModified = false;
+				emm.setEnableMaskOn(FILE_SAVE_AS | TOTAL_EDIT | TOOLS_PREVIEW);
+				clipboardChanged();
 				fillTitle();
 				break;
 			default :
@@ -423,6 +478,34 @@ public class Application extends JFrame implements AutoCloseable, NodeMetadataOw
 	
 	private void fillLocalizedStrings() {
 		fillTitle();
+	}
+
+	private <T> boolean ask(final T instance, final Localizer localizer, final int width, final int height) throws ContentException {
+		final ContentMetadataInterface	mdi = ContentModelFactory.forAnnotatedClass(instance.getClass());
+		
+		try(final AutoBuiltForm<T,?>	abf = new AutoBuiltForm<>(mdi, localizer, PureLibSettings.INTERNAL_LOADER, instance, (FormManager<?,T>)instance)) {
+			
+			((ModuleAccessor)instance).allowUnnamedModuleAccess(abf.getUnnamedModules());
+			abf.setPreferredSize(new Dimension(width,height));
+			return AutoBuiltForm.ask((JFrame)null,localizer,abf);
+		}
+	}
+	
+	private <T> void showModeless(final T instance, final Localizer localizer, final int width, final int height) throws ContentException {
+		final ContentMetadataInterface	mdi = ContentModelFactory.forAnnotatedClass(instance.getClass());
+
+		final Thread	t = new Thread(()->{
+							try(final AutoBuiltForm<T,?>	abf = new AutoBuiltForm<>(mdi, localizer, PureLibSettings.INTERNAL_LOADER, instance, (FormManager<?,T>)instance)) {
+								
+								((ModuleAccessor)instance).allowUnnamedModuleAccess(abf.getUnnamedModules());
+								abf.setPreferredSize(new Dimension(width,height));
+								AutoBuiltForm.ask((JFrame)null,localizer,abf);
+							} catch (ContentException e) {
+								getLogger().message(Severity.warning, e, e.getLocalizedMessage());
+							}
+						});
+		t.setDaemon(true);
+		t.start();
 	}
 	
 	public static void main(String[] args) {

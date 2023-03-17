@@ -44,14 +44,14 @@
 		<app:key code="F1" action="manual"/>
 	</app:keyset>
  	<app:menu id="toolbarmenu">
-		<app:item name="menu.main.edit.cut" caption="menu.main.edit.cut" tooltip="menu.main.edit.cut.tt" action="cut"/>
-		<app:item name="menu.main.edit.copy" caption="menu.main.edit.copy" tooltip="menu.main.edit.copy.tt" action="copy"/>
-		<app:item name="menu.main.edit.paste" caption="menu.main.edit.paste" tooltip="menu.main.edit.paste.tt" action="paste"/>
+		<app:item name="menu.main.edit.cut" caption="menu.main.edit.cut" tooltip="menu.main.edit.cut.tt" icon="root://chav1961.bt.creolenotepad.Application/chav1961/bt/creolenotepad/cut.png" action="cut"/>
+		<app:item name="menu.main.edit.copy" caption="menu.main.edit.copy" tooltip="menu.main.edit.copy.tt" icon="root://chav1961.bt.creolenotepad.Application/chav1961/bt/creolenotepad/copy.png" action="copy"/>
+		<app:item name="menu.main.edit.paste" caption="menu.main.edit.paste" tooltip="menu.main.edit.paste.tt" icon="root://chav1961.bt.creolenotepad.Application/chav1961/bt/creolenotepad/paste.png" action="paste"/>
 		<app:separator/>
-		<app:item name="menu.main.edit.find" caption="menu.main.edit.find" tooltip="menu.main.edit.find.tt" action="find"/>
-		<app:item name="menu.main.edit.findreplace" caption="menu.main.edit.findreplace" tooltip="menu.main.edit.findreplace.tt" action="findreplace"/>
+		<app:item name="menu.main.edit.find" caption="menu.main.edit.find" tooltip="menu.main.edit.find.tt" icon="root://chav1961.bt.creolenotepad.Application/chav1961/bt/creolenotepad/find.png" action="find"/>
+		<app:item name="menu.main.edit.findreplace" caption="menu.main.edit.findreplace" tooltip="menu.main.edit.findreplace.tt" icon="root://chav1961.bt.creolenotepad.Application/chav1961/bt/creolenotepad/findreplace.png" action="findreplace"/>
 		<app:separator/>
-		<app:item name="menu.main.tools.preview" caption="menu.main.tools.preview" tooltip="menu.main.tools.preview.tt" checkable="true" action="previewProject"/>
+		<app:item name="menu.main.tools.preview" caption="menu.main.tools.preview" tooltip="menu.main.tools.preview.tt" checkable="true" icon="root://chav1961.bt.creolenotepad.Application/chav1961/bt/creolenotepad/preview.png" action="previewProject"/>
 	</app:menu>
 	<app:keyset id="toolbarmenu.keyset">
 		<app:key code="X" ctrl="true" action="cut"/>
