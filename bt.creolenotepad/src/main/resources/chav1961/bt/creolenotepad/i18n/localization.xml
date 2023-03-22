@@ -11,8 +11,10 @@
 <!-- Main menu -->
 		<key name="menu.main.file">File</key>
 		<key name="menu.main.file.tt">File menu</key>
-		<key name="menu.main.file.new">New file</key>
-		<key name="menu.main.file.new.tt">Create new File</key>
+		<key name="menu.main.file.new.creole">New Creole file</key>
+		<key name="menu.main.file.new.creole.tt">Create new Creole File</key>
+		<key name="menu.main.file.new.markdown">New Markdown file</key>
+		<key name="menu.main.file.new.markdown.tt">Create new Markdown File</key>
 		<key name="menu.main.file.open">Open file</key>
 		<key name="menu.main.file.open.tt">Open existent file</key>
 		<key name="menu.main.file.lru">Open last recent</key>
@@ -107,8 +109,10 @@
 <!-- Main menu -->
 		<key name="menu.main.file">Файл</key>
 		<key name="menu.main.file.tt">Меню файлов</key>
-		<key name="menu.main.file.new">Новый файл</key>
-		<key name="menu.main.file.new.tt">Создать новый файл</key>
+		<key name="menu.main.file.new.creole">Новый файл Creole</key>
+		<key name="menu.main.file.new.creole.tt">Создать новый файл Creole</key>
+		<key name="menu.main.file.new.markdown">Новый файл Markdown</key>
+		<key name="menu.main.file.new.markdown.tt">Создать новый файл Markdown</key>
 		<key name="menu.main.file.open">Открыть файл</key>
 		<key name="menu.main.file.open.tt">Открыть существующий файл</key>
 		<key name="menu.main.file.lru">Загрузить последние</key>

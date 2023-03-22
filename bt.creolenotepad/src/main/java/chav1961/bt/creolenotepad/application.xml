@@ -3,7 +3,8 @@
 	<app:i18n location="i18n:xml:root://chav1961.bt.creolenotepad.Application/chav1961/bt/creolenotepad/i18n/localization.xml"/>
  	<app:menu id="mainmenu">
 		<app:submenu name="menu.main.file" caption="menu.main.file" tooltip="menu.main.file.tt">
-			<app:item name="menu.main.file.new" caption="menu.main.file.new" tooltip="menu.main.file.new.tt" action="newProject"/>
+			<app:item name="menu.main.file.new.creole" caption="menu.main.file.new.creole" tooltip="menu.main.file.new.creole.tt" action="newCreoleProject"/>
+			<app:item name="menu.main.file.new.markdown" caption="menu.main.file.new.markdown" tooltip="menu.main.file.new.markdown.tt" action="newMarkdownProject"/>
 			<app:item name="menu.main.file.open" caption="menu.main.file.open" tooltip="menu.main.file.open.tt" action="openProject"/>
 			<app:submenu name="menu.main.file.lru" caption="menu.main.file.lru" tooltip="menu.main.file.lru.tt">
 				<app:separator/>

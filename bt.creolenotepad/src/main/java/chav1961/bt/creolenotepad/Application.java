@@ -83,7 +83,8 @@ public class Application extends JFrame implements AutoCloseable, NodeMetadataOw
 	
 	private static final String			CARD_EDITOR = "editor";
 	private static final String			CARD_VIEWER = "viewer";
-	private static final FilterCallback	FILE_FILTER = FilterCallback.of("Creole files", "*.cre");
+	private static final FilterCallback	CREOLE_FILTER = FilterCallback.of("Creole files", "*.cre");
+	private static final FilterCallback	MARKDOWN_FILTER = FilterCallback.of("Markdown files", "*.md");
 
 	private static final String			MENU_FILE_LRU = "menu.main.file.lru";
 	private static final String			MENU_FILE_SAVE = "menu.main.file.save";
@@ -121,6 +122,37 @@ public class Application extends JFrame implements AutoCloseable, NodeMetadataOw
 	private static final long 			TOOLS_PREVIEW = 1L << 9;
 	private static final long 			TOTAL_EDIT = EDIT | EDIT_CUT | EDIT_COPY | EDIT_FIND | EDIT_FIND_REPLACE;
 	
+	private static enum FileFormat {
+		CREOLE(CREOLE_FILTER),
+		MARKDOWN(MARKDOWN_FILTER);
+		
+		private final FilterCallback	filter;
+		
+		private FileFormat(final FilterCallback filter) {
+			this.filter = filter;
+		}
+		
+		public FilterCallback getFilter() {
+			return filter;
+		}
+		
+		private static FileFormat byFile(final File file) {
+			if (file == null) {
+				throw new NullPointerException("File to define format can't be null");
+			}
+			else {
+				try{for(FileFormat item : values()) {
+					if (item.getFilter().accept(file)) {
+						return item;
+					}
+				}
+				throw new IllegalArgumentException("File ["+file.getAbsolutePath()+"]: unknown file format");
+			} catch (IOException exc) {
+				throw new IllegalArgumentException(exc);
+			}
+			}
+		}
+	}
 	
 	private final ContentMetadataInterface	mdi;
 	private final CountDownLatch			latch;
@@ -145,6 +177,7 @@ public class Application extends JFrame implements AutoCloseable, NodeMetadataOw
 	private boolean 						anyOpened = false;
 	private boolean 						contentModified = false;
 	private boolean							inPreview = false;
+	private FileFormat						fileFormat = FileFormat.CREOLE;
 	
 	public Application(final ContentMetadataInterface mdi, final CountDownLatch latch, final File props) throws IOException {
 		if (mdi == null) {
@@ -177,7 +210,7 @@ public class Application extends JFrame implements AutoCloseable, NodeMetadataOw
 			this.findReplace = new FindReplace(state, editor);
 			this.persistence = LRUPersistence.of(props, LRU_PREFIX);
 			this.fcm = new JFileContentManipulator(fsi, localizer, editor, persistence);
-			this.fcm.setFilters(FILE_FILTER);
+			this.fcm.setFilters(FileFormat.CREOLE.getFilter(), FileFormat.MARKDOWN.getFilter());
 			this.fcm.addFileContentChangeListener((e)->processLRU(e));
 			
 			setJMenuBar(menuBar);
@@ -241,9 +274,19 @@ public class Application extends JFrame implements AutoCloseable, NodeMetadataOw
 		PureLibSettings.PURELIB_LOCALIZER.removeLocaleChangeListener(this);
 	}
 
-	@OnAction("action:/newProject")
-	public void newProject() {
+	@OnAction("action:/newCreoleProject")
+	public void newCreoleProject() {
 		try{fcm.newFile();
+			fileFormat = FileFormat.CREOLE;
+		} catch (IOException e) {
+			getLogger().message(Severity.error, e, e.getLocalizedMessage());
+		}
+	}
+
+	@OnAction("action:/newMarkdownProject")
+	public void newMarkdownProject() {
+		try{fcm.newFile();
+			fileFormat = FileFormat.MARKDOWN;
 		} catch (IOException e) {
 			getLogger().message(Severity.error, e, e.getLocalizedMessage());
 		}
@@ -252,6 +295,7 @@ public class Application extends JFrame implements AutoCloseable, NodeMetadataOw
 	@OnAction("action:/openProject")
 	public void openProject() {
 		try{fcm.openFile();
+			fileFormat = FileFormat.byFile(new File(fcm.getCurrentNameOfTheFile()));
 		} catch (IOException e) {
 			getLogger().message(Severity.error, e, e.getLocalizedMessage());
 		}
@@ -268,6 +312,7 @@ public class Application extends JFrame implements AutoCloseable, NodeMetadataOw
 	@OnAction("action:/saveProjectAs")
 	public void saveProjectAs() {
 		try{fcm.saveFileAs();
+			fileFormat = FileFormat.byFile(new File(fcm.getCurrentNameOfTheFile()));
 		} catch (IOException e) {
 			getLogger().message(Severity.error, e, e.getLocalizedMessage());
 		}
@@ -362,8 +407,7 @@ public class Application extends JFrame implements AutoCloseable, NodeMetadataOw
 	public void settings() {
 		final Settings	settings = new Settings(state, properties);
 		
-		try{
-			if (ask(settings, localizer, 200, 100)) {
+		try{if (ask(settings, localizer, 200, 100)) {
 				settings.storeProperties(properties);
 				properties.store(props);
 			}
@@ -387,6 +431,7 @@ public class Application extends JFrame implements AutoCloseable, NodeMetadataOw
 		
 		if (f.exists() && f.isFile() && f.canRead()) {
 			try{fcm.openFile(path);
+				fileFormat = FileFormat.byFile(new File(fcm.getCurrentNameOfTheFile()));
 			} catch (IOException e) {
 				getLogger().message(Severity.error, e, e.getLocalizedMessage());
 			}
