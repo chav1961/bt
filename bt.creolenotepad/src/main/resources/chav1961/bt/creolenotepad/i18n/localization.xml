@@ -4,7 +4,9 @@
 <!-- Application -->
 		<key name="chav1961.bt.creolenotepad.Application.title">(c) 2023, A.V.Chernomyrdin. Simple CREOLE editor V.R.=0.0 %1$s</key>
 		<key name="chav1961.bt.creolenotepad.Application.message.ready">Ready</key>
-		<key name="chav1961.bt.creolenotepad.Application.message.file.not.exists">File(%1$s) is not existst and will be removed from LRU list</key>
+		<key name="chav1961.bt.creolenotepad.Application.message.notfound">Not found</key>		
+		<key name="chav1961.bt.creolenotepad.Application.message.replaced">%1$s items replaced</key>
+		<key name="chav1961.bt.creolenotepad.Application.message.file.not.exists">File(%1$s) is not exists and will be removed from LRU list</key>
 		<key name="chav1961.bt.creolenotepad.Application.help.title">About...</key>
 		<key name="chav1961.bt.creolenotepad.Application.help.content">uri(aboutApplication.cre)</key>
 
@@ -13,8 +15,6 @@
 		<key name="menu.main.file.tt">File menu</key>
 		<key name="menu.main.file.new.creole">New Creole file</key>
 		<key name="menu.main.file.new.creole.tt">Create new Creole File</key>
-		<key name="menu.main.file.new.markdown">New Markdown file</key>
-		<key name="menu.main.file.new.markdown.tt">Create new Markdown File</key>
 		<key name="menu.main.file.open">Open file</key>
 		<key name="menu.main.file.open.tt">Open existent file</key>
 		<key name="menu.main.file.lru">Open last recent</key>
@@ -41,6 +41,26 @@
 		<key name="menu.main.edit.find.tt">Find string</key>
 		<key name="menu.main.edit.findreplace">Find &amp; Replace</key>
 		<key name="menu.main.edit.findreplace.tt">Find and replace string</key>
+		<key name="menu.main.edit.pasteLink">Insert link</key>
+		<key name="menu.main.edit.pasteLink.tt">Insert link</key>
+		<key name="menu.main.edit.pasteImage">Insert image</key>
+		<key name="menu.main.edit.pasteImage.tt">Insert image</key>
+		<key name="menu.main.edit.captionUp">Caption up</key>
+		<key name="menu.main.edit.captionUp.tt">Caption up</key>
+		<key name="menu.main.edit.captionDown">Caption down</key>
+		<key name="menu.main.edit.captionDown.tt">Caption down</key>
+		<key name="menu.main.edit.listUp">Unordered list up</key>
+		<key name="menu.main.edit.listUp.tt">Unordered list up</key>
+		<key name="menu.main.edit.listDown">Unordered list down</key>
+		<key name="menu.main.edit.listDown.tt">Unordered list down</key>
+		<key name="menu.main.edit.orderedListUp">Ordered list up</key>
+		<key name="menu.main.edit.orderedListUp.tt">Ordered list up</key>
+		<key name="menu.main.edit.orderedListDown">Ordered list down</key>
+		<key name="menu.main.edit.orderedListDown.tt">Ordered list down</key>
+		<key name="menu.main.edit.bold">Bold</key>
+		<key name="menu.main.edit.bold.tt">Bold</key>
+		<key name="menu.main.edit.italic">Italic</key>
+		<key name="menu.main.edit.italic.tt">Italic</key>
 		<key name="menu.main.tools">Tools</key>
 		<key name="menu.main.tools.tt">Manage the application</key>
 		<key name="menu.main.tools.preview">Preview</key>
@@ -102,6 +122,8 @@
 <!-- Приложение -->
 		<key name="chav1961.bt.creolenotepad.Application.title">(c) 2023, А.В.Черномырдин. Простой редактор CREOLE V.R.=0.0 %1$s</key>
 		<key name="chav1961.bt.creolenotepad.Application.message.ready">Готово</key>
+		<key name="chav1961.bt.creolenotepad.Application.message.notfound">Не найдено</key>
+		<key name="chav1961.bt.creolenotepad.Application.message.replaced">%1$s строк заменено</key>
 		<key name="chav1961.bt.creolenotepad.Application.message.file.not.exists">Файл (%1$s) не найден и будет удален из списка последних загруженных</key>
 		<key name="chav1961.bt.creolenotepad.Application.help.title">О программе</key>
 		<key name="chav1961.bt.creolenotepad.Application.help.content">uri(aboutApplication.cre)</key>
@@ -111,8 +133,6 @@
 		<key name="menu.main.file.tt">Меню файлов</key>
 		<key name="menu.main.file.new.creole">Новый файл Creole</key>
 		<key name="menu.main.file.new.creole.tt">Создать новый файл Creole</key>
-		<key name="menu.main.file.new.markdown">Новый файл Markdown</key>
-		<key name="menu.main.file.new.markdown.tt">Создать новый файл Markdown</key>
 		<key name="menu.main.file.open">Открыть файл</key>
 		<key name="menu.main.file.open.tt">Открыть существующий файл</key>
 		<key name="menu.main.file.lru">Загрузить последние</key>
@@ -139,6 +159,26 @@
 		<key name="menu.main.edit.find.tt">Найти строку</key>
 		<key name="menu.main.edit.findreplace">Найти и заменить</key>
 		<key name="menu.main.edit.findreplace.tt">Найти и заменить строки</key>
+		<key name="menu.main.edit.pasteLink">Вставить ссылку</key>
+		<key name="menu.main.edit.pasteLink.tt">Вставить ссылку</key>
+		<key name="menu.main.edit.pasteImage">Вставить изображение</key>
+		<key name="menu.main.edit.pasteImage.tt">Вставить изображение</key>
+		<key name="menu.main.edit.captionUp">Повысить заголовок</key>
+		<key name="menu.main.edit.captionUp.tt">Повысить заголовок</key>
+		<key name="menu.main.edit.captionDown">Понизить заголовок</key>
+		<key name="menu.main.edit.captionDown.tt">Понизить заголовок</key>
+		<key name="menu.main.edit.listUp">Повысить список</key>
+		<key name="menu.main.edit.listUp.tt">Повысить список</key>
+		<key name="menu.main.edit.listDown">Понизить список</key>
+		<key name="menu.main.edit.listDown.tt">Понизить список</key>
+		<key name="menu.main.edit.orderedListUp">Повысить список</key>
+		<key name="menu.main.edit.orderedListUp.tt">Повысить список</key>
+		<key name="menu.main.edit.orderedListDown">Понизить список</key>
+		<key name="menu.main.edit.orderedListDown.tt">Понизить список</key>
+		<key name="menu.main.edit.bold">Жирный шрифт</key>
+		<key name="menu.main.edit.bold.tt">Жирный шрифт</key>
+		<key name="menu.main.edit.italic">Наклонный шрифт</key>
+		<key name="menu.main.edit.italic.tt">Наклонный шрифт</key>
 		<key name="menu.main.tools">Инструменты</key>
 		<key name="menu.main.tools.tt">Управление приложением</key>
 		<key name="menu.main.tools.preview">Скрипты</key>

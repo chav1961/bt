@@ -1,9 +1,11 @@
 package chav1961.bt.creolenotepad.dialogs;
 
+import chav1961.bt.creolenotepad.Application;
 import chav1961.purelib.basic.exceptions.FlowException;
 import chav1961.purelib.basic.exceptions.LocalizationException;
 import chav1961.purelib.basic.interfaces.LoggerFacade;
 import chav1961.purelib.basic.interfaces.ModuleAccessor;
+import chav1961.purelib.basic.interfaces.LoggerFacade.Severity;
 import chav1961.purelib.i18n.interfaces.LocaleResource;
 import chav1961.purelib.i18n.interfaces.LocaleResourceLocation;
 import chav1961.purelib.ui.interfaces.Action;
@@ -74,11 +76,32 @@ public class FindReplace implements FormManager<Object, FindReplace>, ModuleAcce
 	@Override
 	public RefreshMode onAction(final FindReplace inst, final Object id, final String actionName, final Object... parameter) throws FlowException, LocalizationException {
 		switch (actionName) {
-			case "find" 		:
+			case "app:action:/FindReplace.find" 		:
+				if (!InternalUtils.find(editor, toFind, backward, wholeWord, useRegex)) {
+					getLogger().message(Severity.warning, Application.KEY_APPLICATION_MESSAGE_NOT_FOUND);
+				}
 				break;
-			case "replace" 		:
+			case "app:action:/FindReplace.replace" 		:
+				if (InternalUtils.find(editor, toFind, backward, wholeWord, useRegex)) {
+					editor.replaceSelection(toReplace);
+				}
+				else {
+					getLogger().message(Severity.warning, Application.KEY_APPLICATION_MESSAGE_NOT_FOUND);
+				}
 				break;
-			case "replaceAll"	:
+			case "app:action:/FindReplace.replaceAll"	:
+				int	count = 0;
+				
+				while (InternalUtils.find(editor, toFind, backward, wholeWord, useRegex)) {
+					editor.replaceSelection(toReplace);
+					count++;
+				}
+				if (count == 0) {
+					getLogger().message(Severity.warning, Application.KEY_APPLICATION_MESSAGE_NOT_FOUND);
+				}
+				else {
+					getLogger().message(Severity.warning, Application.KEY_APPLICATION_MESSAGE_REPLACED, count);
+				}
 				break;
 			default :
 				throw new UnsupportedOperationException("Action name ["+actionName+"] is not supported yet"); 

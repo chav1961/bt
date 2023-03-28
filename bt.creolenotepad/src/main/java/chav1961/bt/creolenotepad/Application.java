@@ -7,6 +7,8 @@ import java.awt.Dialog.ModalityType;
 import java.awt.Dimension;
 import java.awt.Toolkit;
 import java.awt.datatransfer.DataFlavor;
+import java.awt.event.ActionEvent;
+import java.awt.event.KeyEvent;
 import java.io.File;
 import java.io.IOException;
 import java.io.StringWriter;
@@ -25,8 +27,12 @@ import javax.swing.JMenuItem;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JToolBar;
+import javax.swing.KeyStroke;
 import javax.swing.SwingUtilities;
 import javax.swing.border.EtchedBorder;
+import javax.swing.event.CaretEvent;
+import javax.swing.event.CaretListener;
+import javax.swing.text.DefaultCaret;
 import javax.swing.undo.UndoManager;
 
 import chav1961.bt.creolenotepad.dialogs.Find;
@@ -58,6 +64,7 @@ import chav1961.purelib.streams.char2char.CreoleWriter;
 import chav1961.purelib.ui.interfaces.FormManager;
 import chav1961.purelib.ui.interfaces.LRUPersistence;
 import chav1961.purelib.ui.swing.AutoBuiltForm;
+import chav1961.purelib.ui.swing.JToolBarWithMeta;
 import chav1961.purelib.ui.swing.SwingUtils;
 import chav1961.purelib.ui.swing.interfaces.OnAction;
 import chav1961.purelib.ui.swing.useful.JCreoleEditor;
@@ -78,13 +85,14 @@ public class Application extends JFrame implements AutoCloseable, NodeMetadataOw
 	public static final String			KEY_APPLICATION_TITLE = "chav1961.bt.creolenotepad.Application.title";
 	public static final String			KEY_APPLICATION_MESSAGE_READY = "chav1961.bt.creolenotepad.Application.message.ready";
 	public static final String			KEY_APPLICATION_MESSAGE_FILE_NOT_EXISTS = "chav1961.bt.creolenotepad.Application.message.file.not.exists";
+	public static final String			KEY_APPLICATION_MESSAGE_NOT_FOUND = "chav1961.bt.creolenotepad.Application.message.notfound";
+	public static final String			KEY_APPLICATION_MESSAGE_REPLACED = "chav1961.bt.creolenotepad.Application.message.replaced";
 	public static final String			KEY_APPLICATION_HELP_TITLE = "chav1961.bt.creolenotepad.Application.help.title";
 	public static final String			KEY_APPLICATION_HELP_CONTENT = "chav1961.bt.creolenotepad.Application.help.content";
 	
 	private static final String			CARD_EDITOR = "editor";
 	private static final String			CARD_VIEWER = "viewer";
 	private static final FilterCallback	CREOLE_FILTER = FilterCallback.of("Creole files", "*.cre");
-	private static final FilterCallback	MARKDOWN_FILTER = FilterCallback.of("Markdown files", "*.md");
 
 	private static final String			MENU_FILE_LRU = "menu.main.file.lru";
 	private static final String			MENU_FILE_SAVE = "menu.main.file.save";
@@ -93,8 +101,20 @@ public class Application extends JFrame implements AutoCloseable, NodeMetadataOw
 	private static final String			MENU_EDIT_CUT = "menu.main.edit.cut";
 	private static final String			MENU_EDIT_COPY = "menu.main.edit.copy";
 	private static final String			MENU_EDIT_PASTE = "menu.main.edit.paste";
+	private static final String			MENU_EDIT_PASTE_LINK = "menu.main.edit.pasteLink";
+	private static final String			MENU_EDIT_PASTE_IMAGE = "menu.main.edit.pasteImage";
 	private static final String			MENU_EDIT_FIND = "menu.main.edit.find";
 	private static final String			MENU_EDIT_FIND_REPLACE = "menu.main.edit.findreplace";
+	private static final String			MENU_EDIT_CAPTION_UP = "menu.main.edit.captionUp";
+	private static final String			MENU_EDIT_CAPTION_DOWN = "menu.main.edit.captionDown";
+	private static final String			MENU_EDIT_LIST_UP = "menu.main.edit.listUp";
+	private static final String			MENU_EDIT_LIST_DOWN = "menu.main.edit.listDown";
+	private static final String			MENU_EDIT_ORDERED_LIST_UP = "menu.main.edit.orderedListUp";
+	private static final String			MENU_EDIT_ORDERED_LIST_DOWN = "menu.main.edit.orderedListDown";
+	private static final String			MENU_EDIT_ORDERED_BOLD = "menu.main.edit.bold";
+	private static final String			MENU_EDIT_ORDERED_ITALIC = "menu.main.edit.italic";
+	
+	
 	private static final String			MENU_TOOLS_PREVIEW = "menu.main.tools.preview";
 
 	private static final String[]		MENUS = {
@@ -105,8 +125,18 @@ public class Application extends JFrame implements AutoCloseable, NodeMetadataOw
 											MENU_EDIT_CUT,
 											MENU_EDIT_COPY,
 											MENU_EDIT_PASTE,
+											MENU_EDIT_PASTE_LINK,
+											MENU_EDIT_PASTE_IMAGE,
 											MENU_EDIT_FIND,
 											MENU_EDIT_FIND_REPLACE,
+											MENU_EDIT_CAPTION_UP,
+											MENU_EDIT_CAPTION_DOWN,
+											MENU_EDIT_LIST_UP,
+											MENU_EDIT_LIST_DOWN,
+											MENU_EDIT_ORDERED_LIST_UP,
+											MENU_EDIT_ORDERED_LIST_DOWN,
+											MENU_EDIT_ORDERED_BOLD,
+											MENU_EDIT_ORDERED_ITALIC,
 											MENU_TOOLS_PREVIEW
 										};
 	
@@ -117,14 +147,24 @@ public class Application extends JFrame implements AutoCloseable, NodeMetadataOw
 	private static final long 			EDIT_CUT = 1L << 4;
 	private static final long 			EDIT_COPY = 1L << 5;
 	private static final long 			EDIT_PASTE = 1L << 6;
-	private static final long 			EDIT_FIND = 1L << 7;
-	private static final long 			EDIT_FIND_REPLACE = 1L << 8;
-	private static final long 			TOOLS_PREVIEW = 1L << 9;
-	private static final long 			TOTAL_EDIT = EDIT | EDIT_CUT | EDIT_COPY | EDIT_FIND | EDIT_FIND_REPLACE;
+	private static final long 			EDIT_PASTE_LINK = 1L << 7;
+	private static final long 			EDIT_PASTE_IMAGE = 1L << 8;
+	private static final long 			EDIT_FIND = 1L << 9;
+	private static final long 			EDIT_FIND_REPLACE = 1L << 10;
+	private static final long 			EDIT_CAPTION_UP = 1L << 11;
+	private static final long 			EDIT_CAPTION_DOWN = 1L << 12;
+	private static final long 			EDIT_LIST_UP = 1L << 13;
+	private static final long 			EDIT_LIST_DOWN = 1L << 14;
+	private static final long 			EDIT_ORDERED_LIST_UP = 1L << 15;
+	private static final long 			EDIT_ORDERED_LIST_DOWN = 1L << 16;
+	private static final long 			EDIT_ORDERED_BOLD = 1L << 17;
+	private static final long 			EDIT_ORDERED_ITALIC = 1L << 18;	
+	private static final long 			TOOLS_PREVIEW = 1L << 19;
+	private static final long 			TOTAL_EDIT = EDIT | EDIT_CUT | EDIT_COPY| EDIT_PASTE_LINK | EDIT_PASTE_IMAGE | EDIT_FIND | EDIT_FIND_REPLACE;
+	private static final long 			TOTAL_EDIT_SELECTION = EDIT_CAPTION_UP | EDIT_CAPTION_DOWN | EDIT_LIST_UP | EDIT_LIST_DOWN | EDIT_ORDERED_LIST_UP | EDIT_ORDERED_LIST_DOWN | EDIT_ORDERED_BOLD | EDIT_ORDERED_ITALIC;	
 	
 	private static enum FileFormat {
-		CREOLE(CREOLE_FILTER),
-		MARKDOWN(MARKDOWN_FILTER);
+		CREOLE(CREOLE_FILTER);
 		
 		private final FilterCallback	filter;
 		
@@ -210,16 +250,10 @@ public class Application extends JFrame implements AutoCloseable, NodeMetadataOw
 			this.findReplace = new FindReplace(state, editor);
 			this.persistence = LRUPersistence.of(props, LRU_PREFIX);
 			this.fcm = new JFileContentManipulator(fsi, localizer, editor, persistence);
-			this.fcm.setFilters(FileFormat.CREOLE.getFilter(), FileFormat.MARKDOWN.getFilter());
+			this.fcm.setFilters(FileFormat.CREOLE.getFilter());
 			this.fcm.addFileContentChangeListener((e)->processLRU(e));
 			
 			setJMenuBar(menuBar);
-			SwingUtils.assignActionKey(editor, SwingUtils.KS_UNDO, (e)->undo(), SwingUtils.ACTION_UNDO);
-			SwingUtils.assignActionKey(editor, SwingUtils.KS_REDO, (e)->redo(), SwingUtils.ACTION_REDO);
-			SwingUtils.assignActionKey(editor, SwingUtils.KS_FIND, (e)->find(), SwingUtils.ACTION_FIND);
-			SwingUtils.assignActionKey(editor, SwingUtils.KS_FIND_REPLACE, (e)->findReplace(), SwingUtils.ACTION_FIND_REPLACE);
-			SwingUtils.assignActionKey(editor, SwingUtils.KS_PRINT, (e)->previewProject(null), SwingUtils.ACTION_PRINT);
-			SwingUtils.assignActionKey(viewer, SwingUtils.KS_PRINT, (e)->previewProject(null), SwingUtils.ACTION_PRINT);
 			
 			card.add(new JScrollPane(editor), CARD_EDITOR);
 			card.add(new JScrollPane(viewer), CARD_VIEWER);
@@ -233,6 +267,8 @@ public class Application extends JFrame implements AutoCloseable, NodeMetadataOw
 
 	        SwingUtils.assignActionListeners(menuBar, this);
 	        SwingUtils.assignActionListeners(toolbar, this);
+	        ((JToolBarWithMeta)toolbar).assignAccelerators(editor);
+	        ((JToolBarWithMeta)toolbar).assignAccelerators(viewer);
 			SwingUtils.assignExitMethod4MainWindow(this, ()->exit());
 			SwingUtils.centerMainWindow(this, 0.85f);
 	        emm.setEnableMaskOff(FILE_SAVE | FILE_SAVE_AS | TOTAL_EDIT | TOOLS_PREVIEW);
@@ -241,13 +277,13 @@ public class Application extends JFrame implements AutoCloseable, NodeMetadataOw
 
 	        editor.setEditable(false);
 	        viewer.setEditable(false);
+	        editor.addCaretListener((e)->refreshSelectionMenu());
 	        
 	        Toolkit.getDefaultToolkit().getSystemClipboard().addFlavorListener((e)->clipboardChanged());	        
 			
 			fillLocalizedStrings();
 		}
 	}
-
 
 	@Override
 	public ContentNodeMetadata getNodeMetadata() {
@@ -283,15 +319,6 @@ public class Application extends JFrame implements AutoCloseable, NodeMetadataOw
 		}
 	}
 
-	@OnAction("action:/newMarkdownProject")
-	public void newMarkdownProject() {
-		try{fcm.newFile();
-			fileFormat = FileFormat.MARKDOWN;
-		} catch (IOException e) {
-			getLogger().message(Severity.error, e, e.getLocalizedMessage());
-		}
-	}
-	
 	@OnAction("action:/openProject")
 	public void openProject() {
 		try{fcm.openFile();
@@ -357,11 +384,19 @@ public class Application extends JFrame implements AutoCloseable, NodeMetadataOw
 	public void paste() {
 		editor.paste();
 	}
+
+	@OnAction("action:/pasteLink")
+	public void pasteLink() {
+	}
+	
+	@OnAction("action:/pasteImage")
+	public void pasteImage() {
+	}
 	
 	@OnAction("action:/find")
 	public void find() {
 		try{
-			showModeless(find, localizer, 200, 200);
+			showModeless(find, localizer, 400, 150);
 		} catch (ContentException e) {
 			getLogger().message(Severity.error, e, e.getLocalizedMessage());
 		}
@@ -370,9 +405,182 @@ public class Application extends JFrame implements AutoCloseable, NodeMetadataOw
 	@OnAction("action:/findreplace")
 	public void findReplace() {
 		try{
-			showModeless(findReplace, localizer, 200, 250);
+			showModeless(findReplace, localizer, 400, 180);
 		} catch (ContentException e) {
 			getLogger().message(Severity.error, e, e.getLocalizedMessage());
+		}
+	}
+
+	@OnAction("action:/paragraphCaptionUp")
+	public void paragraphCaptionUp() {
+		final int	pos = Math.min(editor.getCaret().getDot(),editor.getCaret().getMark());
+		String		text = editor.getSelectedText();
+		
+		if (text.length() > 0) {
+			if (text.startsWith("=")) {
+				text = text.substring(1);
+			}
+			else {
+				text = "======"+text;
+			}
+			editor.replaceSelection(text);
+			editor.setSelectionStart(pos);
+			editor.setSelectionEnd(pos + text.length());
+		}
+	}
+	
+	@OnAction("action:/paragraphCaptionDown")
+	public void paragraphCaptionDown() {
+		final int	pos = Math.min(editor.getCaret().getDot(),editor.getCaret().getMark());
+		String		text = editor.getSelectedText();
+		
+		if (text.length() > 0) {
+			if (text.startsWith("======")) {
+				text = text.substring(6);
+			}
+			else {
+				text = '=' + text;
+			}
+			editor.replaceSelection(text);
+			editor.setSelectionStart(pos);
+			editor.setSelectionEnd(pos + text.length());
+		}
+	}
+	
+	@OnAction("action:/paragraphListUp")
+	public void paragraphListUp() {
+		final int		pos = Math.min(editor.getCaret().getDot(),editor.getCaret().getMark());
+		final String	text = editor.getSelectedText();
+		
+		if (text.length() > 0) {
+			final StringBuilder	sb = new StringBuilder();
+			
+			for (String line : text.split("\n")) {
+				if (line.startsWith("*")) {
+					sb.append(line.substring(1)).append('\n');
+				}
+				else {
+					sb.append(line).append('\n');
+				}
+			}
+			editor.replaceSelection(sb.toString());
+			editor.setCaretPosition(pos);
+			editor.setSelectionStart(pos);
+			editor.setSelectionEnd(pos + sb.length());
+		}
+	}
+	
+	@OnAction("action:/paragraphListDown")
+	public void paragraphListDown() {
+		final int		pos = Math.min(editor.getCaret().getDot(),editor.getCaret().getMark());
+		final String	text = editor.getSelectedText();
+		int				mark;
+		
+		if (text.length() > 0) {
+			final StringBuilder	sb = new StringBuilder("\n");
+			
+			for (String line : text.split("\n")) {
+				sb.append('*').append(line).append('\n');
+			}
+			editor.replaceSelection(sb.toString());
+			mark = pos + sb.length();
+			editor.setSelectionStart(pos);
+			editor.setSelectionEnd(mark);
+		}
+	}
+	
+	@OnAction("action:/paragraphOrderedListUp")
+	public void paragraphOrderedListUp() {
+		final int		pos = Math.min(editor.getCaret().getDot(),editor.getCaret().getMark());
+		final String	text = editor.getSelectedText();
+		int				mark;
+		
+		if (text.length() > 0) {
+			final StringBuilder	sb = new StringBuilder();
+			
+			for (String line : text.split("\n")) {
+				if (line.startsWith("#")) {
+					sb.append(line.substring(1)).append('\n');
+				}
+				else {
+					sb.append(line).append('\n');
+				}
+			}
+			editor.replaceSelection(sb.toString());
+			mark = pos + sb.length();
+			editor.setSelectionStart(pos);
+			editor.setSelectionEnd(mark);
+		}
+	}
+	
+	@OnAction("action:/paragraphOrderedListDown")
+	public void paragraphOrderedListDown() {
+		final int		pos = Math.min(editor.getCaret().getDot(),editor.getCaret().getMark());
+		final String	text = editor.getSelectedText();
+		int				mark;
+		
+		if (text.length() > 0) {
+			final StringBuilder	sb = new StringBuilder("\n");
+			
+			for (String line : text.split("\n")) {
+				sb.append('#').append(line).append('\n');
+			}
+			editor.replaceSelection(sb.toString());
+			mark = pos + sb.length();
+			editor.setSelectionStart(pos);
+			editor.setSelectionEnd(mark);
+		}
+	}
+	
+	@OnAction("action:/fontBold")
+	public void fontBold() {
+		final int	pos = Math.min(editor.getCaret().getDot(),editor.getCaret().getMark());
+		int			mark;
+		String		text = editor.getSelectedText();
+		
+		if (text.length() > 0) {
+			if (text.startsWith("**") && text.endsWith("**")) {
+				if (text.length() > 4) {
+					editor.replaceSelection(text.substring(2, text.length()-2));
+					mark = pos + text.length() - 4; 
+				}
+				else {
+					editor.replaceSelection("");
+					mark = 0;
+				}
+			}
+			else {
+				editor.replaceSelection("**"+text+"**");
+				mark = pos + text.length() + 4;
+			}
+			editor.setSelectionStart(pos);
+			editor.setSelectionEnd(mark);
+		}
+	}
+	
+	@OnAction("action:/fontItalic")
+	public void fontItalic() {
+		final int	pos = Math.min(editor.getCaret().getDot(),editor.getCaret().getMark());
+		int			mark;
+		String		text = editor.getSelectedText();
+
+		if (text.length() > 0) {
+			if (text.startsWith("//") && text.endsWith("//")) {
+				if (text.length() > 4) {
+					editor.replaceSelection(text.substring(2, text.length()-2));
+					mark = pos + text.length() - 4; 
+				}
+				else {
+					editor.replaceSelection("");
+					mark = 0;
+				}
+			}
+			else {
+				editor.replaceSelection("//"+text+"//");
+				mark = pos + text.length() + 4;
+			}
+			editor.setSelectionStart(pos);
+			editor.setSelectionEnd(mark);
 		}
 	}
 	
@@ -449,6 +657,8 @@ public class Application extends JFrame implements AutoCloseable, NodeMetadataOw
 				break;
 			case FILE_LOADED 				:
 		        editor.setEditable(true);
+		        editor.setCaret(new DefaultCaret());
+		        editor.setCaretPosition(0);
 				anyOpened = true;
 				contentModified = false;
 				emm.setEnableMaskOn(FILE_SAVE_AS | TOTAL_EDIT | TOOLS_PREVIEW);
@@ -476,6 +686,8 @@ public class Application extends JFrame implements AutoCloseable, NodeMetadataOw
 				break;
 			case NEW_FILE_CREATED 			:
 		        editor.setEditable(true);
+		        editor.setCaret(new DefaultCaret());
+		        editor.setCaretPosition(0);
 				anyOpened = true;
 				contentModified = false;
 				emm.setEnableMaskOn(FILE_SAVE_AS | TOTAL_EDIT | TOOLS_PREVIEW);
@@ -516,7 +728,16 @@ public class Application extends JFrame implements AutoCloseable, NodeMetadataOw
 			emm.setEnableMaskOff(EDIT_PASTE);
 		}
 	}
-	
+
+	private void refreshSelectionMenu() {
+		if (editor.getCaret().getDot() != editor.getCaret().getMark()) {
+			emm.setEnableMaskTo(TOTAL_EDIT_SELECTION, anyOpened);
+		}
+		else {
+			emm.setEnableMaskOff(TOTAL_EDIT_SELECTION);
+		}
+	}
+
 	private void fillTitle() {
 		setTitle(localizer.getValue(KEY_APPLICATION_TITLE, (contentModified ? "* " : "") + fcm.getCurrentPathOfTheFile()));
 	}

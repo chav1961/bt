@@ -1,8 +1,13 @@
 package chav1961.bt.creolenotepad.dialogs;
 
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import chav1961.bt.creolenotepad.Application;
 import chav1961.purelib.basic.exceptions.FlowException;
 import chav1961.purelib.basic.exceptions.LocalizationException;
 import chav1961.purelib.basic.interfaces.LoggerFacade;
+import chav1961.purelib.basic.interfaces.LoggerFacade.Severity;
 import chav1961.purelib.basic.interfaces.ModuleAccessor;
 import chav1961.purelib.i18n.interfaces.LocaleResource;
 import chav1961.purelib.i18n.interfaces.LocaleResourceLocation;
@@ -68,7 +73,10 @@ public class Find implements FormManager<Object, Find>, ModuleAccessor {
 	@Override
 	public RefreshMode onAction(final Find inst, final Object id, final String actionName, final Object... parameter) throws FlowException, LocalizationException {
 		switch (actionName) {
-			case "find" 		:
+			case "app:action:/Find.find"	:
+				if(!InternalUtils.find(editor, toFind, backward, wholeWord, useRegex)) {
+					getLogger().message(Severity.warning, Application.KEY_APPLICATION_MESSAGE_NOT_FOUND);
+				}
 				break;
 			default :
 				throw new UnsupportedOperationException("Action name ["+actionName+"] is not supported yet"); 
