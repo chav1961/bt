@@ -113,8 +113,6 @@ public class Application extends JFrame implements AutoCloseable, NodeMetadataOw
 	private static final String			MENU_EDIT_ORDERED_LIST_DOWN = "menu.main.edit.orderedListDown";
 	private static final String			MENU_EDIT_ORDERED_BOLD = "menu.main.edit.bold";
 	private static final String			MENU_EDIT_ORDERED_ITALIC = "menu.main.edit.italic";
-	
-	
 	private static final String			MENU_TOOLS_PREVIEW = "menu.main.tools.preview";
 
 	private static final String[]		MENUS = {
