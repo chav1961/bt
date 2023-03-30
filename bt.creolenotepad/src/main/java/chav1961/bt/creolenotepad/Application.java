@@ -3,6 +3,7 @@ package chav1961.bt.creolenotepad;
 import java.awt.BorderLayout;
 import java.awt.CardLayout;
 import java.awt.Color;
+import java.awt.Dialog;
 import java.awt.Dialog.ModalityType;
 import java.awt.Dimension;
 import java.awt.Toolkit;
@@ -70,6 +71,7 @@ import chav1961.purelib.ui.swing.interfaces.OnAction;
 import chav1961.purelib.ui.swing.useful.JCreoleEditor;
 import chav1961.purelib.ui.swing.useful.JEnableMaskManipulator;
 import chav1961.purelib.ui.swing.useful.JFileContentManipulator;
+import chav1961.purelib.ui.swing.useful.JFileSelectionDialog;
 import chav1961.purelib.ui.swing.useful.JSimpleSplash;
 import chav1961.purelib.ui.swing.useful.JStateString;
 import chav1961.purelib.ui.swing.useful.JFileSelectionDialog.FilterCallback;
@@ -93,6 +95,7 @@ public class Application extends JFrame implements AutoCloseable, NodeMetadataOw
 	private static final String			CARD_EDITOR = "editor";
 	private static final String			CARD_VIEWER = "viewer";
 	private static final FilterCallback	CREOLE_FILTER = FilterCallback.of("Creole files", "*.cre");
+	private static final FilterCallback	IMAGE_FILTER = FilterCallback.of("Image files", "*.png", "*.jpg");
 
 	private static final String			MENU_FILE_LRU = "menu.main.file.lru";
 	private static final String			MENU_FILE_SAVE = "menu.main.file.save";
@@ -389,6 +392,14 @@ public class Application extends JFrame implements AutoCloseable, NodeMetadataOw
 	
 	@OnAction("action:/pasteImage")
 	public void pasteImage() {
+		try{for(String item : JFileSelectionDialog.select(this, localizer, fsi, JFileSelectionDialog.OPTIONS_FOR_OPEN | JFileSelectionDialog.OPTIONS_CAN_SELECT_FILE | JFileSelectionDialog.OPTIONS_FILE_MUST_EXISTS, IMAGE_FILTER)) {
+				final String	lastComponent = item.substring(item.lastIndexOf('/')+1);
+				
+				editor.replaceSelection(" {{file:"+item+"|"+lastComponent+"}} ");
+			}
+		} catch (IOException e) {
+			getLogger().message(Severity.error, e, e.getLocalizedMessage());
+		}		
 	}
 	
 	@OnAction("action:/find")
