@@ -54,6 +54,11 @@ public class Settings implements FormManager<Object, Settings>, ModuleAccessor {
 	}
 	
 	public void storeProperties(final SubstitutableProperties props) {
-		props.setProperty(Application.PROP_CSS_FILE, cssFile.getAbsolutePath());
+		if (cssFile.isFile() && cssFile.canRead()) {
+			props.setProperty(Application.PROP_CSS_FILE, cssFile.getAbsolutePath());
+		}
+		else {
+			props.remove(Application.PROP_CSS_FILE);
+		}
 	}
 }

@@ -6,7 +6,9 @@
 		<key name="chav1961.bt.creolenotepad.Application.message.ready">Ready</key>
 		<key name="chav1961.bt.creolenotepad.Application.message.notfound">Not found</key>		
 		<key name="chav1961.bt.creolenotepad.Application.message.replaced">%1$s items replaced</key>
-		<key name="chav1961.bt.creolenotepad.Application.message.file.not.exists">File(%1$s) is not exists and will be removed from LRU list</key>
+		<key name="chav1961.bt.creolenotepad.Application.message.file.not.exists">File (%1$s) is not exists and will be removed from LRU list</key>
+		<key name="chav1961.bt.creolenotepad.Application.message.nocssfound">Custom CSS not defined. Default will be used. Use Tools-&gt;Settings menu to define custom CSS</key>
+		<key name="chav1961.bt.creolenotepad.Application.message.cssnotexists">Custom CSS file(%1$s) is not exists or is not accessible for you. Default will be used.</key>
 		<key name="chav1961.bt.creolenotepad.Application.help.title">About...</key>
 		<key name="chav1961.bt.creolenotepad.Application.help.content">uri(aboutApplication.cre)</key>
 
@@ -116,6 +118,15 @@
 		<key name="findreplace.wholeWord.tt">Whole words</key>
 		<key name="findreplace.useRegex">Use regex</key>
 		<key name="findreplace.useRegex.tt">Use regex</key>
+
+<!-- InsertLink class localization  -->
+		<key name="insertlink.title">Insert link</key>
+		<key name="insertlink.title.tt">Insert link</key>
+		<key name="insertlink.title.help">Insert link</key>
+		<key name="insertlink.link">Link</key>
+		<key name="insertlink.link.tt">Link</key>
+		<key name="insertlink.title">Title</key>
+		<key name="insertlink.title.tt">Title</key>
 		 
 	</lang>
 	<lang name="ru">
@@ -125,6 +136,8 @@
 		<key name="chav1961.bt.creolenotepad.Application.message.notfound">Не найдено</key>
 		<key name="chav1961.bt.creolenotepad.Application.message.replaced">%1$s строк заменено</key>
 		<key name="chav1961.bt.creolenotepad.Application.message.file.not.exists">Файл (%1$s) не найден и будет удален из списка последних загруженных</key>
+		<key name="chav1961.bt.creolenotepad.Application.message.nocssfound">Пользовательская CSS не задана. Будет использована CSS по умолчанию. Задайте пользовательскую CSS через меню Инструменты-&gt;Настройки</key>
+		<key name="chav1961.bt.creolenotepad.Application.message.cssnotexists">Пользовательская CSS (%1$s) не найдена или недсоутпна для вас. Будет использована CSS по умолчанию.</key>
 		<key name="chav1961.bt.creolenotepad.Application.help.title">О программе</key>
 		<key name="chav1961.bt.creolenotepad.Application.help.content">uri(aboutApplication.cre)</key>
 		
@@ -234,6 +247,15 @@
 		<key name="findreplace.wholeWord.tt">Только слово целиком</key>
 		<key name="findreplace.useRegex">Регулярное выражение</key>
 		<key name="findreplace.useRegex.tt">Регулярное выражение</key>
+		
+<!-- Локализация класса InsertLink -->
+		<key name="insertlink.title">Вставить ссылку</key>
+		<key name="insertlink.title.tt">Вставить ссылку</key>
+		<key name="insertlink.title.help">Вставить ссылку</key>
+		<key name="insertlink.link">Ссылка</key>
+		<key name="insertlink.link.tt">Ссылка</key>
+		<key name="insertlink.title">Надпись</key>
+		<key name="insertlink.title.tt">Надпись</key>
 		
 	</lang>
 </localization>

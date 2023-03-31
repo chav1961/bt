@@ -1,8 +1,5 @@
 package chav1961.bt.creolenotepad.dialogs;
 
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
 import chav1961.bt.creolenotepad.Application;
 import chav1961.purelib.basic.exceptions.FlowException;
 import chav1961.purelib.basic.exceptions.LocalizationException;

@@ -46,6 +46,8 @@
 		<app:key code="F" ctrl="true" action="find"/>
 		<app:key code="H" ctrl="true" action="findreplace"/>
 		<app:key code="P" ctrl="true" action="previewProject"/>
+		<app:key code="Z" ctrl="true" action="undo"/>
+		<app:key code="Y" ctrl="true" action="redo"/>
 	</app:keyset>
  	<app:menu id="toolbarmenu">
 		<app:item name="menu.main.edit.cut" caption="menu.main.edit.cut" tooltip="menu.main.edit.cut.tt" icon="root://chav1961.bt.creolenotepad.Application/chav1961/bt/creolenotepad/cut.png" action="cut"/>

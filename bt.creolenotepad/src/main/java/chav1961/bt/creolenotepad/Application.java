@@ -3,16 +3,13 @@ package chav1961.bt.creolenotepad;
 import java.awt.BorderLayout;
 import java.awt.CardLayout;
 import java.awt.Color;
-import java.awt.Dialog;
-import java.awt.Dialog.ModalityType;
 import java.awt.Dimension;
 import java.awt.Toolkit;
 import java.awt.datatransfer.DataFlavor;
-import java.awt.event.ActionEvent;
-import java.awt.event.KeyEvent;
 import java.io.File;
 import java.io.IOException;
 import java.io.StringWriter;
+import java.io.Writer;
 import java.net.URI;
 import java.util.Hashtable;
 import java.util.List;
@@ -28,40 +25,40 @@ import javax.swing.JMenuItem;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JToolBar;
-import javax.swing.KeyStroke;
 import javax.swing.SwingUtilities;
 import javax.swing.border.EtchedBorder;
-import javax.swing.event.CaretEvent;
-import javax.swing.event.CaretListener;
+import javax.swing.event.UndoableEditEvent;
 import javax.swing.text.DefaultCaret;
 import javax.swing.undo.UndoManager;
 
 import chav1961.bt.creolenotepad.dialogs.Find;
 import chav1961.bt.creolenotepad.dialogs.FindReplace;
+import chav1961.bt.creolenotepad.dialogs.InsertLink;
 import chav1961.bt.creolenotepad.dialogs.Settings;
 import chav1961.purelib.basic.ArgParser;
 import chav1961.purelib.basic.PureLibSettings;
 import chav1961.purelib.basic.SubstitutableProperties;
-import chav1961.purelib.basic.Utils;
 import chav1961.purelib.basic.exceptions.CommandLineParametersException;
 import chav1961.purelib.basic.exceptions.ContentException;
 import chav1961.purelib.basic.exceptions.LocalizationException;
 import chav1961.purelib.basic.interfaces.LoggerFacade;
+import chav1961.purelib.basic.interfaces.LoggerFacade.Severity;
 import chav1961.purelib.basic.interfaces.LoggerFacadeOwner;
 import chav1961.purelib.basic.interfaces.ModuleAccessor;
-import chav1961.purelib.basic.interfaces.LoggerFacade.Severity;
 import chav1961.purelib.enumerations.MarkupOutputFormat;
 import chav1961.purelib.fsys.FileSystemFactory;
 import chav1961.purelib.fsys.interfaces.FileSystemInterface;
 import chav1961.purelib.i18n.LocalizerFactory;
 import chav1961.purelib.i18n.interfaces.Localizer;
-import chav1961.purelib.i18n.interfaces.SupportedLanguages;
 import chav1961.purelib.i18n.interfaces.Localizer.LocaleChangeListener;
+import chav1961.purelib.i18n.interfaces.SupportedLanguages;
 import chav1961.purelib.model.ContentModelFactory;
 import chav1961.purelib.model.interfaces.ContentMetadataInterface;
 import chav1961.purelib.model.interfaces.ContentMetadataInterface.ContentNodeMetadata;
 import chav1961.purelib.model.interfaces.NodeMetadataOwner;
 import chav1961.purelib.streams.char2char.CreoleWriter;
+import chav1961.purelib.streams.char2char.intern.CreoleOutputWriter;
+import chav1961.purelib.streams.interfaces.PrologueEpilogueMaster;
 import chav1961.purelib.ui.interfaces.FormManager;
 import chav1961.purelib.ui.interfaces.LRUPersistence;
 import chav1961.purelib.ui.swing.AutoBuiltForm;
@@ -72,9 +69,9 @@ import chav1961.purelib.ui.swing.useful.JCreoleEditor;
 import chav1961.purelib.ui.swing.useful.JEnableMaskManipulator;
 import chav1961.purelib.ui.swing.useful.JFileContentManipulator;
 import chav1961.purelib.ui.swing.useful.JFileSelectionDialog;
+import chav1961.purelib.ui.swing.useful.JFileSelectionDialog.FilterCallback;
 import chav1961.purelib.ui.swing.useful.JSimpleSplash;
 import chav1961.purelib.ui.swing.useful.JStateString;
-import chav1961.purelib.ui.swing.useful.JFileSelectionDialog.FilterCallback;
 import chav1961.purelib.ui.swing.useful.interfaces.FileContentChangedEvent;
 
 public class Application extends JFrame implements AutoCloseable, NodeMetadataOwner, LocaleChangeListener, LoggerFacadeOwner {
@@ -88,9 +85,13 @@ public class Application extends JFrame implements AutoCloseable, NodeMetadataOw
 	public static final String			KEY_APPLICATION_MESSAGE_READY = "chav1961.bt.creolenotepad.Application.message.ready";
 	public static final String			KEY_APPLICATION_MESSAGE_FILE_NOT_EXISTS = "chav1961.bt.creolenotepad.Application.message.file.not.exists";
 	public static final String			KEY_APPLICATION_MESSAGE_NOT_FOUND = "chav1961.bt.creolenotepad.Application.message.notfound";
+	public static final String			KEY_APPLICATION_MESSAGE_NO_CSS_FOUND = "chav1961.bt.creolenotepad.Application.message.nocssfound";
+	public static final String			KEY_APPLICATION_MESSAGE_CSS_NOT_EXISTS = "chav1961.bt.creolenotepad.Application.message.cssnotexists";
 	public static final String			KEY_APPLICATION_MESSAGE_REPLACED = "chav1961.bt.creolenotepad.Application.message.replaced";
 	public static final String			KEY_APPLICATION_HELP_TITLE = "chav1961.bt.creolenotepad.Application.help.title";
 	public static final String			KEY_APPLICATION_HELP_CONTENT = "chav1961.bt.creolenotepad.Application.help.content";
+
+	private static final String			PROLOGUE_TEMPLATE = "<html><head><link rel=\"stylesheet\" href=\"%1$s\">></head><body>";
 	
 	private static final String			CARD_EDITOR = "editor";
 	private static final String			CARD_VIEWER = "viewer";
@@ -101,6 +102,8 @@ public class Application extends JFrame implements AutoCloseable, NodeMetadataOw
 	private static final String			MENU_FILE_SAVE = "menu.main.file.save";
 	private static final String			MENU_FILE_SAVE_AS = "menu.main.file.saveAs";
 	private static final String			MENU_EDIT = "menu.main.edit";
+	private static final String			MENU_EDIT_UNDO = "menu.main.edit.undo";
+	private static final String			MENU_EDIT_REDO = "menu.main.edit.redo";
 	private static final String			MENU_EDIT_CUT = "menu.main.edit.cut";
 	private static final String			MENU_EDIT_COPY = "menu.main.edit.copy";
 	private static final String			MENU_EDIT_PASTE = "menu.main.edit.paste";
@@ -123,6 +126,8 @@ public class Application extends JFrame implements AutoCloseable, NodeMetadataOw
 											MENU_FILE_SAVE,
 											MENU_FILE_SAVE_AS,
 											MENU_EDIT,
+											MENU_EDIT_UNDO,
+											MENU_EDIT_REDO,
 											MENU_EDIT_CUT,
 											MENU_EDIT_COPY,
 											MENU_EDIT_PASTE,
@@ -145,22 +150,24 @@ public class Application extends JFrame implements AutoCloseable, NodeMetadataOw
 	private static final long 			FILE_SAVE = 1L << 1;
 	private static final long 			FILE_SAVE_AS = 1L << 2;
 	private static final long 			EDIT = 1L << 3;
-	private static final long 			EDIT_CUT = 1L << 4;
-	private static final long 			EDIT_COPY = 1L << 5;
-	private static final long 			EDIT_PASTE = 1L << 6;
-	private static final long 			EDIT_PASTE_LINK = 1L << 7;
-	private static final long 			EDIT_PASTE_IMAGE = 1L << 8;
-	private static final long 			EDIT_FIND = 1L << 9;
-	private static final long 			EDIT_FIND_REPLACE = 1L << 10;
-	private static final long 			EDIT_CAPTION_UP = 1L << 11;
-	private static final long 			EDIT_CAPTION_DOWN = 1L << 12;
-	private static final long 			EDIT_LIST_UP = 1L << 13;
-	private static final long 			EDIT_LIST_DOWN = 1L << 14;
-	private static final long 			EDIT_ORDERED_LIST_UP = 1L << 15;
-	private static final long 			EDIT_ORDERED_LIST_DOWN = 1L << 16;
-	private static final long 			EDIT_ORDERED_BOLD = 1L << 17;
-	private static final long 			EDIT_ORDERED_ITALIC = 1L << 18;	
-	private static final long 			TOOLS_PREVIEW = 1L << 19;
+	private static final long 			EDIT_UNDO = 1L << 4;
+	private static final long 			EDIT_REDO = 1L << 5;
+	private static final long 			EDIT_CUT = 1L << 6;
+	private static final long 			EDIT_COPY = 1L << 7;
+	private static final long 			EDIT_PASTE = 1L << 8;
+	private static final long 			EDIT_PASTE_LINK = 1L << 9;
+	private static final long 			EDIT_PASTE_IMAGE = 1L << 10;
+	private static final long 			EDIT_FIND = 1L << 11;
+	private static final long 			EDIT_FIND_REPLACE = 1L << 12;
+	private static final long 			EDIT_CAPTION_UP = 1L << 13;
+	private static final long 			EDIT_CAPTION_DOWN = 1L << 14;
+	private static final long 			EDIT_LIST_UP = 1L << 15;
+	private static final long 			EDIT_LIST_DOWN = 1L << 16;
+	private static final long 			EDIT_ORDERED_LIST_UP = 1L << 17;
+	private static final long 			EDIT_ORDERED_LIST_DOWN = 1L << 18;
+	private static final long 			EDIT_ORDERED_BOLD = 1L << 19;
+	private static final long 			EDIT_ORDERED_ITALIC = 1L << 20;	
+	private static final long 			TOOLS_PREVIEW = 1L << 21;
 	private static final long 			TOTAL_EDIT = EDIT | EDIT_CUT | EDIT_COPY| EDIT_PASTE_LINK | EDIT_PASTE_IMAGE | EDIT_FIND | EDIT_FIND_REPLACE;
 	private static final long 			TOTAL_EDIT_SELECTION = EDIT_CAPTION_UP | EDIT_CAPTION_DOWN | EDIT_LIST_UP | EDIT_LIST_DOWN | EDIT_ORDERED_LIST_UP | EDIT_ORDERED_LIST_DOWN | EDIT_ORDERED_BOLD | EDIT_ORDERED_ITALIC;	
 	
@@ -243,7 +250,9 @@ public class Application extends JFrame implements AutoCloseable, NodeMetadataOw
 			PureLibSettings.PURELIB_LOCALIZER.push(localizer);
 			PureLibSettings.PURELIB_LOCALIZER.addLocaleChangeListener(this);
 
-			editor.getDocument().addUndoableEditListener((e)->manager.addEdit(e.getEdit()));
+			editor.getDocument().addUndoableEditListener((e)->processUndoable(e));
+			manager.discardAllEdits();
+			
 			viewer.setBackground(Color.LIGHT_GRAY);
 			
 			this.state = new JStateString(localizer);
@@ -360,6 +369,7 @@ public class Application extends JFrame implements AutoCloseable, NodeMetadataOw
 	public void undo() {
 		if (manager.canUndo()) {
 			manager.undo();
+			refreshUndoMenu();
 		}
 	}
 	
@@ -367,6 +377,7 @@ public class Application extends JFrame implements AutoCloseable, NodeMetadataOw
 	public void redo() {
 		if (manager.canRedo()) {
 			manager.redo();
+			refreshUndoMenu();
 		}
 	}
 
@@ -388,6 +399,14 @@ public class Application extends JFrame implements AutoCloseable, NodeMetadataOw
 
 	@OnAction("action:/pasteLink")
 	public void pasteLink() {
+		final InsertLink	il = new InsertLink(getLogger(), editor);
+		
+		try{if (ask(il, localizer, 300, 100)) {
+				editor.replaceSelection(" [["+il.link+"|"+il.title+"]] ");
+			}
+		} catch (ContentException e) {
+			getLogger().message(Severity.error, e, e.getLocalizedMessage());
+		}
 	}
 	
 	@OnAction("action:/pasteImage")
@@ -598,13 +617,41 @@ public class Application extends JFrame implements AutoCloseable, NodeMetadataOw
 		inPreview = !inPreview;
 		emm.setCheckMaskTo(TOOLS_PREVIEW, inPreview);
 		if (inPreview) {
-			try(final StringWriter	wr = new StringWriter();
-				final CreoleWriter	cw = new CreoleWriter(wr, MarkupOutputFormat.XML2HTML)) {
-
-				cw.write(editor.getText());
-				cw.write("\n\n");
-				cw.flush();
-				viewer.setText(wr.toString());
+			final boolean		propsFound = props.isFile() && props.canRead();
+			
+			try{final SubstitutableProperties	subst = propsFound ? SubstitutableProperties.of(props) : new SubstitutableProperties();
+				final boolean	cssFound = subst.containsKey(PROP_CSS_FILE); 
+			
+				if (cssFound && subst.getProperty(PROP_CSS_FILE,File.class,"").isFile() && subst.getProperty(PROP_CSS_FILE,File.class,"").canRead()) {
+					PrologueEpilogueMaster<Writer,CreoleOutputWriter> pm = (wr,inst)->{wr.write(String.format(PROLOGUE_TEMPLATE, subst.getProperty(PROP_CSS_FILE))); return false;}; 
+					PrologueEpilogueMaster<Writer,CreoleOutputWriter> em = (wr,inst)->{wr.write("</body>\n</html>\n"); return false;};
+					
+					try(final StringWriter	wr = new StringWriter();
+						final CreoleWriter	cw = new CreoleWriter(wr, MarkupOutputFormat.XML2HTML, pm, em)) {
+		
+						cw.write(editor.getText());
+						cw.write("\n\n");
+						cw.flush();
+						viewer.setText(wr.toString());
+					}
+				}
+				else {
+					if (cssFound) {
+						getLogger().message(Severity.warning, KEY_APPLICATION_MESSAGE_CSS_NOT_EXISTS, subst.getProperty(PROP_CSS_FILE,File.class,"").getAbsolutePath());
+					}
+					else {
+						getLogger().message(Severity.warning, KEY_APPLICATION_MESSAGE_NO_CSS_FOUND);
+					}
+					
+					try(final StringWriter	wr = new StringWriter();
+						final CreoleWriter	cw = new CreoleWriter(wr, MarkupOutputFormat.XML2HTML)) {
+		
+						cw.write(editor.getText());
+						cw.write("\n\n");
+						cw.flush();
+						viewer.setText(wr.toString());
+					}
+				}
 			} catch (IOException e) {
 				getLogger().message(Severity.error, e, e.getLocalizedMessage());
 			} finally {
@@ -624,7 +671,7 @@ public class Application extends JFrame implements AutoCloseable, NodeMetadataOw
 	public void settings() {
 		final Settings	settings = new Settings(state, properties);
 		
-		try{if (ask(settings, localizer, 200, 100)) {
+		try{if (ask(settings, localizer, 300, 50)) {
 				settings.storeProperties(properties);
 				properties.store(props);
 			}
@@ -747,6 +794,29 @@ public class Application extends JFrame implements AutoCloseable, NodeMetadataOw
 		}
 	}
 
+	private void processUndoable(final UndoableEditEvent e) {
+		if (!editor.isHighlightingLocked()) {
+			manager.addEdit(e.getEdit());
+			refreshUndoMenu();
+		}
+	}
+
+	
+	private void refreshUndoMenu() {
+		if (manager.canUndo()) {
+			emm.setEnableMaskTo(EDIT_UNDO, anyOpened);
+		}
+		else {
+			emm.setEnableMaskOff(EDIT_UNDO);
+		}
+		if (manager.canRedo()) {
+			emm.setEnableMaskTo(EDIT_REDO, anyOpened);
+		}
+		else {
+			emm.setEnableMaskOff(EDIT_REDO);
+		}
+	}
+	
 	private void fillTitle() {
 		setTitle(localizer.getValue(KEY_APPLICATION_TITLE, (contentModified ? "* " : "") + fcm.getCurrentPathOfTheFile()));
 	}
