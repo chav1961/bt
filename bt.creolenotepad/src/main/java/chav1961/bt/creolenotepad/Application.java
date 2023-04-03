@@ -305,6 +305,10 @@ public class Application extends JFrame implements AutoCloseable, NodeMetadataOw
 		return state;
 	}
 	
+	public FileSystemInterface getFileSystem() {
+		return fsi;
+	}
+	
 	@Override
 	public void localeChanged(final Locale oldLocale, final Locale newLocale) throws LocalizationException {
 		SwingUtils.refreshLocale(menuBar, oldLocale, newLocale);
