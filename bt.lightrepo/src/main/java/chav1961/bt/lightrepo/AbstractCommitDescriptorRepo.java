@@ -377,7 +377,7 @@ public class AbstractCommitDescriptorRepo {
 
 		@Override
 		public InputStream getContent() throws IOException {
-			return contentGetter.getContent();
+			return contentGetter.getOutputContent();
 		}
 
 		@Override
