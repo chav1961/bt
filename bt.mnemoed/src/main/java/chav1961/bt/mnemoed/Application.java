@@ -171,7 +171,7 @@ public class Application extends JFrame implements LocaleChangeListener, AutoClo
 				}
 			});
 			this.manipulator.addFileContentChangeListener((e)->SwingUtilities.invokeLater(()->changeState(e)));
-			changeState(new FileContentChangedEvent() {
+			changeState(new FileContentChangedEvent<>() {
 				@Override
 				public FileContentChangeType getChangeType() {
 					return FileContentChangeType.LRU_LIST_REFRESHED;
@@ -180,6 +180,11 @@ public class Application extends JFrame implements LocaleChangeListener, AutoClo
 				@Override
 				public JFileContentManipulator getOwner() {
 					return manipulator;
+				}
+
+				@Override
+				public int getFileSupportId() {
+					return 1;
 				}
 			});
 			
