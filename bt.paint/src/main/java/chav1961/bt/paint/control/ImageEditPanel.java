@@ -36,14 +36,12 @@ import javax.swing.JToggleButton;
 import javax.swing.JToolBar;
 import javax.swing.SwingUtilities;
 import javax.swing.border.EtchedBorder;
-import javax.swing.border.LineBorder;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import javax.swing.event.UndoableEditEvent;
 import javax.swing.event.UndoableEditListener;
 
 import chav1961.bt.paint.control.ImageUtils.DrawingType;
-import chav1961.bt.paint.control.ImageUtils.ProcessType;
 import chav1961.bt.paint.dialogs.AskImageResize;
 import chav1961.bt.paint.interfaces.PaintScriptException;
 import chav1961.bt.paint.script.interfaces.CanvasWrapper;
@@ -600,7 +598,7 @@ public class ImageEditPanel extends JPanel implements LocalizerOwner, LocaleChan
 			canvas.setLineStroke(StrokeWrapper.LineStroke.valueOf(modes.get("style")[0]));
 		}
 		else if (modes.containsKey("cap")) {
-			canvas.setLineCaps(StrokeWrapper.LineCaps.valueOf(modes.get("caps")[0]));
+			canvas.setLineCaps(StrokeWrapper.LineCaps.valueOf(modes.get("cap")[0]));
 		}
 		else if (modes.containsKey("join")) {
 			canvas.setLineJoin(StrokeWrapper.LineJoin.valueOf(modes.get("join")[0]));

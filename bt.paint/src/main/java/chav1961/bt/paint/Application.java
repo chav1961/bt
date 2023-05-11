@@ -206,12 +206,14 @@ public class Application extends JFrame implements NodeMetadataOwner, LocaleChan
 								,()->{return new OutputStream() {@Override public void write(int b) throws IOException {}};},
 								settings
 								);
+			this.imageManipulator.appendNewFileSupport();
 			this.imageManipulator.addFileContentChangeListener((e)->processImageChanges(e));
 			this.scriptManipulator = new ScriptManipulator(this.state, this.fsi, this.localizer
 								,()->{return new InputStream() {@Override public int read() throws IOException {return -1;}};}
 								,()->{return new OutputStream() {@Override public void write(int b) throws IOException {}};},
 								settings
 								);
+			this.imageManipulator.appendNewFileSupport();
 			this.imageManipulator.addFileContentChangeListener((e)->processScriptChanges(e));
 	        
 	        this.panel.addUndoableEditListener((e)->processUndoEvents(e));

@@ -14,6 +14,7 @@ module chav1961.bt.paint {
 	
 	exports chav1961.bt.paint;
 	exports chav1961.bt.paint.control;
+	exports chav1961.bt.paint.interfaces;
 	exports chav1961.bt.paint.script.interfaces;
 	exports chav1961.bt.paint.script.intern to chav1961.purelib;
 	opens chav1961.bt.paint.dialogs to chav1961.purelib;

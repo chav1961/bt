@@ -285,6 +285,9 @@
 		<key name="chav1961.bt.paint.bgeditor.ImageEditPanel.EditStateString.font.tt">Current font selected</key>
 		<key name="chav1961.bt.paint.bgeditor.ImageEditPanel.EditStateString.settings.tt">Current foreground, background, line thickness and style</key>
 
+<!-- ImageEditPanel.JCommandField -->
+		<key name="chav1961.bt.paint.bgeditor.JCommandField.help">uri(commands.cre)</key>
+
 <!-- AskImageSize class localization -->
 		<key name="askimagesize.title">Type image size</key>
 		<key name="askimagesize.title.tt">Type image size</key>
@@ -576,6 +579,9 @@
 		<key name="chav1961.bt.paint.bgeditor.ImageEditPanel.EditStateString.size.tt">Размер текущего изображения</key>
 		<key name="chav1961.bt.paint.bgeditor.ImageEditPanel.EditStateString.font.tt">Настройки текущего шрифтв</key>
 		<key name="chav1961.bt.paint.bgeditor.ImageEditPanel.EditStateString.settings.tt">Цвет фона, переднего плата, стиль и толщина линии</key>
+
+<!-- ImageEditPanel.JCommandField -->
+		<key name="chav1961.bt.paint.bgeditor.JCommandField.help">uri(commands.cre)</key>
 		
 <!-- Локализация класса ImageEditPanel -->
 		<key name="chav1961.bt.paint.editor.ImageEditPanel.selectColor">Выберите цвет</key>		
