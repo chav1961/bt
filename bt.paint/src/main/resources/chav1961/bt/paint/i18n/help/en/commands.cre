@@ -1,211 +1,202 @@
-=== Syntax
+== Console commands
 
+Console commands can be used to draw and/or convert image edited. The most useful case of the commands is drawing with
+exact coordinates. The complete list of console commands see below. Syntax elements in the description means:
 
-=== Drawing command list
+* **<parameterName::type>** - use parameter name with the given type (for example **<xFrom::int>** requires to type any //integer// value here)
+* [option] - optional part (for example **a [then] b** means **a b** or **a then b**)
+* {item~|item} - choise part (for example **{a~|b}** means either **a** or **b**}
 
-1. Draw line:
+Data types to use in the commands, are described in the table:
 
-{{{
-	line <xFrom::int>,<yFrom::int> [to] <xTo::int>,<yTo::int>"
-}}}
+|=Type|=Description|
+| int | any integer value (for example **120**) |
+| string | any sequence in the double quotes (for example **"string 1"**) |
+| any | any sequence up to the tail of the command |
+| Rectangle | <xFrom::int>,<yFrom::int> [**to**] <xTo::int>,<yTo::int> //or// <xFrom::int>,<yFrom::int> **size** <width::int>,<height::int> //or// **center** <xCenter::int>,<yCenter::int> **size** <width::int>,<height::int> |   
+| color | color name (for example, **black**) //or// rgb(<r::int>,<g::int>,<b::int>) //or// #<value::hexadecimal> |
+| ImageType | One of available image types (see below) |
+
+Available image types are described in the table:
+
+|=Image type|=Description|
+| INT3_BGR | Colored image with Blue/Green/Red sequence |
+| INT_ABGR | Colored image with Blue/Green/Red sequence and transparency |
+| INT_ABGR_PRE |  |
+| BYTE_BINARY | Black/White image |
+| BYTE_GRAY | GrayScale image up to 256 grays |
+| BYTE_INDEXED | Up to 256 color image |
+| INT_ARGB |Colored image with Red/Green/Blue sequence and transparency |
+| INT_ARGB_PRE ||
+| INT_BGR | Colored image with Blue/Green/Red sequence |
+| INT_RGB | Colored image with Red/Green/Blue |
+| USHORT_555_RGB | Colored image with Red/Green/Blue |
+| USHORT_565_RGB | Colored image with Red/Green/Blue |
+| USHORT_GRAY | GrayScale image up to 64K grays |
+
+The most of command keywords can be reduced to it's short form (for example, **copy** can be reduced to **cp**). Available reducing form will be described too if supported.
+
+== Drawing command list
+
+=== 1. Draw line:
+
+Syntax: **line** <xFrom::int>,<yFrom::int> [**to**] <xTo::int>,<yTo::int>"
 
 Draws line from point(xFrom,yFrom) to point(xTo,yTo) with current foreground and line style.
 
 Keyword 'line' can be reduced to 'l'.
 
-2. Draw rectangle
+=== 2. Draw rectangle
 
-{{{
-	rectangle <rect::Rectangle> [on]
-}}}
+Syntax: **rectangle** <rect::Rectangle> [**on**]
 
 Draws rectangle with current foreground and line style. If **on** option is typed, fills the 
 rectangle with current background color.
 
 Keyword 'rectanlge' can be reduced to 'rect'.
 
-3. Draw ellipse
+=== 3. Draw ellipse
 
-{{{
-	ellipse <rect::Rectangle> [on]
-}}}
+Syntax: **ellipse** <rect::Rectangle> [**on**]
 
 Draw ellipse inside rectangle typed with current foreground and line style. If **on** option is typed, fills the 
 ellipse with current background color.
 
 Keyword 'ellipse' can be reduced to 'ell'.
 
-4. Draw text
+=== 4. Draw text
 
-{{{
-	text <rect::Rectangle> <foreground::color>[/<background::color>] <content::any>
-}}}
+Syntax: **text** <rect::Rectangle> <foreground::color>[**/**<background::color>] <content::any>
 
 Draw text inside rectangle typed with foreground color typed. If background color is typed, fill the
-rectange with bthe background color. Content is any character sequence
+rectangle with the background color. Content is any character sequence
 
 Keyword 'text' can be reduced to 't'.
 
-5. Draw path
+=== 5. Draw path
 
-{{{
-	path [on] <content::any>
-}}}
+Syntax: **path** [**on**] <path::any>
 
-Draw path with current foreground and line style. Syntax of the path is exactly syntax of <p> tag for SVG format. If **on** option is typed, fills the 
+Draw path with current foreground and line style. Syntax of the **path** is exactly syntax of the <[[https://svg-art.ru/?page_id=897|path]]> tag in the SVG format. If **on** option is typed, fills the 
 path with current background color.
 
 Keyword 'path' can be reduced to 'p'.
 
+=== 6. Fill area
 
-6. Fill area
+Syntax: **fill** <x::int>,<y::int> <color::color>
 
-{{{
-	fill <x::int>,<y::int> <color::color>
-}}}
+Fill area from point(x,y). Point point(x,y) and all it's neighbours with the same color will change it's previous color to color typed.
 
-Fill area from point(x,y). Point point(x,y) and all it's neigbours with the same color will change it's previous colot to color typed.
+== Converting command list
 
+=== 1. Rotate image
 
-=== Converting command list
-
-1. Rotate image
-
-{{{
-	rotate {cw|ccw}
-}}}
+Syntax: **rotate** {**cw**~|**ccw**}
 
 Rotate image to 90 degrees clockwise (**cw** option) or countercloclwise (**ccw** option).
 
 Keyword 'rotate' can be reduced to 'rot'.
 
-2. Mirror image
+=== 2. Mirror image
 
-{{{
-	mirror {hor|vert}
-}}}
+Syntax: **mirror** {**hor**~|**vert**}
 
 Mirror image horizontally (**hor** option) or vertically (**vert** option).
 
 Keyword 'mirror' can be reduced to 'mir'.
 
-3. Scale image
+=== 3. Scale image
 
-{{{
-	scale <newX::int>[,<newY::int>]
-}}}
+Syntax: **scale** <newX::int>[,<newY::int>]
 
 Scale image. NewX and newY are percents to scale. If newY is not typed, newX will be used instead.
 
-4. Crop image
+=== 4. Crop image
 
-{{{
-	crop <rect::Rectangle>
-}}}
+Syntax: **crop** <rect::Rectangle>
 
 Crop image content.
 
-5. Resize image
+=== 5. Resize image
 
-{{{
-	resize <newX::int>,<newY::int> [center]
-}}}
+Syntax: **resize** <newX::int>,<newY::int> [**center**]
 
 Resize image without scaling content. If **center** option is typed, old image content will be moved to the center 
 of new image.
 
-6. Gray-scale image
+=== 6. Gray-scale image
 
-{{{
-	gray
-}}}
+Syntax: **gray**
 
 Convert image content to gray scale.
 
-6. Transparent image
+=== 7. Transparent image
 
-{{{
-	transparent [except] <color::color>
-}}}
+Syntax: **transparent** [**except**] <color::color>
 
 Make all points of image with the given color as transparent points. If **except** option is typed, all points with the 
 color typed will retain opaque, but all others will be transparent.
 
 Keyword 'transparent' can be reduced to 'trans'.
 
-=== Image manipulation commands list
+== Image manipulation commands list
 
-1. Copy image piece to clipboard
+=== 1. Copy image piece to clipboard
 
-{{{
-	copy [<xFrom::int>,<yFrom:int> {size <width::int>,<height::int>| [to] <xTo::int>,<yTo::int>}]
-}}}
+Syntax: **copy** [<xFrom::int>,<yFrom:int> {**size** <width::int>,<height::int>~| [**to**] <xTo::int>,<yTo::int>}]
 
 Copy image piece from rectangle typed to clipboard.
 
 Keyword 'copy' can be reduced to 'cp'.
 
-2. Paste image
+=== 2. Paste image
 
-{{{
-	paste <xFrom::int>,<yFrom::int> [{size <width::int>,<height::int>|[to] <xTo::int>,<yTo::int>}] [from <name::string>]"
-}}}
+Syntax: **paste** <xFrom::int>,<yFrom::int> [{**size** <width::int>,<height::int>~|[**to**] <xTo::int>,<yTo::int>}] [from <fileName::string>]"
 
 Paste image from clipboard or file to point(xFrom,yFrom). If size or end point is typed, only the rectangle typed will be filled with image pasted.
-If **from** option is typed, file name will be used as image source.
+If **from** option is typed, file name will be used as image source instead of the clipboard.
 
-3. Create new image
+=== 3. Create new image
 
-{{{
-	new <width::int>,<height::int> <type::ImageType> [<color::color>]
-}}}
+Syntax: **new** <width::int>,<height::int> <type::ImageType> [<color::color>]
 
-create new image with the goven size and type. If color is typed, all the image created will be filled with it.
+create new image with the given size and type. If color is typed, all the image created will be filled with it.
 
-4. Load image
+=== 4. Load image
 
-{{{
-	load <name::string>
-}}}
+Syntax: **load** <fileName::string>
 
 Load image from file typed.
 
-=== Setting commands list
+== Setting commands list
 
-1. Set current foreground
+=== 1. Set current foreground
 
-{{{
-	foreground {<color::color>| <x::int>,<y::int>}
-}}}
+Syntax: **foreground** {<color::color> ~| <x::int>,<y::int>}
 
 Set current foreground with color from the given point(x,y) or with color typed.
 
 Keyword 'foreground' can be reduced to 'fore'.
 
-2. Set current background
+=== 2. Set current background
 
-{{{
-	background {<color::color>| <x::int>,<y::int>}
-}}}
+Syntax: **background** {<color::color> ~| <x::int>,<y::int>}
 
 Set current background with color from the given point(x,y) or with color typed.
 
 Keyword 'background' can be reduced to 'back'.
 
-3. Set current font
+=== 3. Set current font
 
-{{{
-	font <family> <size::int> [bold] [italic]
-}}}
+Syntax: **font** <family::string> <size::int> [**bold**] [**italic**]
 
 Set current font to use with drawing text.
 
-3. Set current line style
+=== 4. Set current line style
 
-{{{
-	stroke [<thickness::int>] {solid|dashed|dotted} [{butt|round|square} [{miter|round|bevel}]]
-}}}
+Syntax: **stroke** [<thickness::int>] {**solid**~|**dashed**~|**dotted**} [{**butt**~|**round**~|**square**} [{**miter**~|**round**~|**bevel**}]]
 
-Set current line stype to use with drawing figures.
+Set current line type to use with drawing figures.
 
 Keyword 'stroke' can be reduced to 'str'.
