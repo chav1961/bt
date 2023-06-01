@@ -1,4 +1,4 @@
-package chav1961.bt.comm;
+package chav1961.bt.comm.nio;
 
 public class RAFCommPort {
 

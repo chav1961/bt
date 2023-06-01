@@ -50,6 +50,10 @@
             <id>Jar-plugin</id>
             <url>https://mvnrepository.com/artifact/org.apache.maven.plugins/maven-jar-plugin</url>
         </repository>
+        <repository>
+            <id>Comm-plugin</id>
+        	<url>https://mvnrepository.com/artifact/javax.comm/comm</url>
+        </repository>
 	</repositories>
 
 
@@ -119,6 +123,7 @@
            <plugin>
                <groupId>org.apache.maven.plugins</groupId>
                <artifactId>maven-jar-plugin</artifactId>
+               	<version>3.2.0</version>
                <inherited>true</inherited>
                <configuration>
                    <archive>
