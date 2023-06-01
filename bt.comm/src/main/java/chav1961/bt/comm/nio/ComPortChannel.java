@@ -1,6 +1,7 @@
 package chav1961.bt.comm.nio;
 
 import java.io.IOException;
+import java.net.URI;
 import java.nio.ByteBuffer;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.channels.SelectionKey;
@@ -13,21 +14,12 @@ import chav1961.purelib.basic.Utils;
 public class ComPortChannel extends AbstractSelectableChannel implements ReadableByteChannel, WritableByteChannel {
 	static ComPortSelectorProvider	cpsp = new ComPortSelectorProvider();
 
-	private final LoopBackComPort	lbcp;
-	
-	protected ComPortChannel(final String portName) {
+	protected ComPortChannel(final URI comm) {
 		super(cpsp);
-		if (Utils.checkEmptyOrNullString(portName)) {
-			throw new IllegalArgumentException("Port name can't be null or empty");
+		if (comm == null || !comm.isAbsolute()) {
+			throw new IllegalArgumentException("Comm port can't be null and must be absolute");
 		}
 		else {
-			switch (portName) {
-				case "loopback" :
-					this.lbcp = new LoopBackComPort();
-					break;
-				default :
-					throw new UnsupportedOperationException("Port name ["+portName+"] is not supported"); 
-			}
 		}
 	}
 
@@ -60,7 +52,7 @@ public class ComPortChannel extends AbstractSelectableChannel implements Readabl
 		
 	}
 
-	public static ComPortChannel open(final String portName) throws IOException {
-		return new ComPortChannel(portName);
+	public static ComPortChannel open(final URI comm) throws IOException {
+		return new ComPortChannel(comm);
 	}
 }

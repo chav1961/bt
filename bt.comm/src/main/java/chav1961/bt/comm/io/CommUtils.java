@@ -71,6 +71,8 @@ public class CommUtils {
 			return parityMode;
 		}
 	}
+
+	private static final Set<Integer>	AVAILABLE_BAUDS = new HashSet<>(Arrays.asList(110, 300, 600, 1200, 2400, 4800, 9600, 19200, 38400, 57600, 115200));
 	
 	public static Iterable<String> commPortsAvailable() {
 		final List<String>	result = new ArrayList<>();
@@ -80,8 +82,20 @@ public class CommUtils {
 		}
 		return result;
 	}
-	
-	private static final Set<Integer>	AVAILABLE_BAUDS = new HashSet<>(Arrays.asList(110, 300, 600, 1200, 2400, 4800, 9600, 19200, 38400, 57600, 115200));
+
+	static SerialPort prepareCommPort(final String name, final SubstitutableProperties props) {
+		for (SerialPort comPort : SerialPort.getCommPorts()) {
+			if (comPort.getDescriptivePortName().equals(name)) {
+				comPort.setComPortParameters(props.getProperty(CommUtils.BAUD_RATE, int.class), 
+						props.getProperty(CommUtils.DATA_BITS, int.class), 
+						props.getProperty(CommUtils.STOP_BITS, CommUtils.StopBits.class).getStopBitsMode(), 
+						props.getProperty(CommUtils.PARITY, CommUtils.Parity.class).getParityMode()
+						);
+				return comPort;
+			}
+		}
+		return null;
+	}
 	
 	static SubstitutableProperties parseCommQueryParameters(final Hashtable<String,String[]> source) {
 		final SubstitutableProperties	result = new SubstitutableProperties();

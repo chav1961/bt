@@ -10,14 +10,13 @@ import java.nio.channels.spi.AbstractSelector;
 import java.nio.channels.spi.SelectorProvider;
 
 class ComPortSelectorProvider extends SelectorProvider {
-
 	@Override
 	public DatagramChannel openDatagramChannel() throws IOException {
 		throw new UnsupportedOperationException("This method is not supported");
 	}
 
 	@Override
-	public DatagramChannel openDatagramChannel(ProtocolFamily family) throws IOException {
+	public DatagramChannel openDatagramChannel(final ProtocolFamily family) throws IOException {
 		throw new UnsupportedOperationException("This method is not supported");
 	}
 

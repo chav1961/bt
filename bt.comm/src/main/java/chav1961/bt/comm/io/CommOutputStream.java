@@ -11,38 +11,25 @@ import chav1961.purelib.basic.SubstitutableProperties;
 import chav1961.purelib.basic.URIUtils;
 
 public class CommOutputStream extends OutputStream {
-	private final OutputStream	nested;
+	private final SerialPort	nested;
 	
 	public CommOutputStream(final URI comm) throws IOException {
 		if (comm == null || !comm.isAbsolute()) {
 			throw new IllegalArgumentException("Comm URI can't be null and must be absolute");
 		}
 		else {
-			final SubstitutableProperties	props = CommUtils.parseCommQueryParameters(URIUtils.parseQuery(comm));			
-			OutputStream	temp = null;
+			final SubstitutableProperties	props = CommUtils.parseCommQueryParameters(URIUtils.parseQuery(comm));	
+			final String	name = comm.getScheme();
 			
-			for (SerialPort comPort : SerialPort.getCommPorts()) {
-				if (comPort.getDescriptivePortName().equals(comm.getScheme())) {
-					comPort.setComPortParameters(props.getProperty(CommUtils.BAUD_RATE, int.class), 
-							props.getProperty(CommUtils.DATA_BITS, int.class), 
-							props.getProperty(CommUtils.STOP_BITS, CommUtils.StopBits.class).getStopBitsMode(), 
-							props.getProperty(CommUtils.PARITY, CommUtils.Parity.class).getParityMode()
-							);
-					temp = comPort.getOutputStream();
-					break;
-				}
-			}
-			if (temp == null) {
-				throw new FileNotFoundException("Unknown comm port name ["+comm.getScheme()+"]"); 
-			}
-			else {
-				this.nested = temp;
+			this.nested = CommUtils.prepareCommPort(name, props);
+			if (this.nested == null) {
+				throw new FileNotFoundException("Unknown comm port name ["+name+"]"); 
 			}
 		}
 	}
 
 	@Override
 	public void write(int b) throws IOException {
-		nested.write(b);
+		nested.getOutputStream().write(b);
 	}
 }
