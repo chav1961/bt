@@ -33,6 +33,7 @@
 
   	<properties>
 	    <github.global.server>github</github.global.server>
+    	<ignite.version>2.15.0</ignite.version>
 	</properties>
 
 	<repositories>
@@ -57,7 +58,7 @@
 	        <url>file://${project.build.directory}/mvn-repo</url>
 	    </repository>
 	</distributionManagement>
-  
+	
      <build>
        <finalName>bt.opc-0.0.1</finalName>
         <resources>
