@@ -4,6 +4,7 @@ import java.awt.Color;
 
 import chav1961.bt.paint.interfaces.PaintScriptException;
 import chav1961.bt.paint.script.interfaces.ColorWrapper;
+import chav1961.purelib.basic.ColorUtils;
 import chav1961.purelib.basic.PureLibSettings;
 
 public class ColorWrapperImpl implements ColorWrapper {
@@ -44,7 +45,7 @@ public class ColorWrapperImpl implements ColorWrapper {
 			throw new IllegalArgumentException("Color string can't be null or empty");
 		}
 		else {
-			color = PureLibSettings.colorByName(colorStr, Color.BLACK);
+			color = ColorUtils.colorByName(colorStr, Color.BLACK);
 			return this;
 		}
 	}
