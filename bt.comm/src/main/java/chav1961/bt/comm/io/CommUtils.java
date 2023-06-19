@@ -10,13 +10,16 @@ import java.util.Set;
 import com.fazecast.jSerialComm.SerialPort;
 
 import chav1961.purelib.basic.SubstitutableProperties;
+import chav1961.purelib.basic.Utils;
 
 public class CommUtils {
+	public static final String	PORT_NAME = "name";
+	public static final String	PORT_DESCRIPTION = "description";
 	public static final String	DATA_BITS = "dataBits";
 	public static final String	DEFAULT_DATA_BITS = "8";
 	public static final String	STOP_BITS = "stopBits";
 	public static final String	DEFAULT_STOP_BITS = StopBits.one.name();
-	public static final String	PARITY = "stopBits";
+	public static final String	PARITY = "parity";
 	public static final String	DEFAULT_PARITY = Parity.none.name();
 	public static final String	BAUD_RATE = "baudRate";
 	public static final String	DEFAULT_BAUD_RATE = "1200";
@@ -52,6 +55,15 @@ public class CommUtils {
 				throw new IllegalArgumentException("Illegal stop bit value ["+value+"]. Only 1, 1.5 and 2 are available"); 
 			}
 		}
+	
+		static StopBits of(final int stopBitsMode) {
+			for (StopBits item : values()) {
+				if (stopBitsMode == item.getStopBitsMode()) {
+					return item;
+				}
+			}
+			throw new IllegalArgumentException("Unsupported stop bits mode ["+stopBitsMode+"]");
+		}
 	}
 	
 	public static enum Parity {
@@ -70,6 +82,15 @@ public class CommUtils {
 		int getParityMode() {
 			return parityMode;
 		}
+		
+		static Parity of(final int parityMode) {
+			for (Parity item : values()) {
+				if (parityMode == item.getParityMode()) {
+					return item;
+				}
+			}
+			throw new IllegalArgumentException("Unsupported parity mode ["+parityMode+"]");
+		}
 	}
 
 	private static final Set<Integer>	AVAILABLE_BAUDS = new HashSet<>(Arrays.asList(110, 300, 600, 1200, 2400, 4800, 9600, 19200, 38400, 57600, 115200));
@@ -78,18 +99,40 @@ public class CommUtils {
 		final List<String>	result = new ArrayList<>();
 		
 		for (SerialPort comPort : SerialPort.getCommPorts()) {
-			result.add(comPort.getDescriptivePortName());
+			result.add(comPort.getSystemPortName());
 		}
 		return result;
+	}
+	
+	public static SubstitutableProperties getCommPortProperties(final String portName) {
+		if (Utils.checkEmptyOrNullString(portName)) {
+			throw new IllegalArgumentException("Port name can't be null or empty"); 
+		}
+		else {
+			for (SerialPort comPort : SerialPort.getCommPorts()) {
+				if (portName.equals(comPort.getSystemPortName())) {
+					final SubstitutableProperties	props = new SubstitutableProperties();
+					
+					props.setProperty(PORT_NAME, comPort.getSystemPortName());
+					props.setProperty(PORT_DESCRIPTION, comPort.getPortDescription());
+					props.setProperty(DATA_BITS, String.valueOf(comPort.getNumDataBits()));
+					props.setProperty(PARITY, Parity.of(comPort.getParity()).name());
+					props.setProperty(STOP_BITS, StopBits.of(comPort.getNumStopBits()).name());
+					props.setProperty(BAUD_RATE, String.valueOf(comPort.getBaudRate()));
+					return props;
+				}
+			}
+			throw new IllegalArgumentException("Port name ["+portName+"] not found"); 
+		}
 	}
 
 	static SerialPort prepareCommPort(final String name, final SubstitutableProperties props) {
 		for (SerialPort comPort : SerialPort.getCommPorts()) {
-			if (comPort.getDescriptivePortName().equals(name)) {
-				comPort.setComPortParameters(props.getProperty(CommUtils.BAUD_RATE, int.class), 
-						props.getProperty(CommUtils.DATA_BITS, int.class), 
-						props.getProperty(CommUtils.STOP_BITS, CommUtils.StopBits.class).getStopBitsMode(), 
-						props.getProperty(CommUtils.PARITY, CommUtils.Parity.class).getParityMode()
+			if (comPort.getSystemPortName().equals(name)) {
+				comPort.setComPortParameters(props.getProperty(BAUD_RATE, int.class, DEFAULT_BAUD_RATE), 
+						props.getProperty(DATA_BITS, int.class, DEFAULT_DATA_BITS), 
+						props.getProperty(STOP_BITS, CommUtils.StopBits.class, DEFAULT_STOP_BITS).getStopBitsMode(), 
+						props.getProperty(PARITY, CommUtils.Parity.class, DEFAULT_PARITY).getParityMode()
 						);
 				return comPort;
 			}

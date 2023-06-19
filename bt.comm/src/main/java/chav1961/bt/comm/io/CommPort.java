@@ -8,6 +8,8 @@ import java.net.URI;
 
 import com.fazecast.jSerialComm.SerialPort;
 
+import chav1961.bt.comm.io.CommUtils.Parity;
+import chav1961.bt.comm.io.CommUtils.StopBits;
 import chav1961.purelib.basic.SubstitutableProperties;
 import chav1961.purelib.basic.URIUtils;
 import chav1961.purelib.basic.interfaces.InputOutputPairInterface;
@@ -26,6 +28,12 @@ public class CommPort implements InputOutputPairInterface {
 			this.nested = CommUtils.prepareCommPort(name, props);
 			if (this.nested == null) {
 				throw new FileNotFoundException("Unknown comm port name ["+name+"]"); 
+			}
+			else if (!nested.openPort()) {				
+				throw new IOException("Comm port ["+name+"] error #"+nested.getLastErrorCode()); 
+			}
+			else {
+				nested.setComPortTimeouts(SerialPort.TIMEOUT_WRITE_BLOCKING | SerialPort.TIMEOUT_READ_BLOCKING, 5000, 5000);
 			}
 		}
 	}
