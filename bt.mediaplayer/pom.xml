@@ -7,9 +7,6 @@
   </parent>
   <artifactId>bt.mediaplayer</artifactId>
   
-  
-  
-  
 	<developers>
 		<developer>
 			<name>Alexander Chernomyrdin aka chav1961</name>
@@ -61,12 +58,12 @@
 	  <dependency>
 		<groupId>org.jcodec</groupId>
 		<artifactId>jcodec</artifactId>
-		<version>0.2.6-SNAPSHOT</version>
+		<version>0.2.5</version>
 	  </dependency>
 	  <dependency>
 		<groupId>org.jcodec</groupId>
 		<artifactId>jcodec-javase</artifactId>
-		<version>0.2.6-SNAPSHOT</version>
+		<version>0.2.5</version>
 	  </dependency>
 		<dependency>
 			<groupId>org.apache.httpcomponents</groupId>
