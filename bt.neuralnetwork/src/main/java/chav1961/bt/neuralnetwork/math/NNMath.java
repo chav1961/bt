@@ -3,6 +3,8 @@ package chav1961.bt.neuralnetwork.math;
 import java.util.function.DoubleSupplier;
 import java.util.function.DoubleUnaryOperator;
 
+import chav1961.purelib.matrix.interfaces.FloatMatrix;
+
 /**
  * 
  *
@@ -35,8 +37,9 @@ public class NNMath {
 	 * <p>Generate random number with the given distribution</p>
 	 * @param type distribution type. Can't be null
 	 * @return random generated
+	 * @throws NullPointerException on any argument is null
 	 */
-	public static float random(final RandomType type) {
+	public static float random(final RandomType type) throws NullPointerException {
 		if (type == null) {
 			throw new NullPointerException("Random type can't be null"); 
 		}
@@ -48,74 +51,77 @@ public class NNMath {
 	/**
 	 * <p>Fill vector with random numbers</p>
 	 * @param type distribution type. Can't be null
-	 * @param source source vector to fill random numbers. Can't be null</p>
+	 * @param source source vector to fill random numbers. Can't be null
+	 * @throws NullPointerException on any argument is null
 	 */
-	public static void random(final RandomType type, final float[] source) {
+	public static void random(final RandomType type, final float[] source) throws NullPointerException {
 		if (type == null) {
 			throw new NullPointerException("Random type can't be null"); 
 		}
+		else if (source == null) {
+			throw new NullPointerException("Matrix to fill can't be null"); 
+		}
 		else {
 			final DoubleSupplier func = type.getFunction();
+			final DoubleUnaryOperator  duo = (v)->func.getAsDouble();
 			
-			for(int index = 0; index < source.length; index++) {
-				source[index] = (float)func.getAsDouble();
-			}
+			function(source, duo, source);
 		}
 	}
 	
 	/**
 	 * <p>Calculate matrix multiplication</p>
 	 * @param left left matrix to multiply. Can't be null
-	 * @param leftRow number of rows in left matrix. Must be greater than 0
-	 * @param leftCol number of columns in left matrix. Must be greater than 0
+	 * @param leftLines number of lines in left matrix. Must be greater than 0
+	 * @param leftCols number of rows in left matrix. Must be greater than 0
 	 * @param right right matrix to multiply. Can't be null
-	 * @param rightRow number of rows in right matrix. Must be greater than 0
-	 * @param rightCol number of columns in right matrix. Must be greater than 0
+	 * @param rightLines number of lines in right matrix. Must be greater than 0
+	 * @param rightCols number of columns in right matrix. Must be greater than 0
 	 * @return matrix multiplication. Can't be null
 	 * @throws NullPointerException any matrix is null
 	 * @throws IllegalArgumentException some argument restrictions failed
 	 */
-	public static float[] matrixMul(final float[] left, final int leftRow, final int leftCol, final float[] right, final int rightRow, final int rightCol) throws NullPointerException, IllegalArgumentException {
+	public static float[] matrixMul(final float[] left, final int leftLines, final int leftCols, final float[] right, final int rightLines, final int rightCols) throws NullPointerException, IllegalArgumentException {
 		if (left == null) {
 			throw new NullPointerException("Left matrix can't be null"); 
 		}
 		else if (right == null) {
 			throw new NullPointerException("Right matrix can't be null"); 
 		}
-		else if (leftRow <= 0 || leftCol <= 0) {
-			throw new IllegalArgumentException("Left matrix dimensions ["+leftRow+"*"+leftCol+"] must be greater than 0"); 
+		else if (leftCols <= 0 || leftLines <= 0) {
+			throw new IllegalArgumentException("Left matrix dimensions ["+leftCols+"*"+leftLines+"] must be greater than 0"); 
 		}
-		else if (rightRow <= 0 || rightCol <= 0) {
-			throw new IllegalArgumentException("Right matrix dimensions ["+rightRow+"*"+rightCol+"] must be greater than 0"); 
+		else if (rightLines <= 0 || rightCols <= 0) {
+			throw new IllegalArgumentException("Right matrix dimensions ["+rightLines+"*"+rightCols+"] must be greater than 0"); 
 		}
-		else if (leftRow * leftCol != left.length) {
-			throw new IllegalArgumentException("Number of left matrix items ["+left.length+"] is differ than dimensions typed ["+leftRow+"*"+leftCol+"] = ["+(leftRow*leftCol)+"]"); 
+		else if (leftCols * leftLines != left.length) {
+			throw new IllegalArgumentException("Number of left matrix items ["+left.length+"] is differ than dimensions typed ["+leftCols+"*"+leftLines+"] = ["+(leftCols*leftLines)+"]"); 
 		}
-		else if (rightRow * rightCol != right.length) {
-			throw new IllegalArgumentException("Number of right matrix items ["+right.length+"] is differ than dimensions typed ["+rightRow+"*"+rightCol+"] = ["+(rightRow*rightCol)+"]"); 
+		else if (rightLines * rightCols != right.length) {
+			throw new IllegalArgumentException("Number of right matrix items ["+right.length+"] is differ than dimensions typed ["+rightLines+"*"+rightCols+"] = ["+(rightLines*rightCols)+"]"); 
 		}
-		else if (rightRow != leftCol) {
-			throw new IllegalArgumentException("Number of columns in left matrix ["+leftCol+"] is differ than number of rows in right matrix ["+rightRow+"]"); 
+		else if (rightLines != leftCols) {
+			throw new IllegalArgumentException("Number of columns in left matrix ["+leftLines+"] is differ than number of lines in right matrix ["+rightCols+"]"); 
 		}
 		else {
-			return matrixMul(left, leftRow, leftCol, right, rightRow, rightCol, new float[leftRow * rightCol]);
+			return matrixMul(left, leftLines, leftCols, right, rightLines, rightCols, new float[leftLines * rightCols]);
 		}
 	}
 
 	/**
 	 * <p>Calculate matrix multiplication</p>
 	 * @param left left matrix to multiply. Can't be null
-	 * @param leftRow number of rows in left matrix. Must be greater than 0
-	 * @param leftCol number of columns in left matrix. Must be greater than 0
+	 * @param leftLines number of lines in left matrix. Must be greater than 0
+	 * @param leftCols number of columns in left matrix. Must be greater than 0
 	 * @param right right matrix to multiply. Can't be null
-	 * @param rightRow number of rows in right matrix. Must be greater than 0
-	 * @param rightCol number of columns in right matrix. Must be greater than 0
+	 * @param rightLines number of lines in right matrix. Must be greater than 0
+	 * @param rightCols number of columns in right matrix. Must be greater than 0
 	 * @param result matrix to store result. Can't be null and must have length = leftRows * rightColumns 
 	 * @return result matrix (can be used in chain equations)
 	 * @throws NullPointerException any matrix is null
 	 * @throws IllegalArgumentException some argument restrictions failed
 	 */
-	public static float[] matrixMul(final float[] left, final int leftRow, final int leftCol, final float[] right, final int rightRow, final int rightCol, final float[] result)  throws NullPointerException, IllegalArgumentException {
+	public static float[] matrixMul(final float[] left, final int leftLines, final int leftCols, final float[] right, final int rightLines, final int rightCols, final float[] result)  throws NullPointerException, IllegalArgumentException {
 		if (left == null) {
 			throw new NullPointerException("Left matrix can't be null"); 
 		}
@@ -125,26 +131,36 @@ public class NNMath {
 		else if (result == null) {
 			throw new NullPointerException("Matrix to store result can't be null"); 
 		}
-		else if (leftRow <= 0 || leftCol <= 0) {
-			throw new IllegalArgumentException("Left matrix dimensions ["+leftRow+"*"+leftCol+"] must be greater than 0"); 
+		else if (leftLines <= 0 || leftCols <= 0) {
+			throw new IllegalArgumentException("Left matrix dimensions ["+leftLines+"*"+leftCols+"] must be greater than 0"); 
 		}
-		else if (rightRow <= 0 || rightCol <= 0) {
-			throw new IllegalArgumentException("Right matrix dimensions ["+rightRow+"*"+rightCol+"] must be greater than 0"); 
+		else if (rightLines <= 0 || rightCols <= 0) {
+			throw new IllegalArgumentException("Right matrix dimensions ["+rightLines+"*"+rightCols+"] must be greater than 0"); 
 		}
-		else if (leftRow * leftCol != left.length) {
-			throw new IllegalArgumentException("Number of left matrix items ["+left.length+"] is differ than dimensions typed ["+leftRow+"*"+leftCol+"] = ["+(leftRow*leftCol)+"]"); 
+		else if (leftLines * leftCols != left.length) {
+			throw new IllegalArgumentException("Number of left matrix items ["+left.length+"] is differ than dimensions typed ["+leftLines+"*"+leftCols+"] = ["+(leftLines*leftCols)+"]"); 
 		}
-		else if (rightRow * rightCol != right.length) {
-			throw new IllegalArgumentException("Number of right matrix items ["+right.length+"] is differ than dimensions typed ["+rightRow+"*"+rightCol+"] = ["+(rightRow*rightCol)+"]"); 
+		else if (rightLines * rightCols != right.length) {
+			throw new IllegalArgumentException("Number of right matrix items ["+right.length+"] is differ than dimensions typed ["+rightLines+"*"+rightCols+"] = ["+(rightLines*rightCols)+"]"); 
 		}
-		else if (rightRow != leftCol) {
-			throw new IllegalArgumentException("Number of columns in left matrix ["+leftCol+"] is differ than number of rows in right matrix ["+rightRow+"]"); 
+		else if (rightLines != leftCols) {
+			throw new IllegalArgumentException("Number of columns in left matrix ["+leftCols+"] is differ than number of lines in right matrix ["+rightLines+"]"); 
 		}
-		else if (leftRow * rightCol != result.length) {
-			throw new IllegalArgumentException("Number of result matrix items ["+result.length+"] is differ than dimensions typed ["+leftRow+"*"+rightCol+"] = ["+(leftRow*rightCol)+"]"); 
+		else if (leftLines * rightCols != result.length) {
+			throw new IllegalArgumentException("Number of result matrix items ["+result.length+"] is differ than dimensions typed ["+leftLines+"*"+rightCols+"] = ["+(leftLines*rightCols)+"]"); 
 		}
 		else {
-			return result;
+			for(int i = 0; i < leftLines; i++) {
+				for(int j = 0; j < rightCols; j++) {
+					double sum = 0;
+					
+					for(int k = 0; k < leftCols; k++) {
+						sum += left[i * leftCols + k] * right[k * rightCols + j];
+					}
+					result[i * rightCols + j] = (float)sum;
+				}
+			}
+		    return result;
 		}
 	}
 
@@ -213,6 +229,9 @@ public class NNMath {
 			throw new IllegalArgumentException("Number of result matrix items ["+result.length+"] is differ than dimensions typed ["+row+"*"+col+"] = ["+(row*col)+"]"); 
 		}
 		else {
+			for(int index = 0; index < left.length; index++) {
+				result[index] = left[index] + right[index];
+			}
 			return result;
 		}		
 	}
