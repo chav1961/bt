@@ -165,6 +165,100 @@ public class NNMath {
 	}
 
 	/**
+	 * <p>Calculate matrix Hadamard multiplication</p>
+	 * @param left left matrix to multiply. Can't be null
+	 * @param leftLines number of lines in left matrix. Must be greater than 0
+	 * @param leftCols number of columns in left matrix. Must be greater than 0
+	 * @param right right matrix to multiply. Can't be null
+	 * @param rightLines number of lines in right matrix. Must be greater than 0
+	 * @param rightCols number of columns in right matrix. Must be greater than 0
+	 * @return result matrix (can be used in chain equations)
+	 * @throws NullPointerException any matrix is null
+	 * @throws IllegalArgumentException some argument restrictions failed
+	 */
+	public static float[] hadamardMul(final float[] left, final int leftLines, final int leftCols, final float[] right, final int rightLines, final int rightCols)  throws NullPointerException, IllegalArgumentException {
+		if (left == null) {
+			throw new NullPointerException("Left matrix can't be null"); 
+		}
+		else if (right == null) {
+			throw new NullPointerException("Right matrix can't be null"); 
+		}
+		else if (leftLines <= 0 || leftCols <= 0) {
+			throw new IllegalArgumentException("Left matrix dimensions ["+leftLines+"*"+leftCols+"] must be greater than 0"); 
+		}
+		else if (rightLines <= 0 || rightCols <= 0) {
+			throw new IllegalArgumentException("Right matrix dimensions ["+rightLines+"*"+rightCols+"] must be greater than 0"); 
+		}
+		else if (leftLines * leftCols != left.length) {
+			throw new IllegalArgumentException("Number of left matrix items ["+left.length+"] is differ than dimensions typed ["+leftLines+"*"+leftCols+"] = ["+(leftLines*leftCols)+"]"); 
+		}
+		else if (rightLines * rightCols != right.length) {
+			throw new IllegalArgumentException("Number of right matrix items ["+right.length+"] is differ than dimensions typed ["+rightLines+"*"+rightCols+"] = ["+(rightLines*rightCols)+"]"); 
+		}
+		else if (leftLines != rightLines) {
+			throw new IllegalArgumentException("Number of lines in left matrix ["+leftLines+"] is differ than number of lines in right matrix ["+rightLines+"]"); 
+		}
+		else if (leftCols != rightCols) {
+			throw new IllegalArgumentException("Number of columns in left matrix ["+leftCols+"] is differ than number of columns in right matrix ["+rightCols+"]"); 
+		}
+		else {
+		    return hadamardMul(left, leftLines, leftCols, right, rightLines, rightCols, new float[left.length]);
+		}
+	}
+
+	/**
+	 * <p>Calculate matrix Hadamard multiplication</p>
+	 * @param left left matrix to multiply. Can't be null
+	 * @param leftLines number of lines in left matrix. Must be greater than 0
+	 * @param leftCols number of columns in left matrix. Must be greater than 0
+	 * @param right right matrix to multiply. Can't be null
+	 * @param rightLines number of lines in right matrix. Must be greater than 0
+	 * @param rightCols number of columns in right matrix. Must be greater than 0
+	 * @param result matrix to store result. Can't be null and must have length = leftRows * leftColumns 
+	 * @return result matrix (can be used in chain equations)
+	 * @throws NullPointerException any matrix is null
+	 * @throws IllegalArgumentException some argument restrictions failed
+	 */
+	public static float[] hadamardMul(final float[] left, final int leftLines, final int leftCols, final float[] right, final int rightLines, final int rightCols, final float[] result)  throws NullPointerException, IllegalArgumentException {
+		if (left == null) {
+			throw new NullPointerException("Left matrix can't be null"); 
+		}
+		else if (right == null) {
+			throw new NullPointerException("Right matrix can't be null"); 
+		}
+		else if (result == null) {
+			throw new NullPointerException("Matrix to store result can't be null"); 
+		}
+		else if (leftLines <= 0 || leftCols <= 0) {
+			throw new IllegalArgumentException("Left matrix dimensions ["+leftLines+"*"+leftCols+"] must be greater than 0"); 
+		}
+		else if (rightLines <= 0 || rightCols <= 0) {
+			throw new IllegalArgumentException("Right matrix dimensions ["+rightLines+"*"+rightCols+"] must be greater than 0"); 
+		}
+		else if (leftLines * leftCols != left.length) {
+			throw new IllegalArgumentException("Number of left matrix items ["+left.length+"] is differ than dimensions typed ["+leftLines+"*"+leftCols+"] = ["+(leftLines*leftCols)+"]"); 
+		}
+		else if (rightLines * rightCols != right.length) {
+			throw new IllegalArgumentException("Number of right matrix items ["+right.length+"] is differ than dimensions typed ["+rightLines+"*"+rightCols+"] = ["+(rightLines*rightCols)+"]"); 
+		}
+		else if (leftLines != rightLines) {
+			throw new IllegalArgumentException("Number of lines in left matrix ["+leftLines+"] is differ than number of lines in right matrix ["+rightLines+"]"); 
+		}
+		else if (leftCols != rightCols) {
+			throw new IllegalArgumentException("Number of columns in left matrix ["+leftCols+"] is differ than number of columns in right matrix ["+rightCols+"]"); 
+		}
+		else if (leftLines * leftCols != result.length) {
+			throw new IllegalArgumentException("Number of result matrix items ["+result.length+"] is differ than dimensions typed ["+leftLines+"*"+leftCols+"] = ["+(leftLines*rightCols)+"]"); 
+		}
+		else {
+			for(int index = 0; index < left.length; index++) {
+				result[index] = left[index] * right[index];
+			}
+		    return result;
+		}
+	}
+	
+	/**
 	 * <p>Calculate matrix sum</p>
 	 * @param left left matrix to sum. Can't be null
 	 * @param row number of rows in both matrices. Must be greater than 0
