@@ -289,83 +289,36 @@ public class SimpleRNN implements JsonSerializable<SimpleRNN> {
 		}
 	}
 
-//	public void backPropagation(final float[] error, final float[][] lastInputs, final float learnRate) {
-//		final float[] inputHiddenDelta = new float[inputHiddenWeight.length];
-//		final float[] hiddenHiddenDelta = new float[hiddenHiddenWeight.length];
-//		final float[] hiddenDisplacementDelta = new float[hiddenDisplacement.length];
-//
-//		final float[] hiddenOutputDelta = NNMath.matrixMul(error, outputVectorSize, 1, hiddens[hiddens.length-1], 1, hiddenVectorSize);
-//		final float[] outputDisplacementDelta = error.clone();
-//		final float[] hiddenDelta = NNMath.matrixMul(hiddenOutputWeight, hiddenVectorSize, outputVectorSize, error, outputVectorSize, 1);
-//		final float[] emptyInputs = new float[inputVectorSize];
-//		
-//		for(int index = hiddens.length - 1; index >= 0; index--) {
-//			final float[]	temp = NNMath.hadamardMul(					
-//										NNMath.function(hiddens[index], (t)->(1 - t*t)),
-//										hiddenVectorSize,
-//										1,
-//										hiddenDelta,
-//										hiddenVectorSize,
-//										1
-//									);
-//
-//			NNMath.matrixAdd(hiddenDisplacementDelta, hiddenVectorSize, 1, temp, hiddenDisplacementDelta);
-//			
-//			NNMath.matrixAdd(
-//						NNMath.matrixMul(temp, hiddenVectorSize, 1, hiddens[index], 1, hiddenVectorSize),
-//						hiddenVectorSize,
-//						hiddenVectorSize,
-//						hiddenHiddenDelta,
-//						hiddenHiddenDelta
-//			);
-//			
-//			NNMath.matrixAdd(
-//					NNMath.matrixMul(temp, hiddenVectorSize, 1, index > 0 ? lastInputs[index - 1] : emptyInputs, 1, inputVectorSize),
-//					inputVectorSize,
-//					hiddenVectorSize,
-//					inputHiddenDelta,
-//					inputHiddenDelta
-//			);
-//			
-//			NNMath.matrixMul(hiddenHiddenWeight, hiddenVectorSize, hiddenVectorSize, temp, hiddenVectorSize, 1, hiddenDelta);
-//		}
-//		NNMath.function(inputHiddenDelta, (t)->-learnRate*(Math.min(1, Math.max(-1, t))), inputHiddenDelta);
-//		NNMath.function(hiddenHiddenDelta, (t)->-learnRate*(Math.min(1, Math.max(-1, t))), hiddenHiddenDelta);
-//		NNMath.function(hiddenOutputDelta, (t)->-learnRate*(Math.min(1, Math.max(-1, t))), hiddenOutputDelta);
-//		NNMath.function(hiddenDisplacementDelta, (t)->-learnRate*(Math.min(1, Math.max(-1, t))), hiddenDisplacementDelta);
-//		NNMath.function(outputDisplacementDelta, (t)->-learnRate*(Math.min(1, Math.max(-1, t))), outputDisplacementDelta);
-//		
-//		NNMath.matrixAdd(inputHiddenWeight, 
-//				inputVectorSize, 
-//				hiddenVectorSize, 
-//				inputHiddenDelta, 
-//				inputHiddenWeight
-//		);
-//		NNMath.matrixAdd(hiddenHiddenWeight, 
-//				hiddenVectorSize, 
-//				hiddenVectorSize, 
-//				hiddenHiddenDelta, 
-//				hiddenHiddenWeight
-//		);
-//		NNMath.matrixAdd(hiddenOutputWeight, 
-//				hiddenVectorSize, 
-//				outputVectorSize, 
-//				hiddenOutputDelta, 
-//				hiddenOutputWeight
-//		);
-//		NNMath.matrixAdd(hiddenDisplacement, 
-//				hiddenVectorSize, 
-//				1, 
-//				hiddenDisplacementDelta, 
-//				hiddenDisplacement
-//		);
-//		NNMath.matrixAdd(outputDisplacement, 
-//				outputVectorSize, 
-//				1, 
-//				outputDisplacementDelta, 
-//				outputDisplacement
-//		);
-//	}
+	public void backPropagation(final FloatMatrix error, final FloatMatrix[] lastInputs, final float learnRate) {
+		FloatMatrix inputHiddenDelta = (FloatMatrix)mf.newMatrix(float.class, hiddenVectorSize, inputVectorSize);
+		FloatMatrix hiddenHiddenDelta = (FloatMatrix)mf.newMatrix(float.class, hiddenVectorSize, hiddenVectorSize);
+		FloatMatrix hiddenDisplacementDelta = (FloatMatrix)mf.newMatrix(float.class, outputVectorSize, hiddenVectorSize);;
+
+		FloatMatrix hiddenOutputDelta = error.mul(hiddens[hiddens.length-1].transp());
+		FloatMatrix outputDisplacementDelta = error.add(0);
+		FloatMatrix hiddenDelta = hiddenOutputWeight.transp().mul(error);
+		FloatMatrix emptyInputs = (FloatMatrix)mf.newMatrix(float.class, error.getSize(0), error.getSize(1));
+		
+		for(int index = hiddens.length - 1; index >= 0; index--) {
+			final FloatMatrix	temp = hiddens[index].function((t)->(1 - t*t)).transp().mul(hiddenDelta);
+
+			hiddenDisplacementDelta = hiddenDisplacementDelta.add(temp.get(0,0));
+			hiddenHiddenDelta = temp.mul(hiddens[index]).add(hiddenHiddenDelta);
+			inputHiddenDelta = temp.mul(index > 0 ? lastInputs[index - 1] : emptyInputs).add(inputHiddenDelta);
+			hiddenDelta = hiddenHiddenWeight.mul(temp);
+		}
+		inputHiddenDelta = inputHiddenDelta.function((t)->-learnRate*(Math.min(1, Math.max(-1, t))));
+		hiddenHiddenDelta = hiddenHiddenDelta.function((t)->-learnRate*(Math.min(1, Math.max(-1, t))));
+		hiddenOutputDelta = hiddenOutputDelta.function((t)->-learnRate*(Math.min(1, Math.max(-1, t))));
+		hiddenDisplacementDelta = hiddenDisplacementDelta.function((t)->-learnRate*(Math.min(1, Math.max(-1, t))));
+		outputDisplacementDelta = outputDisplacementDelta.function((t)->-learnRate*(Math.min(1, Math.max(-1, t))));
+		
+		inputHiddenWeight = inputHiddenWeight.add(inputHiddenDelta);
+		hiddenHiddenWeight = hiddenHiddenWeight.add(hiddenHiddenDelta);
+		hiddenOutputWeight = hiddenOutputWeight.add(hiddenOutputDelta);
+		hiddenDisplacement = hiddenDisplacement.add(hiddenDisplacementDelta);
+		outputDisplacement = outputDisplacement.add(outputDisplacementDelta);
+	}
 
 	private void checkValue(final int size, final String fieldName) throws SyntaxException {
 		if (size <= 0) {
@@ -381,79 +334,7 @@ public class SimpleRNN implements JsonSerializable<SimpleRNN> {
 			throw new SyntaxException(0, 0, "Field ["+fieldName+"] has wrong number of items ["+array.length+"], must be ["+size+"]");
 		}
 	}
-/*	
 	
-	// Цикл тренировки
-	
-	for x, y in train_data.items():
-	    inputs = createInputs(x)
-	    target = int(y)
-
-	    # Прямое распространение
-	    out, _ = rnn.forward(inputs)
-	    probs = softmax(out)
-
-	    # Создание dL/dy
-	    d_L_d_y = probs
-	    d_L_d_y[target] -= 1
-
-	    # Обратное распространение
-	    rnn.backprop(d_L_d_y)
-	    
-	    
-	    
-	// Обратное распространение
-	
-	 def backprop(self, d_y, learn_rate=2e-2):
-	        """
-	        Выполнение фазы обратного распространения RNN.
-	        - d_y (dL/dy) имеет форму (output_size), 1).
-	        - learn_rate является вещественным числом float.
-	        """
-	        n = len(self.last_inputs)
-
-	        # Инициализация dL/dWhh, dL/dWxh, и dL/dbh к нулю.
-	        d_Whh = np.zeros(self.Whh.shape)
-	        d_Wxh = np.zeros(self.Wxh.shape)
-	        d_bh = np.zeros(self.bh.shape)
-
-	        # Вычисление dL/dWhy и dL/dby.
-	        d_Why = d_y @ self.last_hs[n].T
-	        d_by = d_y
-
-
-	        # Вычисление dL/dh для последнего h.
-	        d_h = self.Why.T @ d_y
-
-	        # Обратное распространение во времени.
-	        for t in reversed(range(n)):
-	            # Среднее значение: dL/dh * (1 - h^2)
-	            temp = ((1 - self.last_hs[t + 1] ** 2) * d_h)
-
-	            # dL/db = dL/dh * (1 - h^2)
-	            d_bh += temp
-
-	            # dL/dWhh = dL/dh * (1 - h^2) * h_{t-1}
-	            d_Whh += temp @ self.last_hs[t].T
-
-	            # dL/dWxh = dL/dh * (1 - h^2) * x
-	            d_Wxh += temp @ self.last_inputs[t].T
-
-	            # Далее dL/dh = dL/dh * (1 - h^2) * Whh
-	            d_h = self.Whh @ temp
-
-	        # Отсекаем, чтобы предотвратить разрыв градиентов.
-	        for d in [d_Wxh, d_Whh, d_Why, d_bh, d_by]:
-	            np.clip(d, -1, 1, out=d)
-
-	        # Обновляем вес и смещение с использованием градиентного спуска.
-	        self.Whh -= learn_rate * d_Whh
-	        self.Wxh -= learn_rate * d_Wxh
-	        self.Why -= learn_rate * d_Why
-	        self.bh -= learn_rate * d_bh
-	        self.by -= learn_rate * d_by
-*/
-
 	private static final Data[]	TRAINING_SET = {
 									new Data("good", true),
 									new Data("bad", false),
@@ -572,9 +453,9 @@ public class SimpleRNN implements JsonSerializable<SimpleRNN> {
 				final FloatMatrix result = softmax(rnn.forward(source));
 				
 				System.err.println("Train: "+item.word+", result="+result+", awaited:"+item.marker);
-//				result[item.marker ? 1 : 0] -= 1;
+				result.set(new float[] {-1}, 0, item.marker ? 1 : 0, 1);
 				
-//				rnn.backPropagation(result, source, 2e-2f);
+				rnn.backPropagation(result, source, 2e-2f);
 			}
 //		}
 		System.err.println("Training ended...");
