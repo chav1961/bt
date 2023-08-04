@@ -1,6 +1,10 @@
 package chav1961.bt.nlp.dictionary;
 
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -37,6 +41,11 @@ public class LoadDict {
 		final long endMem = (Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory());
 		
 		System.err.println("Total="+handler.count+", duration="+(endTime - startTime)+", memory="+(endMem - startMem));
+		
+		final long	time1 = System.currentTimeMillis();
+		AndOrTree.rawUpload((AndOrTree<?>)handler.tree, new DataOutputStream(OutputStream.nullOutputStream()));
+		System.err.println("Upload duration="+(System.currentTimeMillis() - time1));
+		
 	}
 
 	public static class MyHandler extends DefaultHandler {
@@ -49,8 +58,8 @@ public class LoadDict {
 		private final StringBuilder					sb = new StringBuilder();
 		private int		grammemaCount = 0;
 		private int		id;
+		private int		initialId;
 		private String 	parent = null;
-		private String 	initialForm = null;
 		private String 	currentForm = null;
 		private long	lobits;
 		private long	hibits;
@@ -83,7 +92,7 @@ public class LoadDict {
 					hibitsInitial = 0;
 					lobits = 0;
 					hibits = 0;
-					initialForm = attr.getValue("t");
+					initialId = (int)tree.placeName((CharSequence)attr.getValue("t"), null);
 					break;
 				case "f" 		:
 					lobits = 0;
@@ -135,13 +144,21 @@ public class LoadDict {
 					hibitsInitial = hibits;
 					break;
 				case "f" 		:
-					final long	nameId = tree.seekName((CharSequence)currentForm);
+					final long		nameId = tree.seekName((CharSequence)currentForm);
+					final WordDesc	word = new WordDesc(id, initialId, lobits | lobitsInitial, hibits | hibitsInitial);
 					
 					if (nameId < 1) {
-						tree.placeName((CharSequence)currentForm, new WordDesc(id, initialForm, lobits | lobitsInitial, hibits | hibitsInitial));
+						tree.placeName((CharSequence)currentForm, word);
 					}
 					else {
-						tree.getCargo(nameId).next = new WordDesc(id, initialForm, lobits | lobitsInitial, hibits | hibitsInitial);
+						final WordDesc	cargo = tree.getCargo(nameId);
+						
+						if (cargo != null) {
+							cargo.next = word;
+						}
+						else {
+							tree.setCargo(nameId, word);
+						}
 					}
 					break;
 				case "type" 	:
@@ -172,13 +189,13 @@ public class LoadDict {
 	}
 	
 	private static class WordDesc {
-		final int		id;
-		final String	initialForm;
-		final long		loBits;
-		final long		hiBits;
-		WordDesc		next = null;
+		final int	id;
+		final int	initialForm;
+		final long	loBits;
+		final long	hiBits;
+		WordDesc	next = null;
 		
-		public WordDesc(final int id, final String initialForm, final long loBits, final long hiBits) {
+		public WordDesc(final int id, final int initialForm, final long loBits, final long hiBits) {
 			this.id = id;
 			this.initialForm = initialForm;
 			this.loBits = loBits;
@@ -188,6 +205,14 @@ public class LoadDict {
 		@Override
 		public String toString() {
 			return "WordDesc [id=" + id + ", initialForm=" + initialForm + ", loBits=" + loBits + ", hiBits=" + hiBits + "]";
+		}
+		
+		public static void upload(final WordDesc desc, final DataOutputStream dos) throws IOException {
+			
+		}
+
+		public static WordDesc download(final DataInputStream dis) throws IOException {
+			return null;
 		}
 	}
 	

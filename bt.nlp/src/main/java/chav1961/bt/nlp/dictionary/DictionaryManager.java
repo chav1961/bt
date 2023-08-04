@@ -190,20 +190,21 @@ public class DictionaryManager {
 		}
 	}
 
+	public DictionaryManager(final DataInputStream rawDump) throws IOException {
+		if (rawDump == null) {
+			throw new NullPointerException("RAW dump to load can't be null");
+		}
+		else {
+			throw new NullPointerException("RAW dump to load can't be null");
+		}
+	}
+	
 	public int nextWord(final char[] content, final int from, final Consumer<WordDescriptor> callback) throws SyntaxException {
 		return 0;
 	}
 	
 	public void allWords(final Consumer<WordDescriptor> callback) {
 		
-	}
-	
-	public static DictionaryManager download(final DataInputStream is) {
-		return null;
-	}
-	
-	public static DictionaryManager upload(final DataOutputStream is) {
-		return null;
 	}
 	
 	private class MyHandler extends DefaultHandler {
