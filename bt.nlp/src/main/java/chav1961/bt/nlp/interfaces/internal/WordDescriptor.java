@@ -1,5 +1,6 @@
 package chav1961.bt.nlp.interfaces.internal;
 
+import java.util.List;
 import java.util.Set;
 
 public interface WordDescriptor {
@@ -495,4 +496,6 @@ public interface WordDescriptor {
 	String getCurrentFormAsString();
 	char[] getInitialForm();
 	String getInitialFormAsString();
+	
+	List<WordDescriptor> getInitialFormDesc();
 }

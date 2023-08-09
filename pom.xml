@@ -23,7 +23,6 @@
   	<module>bt.starter</module>
   	<module>bt.monitoring</module>
   	<module>bt.xsys</module>
-  	<module>bt.jsapi</module>
   	<module>bt.nlp</module>
   	<module>bt.winsl</module>
   	<module>bt.lightrepo</module>

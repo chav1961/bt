@@ -1,5 +1,7 @@
-package chav1961.bt.voice;
+package chav1961.bt.voice.recognize;
 
+import java.awt.event.KeyEvent;
+import java.awt.event.KeyListener;
 import java.io.Closeable;
 import java.io.File;
 import java.io.IOException;
@@ -13,6 +15,11 @@ import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
+import java.util.function.Predicate;
+
+import javax.swing.Icon;
+import javax.swing.ImageIcon;
+import javax.swing.JComponent;
 
 import org.vosk.Model;
 import org.vosk.Recognizer;
@@ -28,6 +35,13 @@ import chav1961.purelib.json.JsonSerializer;
 import chav1961.purelib.streams.charsource.StringCharSource;
 
 public class VoiceParser implements ListenableExecutionControl, Closeable {
+	public static final int		DEFAULT_SAMPLE_RATE = 16000;
+	public static final int		OPT_PASS_PARTIAL = 0b00000001;
+	public static final int		OPT_PASS_INTERMEDIATE = 0b00000010;
+	public static final int		OPT_PASS_FINAL = 0b00000100;
+
+	private static final Icon	ICON_MICROPHONE_16 = new ImageIcon(VoiceParser.class.getResource("microphone16.png"));
+	
 	private final EnumMap<SupportedLanguages, Model>								models = new EnumMap<>(SupportedLanguages.class);
 	private final LightWeightListenerList<ExecutionControlListener> 				listeners = new LightWeightListenerList<>(ExecutionControlListener.class);
 	private final BlockingQueue<ExecutionControlEvent.ExecutionControlEventType>	queue = new ArrayBlockingQueue<>(10);
@@ -37,9 +51,14 @@ public class VoiceParser implements ListenableExecutionControl, Closeable {
 	private final int 						sampleRate;
 	private final AtomicBoolean				started = new AtomicBoolean(false);
 	private final AtomicBoolean				suspended = new AtomicBoolean(false);
+	private final int 						options;
 	private volatile SupportedLanguages		currentLang = SupportedLanguages.getDefaultLanguage();
+
+	public VoiceParser(final Consumer<String> callback) {
+		this(callback, DEFAULT_SAMPLE_RATE, OPT_PASS_INTERMEDIATE);
+	}	
 	
-	public VoiceParser(final Consumer<String> callback, final int sampleRate) {
+	public VoiceParser(final Consumer<String> callback, final int sampleRate, final int options) {
 		if (callback == null) {
 			throw new NullPointerException("Voice parser callback can't be null"); 
 		}
@@ -51,7 +70,8 @@ public class VoiceParser implements ListenableExecutionControl, Closeable {
 		}
 		else {
 			this.callback = callback;
-			this.sampleRate = sampleRate; 
+			this.sampleRate = sampleRate;
+			this.options = options;
 					
 			t.setName("Voice parser");
 			t.setDaemon(true);
@@ -212,9 +232,64 @@ public class VoiceParser implements ListenableExecutionControl, Closeable {
 		}
 	}
 
+	public static void assignJComponentKey(final JComponent component, final VoiceParser parser) {
+		assignJComponentKey(component, parser, true, (x)->true);
+	}
+	
+	public static void assignJComponentKey(final JComponent component, final VoiceParser parser, final boolean toggleMode, final Predicate<?> isMicrophoneEnabled) {
+		if (component == null) {
+			throw new NullPointerException("Component to assign key can't be null"); 
+		}
+		else {
+			component.addKeyListener(new KeyListener() {
+				boolean pausePressed = false;
+				
+				@Override
+				public void keyPressed(final KeyEvent e) {
+					if (e.getKeyCode() == KeyEvent.VK_PAUSE && isMicrophoneEnabled.test(null)) {
+						if (toggleMode) {
+							if (!pausePressed) {
+								pausePressed = true;
+								if (parser.isSuspended()) {
+									parser.setPreferredLang(SupportedLanguages.of(component.getInputContext().getLocale()));
+									parser.resume();
+								}
+								else {
+									parser.suspend();
+								}
+							}
+						}
+						else if (parser.isSuspended()) {
+							parser.setPreferredLang(SupportedLanguages.of(component.getInputContext().getLocale()));
+							parser.resume();
+						}
+					}
+				}
+				
+				@Override
+				public void keyReleased(final KeyEvent e) {
+					if (e.getKeyCode() == KeyEvent.VK_PAUSE && isMicrophoneEnabled.test(null)) {
+						if (toggleMode) {
+							pausePressed = false;
+						}
+						else if (!parser.isSuspended()) {
+							parser.suspend();
+						}
+					}
+				}
+				
+				@Override public void keyTyped(final KeyEvent e) {}
+			});
+		}
+	}
+	
+	public static Icon getIcon() {
+		return ICON_MICROPHONE_16;
+	}
+	
 	private void listen() {
 		try {
-	        final byte[] b = new byte[8192];
+	        final byte[] b = new byte[4096];
 	        
 loop:		for (;;) {
 				final ExecutionControlEventType action = queue.take();
@@ -232,16 +307,21 @@ loop:		for (;;) {
 				        		conn.connect();
 				        		try(final InputStream	is = conn.getInputStream()) {
 						            while (started.get() && !suspended.get() && (length = is.read(b, 0, b.length)) >= 0) {
-						            	System.err.println("LEn="+length);
 						                if (recognizer.acceptWaveForm(b, length)) {
-						                	callback.accept(toString(recognizer.getResult()));
+						                	if ((options & OPT_PASS_INTERMEDIATE) != 0) {
+							                	callback.accept(toString(recognizer.getResult()));
+						                	}
 						                } 
 						                else {
-						                	callback.accept(toString(recognizer.getPartialResult()));
+						                	if ((options & OPT_PASS_PARTIAL) != 0) {
+						                		callback.accept(toString(recognizer.getPartialResult()));
+						                	}
 						                }
 						            }
 				        		}
-			                	callback.accept(toString(recognizer.getFinalResult()));
+			                	if ((options & OPT_PASS_FINAL) != 0) {
+				                	callback.accept(toString(recognizer.getFinalResult()));
+			                	}
 				        	}
 						}
 						break;
@@ -260,7 +340,6 @@ loop:		for (;;) {
 		}
 	}
 
-	
 	private String toString(final String result) {
 		try {
 			return serializer.deserialize(new StringCharSource(result)).getContent();
@@ -270,7 +349,7 @@ loop:		for (;;) {
 	}
 
 	static String getMicrophoneUrl(final int sampleRate) {
-		return "capture://microphone?rate="+sampleRate+"&bits=16&channels=1&encoding=pcm&signed=signed&endian=big";		
+		return "capture://microphone?rate="+sampleRate+"&bits=16&channels=1&encoding=pcm&signed=signed&endian=little";		
 	}
 	
 	static boolean isMicrophoneExists(final int sampleRate) {
