@@ -1,0 +1,37 @@
+<scenario>
+	<splash href="" title="">...</splash>
+	<parameters>
+		<parameter name="" type="" options="" default=""/>
+	<parameters>
+	<steps size="">
+		<step id="" type="" prev="" next="">
+			<before type="">...</before>
+			<title href=""/>
+			<image href=""/>
+			<help href=""/>
+			<scene>
+				<parameter name="" type="text" href=""/>
+			</scene>
+			<validations>
+				<validation name="" type="" onFail="">...</validation>
+			</validations>
+			<after type="">...</after>
+		</step>
+	</steps> 
+	<source>
+		<dir name="" title="">
+			<url name=""/>
+		</dir>
+	</source>
+	<target memoryRequired="">
+		<dir name="" memoryRequired="">
+			<url from="" to=""/>
+		</dir>
+	</target>
+	<i18n>
+		<item id="" lang="">...</item>
+	</i18n>
+	<images>
+		<image id="" hRef="">...</image>
+	</images>
+</scenario>
