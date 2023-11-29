@@ -43,5 +43,6 @@
   	<module>bt.creolenotepad</module>
   	<module>bt.voice</module>
   	<module>bt.installer</module>
+  	<module>bt.ocr</module>
   </modules>
 </project>
