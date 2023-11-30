@@ -1,6 +1,7 @@
 package chav1961.bt.ocr;
 
 import java.awt.Cursor;
+import java.awt.Dimension;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.Image;
@@ -10,7 +11,6 @@ import java.awt.Toolkit;
 import java.awt.datatransfer.Clipboard;
 import java.awt.datatransfer.DataFlavor;
 import java.awt.datatransfer.FlavorEvent;
-import java.awt.datatransfer.FlavorMap;
 import java.awt.datatransfer.UnsupportedFlavorException;
 import java.awt.dnd.DnDConstants;
 import java.awt.dnd.DropTarget;
@@ -20,17 +20,15 @@ import java.awt.dnd.DropTargetEvent;
 import java.awt.dnd.DropTargetListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
-import java.awt.event.MouseWheelEvent;
-import java.awt.event.MouseWheelListener;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 import java.net.URI;
 import java.util.Hashtable;
 import java.util.List;
-import java.util.Map;
 
 import javax.imageio.ImageIO;
+import javax.swing.JOptionPane;
 import javax.swing.JPopupMenu;
 
 import com.j256.simplemagic.ContentType;
@@ -38,17 +36,17 @@ import com.j256.simplemagic.ContentType;
 import chav1961.purelib.basic.PureLibSettings;
 import chav1961.purelib.basic.exceptions.LocalizationException;
 import chav1961.purelib.basic.interfaces.LoggerFacade;
+import chav1961.purelib.basic.interfaces.LoggerFacade.Severity;
 import chav1961.purelib.basic.interfaces.LoggerFacadeOwner;
 import chav1961.purelib.basic.interfaces.ModuleAccessor;
-import chav1961.purelib.basic.interfaces.LoggerFacade.Severity;
 import chav1961.purelib.i18n.interfaces.Localizer;
 import chav1961.purelib.i18n.interfaces.SupportedLanguages;
 import chav1961.purelib.model.ContentModelFactory;
 import chav1961.purelib.model.interfaces.ContentMetadataInterface;
-import chav1961.purelib.ui.interfaces.Action;
 import chav1961.purelib.ui.swing.SwingUtils;
 import chav1961.purelib.ui.swing.interfaces.OnAction;
 import chav1961.purelib.ui.swing.useful.JBackgroundComponent;
+import chav1961.purelib.ui.swing.useful.JEnableMaskManipulator;
 import chav1961.purelib.ui.swing.useful.SelectionFrameManager;
 import chav1961.purelib.ui.swing.useful.interfaces.SelectionFrameListener;
 import chav1961.purelib.ui.swing.useful.interfaces.SelectionFrameListener.SelectionStyle;
@@ -56,19 +54,37 @@ import net.sourceforge.tess4j.Tesseract;
 import net.sourceforge.tess4j.TesseractException;
 
 public class OCRWindow extends JBackgroundComponent implements LoggerFacadeOwner, ModuleAccessor {
-	private static final long 	serialVersionUID = 7077660700358390745L;
-	private static final URI	LOCALIZER_URI = URI.create("root://"+OCRWindow.class.getCanonicalName()+"/chav1961/bt/ocr/i18n/i18n.xml");
-	private static final String	KEY_MESSAGE_OCR_FAILED = "";
+	private static final long 		serialVersionUID = 7077660700358390745L;
+	private static final URI		LOCALIZER_URI = URI.create("i18n:xml:root://"+OCRWindow.class.getCanonicalName()+"/chav1961/bt/ocr/i18n/i18n.xml");
+	private static final String		KEY_MESSAGE_OCR_FAILED = "";
 	
-	private final Tesseract				tesseract = new Tesseract();
-	private final Localizer				localizer;
-	private final LoggerFacade			logger;
-	private final boolean				listenClipboard;
-	private final JPopupMenu			popup;
-	private final SelectionFrameManager	sfm = new SelectionFrameManager(this, true);
-	private final Clipboard				cb = Toolkit.getDefaultToolkit().getSystemClipboard();
-	private SupportedLanguages			selectedLang = null;
-	private Rectangle					selectedArea = null;
+	private static final String		MENU_POPUP_PASTE = "menu.popup.paste";
+	private static final String		MENU_POPUP_PARSE_IMAGE = "menu.popup.parse.asImage";
+	private static final String		MENU_POPUP_PARSE_TEXT = "menu.popup.parse.asText";
+	private static final String		MENU_POPUP_LANG_CURRENT= "menu.popup.parse.lang.current";
+	
+	private static final String[]	MENUS = {
+										MENU_POPUP_PASTE,
+										MENU_POPUP_PARSE_IMAGE,
+										MENU_POPUP_PARSE_TEXT,
+										MENU_POPUP_LANG_CURRENT
+									};	
+	private static final long 		PASTE_MASK = 1L << 0;
+	private static final long		PARSE_IMAGE_MASK = 1L << 1;
+	private static final long		PARSE_TEXT_MASK = 1L << 2;
+	private static final long		LANG_CURRENT = 1L << 3;
+	private static final long		PARSE_MASK = PARSE_IMAGE_MASK | PARSE_TEXT_MASK;
+	
+	private final Tesseract					tesseract = new Tesseract();
+	private final Localizer					localizer;
+	private final LoggerFacade				logger;
+	private final boolean					listenClipboard;
+	private final JEnableMaskManipulator	emm;
+	private final JPopupMenu				popup;
+	private final SelectionFrameManager		sfm = new SelectionFrameManager(this, true);
+	private final Clipboard					cb = Toolkit.getDefaultToolkit().getSystemClipboard();
+	private SupportedLanguages				selectedLang = null;
+	private Rectangle						selectedArea = null;
 	
 	public OCRWindow(final Localizer localizer, final LoggerFacade logger, final boolean listenClipboard) {
 		super(localizer);
@@ -85,9 +101,13 @@ public class OCRWindow extends JBackgroundComponent implements LoggerFacadeOwner
 			this.logger = logger;
 			this.listenClipboard = listenClipboard;
 			this.popup = SwingUtils.toJComponent(mdi.byUIPath(URI.create("ui:/model/navigation.top.popupmenu")), JPopupMenu.class);
+			this.emm = new JEnableMaskManipulator(MENUS, popup);
 
 	        SwingUtils.assignActionListeners(this.popup, this);
+			SwingUtils.assignActionKey(this, SwingUtils.KS_PASTE, (e)->paste(), SwingUtils.ACTION_PASTE);
 
+			emm.setEnableMaskOn(LANG_CURRENT);
+			
 	        if (!localizer.containsLocalizerAnywhere(LOCALIZER_URI)) {
 				localizer.add(Localizer.Factory.newInstance(LOCALIZER_URI));
 			}
@@ -105,6 +125,7 @@ public class OCRWindow extends JBackgroundComponent implements LoggerFacadeOwner
 				@Override
 				public void mousePressed(MouseEvent e) {
 					if (e.getButton() == MouseEvent.BUTTON3) {
+						refreshMenu();
 						popup.show(OCRWindow.this, e.getX(), e.getY());
 					}
 				}
@@ -129,18 +150,29 @@ public class OCRWindow extends JBackgroundComponent implements LoggerFacadeOwner
 			setFillMode(FillMode.ORIGINAL);
 			setBackgroundImage(new BufferedImage(1,1,BufferedImage.TYPE_INT_ARGB));
 			sfm.setSelectionStyle(SelectionStyle.RECTANGLE);
-			sfm.addSelectionFrameListener((style, start, end, parameters)->
-				selectedArea = new Rectangle(Math.min(start.x, end.x), Math.min(start.y, end.y), Math.abs(end.x - start.x), Math.abs(end.y - start.y))
-			);
+			sfm.addSelectionFrameListener(new SelectionFrameListener() {
+				@Override
+				public void selectionCompleted(final SelectionStyle style, final Point start, final Point end, final Object... parameters) {
+					selectedArea = new Rectangle(Math.min(start.x, end.x), Math.min(start.y, end.y), Math.abs(end.x - start.x), Math.abs(end.y - start.y));
+					refreshMenu();
+				}
+				
+				@Override
+				public void selectionCancelled(final SelectionStyle style, final Point start, final Point end, final Object... parameters) {
+					selectedArea = null;
+					refreshMenu();
+				}
+			});
 		}
 	}
 
 	protected void processAsText(final String text) {
+		System.err.println("TEXT="+text);
 		
 	}
 	
 	protected void processAsImage(final Image image) {
-		
+		System.err.println("IMAGE="+image.getWidth(null)+"x"+image.getHeight(null));
 	}
 
 	@Override
@@ -156,8 +188,11 @@ public class OCRWindow extends JBackgroundComponent implements LoggerFacadeOwner
 	}
 
 	@Override
-	public void setBackgroundImage(Image image) throws NullPointerException {
+	public void setBackgroundImage(final Image image) throws NullPointerException {
 		super.setBackgroundImage(image);
+		sfm.enableSelection(true);
+		sfm.resetCurrentSelection();
+		refreshMenu();
 	}
 	
 	@Override
@@ -188,32 +223,63 @@ public class OCRWindow extends JBackgroundComponent implements LoggerFacadeOwner
 		}
 	}
 
-	@OnAction("action:/processAsText")
+	@OnAction("action:/paste")
+	private void paste() {
+		try {
+			if (cb.isDataFlavorAvailable(DataFlavor.imageFlavor)) {
+				setBackgroundImage((Image)cb.getData(DataFlavor.imageFlavor));
+			}
+		} catch (IOException | UnsupportedFlavorException e) {
+			getLogger().message(Severity.warning, e.getLocalizedMessage());
+		}
+	}
+	
+	@OnAction("action:/parseAsText")
 	private void processAsText() {
 		try {
 			processAsText(processOCR(extractImage(), selectedLang != null ? selectedLang : SupportedLanguages.of(getLocale())));
 		} catch (IOException e) {
 			getLogger().message(Severity.warning, e.getLocalizedMessage());
+		} finally {
+			sfm.enableSelection(true);
+			sfm.resetCurrentSelection();
 		}
 	}
 
-	@OnAction("action:/processAsImage")
+	@OnAction("action:/parseAsImage")
 	private void processAsImage() {
-		processAsImage(extractImage());
+		try {
+			processAsImage(extractImage());
+		} finally {
+			sfm.enableSelection(true);
+			sfm.resetCurrentSelection();
+		}
+	}
+
+	@OnAction("action:/selectCurrentLang")
+	private void clearLanguage(final Hashtable<String,String[]> modes) {
+		selectedLang = null;
+		refreshMenu();
 	}
 	
 	@OnAction("action:builtin:/builtin.languages")
     private void language(final Hashtable<String,String[]> langs) throws LocalizationException {
 		selectedLang = SupportedLanguages.valueOf(langs.get("lang")[0]);
+		refreshMenu();
 	}	
 	
-	@OnAction("action:/clearLanguage")
-	private void clearLanguage() {
-		selectedLang = null;
-	}
-	
 	private BufferedImage extractImage() {
-        return ((BufferedImage)getBackgroundImage()).getSubimage(selectedArea.x, selectedArea.y, selectedArea.width, selectedArea.height);            
+		final BufferedImage	image = (BufferedImage)getBackgroundImage();
+		final Rectangle		rect = new Rectangle(0, 0, image.getWidth(), image.getHeight());
+		
+		if (rect.intersects(selectedArea)) {
+			final Rectangle		clipped = rect.intersection(selectedArea);
+			
+	        return image.getSubimage(clipped.x, clipped.y, clipped.width, clipped.height);            
+		}
+		else {
+			return image;
+		}
 	}
 	
 	private String processOCR(final BufferedImage image, final SupportedLanguages lang) throws IOException {
@@ -244,7 +310,6 @@ public class OCRWindow extends JBackgroundComponent implements LoggerFacadeOwner
 		}
 	}
 	
-	
 	private void listenClipboard(final FlavorEvent event) {
 		if (cb.isDataFlavorAvailable(DataFlavor.imageFlavor)) {
 			try {
@@ -253,5 +318,18 @@ public class OCRWindow extends JBackgroundComponent implements LoggerFacadeOwner
 				getLogger().message(Severity.warning, exc.getLocalizedMessage());
 			}
 		}
+	}
+
+	private void refreshMenu() {
+		emm.setEnableMaskTo(PASTE_MASK, cb.isDataFlavorAvailable(DataFlavor.imageFlavor));
+		emm.setEnableMaskTo(PARSE_MASK, sfm.hasSelectionNow());
+		emm.setCheckMaskTo(LANG_CURRENT, selectedLang == null);
+	}
+	
+	public static void main(final String[] args) {
+		final OCRWindow	w = new OCRWindow(PureLibSettings.PURELIB_LOCALIZER, PureLibSettings.CURRENT_LOGGER, true);
+		
+		w.setPreferredSize(new Dimension(640,480));
+		JOptionPane.showMessageDialog(null, w);
 	}
 }
