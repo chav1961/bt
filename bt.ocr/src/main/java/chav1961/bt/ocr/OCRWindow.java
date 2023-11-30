@@ -50,6 +50,7 @@ import chav1961.purelib.ui.swing.useful.JEnableMaskManipulator;
 import chav1961.purelib.ui.swing.useful.SelectionFrameManager;
 import chav1961.purelib.ui.swing.useful.interfaces.SelectionFrameListener;
 import chav1961.purelib.ui.swing.useful.interfaces.SelectionFrameListener.SelectionStyle;
+import net.sourceforge.tess4j.ITessAPI;
 import net.sourceforge.tess4j.Tesseract;
 import net.sourceforge.tess4j.TesseractException;
 
@@ -76,6 +77,7 @@ public class OCRWindow extends JBackgroundComponent implements LoggerFacadeOwner
 	private static final long		PARSE_MASK = PARSE_IMAGE_MASK | PARSE_TEXT_MASK;
 	
 	private final Tesseract					tesseract = new Tesseract();
+	private final File						tesseractDir;
 	private final Localizer					localizer;
 	private final LoggerFacade				logger;
 	private final boolean					listenClipboard;
@@ -86,7 +88,7 @@ public class OCRWindow extends JBackgroundComponent implements LoggerFacadeOwner
 	private SupportedLanguages				selectedLang = null;
 	private Rectangle						selectedArea = null;
 	
-	public OCRWindow(final Localizer localizer, final LoggerFacade logger, final boolean listenClipboard) {
+	public OCRWindow(final Localizer localizer, final LoggerFacade logger, final File tesseractDir, final boolean listenClipboard) {
 		super(localizer);
 		if (localizer == null) {
 			throw new NullPointerException("Localizer can't be null");
@@ -94,11 +96,15 @@ public class OCRWindow extends JBackgroundComponent implements LoggerFacadeOwner
 		else if (logger == null) {
 			throw new NullPointerException("Logger facade can't be null");
 		}
+		else if (tesseractDir == null || !tesseractDir.isDirectory() || !tesseractDir.canRead()) {
+			throw new IllegalArgumentException("Tesseract directory ["+tesseractDir+"] is null, is not a directory or is not accessible for you");
+		}
 		else {
 			final ContentMetadataInterface	mdi = ContentModelFactory.forXmlDescription(getClass().getResourceAsStream("application.xml"));
 			
 			this.localizer = localizer;
 			this.logger = logger;
+			this.tesseractDir = tesseractDir;
 			this.listenClipboard = listenClipboard;
 			this.popup = SwingUtils.toJComponent(mdi.byUIPath(URI.create("ui:/model/navigation.top.popupmenu")), JPopupMenu.class);
 			this.emm = new JEnableMaskManipulator(MENUS, popup);
@@ -286,7 +292,7 @@ public class OCRWindow extends JBackgroundComponent implements LoggerFacadeOwner
 		final Cursor		oldCursor = getCursor();
 		
 		try{
-			tesseract.setDatapath("d:/tesseract/tessdata");
+			tesseract.setDatapath(tesseractDir.getAbsolutePath());
 			switch (lang) {
 				case en	:
 					tesseract.setLanguage("eng");
@@ -298,8 +304,8 @@ public class OCRWindow extends JBackgroundComponent implements LoggerFacadeOwner
 					throw new UnsupportedOperationException("Language ["+lang+"] is not supported yet");
 			
 			}
-			tesseract.setPageSegMode(1);
-			tesseract.setOcrEngineMode(1);			
+			tesseract.setPageSegMode(ITessAPI.TessPageSegMode.PSM_AUTO_OSD);
+			tesseract.setOcrEngineMode(ITessAPI.TessOcrEngineMode.OEM_LSTM_ONLY);			
 			setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
 			return tesseract.doOCR(image);
 		} catch (TesseractException e) {
@@ -327,7 +333,7 @@ public class OCRWindow extends JBackgroundComponent implements LoggerFacadeOwner
 	}
 	
 	public static void main(final String[] args) {
-		final OCRWindow	w = new OCRWindow(PureLibSettings.PURELIB_LOCALIZER, PureLibSettings.CURRENT_LOGGER, true);
+		final OCRWindow	w = new OCRWindow(PureLibSettings.PURELIB_LOCALIZER, PureLibSettings.CURRENT_LOGGER, new File("d:/tesseract/tessdata"), true);
 		
 		w.setPreferredSize(new Dimension(640,480));
 		JOptionPane.showMessageDialog(null, w);
