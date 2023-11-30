@@ -243,7 +243,7 @@ public class OCRWindow extends JBackgroundComponent implements LoggerFacadeOwner
 	@OnAction("action:/parseAsText")
 	private void processAsText() {
 		try {
-			processAsText(processOCR(extractImage(), selectedLang != null ? selectedLang : SupportedLanguages.of(getLocale())));
+			processAsText(processOCR(extractImage(), selectedLang != null ? selectedLang : SupportedLanguages.of(getInputContext().getLocale())));
 		} catch (IOException e) {
 			getLogger().message(Severity.warning, e.getLocalizedMessage());
 		} finally {
