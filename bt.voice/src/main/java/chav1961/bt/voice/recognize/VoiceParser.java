@@ -16,6 +16,7 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
+import java.util.function.Supplier;
 
 import javax.swing.Icon;
 import javax.swing.ImageIcon;
@@ -46,19 +47,24 @@ public class VoiceParser implements ListenableExecutionControl, Closeable {
 	private final LightWeightListenerList<ExecutionControlListener> 				listeners = new LightWeightListenerList<>(ExecutionControlListener.class);
 	private final BlockingQueue<ExecutionControlEvent.ExecutionControlEventType>	queue = new ArrayBlockingQueue<>(10);
 	private final JsonSerializer<JsonContent> 										serializer = JsonSerializer.buildSerializer(JsonContent.class);  
-	private final Thread					t = new Thread(()->listen());
-	private final Consumer<String> 			callback;
-	private final int 						sampleRate;
-	private final AtomicBoolean				started = new AtomicBoolean(false);
-	private final AtomicBoolean				suspended = new AtomicBoolean(false);
-	private final int 						options;
-	private volatile SupportedLanguages		currentLang = SupportedLanguages.getDefaultLanguage();
+	private final Thread						t = new Thread(()->listen());
+	private final Consumer<String> 				callback;
+	private final int 							sampleRate;
+	private final AtomicBoolean					started = new AtomicBoolean(false);
+	private final AtomicBoolean					suspended = new AtomicBoolean(false);
+	private final int 							options;
+	private final Supplier<SupportedLanguages>	currentLangCallback;
+	private volatile SupportedLanguages			currentLang = null;
 
 	public VoiceParser(final Consumer<String> callback) {
 		this(callback, DEFAULT_SAMPLE_RATE, OPT_PASS_INTERMEDIATE);
 	}	
-	
+
 	public VoiceParser(final Consumer<String> callback, final int sampleRate, final int options) {
+		this(callback, sampleRate, ()->SupportedLanguages.getDefaultLanguage(), options);
+	}
+	
+	public VoiceParser(final Consumer<String> callback, final int sampleRate, final Supplier<SupportedLanguages> currentLangCallback, final int options) {
 		if (callback == null) {
 			throw new NullPointerException("Voice parser callback can't be null"); 
 		}
@@ -68,10 +74,14 @@ public class VoiceParser implements ListenableExecutionControl, Closeable {
 		else if (!isMicrophoneExists(sampleRate)) {
 			throw new IllegalStateException("Microphone is missing in your system"); 
 		}
+		else if (currentLangCallback == null) {
+			throw new NullPointerException("Current language callback can't be null"); 
+		}
 		else {
 			this.callback = callback;
 			this.sampleRate = sampleRate;
 			this.options = options;
+			this.currentLangCallback = currentLangCallback;
 					
 			t.setName("Voice parser");
 			t.setDaemon(true);
@@ -104,6 +114,10 @@ public class VoiceParser implements ListenableExecutionControl, Closeable {
 		else {
 			this.currentLang = lang;
 		}
+	}
+
+	public void resetPreferredLang() {
+		this.currentLang = null;
 	}
 	
 	public SupportedLanguages getPreferredLang() {
@@ -287,6 +301,17 @@ public class VoiceParser implements ListenableExecutionControl, Closeable {
 		return ICON_MICROPHONE_16;
 	}
 	
+	protected SupportedLanguages calcPreferredLang() {
+		final SupportedLanguages	current = getPreferredLang();
+		
+		if (current == null) {
+			return currentLangCallback.get(); 
+		}
+		else {
+			return current;
+		}
+	}
+	
 	private void listen() {
 		try {
 	        final byte[] b = new byte[4096];
@@ -296,7 +321,7 @@ loop:		for (;;) {
 				
 				switch (action) {
 					case STARTED : case RESUMED	:
-						final Model	m = models.get(getPreferredLang());
+						final Model	m = models.get(calcPreferredLang());
 						
 						if (m != null) {
 				        	try(final Recognizer	recognizer = new Recognizer(m, sampleRate);

@@ -5,4 +5,7 @@ module chav1961.bt.voice {
 	requires java.datatransfer;
 	requires transitive vosk;
 	requires com.sun.jna;
+	
+	exports chav1961.bt.voice.play; 
+	exports chav1961.bt.voice.recognize; 
 }
