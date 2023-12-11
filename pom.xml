@@ -44,5 +44,6 @@
   	<module>bt.voice</module>
   	<module>bt.installer</module>
   	<module>bt.ocr</module>
+  	<module>bt.jj</module>
   </modules>
 </project>
