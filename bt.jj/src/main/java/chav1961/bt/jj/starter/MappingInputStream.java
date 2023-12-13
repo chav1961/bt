@@ -22,7 +22,7 @@ public class MappingInputStream extends InputStream {
 			return -1;
 		}
 		else {
-			return (byte)JJ.unname1(currentAddress++);
+			return (byte)JJ.load1(currentAddress++);
 		}
 	}
 	
