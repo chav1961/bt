@@ -14,21 +14,24 @@ class ClassDefinitionLoader {
 	static final int	MAGIC = 0xCAFEBABE;
 	static final JavaClassVersion	CURRENT_VERSION = new JavaClassVersion(65,0);
 	
-	static final byte	CONSTANT_Class = 7;
-	static final byte	CONSTANT_Fieldref = 9;
-	static final byte	CONSTANT_Methodref = 10;
-	static final byte	CONSTANT_InterfaceMethodref = 11;
-	static final byte	CONSTANT_String = 8;
+	static final byte	CONSTANT_Utf8 = 1;
 	static final byte	CONSTANT_Integer = 3;
 	static final byte	CONSTANT_Float = 4;
 	static final byte	CONSTANT_Long = 5;
 	static final byte	CONSTANT_Double = 6;
+	static final byte	CONSTANT_Class = 7;
+	static final byte	CONSTANT_String = 8;
+	static final byte	CONSTANT_Fieldref = 9;
+	static final byte	CONSTANT_Methodref = 10;
+	static final byte	CONSTANT_InterfaceMethodref = 11;
 	static final byte	CONSTANT_NameAndType = 12;
-	static final byte	CONSTANT_Utf8 = 1;
 	static final byte	CONSTANT_MethodHandle = 15;
 	static final byte	CONSTANT_MethodType = 16;
+	static final byte	CONSTANT_Dynamic = 17;
 	static final byte	CONSTANT_InvokeDynamic = 18;
-
+	static final byte	CONSTANT_Module = 19;
+	static final byte	CONSTANT_Package = 20;
+	
 	static final byte	CONSTANT_RESOLVED_Class = 32 + 7;
 	static final byte	CONSTANT_RESOLVED_Fieldref = 32 + 9;
 	static final byte	CONSTANT_RESOLVED_Methodref = 32 + 10;
@@ -71,6 +74,9 @@ class ClassDefinitionLoader {
 				
 				for (int index = 1/* NOT 0 !!!*/, maxIndex = pool.length; index < maxIndex; index++) {
 					pool[index] = readConstantPoolItem(rdr, index);
+					if (pool[index].itemType == CONSTANT_Long || pool[index].itemType == CONSTANT_Double) {
+						index++;
+					}
 				}
 				final int	accessFlag = rdr.readU2();
 				final int	thisClass = rdr.readU2();
@@ -141,13 +147,19 @@ class ClassDefinitionLoader {
 			case CONSTANT_Utf8					:
 				return new ConstantPoolItem(JavaByteCodeConstants.CONSTANT_Utf8, 0, 0, 0, rdr.readUTF()); 
 			case CONSTANT_MethodHandle			:
-				return new ConstantPoolItem(JavaByteCodeConstants.CONSTANT_MethodHandle, rdr.readU2(), rdr.readU2(), 0, null); 
+				return new ConstantPoolItem(JavaByteCodeConstants.CONSTANT_MethodHandle, rdr.read(), rdr.readU2(), 0, null); 
 			case CONSTANT_MethodType			:
 				return new ConstantPoolItem(JavaByteCodeConstants.CONSTANT_MethodType, rdr.readU2(), 0, 0, null); 
+			case CONSTANT_Dynamic				:
+				return new ConstantPoolItem(JavaByteCodeConstants.CONSTANT_InvokeDynamic, rdr.readU2(), rdr.readU2(), 0, null); 
 			case CONSTANT_InvokeDynamic			:
 				return new ConstantPoolItem(JavaByteCodeConstants.CONSTANT_InvokeDynamic, rdr.readU2(), rdr.readU2(), 0, null); 
+			case CONSTANT_Module				:
+				return new ConstantPoolItem(JavaByteCodeConstants.CONSTANT_Module, rdr.readU2(), 0, 0, null); 
+			case CONSTANT_Package				:
+				return new ConstantPoolItem(JavaByteCodeConstants.CONSTANT_Package, rdr.readU2(), 0, 0, null); 
 			default :
-				throw new VerifyError("Verification error - unsupported constant pool item type ["+itemType+"] at index ["+index+"]");
+				throw new VerifyError("Verification error - unsupported constant pool item type ["+itemType+"] at index ["+index+"], file displ=0x"+Integer.toHexString(rdr.getFP()));
 		}
 	}
 

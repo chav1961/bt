@@ -22,7 +22,7 @@ class ByteArrayReader {
 	}
 
 	public long readU8() {
-		return 0L | (content[displ++] << 56) & 0xFF0000000000L | (content[displ++] << 48) & 0xFF0000000000L | (content[displ++] << 40) & 0xFF0000000000L | (content[displ++] << 40) & 0xFF0000000000L | (content[displ++] << 32) & 0xFF00000000L | (content[displ++] << 24) & 0xFF000000 | (content[displ++] << 16) & 0xFF0000 | (content[displ++] << 8) & 0xFF00 | (content[displ++] & 0xFF);
+		return 0L | (content[displ++] << 56) & 0xFF0000000000L | (content[displ++] << 48) & 0xFF0000000000L | (content[displ++] << 40) & 0xFF0000000000L | (content[displ++] << 32) & 0xFF00000000L | (content[displ++] << 24) & 0xFF000000 | (content[displ++] << 16) & 0xFF0000 | (content[displ++] << 8) & 0xFF00 | (content[displ++] & 0xFF);
 	}
 	
 	public int read(byte[] buffer) {
@@ -68,4 +68,15 @@ class ByteArrayReader {
 		displ += length;
 		return result;
 	}
+	
+	public int getFP() {
+		return displ;
+	}
+
+	@Override
+	public String toString() {
+		return "ByteArrayReader [displ=0x" + Integer.toHexString(displ) + ", byte=0x" + Integer.toHexString(content[displ] & 0xFF)+ "]";
+	}
+	
+	
 }

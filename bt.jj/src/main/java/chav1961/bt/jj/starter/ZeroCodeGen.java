@@ -66,18 +66,18 @@ public abstract class ZeroCodeGen {
 		this.cp = cp;
 	}
 
-	protected abstract int makePrefix(final byte[] generated, final int where, final int localSize);
+	protected abstract int makePrefix(final byte[] generated, int where, final int localSize);
 	protected abstract int loadImmediate(final byte[] generated, int where, final long value, final String type);
-	protected abstract int loadImmediateF(final byte[] generated, final int where, final double value, final String type);
-	protected abstract int loadLocal(final byte[] generated, final int genPointer, final int argument, final String type);
-	protected abstract int storeLocal(final byte[] generated, final int genPointer, final int argument, final String type);
-	protected abstract int loadLocalA(final byte[] generated, final int genPointer, final int argument, final String type);
-	protected abstract int storeLocalA(final byte[] generated, final int genPointer, final int argument, String type);
-	protected abstract int loadLocalF(final byte[] generated, final int genPointer, final int argument, final String type);
-	protected abstract int storeLocalF(final byte[] generated, final int genPointer, final int argument, final String type);
-	protected abstract int loadLocalAF(final byte[] generated, final int genPointer, final int argument, final String type);
-	protected abstract int storeLocalAF(final byte[] generated, final int genPointer, final int argument, String type);
-	protected abstract int stack(final byte[] generated, final int genPointer, final int action);
+	protected abstract int loadImmediateF(final byte[] generated, int where, final double value, final String type);
+	protected abstract int loadLocal(final byte[] generated, final int where, final int argument, final String type);
+	protected abstract int storeLocal(final byte[] generated, final int where, final int argument, final String type);
+	protected abstract int loadLocalA(final byte[] generated, final int where, final int argument, final String type);
+	protected abstract int storeLocalA(final byte[] generated, final int where, final int argument, String type);
+	protected abstract int loadLocalF(final byte[] generated, final int where, final int argument, final String type);
+	protected abstract int storeLocalF(final byte[] generated, final int where, final int argument, final String type);
+	protected abstract int loadLocalAF(final byte[] generated, final int where, final int argument, final String type);
+	protected abstract int storeLocalAF(final byte[] generated, final int where, final int argument, String type);
+	protected abstract int stack(final byte[] generated, final int where, final int action);
 	protected abstract int infix(final byte[] generated, final int where, final String type, final char oper);
 	protected abstract int prefix(final byte[] generated, final int where, final String type);
 	protected abstract int increment(final byte[] generated, final int where, final int argument, final String type, final int value);

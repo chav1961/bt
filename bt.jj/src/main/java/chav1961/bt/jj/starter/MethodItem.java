@@ -1,5 +1,6 @@
 package chav1961.bt.jj.starter;
 
+import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.Arrays;
 
@@ -36,7 +37,10 @@ class MethodItem {
 	public ConstantPoolItem prepareMethod() {
 		return new ConstantPoolItem(accessFlags, methodName, methodDesc, accessFlags, null);
 	}
-	
+
+	public Method getMethodInstance() {
+		return null;
+	}
 	
 	@Override
 	public String toString() {

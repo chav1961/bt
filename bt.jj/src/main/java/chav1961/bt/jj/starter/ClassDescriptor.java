@@ -4,7 +4,7 @@ import java.lang.reflect.Modifier;
 
 import chav1961.purelib.cdb.JavaClassVersion;
 
-class ClassDescriptor {
+public class ClassDescriptor {
 	private final ConstantPoolItem[]	pool;
 	private final JavaClassVersion	version;
 	private final int				accessFlags;
@@ -16,6 +16,7 @@ class ClassDescriptor {
 	private final AttributeItem[]	attributes;
 	private final int				classDescSize;
 	private final int				instanceDescSize;
+	private long					staticPart = -1;
 	
 	ClassDescriptor(final ConstantPoolItem[] pool, final JavaClassVersion version, final int accessFlags, final int thisClass, final int superClass, final InterfaceItem[] interfaces, final FieldItem[] fields, final MethodItem[] methods, final AttributeItem[] attributes) {
 		this.pool = pool;
@@ -139,7 +140,7 @@ class ClassDescriptor {
 		this.classDescSize = staticByteDispl;
 		this.instanceDescSize = instanceByteDispl;
 	}
-
+	
 	public ConstantPoolItem[] getConstantPool() {
 		return pool;
 	}
@@ -182,6 +183,10 @@ class ClassDescriptor {
 
 	public AttributeItem[] getAttributes() {
 		return attributes;
+	}
+	
+	public Class<?> getClassInstance() {
+		return null;
 	}
 
 	@Override

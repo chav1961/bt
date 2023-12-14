@@ -1,5 +1,6 @@
 package chav1961.bt.jj.starter;
 
+import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.util.Arrays;
 
@@ -20,6 +21,11 @@ class FieldItem {
 		this.accessFlags = accessFlags;
 		this.pool = pool;
 		this.attrs = attrs;
+	}
+	
+	
+	public Field getFieldInstance() {
+		return null;
 	}
 
 	@Override
