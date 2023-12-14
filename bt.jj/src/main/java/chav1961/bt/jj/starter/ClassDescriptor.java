@@ -140,7 +140,37 @@ public class ClassDescriptor {
 		this.classDescSize = staticByteDispl;
 		this.instanceDescSize = instanceByteDispl;
 	}
+
+	public void validateClassContent() {
+		for(int index = 1; index < pool.length; index++) {
+			if (pool[index] == null) {
+				throw new VerifyError("Constant pool entry at index ["+index+"] is null");
+			}
+			else {
+				validateConstantPool(pool[index]);
+				
+				if (pool[index].itemType == ClassDefinitionLoader.CONSTANT_Long || pool[index].itemType == ClassDefinitionLoader.CONSTANT_Double) {
+					index++;
+				}
+			}
+		}
+		if (!isReferenceValid(thisClass, ClassDefinitionLoader.CONSTANT_Class)) {
+			throw new VerifyError("Illegal 'this' class reference: constant pool entity [" + thisClass + "] out of range 1.."+pool.length+" or points to invalid entry");
+		}
+		if (superClass != 0 && !isReferenceValid(superClass, ClassDefinitionLoader.CONSTANT_Class)) {
+			throw new VerifyError("Illegal 'super' class reference: constant pool entity [" + superClass + "] out of range 1.."+pool.length+" or points to invalid entry");
+		}
+	}
 	
+	private boolean isReferenceValid(final int reference, final byte constantClass) { 
+		return false;
+	}
+
+	private void validateConstantPool(final ConstantPoolItem constantPoolItem) {
+		// TODO Auto-generated method stub
+		
+	}
+
 	public ConstantPoolItem[] getConstantPool() {
 		return pool;
 	}
