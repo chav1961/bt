@@ -78,15 +78,23 @@ class ClassDefinitionLoader {
 						index++;
 					}
 				}
+				
+				for (int index = 1/* NOT 0 !!!*/, maxIndex = pool.length; index < maxIndex; index++) {
+					verifyConstantPoolItem(index, pool);
+					if (pool[index].itemType == CONSTANT_Long || pool[index].itemType == CONSTANT_Double) {
+						index++;
+					}
+				}
+				
 				final int	accessFlag = rdr.readU2();
 				final int	thisClass = rdr.readU2();
 				final int	superClass = rdr.readU2();
 	
 				if (pool[thisClass].itemType != CONSTANT_Class) {
-					throw new VerifyError("Verification error - illegal constant pool entry for THIS CLASS item");
+					throw new VerifyError("Illegal constant pool entry for THIS CLASS item");
 				}
 				else if (superClass != 0 && pool[superClass].itemType != CONSTANT_Class) {
-					throw new VerifyError("Verification error - illegal constant pool entry for SUPER CLASS item");
+					throw new VerifyError("Illegal constant pool entry for SUPER CLASS item");
 				}
 				final InterfaceItem[]	interfaces = new InterfaceItem[rdr.readU2()];
 				
@@ -94,7 +102,7 @@ class ClassDefinitionLoader {
 					final int	interfaceRef = rdr.readU2();
 					
 					if (pool[interfaceRef].itemType != CONSTANT_Class) {
-						throw new VerifyError("Verification error - illegal constant pool entry for INTERFACE item at index ["+index+"]");
+						throw new VerifyError("Illegal constant pool entry for INTERFACE item at index ["+index+"]");
 					}
 					else {
 						interfaces[index] = new InterfaceItem(interfaceRef, pool);
@@ -118,6 +126,113 @@ class ClassDefinitionLoader {
 				return new ClassDescriptor(pool, version, accessFlag, thisClass, superClass, interfaces, fields, methods, attrs);
 			}
 		}
+	}
+
+	private static void verifyConstantPoolItem(final int index, final ConstantPoolItem[] pool) {
+		// TODO Auto-generated method stub
+		final ConstantPoolItem	item = pool[index];
+		
+		switch (item.itemType) {
+			case CONSTANT_Class					:
+				if (item.ref1 <= 0 || item.ref1 >= pool.length || pool[item.ref1] == null) {
+					throw new VerifyError("Constant pool entry for CLASS at index ["+index+"] refers to non-existent constant pool entry ["+item.ref1+"]");
+				}
+				else if (pool[item.ref1].itemType != CONSTANT_Utf8 || pool[item.ref1].content.length == 0) {
+					throw new VerifyError("Constant pool entry for CLASS at index ["+index+"] refers to constant pool entry ["+item.ref1+"], which is not an UTF8 entry or contaons empty string");
+				}
+				else if (!isValidClassSignature(pool[item.ref1].content)) {
+					throw new VerifyError("Constant pool entry for CLASS at index ["+index+"] refers to constant pool entry ["+item.ref1+"], contains invalid class signature ["+new String(pool[item.ref1].content)+"]");
+				}
+				break;
+			case CONSTANT_Fieldref				:
+				if (item.ref1 <= 0 || item.ref1 >= pool.length || pool[item.ref1] == null) {
+					throw new VerifyError("Constant pool entry for FIELD REF at index ["+index+"] refers to non-existent constant pool entry ["+item.ref1+"]");
+				}
+				else if (pool[item.ref1].itemType != CONSTANT_Class) {
+					throw new VerifyError("Constant pool entry for FIELD REF at index ["+index+"] refers to constant pool entry ["+item.ref1+"], which is not a CLASS entry");
+				}
+				else if (item.ref2 <= 0 || item.ref2 >= pool.length || pool[item.ref2] == null) {
+					throw new VerifyError("Constant pool entry for FIELD REF at index ["+index+"] refers to non-existent constant pool entry ["+item.ref2+"]");
+				}
+				else if (pool[item.ref2].itemType != CONSTANT_NameAndType) {
+					throw new VerifyError("Constant pool entry for FIELD REF at index ["+index+"] refers to constant pool entry ["+item.ref2+"], which is not a NAME AND TYPE entry");
+				}
+				break;
+			case CONSTANT_Methodref				:
+				if (item.ref1 <= 0 || item.ref1 >= pool.length || pool[item.ref1] == null) {
+					throw new VerifyError("Constant pool entry for METHOD REF at index ["+index+"] refers to non-existent constant pool entry ["+item.ref1+"]");
+				}
+				else if (pool[item.ref1].itemType != CONSTANT_Class) {
+					throw new VerifyError("Constant pool entry for METHOD REF at index ["+index+"] refers to constant pool entry ["+item.ref1+"], which is not a CLASS entry");
+				}
+				else if (item.ref2 <= 0 || item.ref2 >= pool.length || pool[item.ref2] == null) {
+					throw new VerifyError("Constant pool entry for METHOD REF at index ["+index+"] refers to non-existent constant pool entry ["+item.ref2+"]");
+				}
+				else if (pool[item.ref2].itemType != CONSTANT_NameAndType) {
+					throw new VerifyError("Constant pool entry for METHOD REF at index ["+index+"] refers to constant pool entry ["+item.ref2+"], which is not a NAME AND TYPE entry");
+				}
+				break;
+			case CONSTANT_InterfaceMethodref	:
+				if (item.ref1 <= 0 || item.ref1 >= pool.length || pool[item.ref1] == null) {
+					throw new VerifyError("Constant pool entry for INTERFACE METHOD REF at index ["+index+"] refers to non-existent constant pool entry ["+item.ref1+"]");
+				}
+				else if (pool[item.ref1].itemType != CONSTANT_Class) {
+					throw new VerifyError("Constant pool entry for INTERFACE METHOD REF at index ["+index+"] refers to constant pool entry ["+item.ref1+"], which is not a CLASS entry");
+				}
+				else if (item.ref2 <= 0 || item.ref2 >= pool.length || pool[item.ref2] == null) {
+					throw new VerifyError("Constant pool entry for INTERFACE METHOD REF at index ["+index+"] refers to non-existent constant pool entry ["+item.ref2+"]");
+				}
+				else if (pool[item.ref2].itemType != CONSTANT_NameAndType) {
+					throw new VerifyError("Constant pool entry for INTERFACE METHOD REF at index ["+index+"] refers to constant pool entry ["+item.ref2+"], which is not a NAME AND TYPE entry");
+				}
+				break;
+			case CONSTANT_String				:
+				if (item.ref1 <= 0 || item.ref1 >= pool.length || pool[item.ref1] == null) {
+					throw new VerifyError("Constant pool entry for STRING at index ["+index+"] refers to non-existent constant pool entry ["+item.ref1+"]");
+				}
+				else if (pool[item.ref1].itemType != CONSTANT_Utf8) {
+					throw new VerifyError("Constant pool entry for STRING at index ["+index+"] refers to constant pool entry ["+item.ref1+"], which is not an UTF8 entry");
+				}
+				break;
+			case CONSTANT_NameAndType			:
+				if (item.ref1 <= 0 || item.ref1 >= pool.length || pool[item.ref1] == null) {
+					throw new VerifyError("Constant pool entry for NAME AND TYPE at index ["+index+"] refers to non-existent constant pool entry ["+item.ref1+"]");
+				}
+				else if (pool[item.ref1].itemType != CONSTANT_Utf8 || pool[item.ref1].content.length == 0) {
+					throw new VerifyError("Constant pool entry for NAME AND TYPE at index ["+index+"] refers to constant pool entry ["+item.ref1+"], which is not an UTF8 entry or contants empty string");
+				}
+				else if (item.ref2 <= 0 || item.ref2 >= pool.length || pool[item.ref2] == null) {
+					throw new VerifyError("Constant pool entry for NAME AND TYPE at index ["+index+"] refers to non-existent constant pool entry ["+item.ref2+"]");
+				}
+				else if (pool[item.ref1].itemType != CONSTANT_Utf8 || pool[item.ref1].content.length == 0) {
+					throw new VerifyError("Constant pool entry for NAME AND TYPE at index ["+index+"] refers to constant pool entry ["+item.ref1+"], which is not an UTF8 entry");
+				}
+				else if (!isValidFieldSignature(pool[item.ref1].content) && !isValidMethodSignature(pool[item.ref1].content)) {
+					throw new VerifyError("Constant pool entry for CLASS at index ["+index+"] refers to constant pool entry ["+item.ref1+"], contains invalid field or method signature ["+new String(pool[item.ref1].content)+"]");
+				}
+				break;
+				
+			case CONSTANT_MethodHandle			:
+			case CONSTANT_MethodType			:
+			case CONSTANT_Dynamic				:
+			case CONSTANT_InvokeDynamic			:
+			case CONSTANT_Module				:
+			case CONSTANT_Package				:
+				
+			case CONSTANT_Integer				:
+			case CONSTANT_Float					:
+			case CONSTANT_Long					:
+			case CONSTANT_Double				:
+			case CONSTANT_Utf8					:
+				break;
+			default :
+				throw new VerifyError("Unsupported constant pool entry type ["+item.itemType+"] at index ["+index+"]");
+		}
+	}
+
+	private static boolean isValidClassSignature(char[] content) {
+		// TODO Auto-generated method stub
+		return false;
 	}
 
 	private static ConstantPoolItem readConstantPoolItem(final ByteArrayReader rdr, final int index) {
