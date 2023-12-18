@@ -3,6 +3,7 @@ package chav1961.bt.jj.starter;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -46,6 +47,10 @@ class ClassDefinitionLoader {
 	static final byte	CONSTANT_RESOLVED_MethodHandle = 32 + 15;
 	static final byte	CONSTANT_RESOLVED_MethodType = 32 + 16;
 	static final byte	CONSTANT_RESOLVED_InvokeDynamic = 32 + 18;
+	
+	static final char[]	VALID_CLINIT = {'<', 'c', 'l', 'i', 'n', 'i', 't', '>'};
+	static final char[]	VALID_INIT = {'<', 'i', 'n', 'i', 't', '>'};
+
 	
 	static final Set<String>	SUPPORTED_ATTRIBUTES = new HashSet<>();
 	
@@ -129,29 +134,28 @@ class ClassDefinitionLoader {
 	}
 
 	private static void verifyConstantPoolItem(final int index, final ConstantPoolItem[] pool) {
-		// TODO Auto-generated method stub
 		final ConstantPoolItem	item = pool[index];
 		
 		switch (item.itemType) {
 			case CONSTANT_Class					:
-				if (item.ref1 <= 0 || item.ref1 >= pool.length || pool[item.ref1] == null) {
+				if (!isValidReference(item.ref1, pool)) {
 					throw new VerifyError("Constant pool entry for CLASS at index ["+index+"] refers to non-existent constant pool entry ["+item.ref1+"]");
 				}
-				else if (pool[item.ref1].itemType != CONSTANT_Utf8 || pool[item.ref1].content.length == 0) {
-					throw new VerifyError("Constant pool entry for CLASS at index ["+index+"] refers to constant pool entry ["+item.ref1+"], which is not an UTF8 entry or contaons empty string");
+				else if (!isValidUTF8Reference(item.ref1, false, pool)) {
+					throw new VerifyError("Constant pool entry for CLASS at index ["+index+"] refers to constant pool entry ["+item.ref1+"], which is not an UTF8 entry or contains zero length string");
 				}
-				else if (!isValidClassSignature(pool[item.ref1].content)) {
+				else if (!isValidClassSignature(pool[item.ref1].content) && !isValidClassRefSignature(pool[item.ref1].content)) {
 					throw new VerifyError("Constant pool entry for CLASS at index ["+index+"] refers to constant pool entry ["+item.ref1+"], contains invalid class signature ["+new String(pool[item.ref1].content)+"]");
 				}
 				break;
 			case CONSTANT_Fieldref				:
-				if (item.ref1 <= 0 || item.ref1 >= pool.length || pool[item.ref1] == null) {
+				if (!isValidReference(item.ref1, pool)) {
 					throw new VerifyError("Constant pool entry for FIELD REF at index ["+index+"] refers to non-existent constant pool entry ["+item.ref1+"]");
 				}
 				else if (pool[item.ref1].itemType != CONSTANT_Class) {
-					throw new VerifyError("Constant pool entry for FIELD REF at index ["+index+"] refers to constant pool entry ["+item.ref1+"], which is not a CLASS entry");
+					throw new VerifyError("Constant pool entry for FIELD REF at index ["+index+"] refers to constant pool entry ["+item.ref1+"], which is not a class descriptor");
 				}
-				else if (item.ref2 <= 0 || item.ref2 >= pool.length || pool[item.ref2] == null) {
+				else if (!isValidReference(item.ref2, pool)) {
 					throw new VerifyError("Constant pool entry for FIELD REF at index ["+index+"] refers to non-existent constant pool entry ["+item.ref2+"]");
 				}
 				else if (pool[item.ref2].itemType != CONSTANT_NameAndType) {
@@ -159,13 +163,13 @@ class ClassDefinitionLoader {
 				}
 				break;
 			case CONSTANT_Methodref				:
-				if (item.ref1 <= 0 || item.ref1 >= pool.length || pool[item.ref1] == null) {
+				if (!isValidReference(item.ref1, pool)) {
 					throw new VerifyError("Constant pool entry for METHOD REF at index ["+index+"] refers to non-existent constant pool entry ["+item.ref1+"]");
 				}
 				else if (pool[item.ref1].itemType != CONSTANT_Class) {
 					throw new VerifyError("Constant pool entry for METHOD REF at index ["+index+"] refers to constant pool entry ["+item.ref1+"], which is not a CLASS entry");
 				}
-				else if (item.ref2 <= 0 || item.ref2 >= pool.length || pool[item.ref2] == null) {
+				else if (!isValidReference(item.ref2, pool)) {
 					throw new VerifyError("Constant pool entry for METHOD REF at index ["+index+"] refers to non-existent constant pool entry ["+item.ref2+"]");
 				}
 				else if (pool[item.ref2].itemType != CONSTANT_NameAndType) {
@@ -173,13 +177,13 @@ class ClassDefinitionLoader {
 				}
 				break;
 			case CONSTANT_InterfaceMethodref	:
-				if (item.ref1 <= 0 || item.ref1 >= pool.length || pool[item.ref1] == null) {
+				if (!isValidReference(item.ref1, pool)) {
 					throw new VerifyError("Constant pool entry for INTERFACE METHOD REF at index ["+index+"] refers to non-existent constant pool entry ["+item.ref1+"]");
 				}
 				else if (pool[item.ref1].itemType != CONSTANT_Class) {
 					throw new VerifyError("Constant pool entry for INTERFACE METHOD REF at index ["+index+"] refers to constant pool entry ["+item.ref1+"], which is not a CLASS entry");
 				}
-				else if (item.ref2 <= 0 || item.ref2 >= pool.length || pool[item.ref2] == null) {
+				else if (!isValidReference(item.ref2, pool)) {
 					throw new VerifyError("Constant pool entry for INTERFACE METHOD REF at index ["+index+"] refers to non-existent constant pool entry ["+item.ref2+"]");
 				}
 				else if (pool[item.ref2].itemType != CONSTANT_NameAndType) {
@@ -187,28 +191,35 @@ class ClassDefinitionLoader {
 				}
 				break;
 			case CONSTANT_String				:
-				if (item.ref1 <= 0 || item.ref1 >= pool.length || pool[item.ref1] == null) {
+				if (!isValidReference(item.ref1, pool)) {
 					throw new VerifyError("Constant pool entry for STRING at index ["+index+"] refers to non-existent constant pool entry ["+item.ref1+"]");
 				}
-				else if (pool[item.ref1].itemType != CONSTANT_Utf8) {
+				else if (!isValidUTF8Reference(item.ref1, true, pool)) {
 					throw new VerifyError("Constant pool entry for STRING at index ["+index+"] refers to constant pool entry ["+item.ref1+"], which is not an UTF8 entry");
 				}
 				break;
 			case CONSTANT_NameAndType			:
-				if (item.ref1 <= 0 || item.ref1 >= pool.length || pool[item.ref1] == null) {
+				if (!isValidReference(item.ref1, pool)) {
 					throw new VerifyError("Constant pool entry for NAME AND TYPE at index ["+index+"] refers to non-existent constant pool entry ["+item.ref1+"]");
 				}
-				else if (pool[item.ref1].itemType != CONSTANT_Utf8 || pool[item.ref1].content.length == 0) {
-					throw new VerifyError("Constant pool entry for NAME AND TYPE at index ["+index+"] refers to constant pool entry ["+item.ref1+"], which is not an UTF8 entry or contants empty string");
+				else if (!isValidUTF8Reference(item.ref1, false, pool)) {
+					throw new VerifyError("Constant pool entry for NAME AND TYPE at index ["+index+"] refers to constant pool entry ["+item.ref1+"] for name, which is not an UTF8 entry or contants empty string");
 				}
-				else if (item.ref2 <= 0 || item.ref2 >= pool.length || pool[item.ref2] == null) {
+				else if (!isValidReference(item.ref2, pool)) {
 					throw new VerifyError("Constant pool entry for NAME AND TYPE at index ["+index+"] refers to non-existent constant pool entry ["+item.ref2+"]");
 				}
-				else if (pool[item.ref1].itemType != CONSTANT_Utf8 || pool[item.ref1].content.length == 0) {
-					throw new VerifyError("Constant pool entry for NAME AND TYPE at index ["+index+"] refers to constant pool entry ["+item.ref1+"], which is not an UTF8 entry");
+				else if (!isValidUTF8Reference(item.ref1, false, pool)) {
+					throw new VerifyError("Constant pool entry for NAME AND TYPE at index ["+index+"] refers to constant pool entry ["+item.ref1+"] for type, which is not an UTF8 entry");
 				}
-				else if (!isValidFieldSignature(pool[item.ref1].content) && !isValidMethodSignature(pool[item.ref1].content)) {
-					throw new VerifyError("Constant pool entry for CLASS at index ["+index+"] refers to constant pool entry ["+item.ref1+"], contains invalid field or method signature ["+new String(pool[item.ref1].content)+"]");
+				else if (!isValidName(pool[item.ref1].content)) {
+					throw new VerifyError("Constant pool entry for CLASS at index ["+index+"] refers to constant pool entry ["+item.ref1+"], contains invalid entity name");
+				}
+				else if (!isValidUTF8Reference(item.ref2, false, pool)) {
+					throw new VerifyError("Constant pool entry for CLASS at index ["+index+"] refers to constant pool entry ["+item.ref1+"] for type, which is not an UTF8 entry or contants empty string");
+				}
+				else if (!isValidClassRefSignature(pool[item.ref2].content) && !isValidMethodSignature(pool[item.ref2].content)) {
+					isValidMethodSignature(pool[item.ref2].content);
+					throw new VerifyError("Constant pool entry for CLASS at index ["+index+"] refers to constant pool entry ["+item.ref1+"], contains invalid field or method signature ["+new String(pool[item.ref2].content)+"]");
 				}
 				break;
 				
@@ -218,7 +229,7 @@ class ClassDefinitionLoader {
 			case CONSTANT_InvokeDynamic			:
 			case CONSTANT_Module				:
 			case CONSTANT_Package				:
-				
+				break;
 			case CONSTANT_Integer				:
 			case CONSTANT_Float					:
 			case CONSTANT_Long					:
@@ -228,11 +239,6 @@ class ClassDefinitionLoader {
 			default :
 				throw new VerifyError("Unsupported constant pool entry type ["+item.itemType+"] at index ["+index+"]");
 		}
-	}
-
-	private static boolean isValidClassSignature(char[] content) {
-		// TODO Auto-generated method stub
-		return false;
 	}
 
 	private static ConstantPoolItem readConstantPoolItem(final ByteArrayReader rdr, final int index) {
@@ -329,6 +335,199 @@ class ClassDefinitionLoader {
 		return new AttributeItem(name, content, pool);
 	}
 
+	private static boolean isValidReference(final int refIndex, final ConstantPoolItem[] cp) {
+		return !(refIndex <= 0 || refIndex >= cp.length || cp[refIndex] == null);
+	}
+
+	private static boolean isValidUTF8Reference(final int refIndex, final boolean zeroLengthIsValid, final ConstantPoolItem[] cp) {
+		if (isValidReference(refIndex, cp)) {
+			return cp[refIndex].itemType == CONSTANT_Utf8 && (zeroLengthIsValid || cp[refIndex].content.length > 0);
+		}
+		else {
+			return false;
+		}
+	}
+	
+	private static boolean isValidName(final char[] content) {
+		if (content.length == 0) {
+			return false;
+		}
+		else if (!Character.isJavaIdentifierStart(content[0])) {
+			if (Arrays.equals(content, VALID_CLINIT) || Arrays.equals(content, VALID_INIT)) {
+				return true;
+			}
+			else {
+				return false;
+			}
+		}
+		else {
+			for(int index = 1; index < content.length; index++) {
+				if (!Character.isJavaIdentifierPart(content[index])) {
+					return false;
+				}
+			}
+			return true;
+		}
+	}
+	
+	private static boolean isValidClassSignature(final char[] content) {
+		int	index = 0, maxIndex = content.length;
+		
+		while (index < maxIndex && content[index] == '[') {
+			index++;
+		}
+		while(index < maxIndex) {
+			if (Character.isJavaIdentifierStart(content[index])) {
+				while (index < maxIndex && Character.isJavaIdentifierPart(content[index])) {
+					index++;
+				}
+				if (index < maxIndex && content[index] == '/') {
+					index++;
+				}
+			}
+			else {
+				return false;
+			}
+		}
+		return index > 0 && content[index - 1] != '/';
+	}
+
+	private static boolean isValidClassRefSignature(final char[] content) {
+		int	index = 0, maxIndex = content.length;
+		
+		while (index < maxIndex && content[index] == '[') {
+			index++;
+		}
+		if (index < maxIndex) {
+			switch (content[index]) {
+				case 'B' : case 'C' : case 'D' : case 'F' : case 'I' : case 'J' : case 'S' : case 'V' : case 'Z' :
+					index++;
+					break;
+				case 'L' :
+					index++;
+					while(index < maxIndex) {
+						if (Character.isJavaIdentifierStart(content[index])) {
+							while (index < maxIndex && Character.isJavaIdentifierPart(content[index])) {
+								index++;
+							}
+							if (index < maxIndex && content[index] == ';') {
+								index++;
+								break;
+							}
+							if (index < maxIndex && content[index] == '/') {
+								index++;
+							}
+						}
+						else {
+							return false;
+						}
+					}
+					break;
+				default :
+					return false;
+			}
+			return index >= maxIndex;
+		}
+		else {
+			return false;
+		}
+	}
+	
+	private static boolean isValidMethodSignature(final char[] content) {
+		int	index = 0, maxIndex = content.length;
+
+		if (index < maxIndex && content[index] == '(') {
+			index++;
+			while (index < maxIndex && content[index] != ')') {
+				while (index < maxIndex && content[index] == '[') {
+					index++;
+				}
+				if (index < maxIndex) {
+					switch (content[index]) {
+						case 'B' : case 'C' : case 'D' : case 'F' : case 'I' : case 'J' : case 'S' : case 'Z' :
+							index++;
+							break;
+						case 'L' :
+							index++;
+							while(index < maxIndex) {
+								if (Character.isJavaIdentifierStart(content[index])) {
+									while (index < maxIndex && Character.isJavaIdentifierPart(content[index])) {
+										index++;
+									}
+									if (index < maxIndex && content[index] == ';') {
+										index++;
+										break;
+									}
+									if (index < maxIndex && content[index] == '/') {
+										index++;
+									}
+								}
+								else {
+									return false;
+								}
+							}
+							break;
+						default :
+							return false;
+					}
+				}
+				else {
+					return false;
+				}
+			}
+			if (index < maxIndex && content[index] == ')') {
+				index++;
+				if (index < maxIndex && content[index] == 'V') {
+					index++;
+				}
+				else {
+					while (index < maxIndex && content[index] == '[') {
+						index++;
+					}
+					if (index < maxIndex) {
+						switch (content[index]) {
+							case 'B' : case 'C' : case 'D' : case 'F' : case 'I' : case 'J' : case 'S' : case 'Z' :
+								index++;
+								break;
+							case 'L' :
+								index++;
+								while(index < maxIndex) {
+									if (Character.isJavaIdentifierStart(content[index])) {
+										while (index < maxIndex && Character.isJavaIdentifierPart(content[index])) {
+											index++;
+										}
+										if (index < maxIndex && content[index] == ';') {
+											index++;
+											break;
+										}
+										if (index < maxIndex && content[index] == '/') {
+											index++;
+										}
+									}
+									else {
+										return false;
+									}
+								}
+								break;
+							default :
+								return false;
+						}
+					}
+					else {
+						return false;
+					}
+				}
+				return index >= maxIndex;
+			}
+			else {
+				return false;
+			}
+		}
+		else {
+			return false;
+		}
+	}
+
 	static String resolveDescriptor(final ConstantPoolItem[] pool, final int index) {
 		switch (pool[index].itemType) {
 			case CONSTANT_Class					:
@@ -359,7 +558,7 @@ class ClassDefinitionLoader {
 	}
 	
 	public static void main(final String[] args) throws IOException {
-		final ClassDescriptor	def = parse(new ByteArrayReader(Files.readAllBytes(new File("c:/tmp/MM.class").toPath()))); 
+		final ClassDescriptor	def = parse(new ByteArrayReader(Files.readAllBytes(new File("c:/tmp/Layer.class").toPath()))); 
 		
 		System.err.println(def);
 	}
