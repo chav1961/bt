@@ -14,7 +14,6 @@ class FieldItem {
 	
 	private final ConstantPoolItem[]	pool;
 	
-	
 	public FieldItem(final int fieldName, final int fieldDesc, final int accessFlags, final ConstantPoolItem[] pool, final AttributeItem... attrs) {
 		this.fieldName = fieldName;
 		this.fieldDesc = fieldDesc;
