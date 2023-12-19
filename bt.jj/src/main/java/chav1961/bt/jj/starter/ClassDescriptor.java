@@ -6,17 +6,16 @@ import chav1961.purelib.cdb.JavaClassVersion;
 
 public class ClassDescriptor {
 	private final ConstantPoolItem[]	pool;
-	private final JavaClassVersion	version;
-	private final int				accessFlags;
-	private final int				thisClass;
-	private final int				superClass;
-	private final InterfaceItem[]	interfaces;
-	private final FieldItem[]		fields;
-	private final MethodItem[]		methods;
-	private final AttributeItem[]	attributes;
-	private final int				classDescSize;
-	private final int				instanceDescSize;
-	private long					staticPart = -1;
+	private final JavaClassVersion		version;
+	private final int					accessFlags;
+	private final int					thisClass;
+	private final int					superClass;
+	private final InterfaceItem[]		interfaces;
+	private final FieldItem[]			fields;
+	private final MethodItem[]			methods;
+	private final AttributeItem[]		attributes;
+	private final int					staticPart;
+	private final int					instancePiecePart;
 	
 	ClassDescriptor(final ConstantPoolItem[] pool, final JavaClassVersion version, final int accessFlags, final int thisClass, final int superClass, final InterfaceItem[] interfaces, final FieldItem[] fields, final MethodItem[] methods, final AttributeItem[] attributes) {
 		this.pool = pool;
@@ -28,147 +27,8 @@ public class ClassDescriptor {
 		this.fields = fields;
 		this.methods = methods;
 		this.attributes = attributes;
-		
-		int staticLongCount = 0, staticIntCount = 0, staticShortCount = 0, staticByteCount = 0;
-		int staticLongDispl, staticIntDispl, staticShortDispl, staticByteDispl;
-		int instanceLongCount = 0, instanceIntCount = 0, instanceShortCount = 0, instanceByteCount = 0;
-		int instanceLongDispl, instanceIntDispl, instanceShortDispl, instanceByteDispl;
-		
-		for(FieldItem item : fields) {
-			switch (CodeExecutor.getArgumentSize(ClassDefinitionLoader.resolveDescriptor(pool, item.fieldDesc))) {
-				case CodeExecutor.BYTE_SIZE :
-					if (Modifier.isStatic(item.accessFlags)) {
-						staticByteCount++;
-					}
-					else {
-						instanceByteCount++;
-					}
-					break;
-				case CodeExecutor.SHORT_SIZE :
-					if (Modifier.isStatic(item.accessFlags)) {
-						staticShortCount++;
-					}
-					else {
-						instanceShortCount++;
-					}
-					break;
-				case CodeExecutor.INT_SIZE :
-					if (Modifier.isStatic(item.accessFlags)) {
-						staticIntCount++;
-					}
-					else {
-						instanceIntCount++;
-					}
-					break;
-				case CodeExecutor.LONG_SIZE :
-					if (Modifier.isStatic(item.accessFlags)) {
-						staticLongCount++;
-					}
-					else {
-						instanceLongCount++;
-					}
-					break;
-				default :
-					throw new UnsupportedOperationException();
-			}
-		}
-		
-		staticLongDispl = 0;
-		staticIntDispl = staticLongDispl + CodeExecutor.LONG_SIZE * staticLongCount;
-		staticShortDispl = staticIntDispl + CodeExecutor.INT_SIZE * staticIntCount;
-		staticByteDispl = staticShortDispl + CodeExecutor.SHORT_SIZE * staticShortCount;
-		instanceLongDispl = 0;
-		instanceIntDispl = instanceLongDispl + CodeExecutor.LONG_SIZE * instanceLongCount;
-		instanceShortDispl = instanceIntDispl + CodeExecutor.INT_SIZE * instanceIntCount;
-		instanceByteDispl = instanceShortDispl + CodeExecutor.SHORT_SIZE * instanceShortCount;
-		
-		for(FieldItem item : fields) {
-			switch (CodeExecutor.getArgumentSize(ClassDefinitionLoader.resolveDescriptor(pool, item.fieldDesc))) {
-				case CodeExecutor.BYTE_SIZE :
-					if (Modifier.isStatic(item.accessFlags)) {
-						item.displacement = staticByteDispl;
-						item.length = CodeExecutor.BYTE_SIZE; 
-						staticByteDispl += CodeExecutor.BYTE_SIZE;
-					}
-					else {
-						item.displacement = instanceByteDispl;
-						item.length = CodeExecutor.BYTE_SIZE; 
-						instanceByteDispl += CodeExecutor.BYTE_SIZE;
-					}
-					break;
-				case CodeExecutor.SHORT_SIZE :
-					if (Modifier.isStatic(item.accessFlags)) {
-						item.displacement = staticShortDispl;
-						item.length = CodeExecutor.SHORT_SIZE; 
-						staticShortDispl += CodeExecutor.SHORT_SIZE;
-					}
-					else {
-						item.displacement = instanceShortDispl;
-						item.length = CodeExecutor.SHORT_SIZE; 
-						instanceShortDispl += CodeExecutor.SHORT_SIZE;
-					}
-					break;
-				case CodeExecutor.INT_SIZE :
-					if (Modifier.isStatic(item.accessFlags)) {
-						item.displacement = staticIntDispl;
-						item.length = CodeExecutor.INT_SIZE; 
-						staticIntDispl += CodeExecutor.INT_SIZE;
-					}
-					else {
-						item.displacement = instanceIntDispl;
-						item.length = CodeExecutor.INT_SIZE; 
-						instanceIntDispl += CodeExecutor.INT_SIZE;
-					}
-					break;
-				case CodeExecutor.LONG_SIZE :
-					if (Modifier.isStatic(item.accessFlags)) {
-						item.displacement = staticLongDispl;
-						item.length = CodeExecutor.LONG_SIZE; 
-						staticLongDispl += CodeExecutor.LONG_SIZE;
-					}
-					else {
-						item.displacement = instanceLongDispl;
-						item.length = CodeExecutor.LONG_SIZE; 
-						instanceLongDispl += CodeExecutor.LONG_SIZE;
-					}
-					break;
-				default :
-					throw new UnsupportedOperationException();
-			}
-		}
-		
-		this.classDescSize = staticByteDispl;
-		this.instanceDescSize = instanceByteDispl;
-	}
-
-	public void validateClassContent() {
-		for(int index = 1; index < pool.length; index++) {
-			if (pool[index] == null) {
-				throw new VerifyError("Constant pool entry at index ["+index+"] is null");
-			}
-			else {
-				validateConstantPool(pool[index]);
-				
-				if (pool[index].itemType == ClassDefinitionLoader.CONSTANT_Long || pool[index].itemType == ClassDefinitionLoader.CONSTANT_Double) {
-					index++;
-				}
-			}
-		}
-		if (!isReferenceValid(thisClass, ClassDefinitionLoader.CONSTANT_Class)) {
-			throw new VerifyError("Illegal 'this' class reference: constant pool entity [" + thisClass + "] out of range 1.."+pool.length+" or points to invalid entry");
-		}
-		if (superClass != 0 && !isReferenceValid(superClass, ClassDefinitionLoader.CONSTANT_Class)) {
-			throw new VerifyError("Illegal 'super' class reference: constant pool entity [" + superClass + "] out of range 1.."+pool.length+" or points to invalid entry");
-		}
-	}
-	
-	private boolean isReferenceValid(final int reference, final byte constantClass) { 
-		return false;
-	}
-
-	private void validateConstantPool(final ConstantPoolItem constantPoolItem) {
-		// TODO Auto-generated method stub
-		
+		this.staticPart = InternalUtils.allocateStaticMemory(0, fields, pool); 
+		this.instancePiecePart = InternalUtils.allocateInstanceMemory(0, fields, pool); 
 	}
 
 	public ConstantPoolItem[] getConstantPool() {
@@ -196,11 +56,11 @@ public class ClassDescriptor {
 	}
 
 	public int getClassDescSize() {
-		return classDescSize;
+		return staticPart;
 	}
 
 	public int getInstanceDescSize() {
-		return instanceDescSize;
+		return instancePiecePart;
 	}
 	
 	public FieldItem[] getFields() {

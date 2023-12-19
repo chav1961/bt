@@ -1089,6 +1089,10 @@ loop:	while(commandPointer < code.length) {
 		return Arrays.copyOfRange(generated, 0, genPointer);
 	}
 
+	public static byte[] compile(final MethodItem item) {
+		return null;
+	}
+	
 	protected void push(final String type) {
 		if (stackTop >= stackContent.length) {
 			throw new Error("Stack overflow");

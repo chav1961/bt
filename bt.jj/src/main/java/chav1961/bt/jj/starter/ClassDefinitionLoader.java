@@ -33,21 +33,6 @@ class ClassDefinitionLoader {
 	static final byte	CONSTANT_Module = 19;
 	static final byte	CONSTANT_Package = 20;
 	
-	static final byte	CONSTANT_RESOLVED_Class = 32 + 7;
-	static final byte	CONSTANT_RESOLVED_Fieldref = 32 + 9;
-	static final byte	CONSTANT_RESOLVED_Methodref = 32 + 10;
-	static final byte	CONSTANT_RESOLVED_InterfaceMethodref = 32 + 11;
-	static final byte	CONSTANT_RESOLVED_String = 32 + 8;
-	static final byte	CONSTANT_RESOLVED_Integer = 32 + 3;
-	static final byte	CONSTANT_RESOLVED_Float = 32 + 4;
-	static final byte	CONSTANT_RESOLVED_Long = 32 + 5;
-	static final byte	CONSTANT_RESOLVED_Double = 32 + 6;
-	static final byte	CONSTANT_RESOLVED_NameAndType = 32 + 12;
-	static final byte	CONSTANT_RESOLVED_Utf8 = 32 + 1;
-	static final byte	CONSTANT_RESOLVED_MethodHandle = 32 + 15;
-	static final byte	CONSTANT_RESOLVED_MethodType = 32 + 16;
-	static final byte	CONSTANT_RESOLVED_InvokeDynamic = 32 + 18;
-	
 	static final char[]	VALID_CLINIT = {'<', 'c', 'l', 'i', 'n', 'i', 't', '>'};
 	static final char[]	VALID_INIT = {'<', 'i', 'n', 'i', 't', '>'};
 
