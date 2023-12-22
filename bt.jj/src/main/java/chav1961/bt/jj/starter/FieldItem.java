@@ -29,6 +29,6 @@ class FieldItem {
 
 	@Override
 	public String toString() {
-		return "FieldItem [fieldName=" + ClassDefinitionLoader.resolveDescriptor(pool, fieldName) + ", fieldDesc=" + ClassDefinitionLoader.resolveDescriptor(pool, fieldDesc) + ", accessFlags=" + Modifier.toString(accessFlags) + ", attrs=" + Arrays.toString(attrs) + "]";
+		return "FieldItem [fieldName=" +  InternalUtils.resolveDescriptor(pool, fieldName) + ", fieldDesc=" +  InternalUtils.resolveDescriptor(pool, fieldDesc) + ", accessFlags=" + Modifier.toString(accessFlags) + ", attrs=" + Arrays.toString(attrs) + "]";
 	}
 }

@@ -11,6 +11,6 @@ class InterfaceItem {
 
 	@Override
 	public String toString() {
-		return "InterfaceItem [interfaceRef=" + ClassDefinitionLoader.resolveDescriptor(pool, interfaceRef) + "]";
+		return "InterfaceItem [interfaceRef=" +  InternalUtils.resolveDescriptor(pool, interfaceRef) + "]";
 	}
 }

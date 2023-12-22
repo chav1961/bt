@@ -83,27 +83,27 @@ public class ClassDescriptor {
 	public String toString() {
 		final StringBuilder	sb = new StringBuilder();
 		
-		sb.append(Modifier.toString(accessFlags)).append(' ').append(ClassDefinitionLoader.resolveDescriptor(pool, thisClass));
+		sb.append(Modifier.toString(accessFlags)).append(' ').append( InternalUtils.resolveDescriptor(pool, thisClass));
 		if (superClass != 0) {
-			sb.append(" extends ").append(ClassDefinitionLoader.resolveDescriptor(pool, superClass));
+			sb.append(" extends ").append(InternalUtils.resolveDescriptor(pool, superClass));
 		}
 		if (interfaces.length > 0) {
 			String	prefix = " implements ";
 			for (InterfaceItem item : interfaces) {
-				sb.append(prefix).append(ClassDefinitionLoader.resolveDescriptor(pool, item.interfaceRef));
+				sb.append(prefix).append(InternalUtils.resolveDescriptor(pool, item.interfaceRef));
 				prefix = " , ";
 			}
 		}
 		sb.append(" {\n");
 
 		for (FieldItem item : fields) {
-			sb.append('\t').append(Modifier.toString(item.accessFlags)).append(' ').append(ClassDefinitionLoader.resolveDescriptor(pool, item.fieldDesc))
-			  .append(' ').append(ClassDefinitionLoader.resolveDescriptor(pool, item.fieldName)).append(";\n");
+			sb.append('\t').append(Modifier.toString(item.accessFlags)).append(' ').append(InternalUtils.resolveDescriptor(pool, item.fieldDesc))
+			  .append(' ').append(InternalUtils.resolveDescriptor(pool, item.fieldName)).append(";\n");
 		}
 
 		for (MethodItem item : methods) {
-			sb.append('\t').append(Modifier.toString(item.accessFlags)).append(' ').append(ClassDefinitionLoader.resolveDescriptor(pool, item.methodName))
-			  .append(ClassDefinitionLoader.resolveDescriptor(pool, item.methodDesc)).append(";\n");
+			sb.append('\t').append(Modifier.toString(item.accessFlags)).append(' ').append(InternalUtils.resolveDescriptor(pool, item.methodName))
+			  .append(InternalUtils.resolveDescriptor(pool, item.methodDesc)).append(";\n");
 		}
 		return sb.append("}\n").toString();
 	}

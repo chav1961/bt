@@ -24,12 +24,6 @@ class MethodItem {
 		this.pool = pool;
 		if (!Modifier.isAbstract(accessFlags)) {
 			for(AttributeItem item : attrs) {
-				switch (item.type) {
-					case Code :
-						break;
-					default :
-						break;
-				}
 			}
 		}
 	}
@@ -44,6 +38,6 @@ class MethodItem {
 	
 	@Override
 	public String toString() {
-		return "MethodItem [methodName=" + ClassDefinitionLoader.resolveDescriptor(pool, methodName) + ", methodDesc=" + ClassDefinitionLoader.resolveDescriptor(pool, methodDesc) + ", accessFlags=" + Modifier.toString(accessFlags) + ", attrs=" + Arrays.toString(attrs) + "]";
+		return "MethodItem [methodName=" +  InternalUtils.resolveDescriptor(pool, methodName) + ", methodDesc=" + InternalUtils.resolveDescriptor(pool, methodDesc) + ", accessFlags=" + Modifier.toString(accessFlags) + ", attrs=" + Arrays.toString(attrs) + "]";
 	}
 }
