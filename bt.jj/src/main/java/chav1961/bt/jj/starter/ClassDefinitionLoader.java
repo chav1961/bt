@@ -24,10 +24,9 @@ class ClassDefinitionLoader {
 	static final short	ACC_VOLATILE = 0x0040;
 	static final short	ACC_TRANSIENT = 0x0080;
 	static final short	ACC_SYNTHETIC = 0x1000;
-	static final short	ACC_ENUM = 0x4000;	
+	static final short	ACC_ENUM = 0x4000;
+	static final short	ACC_MANDATED = (short)0x8000;
 
-	static final short	ACC_FIELD = ACC_PUBLIC|ACC_PRIVATE|ACC_PROTECTED|ACC_STATIC|ACC_FINAL|ACC_VOLATILE|ACC_TRANSIENT|ACC_SYNTHETIC|ACC_ENUM;	
-	
 	static final byte	CONSTANT_Utf8 = 1;
 	static final byte	CONSTANT_Integer = 3;
 	static final byte	CONSTANT_Float = 4;
@@ -82,6 +81,8 @@ class ClassDefinitionLoader {
 	private static final String	ERR_INVALIF_REF_FIELD_ATTR = "Entity [%1$s] with name [%2$s] and signature [%3$s] referenced to invalid constant pool entry [%4$d] ([%5$s] awaited)"; 
 	private static final String	ERR_INVALID_CLASS_SIGNATURE_ENTITY = "Entity [%1$s] with name [%2$s] refers to constant pool entry [%3$d], contains invalid class signature [%4$s]"; 
 
+	private static final short	ACC_FIELD = ACC_PUBLIC|ACC_PRIVATE|ACC_PROTECTED|ACC_STATIC|ACC_FINAL|ACC_VOLATILE|ACC_TRANSIENT|ACC_SYNTHETIC|ACC_ENUM;	
+	
 	static {
 		for(JavaAttributeType item : JavaByteCodeConstants.JavaAttributeType.values()) {
 			SUPPORTED_ATTRIBUTES.add(item.name());
@@ -495,10 +496,14 @@ class ClassDefinitionLoader {
 			switch (kind) {
 				case ConstantValue 	:
 					return new AttributeItem.ConstantValue(content, pool);
+				case Synthetic : case Deprecated :
+					return new AttributeItem(kind, pool);
 				case Signature		:
 					return new AttributeItem.Signature(content, pool);
-				case Deprecated		:
-					return new AttributeItem(kind, pool);
+				case SourceFile		:
+					return new AttributeItem.SourceFile(content, pool);
+				case MethodParameters	:
+					return new AttributeItem.MethodParameters(content, pool);
 				case RuntimeVisibleAnnotations	:
 					return new AttributeItem.RuntimeVisibleAnnotations(content, pool);
 				case RuntimeInvisibleAnnotations	:

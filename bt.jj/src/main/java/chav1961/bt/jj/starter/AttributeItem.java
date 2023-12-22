@@ -141,7 +141,10 @@ class AttributeItem {
 	}
 
 	public static class ConstantValue extends AttributeItem {
-		public final int		constRef;
+		private static final int	VALID_CONSTANT_MASK = (1 << ClassDefinitionLoader.CONSTANT_Integer) | (1 << ClassDefinitionLoader.CONSTANT_Long)
+														| (1 << ClassDefinitionLoader.CONSTANT_Float) | (1 << ClassDefinitionLoader.CONSTANT_Double)
+														| (1 << ClassDefinitionLoader.CONSTANT_String);
+		public final int			constRef;
 		
 		public ConstantValue(final byte[] content, final ConstantPoolItem[] pool) {
 			super(AttributeKind.ConstantValue, pool);
@@ -150,13 +153,18 @@ class AttributeItem {
 			if (!ClassDefinitionLoader.isValidReference(ref, pool)) {
 				throw new VerifyError("Constant pool entry for CONSTANTVALUE ATTRIBUTE refers to non-existent constant pool entry ["+ref+"]");
 			}
-			else if (pool[ref].itemType != ClassDefinitionLoader.CONSTANT_Integer && pool[ref].itemType != ClassDefinitionLoader.CONSTANT_Long 
-					 && pool[ref].itemType != ClassDefinitionLoader.CONSTANT_Float && pool[ref].itemType != ClassDefinitionLoader.CONSTANT_Double) {
-				throw new VerifyError("Constant pool entry for CONSTANTVALUE ATTRIBUTE refers to invalid constant pool entry ["+ref+"] (CONSTANT_Integer, CONSTANT_Long, CONSTANT_Float or CONSTANT_Double awaited)");
+			else if (((1 << pool[ref].itemType) & VALID_CONSTANT_MASK) == 0) {
+				throw new VerifyError("Constant pool entry for CONSTANTVALUE ATTRIBUTE refers to invalid constant pool entry ["+ref+"] (CONSTANT_Integer, CONSTANT_Long, CONSTANT_Float, CONSTANT_Double or CONSTANT_String awaited)");
 			}
 			else {
 				this.constRef = ref; 
 			}
+		}
+	}
+
+	public static class Synthetic extends AttributeItem {
+		public Synthetic(final ConstantPoolItem[] pool) {
+			super(AttributeKind.Synthetic, pool);
 		}
 	}
 	
@@ -179,6 +187,59 @@ class AttributeItem {
 		}
 	}
 
+	public static class SourceFile extends AttributeItem {
+		public final int		sourceFileRef;
+		
+		public SourceFile(final byte[] content, final ConstantPoolItem[] pool) {
+			super(AttributeKind.SourceFile, pool);
+			final int	ref = new ByteArrayReader(content).readU2(); 
+			
+			if (!ClassDefinitionLoader.isValidReference(ref, pool)) {
+				throw new VerifyError("Constant pool entry for SOURCE FILE refers to non-existent constant pool entry ["+ref+"]");
+			}
+			else if (!ClassDefinitionLoader.isValidUTF8Reference(ref, false, pool)) {
+				throw new VerifyError("Constant pool entry for SIGNATURE ATTRIBUTE refers to invalid constant pool entry ["+ref+"] (CONSTANT_UTF8 awaited)");
+			}
+			else {
+				this.sourceFileRef = ref; 
+			}
+		}
+	}
+	
+	public static class MethodParameters extends AttributeItem {
+		private static final int	AVAILABLE_ACC = ClassDefinitionLoader.ACC_FINAL | ClassDefinitionLoader.ACC_SYNTHETIC | ClassDefinitionLoader.ACC_MANDATED; 
+		
+		public final int[][]		parameters;
+		
+		public MethodParameters(final byte[] content, final ConstantPoolItem[] pool) {
+			super(AttributeKind.MethodParameters, pool);
+			final ByteArrayReader	bar = new ByteArrayReader(content);
+			final int[][]			parameters = new int[bar.read()][];
+
+			for (int index = 0; index < parameters.length; index++) {
+				final int[]			desc = new int[] {bar.readU2(), bar.readU2()};
+				
+				if (!ClassDefinitionLoader.isValidReference(desc[0], pool)) {
+					throw new VerifyError("Constant pool entry for SOURCE FILE refers to non-existent constant pool entry ["+desc[0]+"]");
+				}
+				else if (!ClassDefinitionLoader.isValidUTF8Reference(desc[0], false, pool)) {
+					throw new VerifyError("Constant pool entry for SIGNATURE ATTRIBUTE refers to invalid constant pool entry ["+desc[0]+"] (CONSTANT_UTF8 awaited)");
+				}
+				else if (!ClassDefinitionLoader.isValidName(pool[desc[0]].content)) {
+					throw new VerifyError("Constant pool entry for SIGNATURE ATTRIBUTE refers to invalid constant pool entry ["+desc[0]+"] (invalid name)");
+				}
+				else if ((desc[1] & ~AVAILABLE_ACC) != 0) {
+					throw new VerifyError("Constant pool entry for SIGNATURE ATTRIBUTE contains extrac access flags");
+				}
+				else {
+					parameters[index] = desc;
+				}
+			}
+			this.parameters = parameters;
+		}
+	}
+	
+	
 	static abstract class RuntimeAnnotations extends AttributeItem {
 		private final AnnotationItem[]	list;
 		
