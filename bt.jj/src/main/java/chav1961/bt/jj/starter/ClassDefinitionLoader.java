@@ -23,7 +23,10 @@ class ClassDefinitionLoader {
 	static final short	ACC_FINAL = 0x0010;
 	static final short	ACC_VOLATILE = 0x0040;
 	static final short	ACC_TRANSIENT = 0x0080;
+	static final short	ACC_INTERFACE = 0x0200;
+	static final short	ACC_ABSTRACT = 0x0400;
 	static final short	ACC_SYNTHETIC = 0x1000;
+	static final short	ACC_ANNOTATION = 0x2000;
 	static final short	ACC_ENUM = 0x4000;
 	static final short	ACC_MANDATED = (short)0x8000;
 
@@ -50,37 +53,61 @@ class ClassDefinitionLoader {
 	
 	static final Set<String>	SUPPORTED_ATTRIBUTES = new HashSet<>();
 
-	private static final String	ERR_ILLEGAL_MAGIC = "Illegal MAGIC";
-	private static final String	ERR_VERSION_TOO_NEW = "Class file version [%1$s] is too new to support, max supported is [%2$s]";
-	private static final String	ERR_NON_EXISTENT_REF_THIS_CLASS = "THIS CLASS item referes to non-existent constant pool entry [%1$d]";
-	private static final String	ERR_INVALID_REF_THIS_CLASS = "Illegal constant pool entry [%1$d] for THIS CLASS item (CONSTANT_Class awaited)"; 
-	private static final String	ERR_NON_EXISTENT_REF_SUPER_CLASS = "SUPER CLASS item referes to non-existent constant pool entry [%1$d]";
-	private static final String	ERR_INVALID_REF_SUPER_CLASS = "Illegal constant pool entry [%1$d] for SUPER CLASS item (CONSTANT_Class awaited)"; 
-	private static final String	ERR_NON_EXISTENT_REF_INTERFACE = "INTERFACE item at index [%1$d] referes to non-existent constant pool entry [%2$d]";
-	private static final String	ERR_INVALID_REF_INTERFACE = "Illegal constant pool entry [%1$d] for INTERFACE item at index [%2$d] (CONSTANT_Class awaited)"; 
-	private static final String	ERR_UNSUPPORTED_CONSTANT_POOL_ITEM_TYPE = "Unsupported constant pool item type [%1$d] at index [%2$d], byte code displacement=[%3$x]";	
-	private static final String	ERR_NON_EXISTENT_REF_FIELD = "FIELD item at index [%1$d] refers to non-existent constant pool entry [%2$d]";
-	private static final String	ERR_INVALID_REF_FIELD = "Illegal constant pool entry [%1$d] for FIELD item at index [%2$d] (CONSTANT_Utf8 awaited)"; 
-	private static final String	ERR_INVALID_NAME_FIELD = "Illegal constant pool entry [%1$d] for FIELD item at index [%2$d] (invalid field name '%3$s')"; 
-	private static final String	ERR_INVALID_SIGNATURE_FIELD = "Illegal constant pool entry [%1$d] for FIELD item at index [%2$d] (invalid field signature '%3$s')"; 
-	private static final String	ERR_NON_EXISTENT_REF_METHOD = "METHOD item at index [%1$d] refers to non-existent constant pool entry [%2$d]";
-	private static final String	ERR_INVALID_REF_METHOD = "Illegal constant pool entry [%1$d] for METHOD item at index [%2$d] (CONSTANT_Utf8 awaited)"; 
-	private static final String	ERR_INVALID_NAME_METHOD = "Illegal constant pool entry [%1$d] for METHOD item at index [%2$d] (invalid method name '%3$s')"; 
-	private static final String	ERR_INVALID_SIGNATURE_METHOD = "Illegal constant pool entry [%1$d] for METHOD item at index [%2$d] (invalid method signature '%3$s')"; 
-	private static final String	ERR_NON_EXISTENT_REF_ATTRIBUTE = "ATTRIBUTE [%1$d/%2$d] refers to non-existent constant pool entry [%3$d]";
-	private static final String	ERR_INVALID_REF_ATTRIBUTE = "Illegal constant pool entry [%1$d] for ATTRIBUTE item [%2$d/%3$d] (CONSTANT_Utf8 awaited)"; 
-	private static final String	ERR_NON_EXISTENT_REF_CPE = "Constant pool entry for [%1$s] at [%2$d] refers to non-existent constant pool entry [%3$d]";
-	private static final String	ERR_INVALID_REF_CPE = "Illegal constant pool entry for [%1$s] at index [%2$d], reference index = [%3$d] ([%4$s] awaited)"; 
-	private static final String	ERR_INVALID_NAME_CPE = "Constant pool entry for [%1$s] at index [%2$d] refers to constant pool entry [%3$d], contains invalid entity name [%4$s]"; 
-	private static final String	ERR_INVALID_CLASS_SIGNATURE_CPE = "Constant pool entry for [%1$s] at index [%2$d] refers to constant pool entry [%3$d], contains invalid class signature [%4$s]"; 
-	private static final String	ERR_INVALID_METHOD_HANDLE_KIND_CPE = "Constant pool entry for METHOD HANDLE at index [%1$d] contains reference kind [%2$d] out of range 1..9"; 
-	private static final String	ERR_INVALID_METHOD_SIGNATURE_CPE = "Constant pool entry for [%1$s] at index [%2$d] refers to constant pool entry [%3$d] contains invalid method signature [%4$s]"; 
-	private static final String	ERR_EXTRA_ACCESS_FLAGS = "Entity [%1$s] contains extra access flags [%2$x]"; 
-	private static final String	ERR_DUPLICATE_ATTRIBUTE = "Entity [%1$s] with name [%2$s] contains duplicate attribute [%3$s]"; 
-	private static final String	ERR_NOT_APPLICABLE_ATTRIBUTE = "Entity [%1$s] with name [%2$s] contains unapplicable attribute [%3$s]"; 
-	private static final String	ERR_INVALIF_REF_FIELD_ATTR = "Entity [%1$s] with name [%2$s] and signature [%3$s] referenced to invalid constant pool entry [%4$d] ([%5$s] awaited)"; 
-	private static final String	ERR_INVALID_CLASS_SIGNATURE_ENTITY = "Entity [%1$s] with name [%2$s] refers to constant pool entry [%3$d], contains invalid class signature [%4$s]"; 
-
+	static final String	ERR_ILLEGAL_MAGIC = "Illegal MAGIC";
+	static final String	ERR_VERSION_TOO_NEW = "Class file version [%1$s] is too new to support, max supported is [%2$s]";
+	static final String	ERR_NON_EXISTENT_REF_THIS_CLASS = "THIS CLASS item referes to non-existent constant pool entry [%1$d]";
+	static final String	ERR_INVALID_REF_THIS_CLASS = "Illegal constant pool entry [%1$d] for THIS CLASS item (CONSTANT_Class awaited)"; 
+	static final String	ERR_NON_EXISTENT_REF_SUPER_CLASS = "SUPER CLASS item referes to non-existent constant pool entry [%1$d]";
+	static final String	ERR_INVALID_REF_SUPER_CLASS = "Illegal constant pool entry [%1$d] for SUPER CLASS item (CONSTANT_Class awaited)"; 
+	static final String	ERR_NON_EXISTENT_REF_INTERFACE = "INTERFACE item at index [%1$d] referes to non-existent constant pool entry [%2$d]";
+	static final String	ERR_INVALID_REF_INTERFACE = "Illegal constant pool entry [%1$d] for INTERFACE item at index [%2$d] (CONSTANT_Class awaited)"; 
+	static final String	ERR_UNSUPPORTED_CONSTANT_POOL_ITEM_TYPE = "Unsupported constant pool item type [%1$d] at index [%2$d], byte code displacement=[%3$x]";	
+	static final String	ERR_NON_EXISTENT_REF_FIELD = "FIELD item at index [%1$d] refers to non-existent constant pool entry [%2$d]";
+	static final String	ERR_INVALID_REF_FIELD = "Illegal constant pool entry [%1$d] for FIELD item at index [%2$d] (CONSTANT_Utf8 awaited)"; 
+	static final String	ERR_INVALID_NAME_FIELD = "Illegal constant pool entry [%1$d] for FIELD item at index [%2$d] (invalid field name '%3$s')"; 
+	static final String	ERR_INVALID_SIGNATURE_FIELD = "Illegal constant pool entry [%1$d] for FIELD item at index [%2$d] (invalid field signature '%3$s')"; 
+	static final String	ERR_NON_EXISTENT_REF_METHOD = "METHOD item at index [%1$d] refers to non-existent constant pool entry [%2$d]";
+	static final String	ERR_INVALID_REF_METHOD = "Illegal constant pool entry [%1$d] for METHOD item at index [%2$d] (CONSTANT_Utf8 awaited)"; 
+	static final String	ERR_INVALID_NAME_METHOD = "Illegal constant pool entry [%1$d] for METHOD item at index [%2$d] (invalid method name '%3$s')"; 
+	static final String	ERR_INVALID_SIGNATURE_METHOD = "Illegal constant pool entry [%1$d] for METHOD item at index [%2$d] (invalid method signature '%3$s')"; 
+	static final String	ERR_NON_EXISTENT_REF_ATTRIBUTE = "ATTRIBUTE [%1$d/%2$d] refers to non-existent constant pool entry [%3$d]";
+	static final String	ERR_INVALID_REF_ATTRIBUTE = "Illegal constant pool entry [%1$d] for ATTRIBUTE item [%2$d/%3$d] (CONSTANT_Utf8 awaited)"; 
+	static final String	ERR_NON_EXISTENT_REF_CPE = "Constant pool entry for [%1$s] at [%2$d] refers to non-existent constant pool entry [%3$d]";
+	static final String	ERR_INVALID_REF_CPE = "Illegal constant pool entry for [%1$s] at index [%2$d], reference index = [%3$d] ([%4$s] awaited)"; 
+	static final String	ERR_INVALID_NAME_CPE = "Constant pool entry for [%1$s] at index [%2$d] refers to constant pool entry [%3$d], contains invalid entity name [%4$s]"; 
+	static final String	ERR_INVALID_CLASS_SIGNATURE_CPE = "Constant pool entry for [%1$s] at index [%2$d] refers to constant pool entry [%3$d], contains invalid class signature [%4$s]"; 
+	static final String	ERR_INVALID_METHOD_HANDLE_KIND_CPE = "Constant pool entry for METHOD HANDLE at index [%1$d] contains reference kind [%2$d] out of range 1..9"; 
+	static final String	ERR_INVALID_METHOD_SIGNATURE_CPE = "Constant pool entry for [%1$s] at index [%2$d] refers to constant pool entry [%3$d] contains invalid method signature [%4$s]"; 
+	static final String	ERR_EXTRA_ACCESS_FLAGS = "Entity [%1$s] contains extra access flags [%2$x]"; 
+	static final String	ERR_DUPLICATE_ATTRIBUTE = "Entity [%1$s] with name [%2$s] contains duplicate attribute [%3$s]"; 
+	static final String	ERR_NOT_APPLICABLE_ATTRIBUTE = "Entity [%1$s] with name [%2$s] contains unapplicable attribute [%3$s]"; 
+	static final String	ERR_INVALIF_REF_FIELD_ATTR = "Entity [%1$s] with name [%2$s] and signature [%3$s] referenced to invalid constant pool entry [%4$d] ([%5$s] awaited)"; 
+	static final String	ERR_INVALID_CLASS_SIGNATURE_ENTITY = "Entity [%1$s] with name [%2$s] refers to constant pool entry [%3$d], contains invalid class signature [%4$s]"; 
+	static final String	ERR_NON_EXISTENT_REF_CONSTVALUE = "Constant pool entry for CONSTVALUE ATTRIBUTE refers to non-existent constant pool entry [%1$d]";
+	static final String	ERR_INVALID_REF_CONSTVALUE = "Constant pool entry for CONSTANTVALUE ATTRIBUTE refers to invalid constant pool entry [%1$d] (CONSTANT_Integer, CONSTANT_Long, CONSTANT_Float, CONSTANT_Double or CONSTANT_String awaited)";
+	static final String	ERR_NON_EXISTENT_REF_SIGNATURE = "Constant pool entry for SIGNATURE ATTRIBUTE refers to non-existent constant pool entry [%1$d]";
+	static final String	ERR_INVALID_REF_SIGNATURE = "Constant pool entry for SIGNATURE ATTRIBUTE refers to invalid constant pool entry [%1$d] (CONSTANT_UTF8 awaited)";
+	static final String	ERR_NON_EXISTENT_REF_SOURCEFILE = "SOURCEFILE ATTRIBUTE refers to non-existent constant pool entry [%1$d]";
+	static final String	ERR_INVALID_REF_SOURCEFILE = "Constant pool entry for SOURCEFILE ATTRIBUTE refers to invalid constant pool entry [%1$d] (CONSTANT_UTF8 awaited)";
+	static final String	ERR_NON_EXISTENT_REF_ANNOTATION_VALUE = "Constant pool entry for [%1$s] ATTRIBUTE at index [%2$d]/[%3$d] refers to non-existent constant pool entry [%4$d]";
+	static final String	ERR_INVALID_REF_ANNOTATION_VALUE = "Constant pool entry for [%1$s] ATTRIBUTE at index [%2$d]/[%3$d] refers to invalid constant pool entry [%4$d] (%5$s awaited)";
+	static final String	ERR_INVALID_REF_ANNOTATION_BOOL_VALUE = "Constant pool entry for [%1$s] ATTRIBUTE at index [%2$d]/[%3$d] refers to invalid constant pool entry [%4$d] (integer value [%5$d] is neither false (0) nor true (1))";
+	static final String	ERR_INVALID_REF_ANNOTATION_CLASS_SIGNATURE = "Constant pool entry for [%1$s] ATTRIBUTE at index [%2$d]/[%3$d] refers to invalid constant pool entry [%4$d] (invalid class signature '%5$s')";
+	static final String	ERR_INVALID_REF_ANNOTATION_NAME = "Constant pool entry for [%1$s] ATTRIBUTE at index [%2$d]/[%3$d] refers to invalid constant pool entry [%4$d] (invalid name '%5$s')";
+	static final String	ERR_INVALID_REF_ANNOTATION_TAG = "Constant pool entry for [%1$s] ATTRIBUTE at index [%2$d]/[%3$d] has invalid tag value '%4$c'";
+	static final String	ERR_INVALID_REF_ANNOTATION_TARGET_TYPE = "Constant pool entry for [%1$s] ATTRIBUTE at index [%2$d]/[%3$d] has invalid target type [%4$x]";
+	static final String	ERR_NON_EXISTENT_REF_METHOD_PARAMETERS = "Constant pool entry for METHOD_PARAMETERS refers to non-existent constant pool entry [%1$d]";
+	static final String	ERR_INVALID_REF_METHOD_PARAMETERS = "Constant pool entry for METHOD_PARAMETERS refers to invalid constant pool entry [%1$d] (CONSTANT_UTF8 awaited)";
+	static final String	ERR_INVALID_REF_METHOD_PARAMETERS_NAME = "Constant pool entry for METHOD_PARAMETERS refers to invalid constant pool entry [%1$d] (invalid name '%2$s')";
+	static final String	ERR_EXTRA_ACCESS_FLAGS_METHOD_PARAMETERS = "Constant pool entry for METHOD_PARAMETERS contains extra acccess flags [%1$x]";
+	static final String	ERR_NON_EXISTENT_REF_INNER_CLASSES = "INNER_CLASSES ATTRIBUTE refers to non-existent constant pool entry [%1$d]";
+	static final String	ERR_INVALID_REF_INNER_CLASSES = "INNER_CLASSES ATTRIBUTE refers to invalid constant pool entry [%1$d] (%2$s awaited)";
+	static final String	ERR_INVALID_NAME_REF_INNER_CLASSES = "INNER_CLASSES ATTRIBUTE refers to invalid constant pool entry [%1$d] (invalid name '%2$s')";
+	static final String	ERR_EXTRA_ACCESS_FLAGS_INNER_CLASSES = "Constant pool entry for INNER_CLASSES contains extra acccess flags [%1$x]";
+	static final String	ERR_NON_EXISTENT_REF_ENCLOSING_METHOD = "ENCLOSING_METHOD ATTRIBUTE refers to non-existent constant pool entry [%1$d]";
+	static final String	ERR_INVALID_REF_ENCLOSING_METHOD = "ENCLOSING_METHOD ATTRIBUTE refers to invalid constant pool entry [%1$d] (%2$s awaited)";
+	
+	
 	private static final short	ACC_FIELD = ACC_PUBLIC|ACC_PRIVATE|ACC_PROTECTED|ACC_STATIC|ACC_FINAL|ACC_VOLATILE|ACC_TRANSIENT|ACC_SYNTHETIC|ACC_ENUM;	
 	
 	static {
@@ -496,12 +523,8 @@ class ClassDefinitionLoader {
 			switch (kind) {
 				case ConstantValue 	:
 					return new AttributeItem.ConstantValue(content, pool);
-				case Synthetic : case Deprecated :
-					return new AttributeItem(kind, pool);
-				case Signature		:
-					return new AttributeItem.Signature(content, pool);
-				case SourceFile		:
-					return new AttributeItem.SourceFile(content, pool);
+				case InnerClasses	:
+					return new AttributeItem.InnerClasses(content, pool);
 				case MethodParameters	:
 					return new AttributeItem.MethodParameters(content, pool);
 				case RuntimeVisibleAnnotations	:
@@ -512,6 +535,13 @@ class ClassDefinitionLoader {
 					return new AttributeItem.RuntimeVisibleTypeAnnotations(content, pool);
 				case RuntimeInvisibleTypeAnnotations	:
 					return new AttributeItem.RuntimeInvisibleTypeAnnotations(content, pool);
+				case Signature		:
+					return new AttributeItem.Signature(content, pool);
+				case SourceFile		:
+					return new AttributeItem.SourceFile(content, pool);
+					
+				case Synthetic : case Deprecated :
+					return new AttributeItem(kind, pool);
 				default :
 					return new AttributeItem(kind, pool);
 			}

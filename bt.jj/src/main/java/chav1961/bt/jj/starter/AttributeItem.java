@@ -22,10 +22,10 @@ class AttributeItem {
 			case 'B': case 'C': case 'I': case 'S':
 				ref1 = rdr.readU2();
 				if (!ClassDefinitionLoader.isValidReference(ref1, pool)) {
-					throw new VerifyError("Constant pool entry for "+annotationName+" ATTRIBUTE at index ["+index+"/"+pairIndex+"] refers to non-existent constant pool entry ["+ref1+"]");
+					throw ClassDefinitionLoader.buildError(ClassDefinitionLoader.ERR_NON_EXISTENT_REF_ANNOTATION_VALUE, annotationName, index, pairIndex, ref1);
 				}
 				else if (pool[ref1].itemType != ClassDefinitionLoader.CONSTANT_Integer) {
-					throw new VerifyError("Constant pool entry for "+annotationName+" ATTRIBUTE at index ["+index+"/"+pairIndex+"] refers to invalid constant pool entry ["+ref1+"] (CONSTANT_Integer awaited)");
+					throw ClassDefinitionLoader.buildError(ClassDefinitionLoader.ERR_INVALID_REF_ANNOTATION_VALUE, annotationName, index, pairIndex, ref1, "CONSTANT_Integer");
 				}
 				else {
 					return new AnnotationValue(tag, ref1);
@@ -33,13 +33,13 @@ class AttributeItem {
 			case 'Z':
 				ref1 = rdr.readU2();
 				if (!ClassDefinitionLoader.isValidReference(ref1, pool)) {
-					throw new VerifyError("Constant pool entry for "+annotationName+" ATTRIBUTE at index ["+index+"/"+pairIndex+"] refers to non-existent constant pool entry ["+ref1+"]");
+					throw ClassDefinitionLoader.buildError(ClassDefinitionLoader.ERR_NON_EXISTENT_REF_ANNOTATION_VALUE, annotationName, index, pairIndex, ref1);
 				}
 				else if (pool[ref1].itemType != ClassDefinitionLoader.CONSTANT_Integer) {
-					throw new VerifyError("Constant pool entry for "+annotationName+" ATTRIBUTE at index ["+index+"/"+pairIndex+"] refers to invalid constant pool entry ["+ref1+"] (CONSTANT_Integer awaited)");
+					throw ClassDefinitionLoader.buildError(ClassDefinitionLoader.ERR_INVALID_REF_ANNOTATION_VALUE, annotationName, index, pairIndex, ref1, "CONSTANT_Integer");
 				}
 				else if (pool[ref1].ref1 != 0 && pool[ref1].ref1 != 1) {
-					throw new VerifyError("Constant pool entry for "+annotationName+" ATTRIBUTE at index ["+index+"/"+pairIndex+"] refers to invalid constant pool entry ["+ref1+"] (integer value ["+pool[ref1].ref1+"] is neither false (0) nor true (1))");
+					throw ClassDefinitionLoader.buildError(ClassDefinitionLoader.ERR_INVALID_REF_ANNOTATION_BOOL_VALUE, annotationName, index, pairIndex, ref1, pool[ref1].ref1);
 				}
 				else {
 					return new AnnotationValue(tag, ref1);
@@ -47,10 +47,10 @@ class AttributeItem {
 			case 'D':
 				ref1 = rdr.readU2();
 				if (!ClassDefinitionLoader.isValidReference(ref1, pool)) {
-					throw new VerifyError("Constant pool entry for "+annotationName+" ATTRIBUTE at index ["+index+"/"+pairIndex+"] refers to non-existent constant pool entry ["+ref1+"]");
+					throw ClassDefinitionLoader.buildError(ClassDefinitionLoader.ERR_NON_EXISTENT_REF_ANNOTATION_VALUE, annotationName, index, pairIndex, ref1);
 				}
 				else if (pool[ref1].itemType != ClassDefinitionLoader.CONSTANT_Double) {
-					throw new VerifyError("Constant pool entry for "+annotationName+" ATTRIBUTE at index ["+index+"/"+pairIndex+"] refers to invalid constant pool entry ["+ref1+"] (CONSTANT_Double awaited)");
+					throw ClassDefinitionLoader.buildError(ClassDefinitionLoader.ERR_INVALID_REF_ANNOTATION_VALUE, annotationName, index, pairIndex, ref1, "CONSTANT_Double");
 				}
 				else {
 					return new AnnotationValue(tag, ref1);
@@ -58,10 +58,10 @@ class AttributeItem {
 			case 'F':
 				ref1 = rdr.readU2();
 				if (!ClassDefinitionLoader.isValidReference(ref1, pool)) {
-					throw new VerifyError("Constant pool entry for "+annotationName+" ATTRIBUTE at index ["+index+"/"+pairIndex+"] refers to non-existent constant pool entry ["+ref1+"]");
+					throw ClassDefinitionLoader.buildError(ClassDefinitionLoader.ERR_NON_EXISTENT_REF_ANNOTATION_VALUE, annotationName, index, pairIndex, ref1);
 				}
 				else if (pool[ref1].itemType != ClassDefinitionLoader.CONSTANT_Float) {
-					throw new VerifyError("Constant pool entry for "+annotationName+" ATTRIBUTE at index ["+index+"/"+pairIndex+"] refers to invalid constant pool entry ["+ref1+"] (CONSTANT_Float awaited)");
+					throw ClassDefinitionLoader.buildError(ClassDefinitionLoader.ERR_INVALID_REF_ANNOTATION_VALUE, annotationName, index, pairIndex, ref1, "CONSTANT_Float");
 				}
 				else {
 					return new AnnotationValue(tag, ref1);
@@ -69,10 +69,10 @@ class AttributeItem {
 			case 'J':
 				ref1 = rdr.readU2();
 				if (!ClassDefinitionLoader.isValidReference(ref1, pool)) {
-					throw new VerifyError("Constant pool entry for "+annotationName+" ATTRIBUTE at index ["+index+"/"+pairIndex+"] refers to non-existent constant pool entry ["+ref1+"]");
+					throw ClassDefinitionLoader.buildError(ClassDefinitionLoader.ERR_NON_EXISTENT_REF_ANNOTATION_VALUE, annotationName, index, pairIndex, ref1);
 				}
 				else if (pool[ref1].itemType != ClassDefinitionLoader.CONSTANT_Long) {
-					throw new VerifyError("Constant pool entry for "+annotationName+" ATTRIBUTE at index ["+index+"/"+pairIndex+"] refers to invalid constant pool entry ["+ref1+"] (CONSTANT_Long awaited)");
+					throw ClassDefinitionLoader.buildError(ClassDefinitionLoader.ERR_INVALID_REF_ANNOTATION_VALUE, annotationName, index, pairIndex, ref1, "CONSTANT_Long");
 				}
 				else {
 					return new AnnotationValue(tag, ref1);
@@ -80,10 +80,10 @@ class AttributeItem {
 			case 's':
 				ref1 = rdr.readU2();
 				if (!ClassDefinitionLoader.isValidReference(ref1, pool)) {
-					throw new VerifyError("Constant pool entry for "+annotationName+" ATTRIBUTE at index ["+index+"/"+pairIndex+"] refers to non-existent constant pool entry ["+ref1+"]");
+					throw ClassDefinitionLoader.buildError(ClassDefinitionLoader.ERR_NON_EXISTENT_REF_ANNOTATION_VALUE, annotationName, index, pairIndex, ref1);
 				}
 				else if (!ClassDefinitionLoader.isValidUTF8Reference(ref1, true, pool)) {
-					throw new VerifyError("Constant pool entry for "+annotationName+" ATTRIBUTE at index ["+index+"/"+pairIndex+"] refers to invalid constant pool entry ["+ref1+"] (CONSTANT_UTF8 awaited)");
+					throw ClassDefinitionLoader.buildError(ClassDefinitionLoader.ERR_INVALID_REF_ANNOTATION_VALUE, annotationName, index, pairIndex, ref1, "CONSTANT_UTF8");
 				}
 				else {
 					return new AnnotationValue(tag, ref1);
@@ -91,23 +91,23 @@ class AttributeItem {
 			case 'e':
 				ref1 = rdr.readU2();
 				if (!ClassDefinitionLoader.isValidReference(ref1, pool)) {
-					throw new VerifyError("Constant pool entry for "+annotationName+" ATTRIBUTE at index ["+index+"/"+pairIndex+"] refers to non-existent constant pool entry ["+ref1+"]");
+					throw ClassDefinitionLoader.buildError(ClassDefinitionLoader.ERR_NON_EXISTENT_REF_ANNOTATION_VALUE, annotationName, index, pairIndex, ref1);
 				}
 				else if (!ClassDefinitionLoader.isValidUTF8Reference(ref1, false, pool)) {
-					throw new VerifyError("Constant pool entry for "+annotationName+" ATTRIBUTE at index ["+index+"/"+pairIndex+"] refers to invalid constant pool entry ["+ref1+"] (CONSTANT_UTF8 awaited)");
+					throw ClassDefinitionLoader.buildError(ClassDefinitionLoader.ERR_INVALID_REF_ANNOTATION_VALUE, annotationName, index, pairIndex, ref1, "CONSTANT_UTF8");
 				}
 				else if (ClassDefinitionLoader.isValidClassSignature(pool[ref1].content)) {
-					throw new VerifyError("Constant pool entry for "+annotationName+" ATTRIBUTE at index ["+index+"/"+pairIndex+"] refers to invalid constant pool entry ["+ref1+"] (invalid class signature ["+new String(pool[ref1].content)+"])");
+					throw ClassDefinitionLoader.buildError(ClassDefinitionLoader.ERR_INVALID_REF_ANNOTATION_CLASS_SIGNATURE, annotationName, index, pairIndex, ref1, new String(pool[ref1].content));
 				}
 				ref2 = rdr.readU2();
 				if (!ClassDefinitionLoader.isValidReference(ref2, pool)) {
-					throw new VerifyError("Constant pool entry for "+annotationName+" ATTRIBUTE at index ["+index+"/"+pairIndex+"] refers to non-existent constant pool entry ["+ref2+"]");
+					throw ClassDefinitionLoader.buildError(ClassDefinitionLoader.ERR_NON_EXISTENT_REF_ANNOTATION_VALUE, annotationName, index, pairIndex, ref2);
 				}
 				else if (!ClassDefinitionLoader.isValidUTF8Reference(ref2, false, pool)) {
-					throw new VerifyError("Constant pool entry for "+annotationName+" ATTRIBUTE at index ["+index+"/"+pairIndex+"] refers to invalid constant pool entry ["+ref2+"] (CONSTANT_UTF8 awaited)");
+					throw ClassDefinitionLoader.buildError(ClassDefinitionLoader.ERR_INVALID_REF_ANNOTATION_VALUE, annotationName, index, pairIndex, ref2, "CONSTANT_UTF8");
 				}
-				else if (ClassDefinitionLoader.isValidName(pool[ref1].content)) {
-					throw new VerifyError("Constant pool entry for "+annotationName+" ATTRIBUTE at index ["+index+"/"+pairIndex+"] refers to invalid constant pool entry ["+ref2+"] (invalid name ["+new String(pool[ref2].content)+"])");
+				else if (ClassDefinitionLoader.isValidName(pool[ref2].content)) {
+					throw ClassDefinitionLoader.buildError(ClassDefinitionLoader.ERR_INVALID_REF_ANNOTATION_NAME, annotationName, index, pairIndex, ref2, new String(pool[ref2].content));
 				}
 				else {
 					return new AnnotationValue(tag, ref1, ref2);
@@ -115,13 +115,13 @@ class AttributeItem {
 			case 'c':
 				ref1 = rdr.readU2();
 				if (!ClassDefinitionLoader.isValidReference(ref1, pool)) {
-					throw new VerifyError("Constant pool entry for "+annotationName+" ATTRIBUTE at index ["+index+"/"+pairIndex+"] refers to non-existent constant pool entry ["+ref1+"]");
+					throw ClassDefinitionLoader.buildError(ClassDefinitionLoader.ERR_NON_EXISTENT_REF_ANNOTATION_VALUE, annotationName, index, pairIndex, ref1);
 				}
 				else if (!ClassDefinitionLoader.isValidUTF8Reference(ref1, false, pool)) {
-					throw new VerifyError("Constant pool entry for "+annotationName+" ATTRIBUTE at index ["+index+"/"+pairIndex+"] refers to invalid constant pool entry ["+ref1+"] (CONSTANT_UTF8 awaited)");
+					throw ClassDefinitionLoader.buildError(ClassDefinitionLoader.ERR_INVALID_REF_ANNOTATION_VALUE, annotationName, index, pairIndex, ref1, "CONSTANT_UTF8");
 				}
 				else if (ClassDefinitionLoader.isValidClassSignature(pool[ref1].content)) {
-					throw new VerifyError("Constant pool entry for "+annotationName+" ATTRIBUTE at index ["+index+"/"+pairIndex+"] refers to invalid constant pool entry ["+ref1+"] (invalid class signature ["+new String(pool[ref1].content)+"])");
+					throw ClassDefinitionLoader.buildError(ClassDefinitionLoader.ERR_INVALID_REF_ANNOTATION_CLASS_SIGNATURE, annotationName, index, pairIndex, ref1, new String(pool[ref1].content));
 				}
 				else {
 					return new AnnotationValue(tag, ref1);
@@ -136,7 +136,7 @@ class AttributeItem {
 				}
 				return new AnnotationValue(tag, list);
 			default :
-				throw new VerifyError("Constant pool entry for "+annotationName+" ATTRIBUTE at index ["+index+"/"+pairIndex+"] has invalid tag value ["+tag+"]");
+				throw ClassDefinitionLoader.buildError(ClassDefinitionLoader.ERR_INVALID_REF_ANNOTATION_TAG, annotationName, index, pairIndex, tag);
 		}
 	}
 
@@ -151,10 +151,10 @@ class AttributeItem {
 			final int	ref = new ByteArrayReader(content).readU2(); 
 			
 			if (!ClassDefinitionLoader.isValidReference(ref, pool)) {
-				throw new VerifyError("Constant pool entry for CONSTANTVALUE ATTRIBUTE refers to non-existent constant pool entry ["+ref+"]");
+				throw ClassDefinitionLoader.buildError(ClassDefinitionLoader.ERR_NON_EXISTENT_REF_CONSTVALUE, ref); 
 			}
 			else if (((1 << pool[ref].itemType) & VALID_CONSTANT_MASK) == 0) {
-				throw new VerifyError("Constant pool entry for CONSTANTVALUE ATTRIBUTE refers to invalid constant pool entry ["+ref+"] (CONSTANT_Integer, CONSTANT_Long, CONSTANT_Float, CONSTANT_Double or CONSTANT_String awaited)");
+				throw ClassDefinitionLoader.buildError(ClassDefinitionLoader.ERR_INVALID_REF_CONSTVALUE, ref); 
 			}
 			else {
 				this.constRef = ref; 
@@ -176,10 +176,10 @@ class AttributeItem {
 			final int	ref = new ByteArrayReader(content).readU2(); 
 			
 			if (!ClassDefinitionLoader.isValidReference(ref, pool)) {
-				throw new VerifyError("Constant pool entry for SIGNATURE ATTRIBUTE refers to non-existent constant pool entry ["+ref+"]");
+				throw ClassDefinitionLoader.buildError(ClassDefinitionLoader.ERR_NON_EXISTENT_REF_SIGNATURE, ref); 
 			}
 			else if (!ClassDefinitionLoader.isValidUTF8Reference(ref, false, pool)) {
-				throw new VerifyError("Constant pool entry for SIGNATURE ATTRIBUTE refers to invalid constant pool entry ["+ref+"] (CONSTANT_UTF8 awaited)");
+				throw ClassDefinitionLoader.buildError(ClassDefinitionLoader.ERR_INVALID_REF_SIGNATURE, ref); 
 			}
 			else {
 				this.signatureRef = ref; 
@@ -195,10 +195,10 @@ class AttributeItem {
 			final int	ref = new ByteArrayReader(content).readU2(); 
 			
 			if (!ClassDefinitionLoader.isValidReference(ref, pool)) {
-				throw new VerifyError("Constant pool entry for SOURCE FILE refers to non-existent constant pool entry ["+ref+"]");
+				throw ClassDefinitionLoader.buildError(ClassDefinitionLoader.ERR_NON_EXISTENT_REF_SOURCEFILE, ref); 
 			}
 			else if (!ClassDefinitionLoader.isValidUTF8Reference(ref, false, pool)) {
-				throw new VerifyError("Constant pool entry for SIGNATURE ATTRIBUTE refers to invalid constant pool entry ["+ref+"] (CONSTANT_UTF8 awaited)");
+				throw ClassDefinitionLoader.buildError(ClassDefinitionLoader.ERR_INVALID_REF_SOURCEFILE, ref); 
 			}
 			else {
 				this.sourceFileRef = ref; 
@@ -220,16 +220,16 @@ class AttributeItem {
 				final int[]			desc = new int[] {bar.readU2(), bar.readU2()};
 				
 				if (!ClassDefinitionLoader.isValidReference(desc[0], pool)) {
-					throw new VerifyError("Constant pool entry for SOURCE FILE refers to non-existent constant pool entry ["+desc[0]+"]");
+					throw ClassDefinitionLoader.buildError(ClassDefinitionLoader.ERR_NON_EXISTENT_REF_METHOD_PARAMETERS, desc[0]); 
 				}
 				else if (!ClassDefinitionLoader.isValidUTF8Reference(desc[0], false, pool)) {
-					throw new VerifyError("Constant pool entry for SIGNATURE ATTRIBUTE refers to invalid constant pool entry ["+desc[0]+"] (CONSTANT_UTF8 awaited)");
+					throw ClassDefinitionLoader.buildError(ClassDefinitionLoader.ERR_INVALID_REF_METHOD_PARAMETERS, desc[0]); 
 				}
 				else if (!ClassDefinitionLoader.isValidName(pool[desc[0]].content)) {
-					throw new VerifyError("Constant pool entry for SIGNATURE ATTRIBUTE refers to invalid constant pool entry ["+desc[0]+"] (invalid name)");
+					throw ClassDefinitionLoader.buildError(ClassDefinitionLoader.ERR_INVALID_REF_METHOD_PARAMETERS_NAME, desc[0], new String(pool[desc[0]].content)); 
 				}
 				else if ((desc[1] & ~AVAILABLE_ACC) != 0) {
-					throw new VerifyError("Constant pool entry for SIGNATURE ATTRIBUTE contains extrac access flags");
+					throw ClassDefinitionLoader.buildError(ClassDefinitionLoader.ERR_EXTRA_ACCESS_FLAGS_METHOD_PARAMETERS, desc[1] & ~AVAILABLE_ACC); 
 				}
 				else {
 					parameters[index] = desc;
@@ -238,7 +238,6 @@ class AttributeItem {
 			this.parameters = parameters;
 		}
 	}
-	
 	
 	static abstract class RuntimeAnnotations extends AttributeItem {
 		private final AnnotationItem[]	list;
@@ -358,7 +357,7 @@ class AttributeItem {
 					localDesc = null;
 					break;
 				default :
-					throw new VerifyError("Constant pool entry for "+getAnnotationName()+" ATTRIBUTE at index ["+index+"/"+pairIndex+"] has invalid target type ["+Integer.toHexString(type)+"]");
+					throw ClassDefinitionLoader.buildError(ClassDefinitionLoader.ERR_INVALID_REF_ANNOTATION_TAG, getAnnotationName(), index, pairIndex, type);
 			}
 			final TypePathDescriptor[]	pathDesc = new TypePathDescriptor[rdr.read()]; 
 			
@@ -368,13 +367,13 @@ class AttributeItem {
 			final int	typeIndex = rdr.readU2();
 			
 			if (!ClassDefinitionLoader.isValidReference(typeIndex, pool)) {
-				throw new VerifyError("Constant pool entry for "+getAnnotationName()+" ATTRIBUTE at index ["+index+"/"+pairIndex+"] refers to non-existent constant pool entry ["+typeIndex+"]");
+				throw ClassDefinitionLoader.buildError(ClassDefinitionLoader.ERR_NON_EXISTENT_REF_ANNOTATION_VALUE, getAnnotationName(), index, pairIndex, typeIndex);
 			}
 			else if (!ClassDefinitionLoader.isValidUTF8Reference(typeIndex, false, pool)) {
-				throw new VerifyError("Constant pool entry for "+getAnnotationName()+" ATTRIBUTE at index ["+index+"/"+pairIndex+"] refers to invalid constant pool entry ["+typeIndex+"] (CONSTANT_UTF8 awaited)");
+				throw ClassDefinitionLoader.buildError(ClassDefinitionLoader.ERR_INVALID_REF_ANNOTATION_VALUE, getAnnotationName(), index, pairIndex, typeIndex, "CONSTANT_UTF8");
 			}
-			else if (ClassDefinitionLoader.isValidClassSignature(pool[typeIndex].content)) {
-				throw new VerifyError("Constant pool entry for "+getAnnotationName()+" ATTRIBUTE at index ["+index+"/"+pairIndex+"] refers to invalid constant pool entry ["+typeIndex+"] (invalid class signature ["+new String(pool[typeIndex].content)+"])");
+			else if (!ClassDefinitionLoader.isValidClassSignature(pool[typeIndex].content)) {
+				throw ClassDefinitionLoader.buildError(ClassDefinitionLoader.ERR_INVALID_REF_ANNOTATION_CLASS_SIGNATURE, getAnnotationName(), index, pairIndex, typeIndex, new String(pool[typeIndex].content));
 			}
 			final AnnotationValue[]	pairs = new AnnotationValue[rdr.readU2()];
 			
@@ -409,4 +408,75 @@ class AttributeItem {
 			return "RUNTIMEINVISIBLETYPEANNOTATIONS";
 		}
 	}
+	
+	public static class InnerClasses extends AttributeItem {
+		private static final int	AVAILABLE_ACC = ClassDefinitionLoader.ACC_PUBLIC | ClassDefinitionLoader.ACC_PRIVATE | 
+													ClassDefinitionLoader.ACC_PROTECTED | ClassDefinitionLoader.ACC_STATIC | 
+													ClassDefinitionLoader.ACC_FINAL | ClassDefinitionLoader.ACC_INTERFACE | 
+													ClassDefinitionLoader.ACC_ABSTRACT | ClassDefinitionLoader.ACC_SYNTHETIC | 
+													ClassDefinitionLoader.ACC_ANNOTATION | ClassDefinitionLoader.ACC_ENUM;
+		
+		public final int[][]		classes;
+
+		InnerClasses(final byte[] content, final ConstantPoolItem[] pool) {
+			super(AttributeKind.InnerClasses, pool);
+			final ByteArrayReader		rdr = new ByteArrayReader(content); 
+			final int					amount = rdr.readU2();
+			
+			this.classes = new int[amount][];
+			
+			for(int index = 0; index < amount; index++) {
+				final int 	inner = rdr.readU2(), outer = rdr.readU2();
+				final int	innerName = rdr.readU2(), accessFlags = rdr.readU2();
+				
+				if (!ClassDefinitionLoader.isValidReference(inner, pool)) {
+					throw ClassDefinitionLoader.buildError(ClassDefinitionLoader.ERR_NON_EXISTENT_REF_INNER_CLASSES, inner); 
+				}
+				else if (pool[inner].itemType != ClassDefinitionLoader.CONSTANT_Class) {
+					throw ClassDefinitionLoader.buildError(ClassDefinitionLoader.ERR_INVALID_REF_INNER_CLASSES, inner, "CONSTANT_Class"); 
+				}
+				else if (outer != 0 && !ClassDefinitionLoader.isValidReference(outer, pool)) {
+					throw ClassDefinitionLoader.buildError(ClassDefinitionLoader.ERR_NON_EXISTENT_REF_INNER_CLASSES, outer); 
+				}
+				else if (outer != 0 && pool[outer].itemType != ClassDefinitionLoader.CONSTANT_Class) {
+					throw ClassDefinitionLoader.buildError(ClassDefinitionLoader.ERR_INVALID_REF_INNER_CLASSES, outer, "CONSTANT_Class"); 
+				}
+				else if (innerName != 0 && !ClassDefinitionLoader.isValidReference(innerName, pool)) {
+					throw ClassDefinitionLoader.buildError(ClassDefinitionLoader.ERR_NON_EXISTENT_REF_INNER_CLASSES, innerName); 
+				}
+				else if (innerName != 0 && !ClassDefinitionLoader.isValidName(pool[innerName].content)) {
+					throw ClassDefinitionLoader.buildError(ClassDefinitionLoader.ERR_INVALID_NAME_REF_INNER_CLASSES, innerName); 
+				}
+				else if ((accessFlags & ~AVAILABLE_ACC) != 0) {
+					throw ClassDefinitionLoader.buildError(ClassDefinitionLoader.ERR_EXTRA_ACCESS_FLAGS_INNER_CLASSES, accessFlags & ~AVAILABLE_ACC); 
+				}
+				classes[index] = new int[] {inner, outer, innerName, accessFlags};
+			}
+		}
+	}	
+
+	public static class EnclosingMethod extends AttributeItem {
+		public final int	clazz;
+		public final int	method;
+
+		EnclosingMethod(final byte[] content, final ConstantPoolItem[] pool) {
+			super(AttributeKind.EnclosingMethod, pool);
+			final ByteArrayReader		rdr = new ByteArrayReader(content);
+			
+			this.clazz = rdr.readU2();
+			this.method = rdr.readU2();
+			if (!ClassDefinitionLoader.isValidReference(clazz, pool)) {
+				throw ClassDefinitionLoader.buildError(ClassDefinitionLoader.ERR_NON_EXISTENT_REF_INNER_CLASSES, clazz); 
+			}
+			else if (pool[clazz].itemType != ClassDefinitionLoader.CONSTANT_Class) {
+				throw ClassDefinitionLoader.buildError(ClassDefinitionLoader.ERR_INVALID_REF_ENCLOSING_METHOD, clazz, "CONSTANT_Class"); 
+			}
+			else if (method != 0 && !ClassDefinitionLoader.isValidReference(method, pool)) {
+				throw ClassDefinitionLoader.buildError(ClassDefinitionLoader.ERR_NON_EXISTENT_REF_INNER_CLASSES, method); 
+			}
+			else if (method != 0 && pool[method].itemType != ClassDefinitionLoader.CONSTANT_NameAndType) {
+				throw ClassDefinitionLoader.buildError(ClassDefinitionLoader.ERR_INVALID_REF_ENCLOSING_METHOD, method, "CONSTANT_NameAndType"); 
+			}
+		}
+	}	
 }
