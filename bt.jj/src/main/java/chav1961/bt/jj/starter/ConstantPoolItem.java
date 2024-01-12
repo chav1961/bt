@@ -5,9 +5,11 @@ class ConstantPoolItem extends AbstractConstantPoolItem {
 	public final int	ref2;
 	public final long	value;
 	public final char[]	content;
+	final int offset; 
 	
-	public ConstantPoolItem(final int itemType, final int ref1, final int ref2, final long value, final char[] content) {
+	public ConstantPoolItem(final int offset, final int itemType, final int ref1, final int ref2, final long value, final char[] content) {
 		super(itemType);
+		this.offset = offset;
 		this.ref1 = ref1;
 		this.ref2 = ref2;
 		this.value = value;

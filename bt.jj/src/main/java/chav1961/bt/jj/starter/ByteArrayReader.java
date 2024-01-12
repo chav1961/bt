@@ -2,34 +2,41 @@ package chav1961.bt.jj.starter;
 
 class ByteArrayReader {
 	private final byte[]	content;
-	private int 			displ;
+	private int 			displ, offset;
 	
 	public ByteArrayReader(final byte[] content) {
 		this.content = content;
 		this.displ = 0;
+		this.offset = 0;
 	}
 	
 	public int read() {
+		offset = displ;
 		return content[displ++];
 	}
 	
 	public int readU2() {
+		offset = displ;
 		return (content[displ++] << 8) & 0xFF00 | (content[displ++] & 0xFF);
 	}
 
 	public int readU4() {
+		offset = displ;
 		return (content[displ++] << 24) & 0xFF000000 | (content[displ++] << 16) & 0xFF0000 | (content[displ++] << 8) & 0xFF00 | (content[displ++] & 0xFF); 
 	}
 
 	public long readU8() {
+		offset = displ;
 		return 0L | (content[displ++] << 56) & 0xFF0000000000L | (content[displ++] << 48) & 0xFF0000000000L | (content[displ++] << 40) & 0xFF0000000000L | (content[displ++] << 32) & 0xFF00000000L | (content[displ++] << 24) & 0xFF000000 | (content[displ++] << 16) & 0xFF0000 | (content[displ++] << 8) & 0xFF00 | (content[displ++] & 0xFF);
 	}
 	
 	public int read(byte[] buffer) {
+		offset = displ;
 		return read(buffer, 0, buffer.length);
 	}
 	
 	public int read(byte[] buffer, int to, int len) {
+		offset = displ;
 		for (int index = 0; index < len; index++) {
 			buffer[to + index] = content[displ + index];
 		}
@@ -38,6 +45,8 @@ class ByteArrayReader {
 	}
 	
 	public char[] readUTF() {
+		offset = displ;
+		
 		final int		length = readU2();
 		int				count = 0;
 		
@@ -69,14 +78,12 @@ class ByteArrayReader {
 		return result;
 	}
 	
-	public int getFP() {
-		return displ;
+	public int offset() {
+		return offset;
 	}
 
 	@Override
 	public String toString() {
 		return "ByteArrayReader [displ=0x" + Integer.toHexString(displ) + ", byte=0x" + Integer.toHexString(content[displ] & 0xFF)+ "]";
 	}
-	
-	
 }

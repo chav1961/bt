@@ -121,6 +121,9 @@ class ClassDefinitionLoader {
 	static final String	ERR_NON_EXISTENT_REF_LOCAL_VARIABLE_TYPE = "LOCAL_VARIABLE_TYPE ATTRIBUTE refers to non-existent constant pool entry [%1$d]";
 	static final String	ERR_INVALID_REF_LOCAL_VARIABLE_TYPE = "LOCAL_VARIABLE_TYPE ATTRIBUTE refers to invalid constant pool entry [%1$d] (CONSTANT_Utf8 awaited)";
 	static final String	ERR_INVALID_SIGNATURE_LOCAL_VARIABLE_TYPE = "LOCAL_VARIABLE_TYPE ATTRIBUTE refers to invalid constant pool entry [%1$d] (invalid class signature '%2$s')";
+	static final String	ERR_NON_EXISTENT_REF_BOOTSTRAP_METHODS = "BOOTSTRAP_METHODS ATTRIBUTE at index [%1$d] refers to non-existent constant pool entry [%2$d]";
+	static final String	ERR_INVALID_REF_BOOTSTRAP_METHODS = "BOOTSTRAP_METHODS ATTRIBUTE at index [%1$d] refers to invalid constant pool entry [%2$d] (CONSTANT_MethofHandle awaited)";
+	static final String	ERR_NON_EXISTENT_ARG_REF_BOOTSTRAP_METHODS = "BOOTSTRAP_METHODS ATTRIBUTE at index [%1$d] - argument [%2$d] refers to non-existent constant pool entry [%3$d]";
 	
 	private static final short	ACC_FIELD = ACC_PUBLIC|ACC_PRIVATE|ACC_PROTECTED|ACC_STATIC|ACC_FINAL|ACC_VOLATILE|ACC_TRANSIENT|ACC_SYNTHETIC|ACC_ENUM;	
 	
@@ -450,7 +453,7 @@ class ClassDefinitionLoader {
 			case CONSTANT_Package				:
 				return new ConstantPoolItem(JavaByteCodeConstants.CONSTANT_Package, rdr.readU2(), 0, 0, null); 
 			default :
-				throw buildError(ERR_UNSUPPORTED_CONSTANT_POOL_ITEM_TYPE, itemType, index, rdr.getFP());
+				throw buildError(ERR_UNSUPPORTED_CONSTANT_POOL_ITEM_TYPE, itemType, index, rdr.offset());
 		}
 	}
 
@@ -573,9 +576,12 @@ class ClassDefinitionLoader {
 					return new AttributeItem.RuntimeInvisibleTypeAnnotations(content, pool);
 				case AnnotationDefault	:
 					return new AttributeItem.AnnotationDefault(content, pool);
-
+				case BootstrapMethods	:
+					return new AttributeItem.BootstrapMethods(content, pool);
 				case MethodParameters	:
 					return new AttributeItem.MethodParameters(content, pool);
+					
+					
 				default :
 					return new AttributeItem(kind, pool);
 			}

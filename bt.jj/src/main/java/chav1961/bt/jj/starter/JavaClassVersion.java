@@ -5,12 +5,11 @@ import chav1961.purelib.cdb.JavaByteCodeConstants;
 class JavaClassVersion implements Comparable<JavaClassVersion> {
 	public final int	major;
 	public final int	minor;
+
+	public JavaClassVersion(final int majorAndMinor) {
+		this(majorAndMinor & 0xFFFF, majorAndMinor >> 16);
+	}
 	
-	/**
-	 * <p>Constructor of the class</p>
-	 * @param major major version number
-	 * @param minor minor version number
-	 */
 	public JavaClassVersion(final int major, final int minor) {
 		this.major = major;
 		this.minor = minor;

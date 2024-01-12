@@ -783,6 +783,49 @@ class AttributeItem {
 			this.value = getAnnotationValue(pool, "", new ByteArrayReader(content), 0, 0);
 		}
 	}
+
+	public static class BootstrapMethods extends AttributeItem {
+		public final BootstrapMethod[]	methods;
+
+		BootstrapMethods(final byte[] content, final ConstantPoolItem[] pool) {
+			super(AttributeKind.BootstrapMethods, pool);
+			final ByteArrayReader		rdr = new ByteArrayReader(content); 
+
+			this.methods = new BootstrapMethod[rdr.readU2()];
+			
+			for(int index = 0; index < methods.length; index++) {
+				final int 	ref = rdr.readU2();
+				
+				if (!ClassDefinitionLoader.isValidReference(ref, pool)) {
+					throw ClassDefinitionLoader.buildError(ClassDefinitionLoader.ERR_NON_EXISTENT_REF_BOOTSTRAP_METHODS, index, ref);
+				}
+				else if (pool[ref].itemType != ClassDefinitionLoader.CONSTANT_MethodHandle) {
+					throw ClassDefinitionLoader.buildError(ClassDefinitionLoader.ERR_INVALID_REF_BOOTSTRAP_METHODS, index, ref);
+				}
+
+				final int[]	args = new int[rdr.readU2()];
+				
+				for(int argIndex = 0; argIndex < args.length; argIndex++) {
+					args[index] = rdr.readU2();
+					
+					if (!ClassDefinitionLoader.isValidReference(args[index], pool)) {
+						throw ClassDefinitionLoader.buildError(ClassDefinitionLoader.ERR_NON_EXISTENT_ARG_REF_BOOTSTRAP_METHODS, index, argIndex, args[index]);
+					}
+ 				}
+				methods[index] = new BootstrapMethod(ref, args);
+			}
+		}
+		
+		public static class BootstrapMethod {
+			public final int	methodRef;
+			public final int[]	arguments;
+			
+			public BootstrapMethod(final int methodRef, final int... arguments) {
+				this.methodRef = methodRef;
+				this.arguments = arguments;
+			}
+		}
+	}
 	
 	public static class MethodParameters extends AttributeItem {
 		private static final int	AVAILABLE_ACC = ClassDefinitionLoader.ACC_FINAL | ClassDefinitionLoader.ACC_SYNTHETIC | ClassDefinitionLoader.ACC_MANDATED; 
@@ -817,5 +860,114 @@ class AttributeItem {
 		}
 	}
 	
-	
+
+	public static class Module extends AttributeItem {
+		public final int	name;
+		public final int	accessFlags;
+		public final int	version;
+		
+		public final Requires[]	requires;
+		public final Exports[]	exports;
+		public final Opens[]	opens;
+		public final int[]		uses;
+		public final Provides[]	provides;
+		
+
+		Module(final byte[] content, final ConstantPoolItem[] pool) {
+			super(AttributeKind.Module, pool);
+			final ByteArrayReader	rdr = new ByteArrayReader(content);
+			
+			this.name = rdr.readU2();
+			this.accessFlags = rdr.readU2();
+			this.version = rdr.readU2();
+			
+			this.requires = new Requires[rdr.readU2()];
+			for(int index = 0; index < requires.length; index++) {
+				final int	name = rdr.readU2(), accessFlags = rdr.readU2(), version = rdr.readU2();
+				
+				requires[index] = new Requires(name, accessFlags, version);
+			}
+			
+			this.exports = new Exports[rdr.readU2()];
+			for(int index = 0; index < exports.length; index++) {
+				final int	name = rdr.readU2(), accessFlags = rdr.readU2(), list[] = new int[rdr.readU2()];
+
+				for(int listIndex = 0; listIndex < list.length; listIndex++) {
+					list[listIndex] = rdr.readU2();
+				}
+				exports[index] = new Exports(name, accessFlags, list);
+			}
+			
+			this.opens = new Opens[rdr.readU2()];
+			for(int index = 0; index < opens.length; index++) {
+				final int	name = rdr.readU2(), accessFlags = rdr.readU2(), list[] = new int[rdr.readU2()];
+				
+				for(int listIndex = 0; listIndex < list.length; listIndex++) {
+					list[listIndex] = rdr.readU2();
+				}
+				opens[index] = new Opens(name, accessFlags, list);
+			}
+			
+			this.uses = new int[rdr.readU2()];
+			for(int index = 0; index < uses.length; index++) {
+				uses[index] = rdr.readU2();
+			}
+			
+			this.provides = new Provides[rdr.readU2()];
+			for(int index = 0; index < provides.length; index++) {
+				final int	name = rdr.readU2(), list[] = new int[rdr.readU2()];
+
+				for(int listIndex = 0; listIndex < list.length; listIndex++) {
+					list[listIndex] = rdr.readU2();
+				}
+				provides[index] = new Provides(name, list);
+			}
+		}
+
+		public static class Requires {
+			public final int	name;
+			public final int	accessFlags;
+			public final int	version;
+			
+			public Requires(final int name, final int accessFlags, final int version) {
+				this.name = name;
+				this.accessFlags = accessFlags;
+				this.version = version;
+			}
+		}
+		
+		public static class Exports {
+			public final int	name;
+			public final int	accessFlags;
+			public final int[]	exports;
+			
+			public Exports(final int name, final int accessFlags, final int... exports) {
+				this.name = name;
+				this.accessFlags = accessFlags;
+				this.exports = exports;
+			}
+		}
+
+		public static class Opens {
+			public final int	name;
+			public final int	accessFlags;
+			public final int[]	opens;
+			
+			public Opens(final int name, final int accessFlags, final int... opens) {
+				this.name = name;
+				this.accessFlags = accessFlags;
+				this.opens = opens;
+			}
+		}
+
+		public static class Provides {
+			public final int	name;
+			public final int[]	provides;
+			
+			public Provides(final int name, final int... provides) {
+				this.name = name;
+				this.provides = provides;
+			}
+		}
+	}
 }
