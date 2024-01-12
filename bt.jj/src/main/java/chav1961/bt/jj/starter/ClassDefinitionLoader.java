@@ -106,7 +106,21 @@ class ClassDefinitionLoader {
 	static final String	ERR_EXTRA_ACCESS_FLAGS_INNER_CLASSES = "Constant pool entry for INNER_CLASSES contains extra acccess flags [%1$x]";
 	static final String	ERR_NON_EXISTENT_REF_ENCLOSING_METHOD = "ENCLOSING_METHOD ATTRIBUTE refers to non-existent constant pool entry [%1$d]";
 	static final String	ERR_INVALID_REF_ENCLOSING_METHOD = "ENCLOSING_METHOD ATTRIBUTE refers to invalid constant pool entry [%1$d] (%2$s awaited)";
-	
+	static final String	ERR_INVALID_START_PC_EXCEPTIONS = "CODE ATTRIBUTE has invalid exception table item at index [%1$d]: start_PC [%2$d] outside code array [%3$d]";
+	static final String	ERR_INVALID_END_PC_EXCEPTIONS = "CODE ATTRIBUTE has invalid exception table item at index [%1$d]: end_PC [%2$d] outside code array [%3$d]";
+	static final String	ERR_END_PC_LESS_START_PC_EXCEPTIONS = "CODE ATTRIBUTE has invalid exception table item at index [%1$d]: end_PC [%2$d] is less than start_PC [%3$d]";
+	static final String	ERR_INVALID_HANDLER_PC_EXCEPTIONS = "CODE ATTRIBUTE has invalid exception table item at index [%1$d]: handler_PC [%2$d] outside code array [%3$d]";
+	static final String	ERR_NON_EXISTENT_CATCH_EXCEPTIONS = "CODE ATTRIBUTE has invalid exception table item at index [%1$d]: catch refers to non-existent constant pool entry [%2$d]";
+	static final String	ERR_INVALID_CATCH_EXCEPTIONS = "CODE ATTRIBUTE has invalid exception table item at index [%1$d]: catch refers to invalid constant pool entry [%2$d] (CONSTANT_Class awaited)";
+	static final String	ERR_INVALID_TAG_STACKMAPTABLE = "STACKMAPTABLE ATTRIBUTE has invalid tag [%2$x] at index [%1$d]";
+	static final String	ERR_UNSUPPORTED_TAG_STACKMAPTABLE = "STACKMAPTABLE ATTRIBUTE has unsupported tag [%2$x] at index [%1$d]";
+	static final String	ERR_NON_EXISTENT_REF_EXCEPTIONS = "EXCEPTIONS ATTRIBUTE refers to non-existent constant pool entry [%1$d]";
+	static final String	ERR_INVALID_REF_EXCEPTIONS = "EXCEPTIONS ATTRIBUTE refers to invalid constant pool entry [%1$d] (CONSTANT_Class awaited)";
+	static final String	ERR_NON_EXISTENT_REF_LOCAL_VARIABLE = "LOCAL_VARIABLE ATTRIBUTE refers to non-existent constant pool entry [%1$d]";
+	static final String	ERR_INVALID_REF_LOCAL_VARIABLE = "LOCAL_VARIABLE ATTRIBUTE refers to invalid constant pool entry [%1$d] (%2$s awaited)";
+	static final String	ERR_NON_EXISTENT_REF_LOCAL_VARIABLE_TYPE = "LOCAL_VARIABLE_TYPE ATTRIBUTE refers to non-existent constant pool entry [%1$d]";
+	static final String	ERR_INVALID_REF_LOCAL_VARIABLE_TYPE = "LOCAL_VARIABLE_TYPE ATTRIBUTE refers to invalid constant pool entry [%1$d] (CONSTANT_Utf8 awaited)";
+	static final String	ERR_INVALID_SIGNATURE_LOCAL_VARIABLE_TYPE = "LOCAL_VARIABLE_TYPE ATTRIBUTE refers to invalid constant pool entry [%1$d] (invalid class signature '%2$s')";
 	
 	private static final short	ACC_FIELD = ACC_PUBLIC|ACC_PRIVATE|ACC_PROTECTED|ACC_STATIC|ACC_FINAL|ACC_VOLATILE|ACC_TRANSIENT|ACC_SYNTHETIC|ACC_ENUM;	
 	
@@ -523,10 +537,32 @@ class ClassDefinitionLoader {
 			switch (kind) {
 				case ConstantValue 	:
 					return new AttributeItem.ConstantValue(content, pool);
+				case Code 			:
+					return new AttributeItem.Code(content, pool);
+				case StackMapTable	:
+					return new AttributeItem.StackMapTable(content, pool);
+				case Exceptions		:
+					return new AttributeItem.Exceptions(content, pool);
 				case InnerClasses	:
 					return new AttributeItem.InnerClasses(content, pool);
-				case MethodParameters	:
-					return new AttributeItem.MethodParameters(content, pool);
+				case EnclosingMethod	:
+					return new AttributeItem.EnclosingMethod(content, pool);
+				case Synthetic :
+					return new AttributeItem(kind, pool);
+				case Signature		:
+					return new AttributeItem.Signature(content, pool);
+				case SourceFile		:
+					return new AttributeItem.SourceFile(content, pool);
+				case SourceDebugExtension	:
+					return new AttributeItem.SourceDebugExtension(content, pool);
+				case LineNumberTable:
+					return new AttributeItem.LineNumberTable(content, pool);
+				case LocalVariableTable	:
+					return new AttributeItem.LocalVariablesTable(content, pool);
+				case LocalVariableTypeTable	:
+					return new AttributeItem.LocalVariablesTypeTable(content, pool);
+				case Deprecated :
+					return new AttributeItem(kind, pool);
 				case RuntimeVisibleAnnotations	:
 					return new AttributeItem.RuntimeVisibleAnnotations(content, pool);
 				case RuntimeInvisibleAnnotations	:
@@ -535,13 +571,11 @@ class ClassDefinitionLoader {
 					return new AttributeItem.RuntimeVisibleTypeAnnotations(content, pool);
 				case RuntimeInvisibleTypeAnnotations	:
 					return new AttributeItem.RuntimeInvisibleTypeAnnotations(content, pool);
-				case Signature		:
-					return new AttributeItem.Signature(content, pool);
-				case SourceFile		:
-					return new AttributeItem.SourceFile(content, pool);
-					
-				case Synthetic : case Deprecated :
-					return new AttributeItem(kind, pool);
+				case AnnotationDefault	:
+					return new AttributeItem.AnnotationDefault(content, pool);
+
+				case MethodParameters	:
+					return new AttributeItem.MethodParameters(content, pool);
 				default :
 					return new AttributeItem(kind, pool);
 			}
