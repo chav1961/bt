@@ -137,33 +137,4 @@ class InternalUtils {
 		}
 		return displ;
 	}
-	
-	public static String resolveDescriptor(final ConstantPoolItem[] pool, final int index) {
-		switch (pool[index].itemType) {
-			case ClassDefinitionLoader.CONSTANT_Class					:
-				return resolveDescriptor(pool, pool[index].ref1); 
-			case ClassDefinitionLoader.CONSTANT_Fieldref				:
-			case ClassDefinitionLoader.CONSTANT_Methodref				:
-			case ClassDefinitionLoader.CONSTANT_InterfaceMethodref	:
-			case ClassDefinitionLoader.CONSTANT_MethodHandle			:
-			case ClassDefinitionLoader.CONSTANT_MethodType			:
-			case ClassDefinitionLoader.CONSTANT_InvokeDynamic			:
-				return resolveDescriptor(pool, pool[index].ref1)+"."+resolveDescriptor(pool, pool[index].ref2); 
-			case ClassDefinitionLoader.CONSTANT_String				:
-				return resolveDescriptor(pool, pool[index].ref1); 
-			case ClassDefinitionLoader.CONSTANT_Integer				:
-			case ClassDefinitionLoader.CONSTANT_Long					:
-				return String.valueOf(pool[index].value); 
-			case ClassDefinitionLoader.CONSTANT_Float					:
-				return String.valueOf(Float.intBitsToFloat((int)pool[index].value)); 
-			case ClassDefinitionLoader.CONSTANT_Double				:
-				return String.valueOf(Double.longBitsToDouble(pool[index].value)); 
-			case ClassDefinitionLoader.CONSTANT_NameAndType			:
-				return resolveDescriptor(pool, pool[index].ref1)+" "+resolveDescriptor(pool, pool[index].ref1); 
-			case ClassDefinitionLoader.CONSTANT_Utf8					:
-				return new String(pool[index].content); 
-			default :
-				throw new IllegalArgumentException("illegal constain pool item type ["+pool[index].itemType+"] at index ["+index+"]");
-		}
-	}
 }
