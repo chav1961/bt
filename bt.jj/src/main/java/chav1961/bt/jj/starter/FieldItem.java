@@ -9,12 +9,12 @@ class FieldItem {
 	public final int	fieldDesc;
 	public final int	accessFlags;
 	public final AttributeItem[]	attrs;
-	public int 	displacement = 0;
-	public int 	length = 0;
+	final int			offset;
 	
-	private final ConstantPoolItem[]	pool;
+	private final ConstantPool	pool;
 	
-	public FieldItem(final int fieldName, final int fieldDesc, final int accessFlags, final ConstantPoolItem[] pool, final AttributeItem... attrs) {
+	public FieldItem(final int offset, final int fieldName, final int fieldDesc, final int accessFlags, final ConstantPool pool, final AttributeItem... attrs) {
+		this.offset = offset;
 		this.fieldName = fieldName;
 		this.fieldDesc = fieldDesc;
 		this.accessFlags = accessFlags;
@@ -22,13 +22,12 @@ class FieldItem {
 		this.attrs = attrs;
 	}
 	
-	
 	public Field getFieldInstance() {
 		return null;
 	}
 
 	@Override
 	public String toString() {
-		return "FieldItem [fieldName=" +  InternalUtils.resolveDescriptor(pool, fieldName) + ", fieldDesc=" +  InternalUtils.resolveDescriptor(pool, fieldDesc) + ", accessFlags=" + Modifier.toString(accessFlags) + ", attrs=" + Arrays.toString(attrs) + "]";
+		return "FieldItem [fieldName=" +  pool.deepToString(fieldName) + ", fieldDesc=" +  pool.deepToString(fieldDesc) + ", accessFlags=" + Modifier.toString(accessFlags) + ", attrs=" + Arrays.toString(attrs) + "]";
 	}
 }

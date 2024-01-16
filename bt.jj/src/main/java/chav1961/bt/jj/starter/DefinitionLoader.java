@@ -32,10 +32,15 @@ public class DefinitionLoader {
 	static final short	ACC_STATIC = 0x0008;
 	static final short	ACC_FINAL = 0x0010;
 	static final short	ACC_SUPER = 0x0020;
+	static final short	ACC_SYNCHRONIZED = 0x0020;
 	static final short	ACC_VOLATILE = 0x0040;
+	static final short	ACC_BRIDGE = 0x0040;
 	static final short	ACC_TRANSIENT = 0x0080;
+	static final short	ACC_VARARGS = 0x0080;
+	static final short	ACC_NATIVE = 0x0100;
 	static final short	ACC_INTERFACE = 0x0200;
 	static final short	ACC_ABSTRACT = 0x0400;
+	static final short	ACC_STRICT = 0x0800;
 	static final short	ACC_SYNTHETIC = 0x1000;
 	static final short	ACC_ANNOTATION = 0x2000;
 	static final short	ACC_ENUM = 0x4000;
@@ -45,10 +50,11 @@ public class DefinitionLoader {
 	static final char[]	VALID_CLINIT = "<clinit>".toCharArray();
 	static final char[]	VALID_INIT = "<init>".toCharArray();
 	
-	private static final short	CLASS_FLAGS_AVAILABLE = ACC_PUBLIC | ACC_FINAL | ACC_SUPER | ACC_INTERFACE | ACC_ABSTRACT | ACC_SYNTHETIC | ACC_ANNOTATION | ACC_ENUM | ACC_MODULE;			
+	public static void parse(final ByteArrayReader rdr) {
+		parse(rdr, true, JavaAttributeProcessing.Execute);
+	}
 	
-	
-	public static void parse(final ByteArrayReader rdr, final JavaAttributeProcessing processing) {
+	public static void parse(final ByteArrayReader rdr, final boolean verify, final JavaAttributeProcessing processing) {
 		if (rdr == null) {
 			throw new NullPointerException("Reader can't be null");
 		}
@@ -66,26 +72,30 @@ public class DefinitionLoader {
 					throw err.buildError(rdr.offset(), VerifyErrorManager.ERR_VERSION_TOO_NEW, "", version, CURRENT_VERSION);
 				}
 				else {
-					final ConstantPool	pool = loadConstantPool(rdr, err);
+					final ConstantPool	pool = loadConstantPool(rdr, verify, err);
 					
 					err.setConstantPool(pool);
 					
 					final int	accessFlags = rdr.readU2();
 					
-					checkClassAccessFlags(rdr.offset(), accessFlags, err);
+					if (verify) {
+						checkClassAccessFlags(rdr.offset(), accessFlags, err);
+					}
 					
 					final int	thisClass = rdr.readU2();
-					
-					if (!pool.isRefValid(thisClass)) {
-						throw err.buildError(rdr.offset(), VerifyErrorManager.ERR_NON_EXISTENT_REF_CP, "thisClass", thisClass);
-					}
-					else if (!pool.hasType(thisClass, CONSTANT_Class)) {
-						throw err.buildError(rdr.offset(), VerifyErrorManager.ERR_INVALID_REF_CP, "thisClass", thisClass);
+
+					if (verify) {
+						if (!pool.isRefValid(thisClass)) {
+							throw err.buildError(rdr.offset(), VerifyErrorManager.ERR_NON_EXISTENT_REF_CP, "thisClass", thisClass);
+						}
+						else if (!pool.hasType(thisClass, CONSTANT_Class)) {
+							throw err.buildError(rdr.offset(), VerifyErrorManager.ERR_INVALID_REF_CP, "thisClass", thisClass);
+						}
 					}
 					
 					final int	superClass = rdr.readU2();
 					
-					if (superClass != 0) {
+					if (verify && superClass != 0) {
 						if (!pool.isRefValid(superClass)) {
 							throw err.buildError(rdr.offset(), VerifyErrorManager.ERR_NON_EXISTENT_REF_CP, "superClass", superClass);
 						}
@@ -104,71 +114,56 @@ public class DefinitionLoader {
 						final int	interfaceRef = rdr.readU2();
 						
 						err.setIndex(index);
-						if (!pool.isRefValid(interfaceRef)) {
-							throw err.buildError(rdr.offset(), VerifyErrorManager.ERR_NON_EXISTENT_REF_CP, "interface", interfaceRef);
-						}
-						else if (!pool.hasType(interfaceRef, CONSTANT_Class)) {
-							throw err.buildError(rdr.offset(), VerifyErrorManager.ERR_INVALID_REF_CP, "interface", interfaceRef);
-						}
-						else {
-							interfaces[index] = new InterfaceItem(rdr.offset(), interfaceRef, pool);
-						}
-					}
-					err.pop();
-					err.pop();	// section
-					
-					err.pushSection("<fields>");
-					err.pushIndices();
-					for (int index = 0, maxIndex = interfaces.length; index < maxIndex; index++) {
-						final int	interfaceRef = rdr.readU2();
-						
-						err.setIndex(index);
-						if (!pool.isRefValid(interfaceRef)) {
-							throw err.buildError(rdr.offset(), VerifyErrorManager.ERR_NON_EXISTENT_REF_CP, "field", interfaceRef);
-						}
-						else if (!pool.hasType(interfaceRef, CONSTANT_Class)) {
-							throw err.buildError(rdr.offset(), VerifyErrorManager.ERR_INVALID_REF_CP, "field", interfaceRef);
-						}
-						else {
-							interfaces[index] = new InterfaceItem(rdr.offset(), interfaceRef, pool);
+						interfaces[index] = new InterfaceItem(rdr.offset(), interfaceRef, pool);
+						if (verify) {
+							if (!pool.isRefValid(interfaceRef)) {
+								throw err.buildError(rdr.offset(), VerifyErrorManager.ERR_NON_EXISTENT_REF_CP, "interface", interfaceRef);
+							}
+							else if (!pool.hasType(interfaceRef, CONSTANT_Class)) {
+								throw err.buildError(rdr.offset(), VerifyErrorManager.ERR_INVALID_REF_CP, "interface", interfaceRef);
+							}
 						}
 					}
 					err.pop();
 					err.pop();	// section
 
+					final FieldItem[]	fields = new FieldItem[rdr.readU2()];
+					
+					err.pushSection("<fields>");
+					err.pushIndices();
+					for (int index = 0, maxIndex = interfaces.length; index < maxIndex; index++) {
+						err.setIndex(index);
+						fields[index] = readFieldDescriptor(rdr, pool);
+						if (verify) {
+							verifyFieldDescriptor(fields[index], (accessFlags & ACC_INTERFACE) != 0,  (accessFlags & ACC_ENUM) != 0, pool, err);
+						}
+					}
+					err.pop();
+					err.pop();	// section
+
+					final MethodItem[]	methods = new MethodItem[rdr.readU2()];
+					
 					err.pushSection("<methods>");
 					err.pushIndices();
 					for (int index = 0, maxIndex = interfaces.length; index < maxIndex; index++) {
-						final int	interfaceRef = rdr.readU2();
-						
 						err.setIndex(index);
-						if (!pool.isRefValid(interfaceRef)) {
-							throw err.buildError(rdr.offset(), VerifyErrorManager.ERR_NON_EXISTENT_REF_CP, "method", interfaceRef);
-						}
-						else if (!pool.hasType(interfaceRef, CONSTANT_Class)) {
-							throw err.buildError(rdr.offset(), VerifyErrorManager.ERR_INVALID_REF_CP, "method", interfaceRef);
-						}
-						else {
-							interfaces[index] = new InterfaceItem(rdr.offset(), interfaceRef, pool);
+						methods[index] = readMethodDescriptor(rdr, pool, err);
+						if (verify) {
+							verifyMethodDescriptor(methods[index], (accessFlags & ACC_INTERFACE) != 0, version, pool, err);
 						}
 					}
 					err.pop();
 					err.pop();	// section
 					
+					final AttributeItem[]	attrs = new AttributeItem[rdr.readU2()];
+					
 					err.pushSection("<attributes>");
 					err.pushIndices();
 					for (int index = 0, maxIndex = interfaces.length; index < maxIndex; index++) {
-						final int	interfaceRef = rdr.readU2();
-						
 						err.setIndex(index);
-						if (!pool.isRefValid(interfaceRef)) {
-							throw err.buildError(rdr.offset(), VerifyErrorManager.ERR_NON_EXISTENT_REF_CP, "attribute", interfaceRef);
-						}
-						else if (!pool.hasType(interfaceRef, CONSTANT_Class)) {
-							throw err.buildError(rdr.offset(), VerifyErrorManager.ERR_INVALID_REF_CP, "attribute", interfaceRef);
-						}
-						else {
-							interfaces[index] = new InterfaceItem(rdr.offset(), interfaceRef, pool);
+						attrs[index] = readAttributeItem(rdr, pool);
+						if (verify) {
+							verifyAttributeItem(attrs[index], pool, err);
 						}
 					}
 					err.pop();
@@ -199,7 +194,7 @@ public class DefinitionLoader {
 		}
 	}
 
-	private static ConstantPool loadConstantPool(final ByteArrayReader rdr, final VerifyErrorManager err) {
+	private static ConstantPool loadConstantPool(final ByteArrayReader rdr, final boolean verify, final VerifyErrorManager err) {
 		final ConstantPoolItem[]	pool = new ConstantPoolItem[rdr.readU2()];
 
 		err.pushSection("<constantpool>");
@@ -212,17 +207,20 @@ public class DefinitionLoader {
 			}
 		}
 		err.pop();
+	
+		final ConstantPool	cp = new ConstantPool(pool);
 		
-		final ConstantPool	cp = new ConstantPool(pool); 
-		err.pushIndices();
-		for (int index = 1/* NOT 0 !!!*/, maxIndex = pool.length; index < maxIndex; index++) {
-			err.setIndex(index);
-			verifyConstantPoolItem(cp, index, err);
-			if (pool[index].itemType == CONSTANT_Long || pool[index].itemType == CONSTANT_Double) {
-				index++;
+		if (verify) {
+			err.pushIndices();
+			for (int index = 1/* NOT 0 !!!*/, maxIndex = pool.length; index < maxIndex; index++) {
+				err.setIndex(index);
+				verifyConstantPoolItem(cp, index, err);
+				if (pool[index].itemType == CONSTANT_Long || pool[index].itemType == CONSTANT_Double) {
+					index++;
+				}
 			}
+			err.pop();
 		}
-		err.pop();
 		err.pop();	// section
 		return cp;
 	}
@@ -283,7 +281,7 @@ public class DefinitionLoader {
 					throw err.buildError(item.offset, VerifyErrorManager.ERR_INVALID_REF_CP, "CONSTANT_Class", item.ref1, "non-zero CONSTANT_Utf8");
 				}
 				else if (!isValidClassSignature(pool.get(item.ref1).content) && !isValidClassRefSignature(pool.get(item.ref1).content)) {
-					throw err.buildError(item.offset, VerifyErrorManager.ERR_INVALID_CLASS_SIGNATURE_CP, "CONSTANT_Class", new String(pool.get(item.ref1).content)); 
+					throw err.buildError(item.offset, VerifyErrorManager.ERR_INVALID_CLASS_OR_METHOD_SIGNATURE_CP, "CONSTANT_Class", new String(pool.get(item.ref1).content)); 
 				}
 				break;
 			case CONSTANT_Fieldref				:
@@ -353,7 +351,7 @@ public class DefinitionLoader {
 					throw err.buildError(item.offset, VerifyErrorManager.ERR_INVALID_NAME_CP, "CONSTANT_NameAndType.name", pool.get(item.ref1).content); 
 				}
 				else if (!isValidClassRefSignature(pool.get(item.ref2).content) && !isValidMethodSignature(pool.get(item.ref2).content)) {
-					throw err.buildError(item.offset, VerifyErrorManager.ERR_INVALID_CLASS_SIGNATURE_CP, "CONSTANT_NameAndType.type", new String(pool.get(item.ref2).content)); 
+					throw err.buildError(item.offset, VerifyErrorManager.ERR_INVALID_CLASS_OR_METHOD_SIGNATURE_CP, "CONSTANT_NameAndType.type", new String(pool.get(item.ref2).content)); 
 				}
 				break;
 			case CONSTANT_MethodHandle			:
@@ -409,7 +407,7 @@ public class DefinitionLoader {
 					throw err.buildError(item.offset, VerifyErrorManager.ERR_INVALID_REF_CP, "CONSTANT_MethodType", item.ref1, "non-zero CONSTANT_Utf8");
 				}
 				else if (!isValidMethodSignature(pool.get(item.ref1).content)) {
-					throw err.buildError(item.offset, VerifyErrorManager.ERR_INVALID_CLASS_SIGNATURE_CP, "CONSTANT_MethodType", new String(pool.get(item.ref1).content)); 
+					throw err.buildError(item.offset, VerifyErrorManager.ERR_INVALID_CLASS_OR_METHOD_SIGNATURE_CP, "CONSTANT_MethodType", new String(pool.get(item.ref1).content)); 
 				}
 				break;
 			case CONSTANT_Dynamic				:
@@ -436,7 +434,7 @@ public class DefinitionLoader {
 					throw err.buildError(item.offset, VerifyErrorManager.ERR_INVALID_REF_CP, "CONSTANT_Module", item.ref1, "non-zero CONSTANT_Utf8");
 				}
 				else if (!isValidClassSignature(pool.get(item.ref1).content)) {
-					throw err.buildError(item.offset, VerifyErrorManager.ERR_INVALID_CLASS_SIGNATURE_CP, "CONSTANT_Module", new String(pool.get(item.ref1).content)); 
+					throw err.buildError(item.offset, VerifyErrorManager.ERR_INVALID_CLASS_OR_METHOD_SIGNATURE_CP, "CONSTANT_Module", new String(pool.get(item.ref1).content)); 
 				}
 				break;
 			case CONSTANT_Package				:
@@ -447,7 +445,7 @@ public class DefinitionLoader {
 					throw err.buildError(item.offset, VerifyErrorManager.ERR_INVALID_REF_CP, "CONSTANT_Package", item.ref1, "non-zero CONSTANT_Utf8");
 				}
 				else if (!isValidClassSignature(pool.get(item.ref1).content)) {
-					throw err.buildError(item.offset, VerifyErrorManager.ERR_INVALID_CLASS_SIGNATURE_CP, "CONSTANT_Package", new String(pool.get(item.ref1).content)); 
+					throw err.buildError(item.offset, VerifyErrorManager.ERR_INVALID_CLASS_OR_METHOD_SIGNATURE_CP, "CONSTANT_Package", new String(pool.get(item.ref1).content)); 
 				}
 				break;
 			case CONSTANT_Integer : case CONSTANT_Float : case CONSTANT_Long : case CONSTANT_Double : case CONSTANT_Utf8 :
@@ -455,6 +453,245 @@ public class DefinitionLoader {
 			default :
 				throw err.buildError(item.offset, VerifyErrorManager.ERR_UNSUPPORTED_CONSTANT_POOL_ITEM_TYPE, "ConstantPool", item.itemType);
 		}
+	}
+
+	private static FieldItem readFieldDescriptor(final ByteArrayReader rdr, final ConstantPool pool) {
+		final int	accessFlags	= rdr.readU2();
+		final int	offset = rdr.offset();
+		final int	name = rdr.readU2();
+		final int	description	= rdr.readU2();
+		final AttributeItem[]	attrs = new AttributeItem[rdr.readU2()];
+		
+		for(int attrIndex = 0, maxAttrIndex = attrs.length; attrIndex < maxAttrIndex; attrIndex++) {
+			attrs[attrIndex] = readAttributeItem(rdr, pool);
+		}
+		return new FieldItem(offset, name, description, accessFlags, pool, attrs);
+	}
+
+	private static void verifyFieldDescriptor(final FieldItem fieldItem, final boolean isInterface, final boolean isEnum, final ConstantPool pool, final VerifyErrorManager err) {
+		final int	accessFlags = fieldItem.accessFlags;
+
+		if (isInterface) {
+			if ((accessFlags & (ACC_PUBLIC | ACC_STATIC | ACC_FINAL)) != (ACC_PUBLIC | ACC_STATIC | ACC_FINAL)) {
+				throw err.buildError(fieldItem.offset, VerifyErrorManager.ERR_INCOMPATIBLE_ACCESS_FLAGS, "Field.access", accessFlags);
+			}
+			if ((accessFlags & (ACC_PRIVATE | ACC_PROTECTED | ACC_VOLATILE | ACC_TRANSIENT | ACC_ENUM)) != 0) {
+				throw err.buildError(fieldItem.offset, VerifyErrorManager.ERR_INCOMPATIBLE_ACCESS_FLAGS, "Field.access", accessFlags);
+			}
+			if ((accessFlags & ACC_ENUM) != 0) {
+				throw err.buildError(fieldItem.offset, VerifyErrorManager.ERR_INCOMPATIBLE_ACCESS_FLAGS, "Field.access", accessFlags);
+			}
+		}
+		else {
+			if ((accessFlags & (ACC_PUBLIC | ACC_PRIVATE | ACC_PROTECTED)) != 0) {
+				if ((accessFlags & (ACC_PUBLIC | ACC_PRIVATE | ACC_PROTECTED)) != ACC_PUBLIC && (accessFlags & (ACC_PUBLIC | ACC_PRIVATE | ACC_PROTECTED)) != ACC_PRIVATE && (accessFlags & (ACC_PUBLIC | ACC_PRIVATE | ACC_PROTECTED)) != ACC_PROTECTED) {
+					throw err.buildError(fieldItem.offset, VerifyErrorManager.ERR_INCOMPATIBLE_ACCESS_FLAGS, "Field.access", accessFlags);
+				}
+			}
+			if ((accessFlags & (ACC_FINAL | ACC_VOLATILE)) == (ACC_FINAL | ACC_VOLATILE)) {
+				throw err.buildError(fieldItem.offset, VerifyErrorManager.ERR_INCOMPATIBLE_ACCESS_FLAGS, "Field.access", accessFlags);
+			}
+			if (isEnum != ((accessFlags & ACC_ENUM) == ACC_ENUM)) {
+				throw err.buildError(fieldItem.offset, VerifyErrorManager.ERR_INCOMPATIBLE_ACCESS_FLAGS, "Field.access", accessFlags);
+			}
+		}
+		
+		if (!pool.isRefValid(fieldItem.fieldName)) {
+			throw err.buildError(fieldItem.offset, VerifyErrorManager.ERR_NON_EXISTENT_REF_CP, "Field.name", fieldItem.fieldName);
+		}
+		else if (!isValidUTF8Reference(fieldItem.fieldName, false, pool)) {
+			throw err.buildError(fieldItem.offset, VerifyErrorManager.ERR_INVALID_REF_CP, "Field.name", fieldItem.fieldName, "CONSTANT_Utf8"); 
+		}
+		else if (!isValidName(pool.get(fieldItem.fieldName).content)) {
+			throw err.buildError(fieldItem.offset, VerifyErrorManager.ERR_INVALID_NAME_CP, "Field.name", fieldItem.fieldName, new String(pool.get(fieldItem.fieldName).content));
+		}
+		
+		if (!pool.isRefValid(fieldItem.fieldDesc)) {
+			throw err.buildError(fieldItem.offset, VerifyErrorManager.ERR_NON_EXISTENT_REF_CP, "Field.descriptor", fieldItem.fieldDesc);
+		}
+		else if (!isValidUTF8Reference(fieldItem.fieldDesc, false, pool)) {
+			throw err.buildError(fieldItem.offset, VerifyErrorManager.ERR_INVALID_REF_CP, "Field.descriptor", fieldItem.fieldDesc, "CONSTANT_Utf8"); 
+		}
+		else if (!isValidClassRefSignature(pool.get(fieldItem.fieldDesc).content)) {
+			throw err.buildError(fieldItem.offset, VerifyErrorManager.ERR_INVALID_CLASS_OR_METHOD_SIGNATURE_CP, "Field.descriptor", fieldItem.fieldDesc, new String(pool.get(fieldItem.fieldDesc).content));
+		}
+
+		// TODO Auto-generated method stub
+	}
+	
+	private static MethodItem readMethodDescriptor(final ByteArrayReader rdr, final ConstantPool pool, final VerifyErrorManager err) {
+		final int	accessFlags	= rdr.readU2();
+		final int	offset = rdr.offset();
+		final int	name = rdr.readU2();
+		final int	description	= rdr.readU2();
+		final AttributeItem[]	attrs = new AttributeItem[rdr.readU2()];
+		
+		for(int attrIndex = 0, maxAttrIndex = attrs.length; attrIndex < maxAttrIndex; attrIndex++) {
+			attrs[attrIndex] = readAttributeItem(rdr, pool);
+		}
+		return new MethodItem(offset, name, description, accessFlags, pool, attrs);
+	}
+
+	private static void verifyMethodDescriptor(final MethodItem methodItem, final boolean isInterface, final JavaClassVersion version, final ConstantPool pool, final VerifyErrorManager err) {
+		final int	accessFlags = methodItem.accessFlags;
+
+		if (isInterface) {
+			if ((accessFlags & (ACC_PROTECTED | ACC_FINAL | ACC_SYNCHRONIZED | ACC_NATIVE)) != 0) {
+				throw err.buildError(methodItem.offset, VerifyErrorManager.ERR_INCOMPATIBLE_ACCESS_FLAGS, "Method.access", accessFlags);
+			}
+			if (version.major < 52 && ((accessFlags & (ACC_PUBLIC | ACC_ABSTRACT)) != (ACC_PUBLIC | ACC_ABSTRACT))) {
+				throw err.buildError(methodItem.offset, VerifyErrorManager.ERR_INCOMPATIBLE_ACCESS_FLAGS, "Method.access", accessFlags);
+			}
+			if (version.major >= 52 && ((accessFlags & (ACC_PUBLIC | ACC_PRIVATE)) != ACC_PUBLIC && (accessFlags & (ACC_PUBLIC | ACC_PRIVATE)) != ACC_PRIVATE)) {
+				throw err.buildError(methodItem.offset, VerifyErrorManager.ERR_INCOMPATIBLE_ACCESS_FLAGS, "Method.access", accessFlags);
+			}
+			if ((accessFlags & ACC_ABSTRACT) != 0 && (accessFlags & (ACC_PRIVATE | ACC_STATIC | ACC_FINAL | ACC_SYNCHRONIZED | ACC_NATIVE)) != 0) {
+				throw err.buildError(methodItem.offset, VerifyErrorManager.ERR_INCOMPATIBLE_ACCESS_FLAGS, "Method.access", accessFlags);
+			}
+		}
+		else {
+			if ((accessFlags & (ACC_PUBLIC | ACC_PRIVATE | ACC_PROTECTED)) != 0) {
+				if ((accessFlags & (ACC_PUBLIC | ACC_PRIVATE | ACC_PROTECTED)) != ACC_PUBLIC && (accessFlags & (ACC_PUBLIC | ACC_PRIVATE | ACC_PROTECTED)) != ACC_PRIVATE && (accessFlags & (ACC_PUBLIC | ACC_PRIVATE | ACC_PROTECTED)) != ACC_PROTECTED) {
+					throw err.buildError(methodItem.offset, VerifyErrorManager.ERR_INCOMPATIBLE_ACCESS_FLAGS, "Method.access", accessFlags);
+				}
+			}
+			if ((accessFlags & ACC_ABSTRACT) != 0 && (accessFlags & (ACC_PRIVATE | ACC_STATIC | ACC_FINAL | ACC_SYNCHRONIZED | ACC_NATIVE)) != 0) {
+				throw err.buildError(methodItem.offset, VerifyErrorManager.ERR_INCOMPATIBLE_ACCESS_FLAGS, "Method.access", accessFlags);
+			}
+		}
+		
+		if (!pool.isRefValid(methodItem.methodName)) {
+			throw err.buildError(methodItem.offset, VerifyErrorManager.ERR_NON_EXISTENT_REF_CP, "Method.name", methodItem.methodName);
+		}
+		else if (!isValidUTF8Reference(methodItem.methodName, false, pool)) {
+			throw err.buildError(methodItem.offset, VerifyErrorManager.ERR_INVALID_REF_CP, "Method.name", methodItem.methodName); 
+		}
+		else if (!isValidName(pool.get(methodItem.methodName).content)) {
+			throw err.buildError(methodItem.offset, VerifyErrorManager.ERR_INVALID_NAME_CP, "Method.name", methodItem.methodName, new String(pool.get(methodItem.methodName).content));
+		}
+		
+		if (!pool.isRefValid(methodItem.methodDesc)) {
+			throw err.buildError(methodItem.offset, VerifyErrorManager.ERR_NON_EXISTENT_REF_CP, "Method.descriptor", methodItem.methodDesc);
+		}
+		else if (!isValidUTF8Reference(methodItem.methodDesc, false, pool)) {
+			throw err.buildError(methodItem.offset, VerifyErrorManager.ERR_INVALID_REF_CP, "Method.descriptor", methodItem.methodDesc); 
+		}
+		else if (!isValidMethodSignature(pool.get(methodItem.methodDesc).content)) {
+			throw err.buildError(methodItem.offset, VerifyErrorManager.ERR_INVALID_CLASS_OR_METHOD_SIGNATURE_CP, "Method.descriptor", methodItem.methodDesc, new String(pool.get(methodItem.methodDesc).content));
+		}
+		
+		if (InternalUtils.compareTo(pool.get(methodItem.methodName).content, VALID_INIT) == 0) {
+			if ((accessFlags & (ACC_STATIC | ACC_FINAL | ACC_BRIDGE | ACC_NATIVE)) != 0) {
+				throw err.buildError(methodItem.offset, VerifyErrorManager.ERR_INCOMPATIBLE_ACCESS_FLAGS, "Method.access", accessFlags);
+			}
+			if ((version.major < 46 || version.major > 60) && (accessFlags & ACC_STRICT) != 0) {
+				throw err.buildError(methodItem.offset, VerifyErrorManager.ERR_INCOMPATIBLE_ACCESS_FLAGS, "Method.access", accessFlags);
+			}
+		}
+		else if (InternalUtils.compareTo(pool.get(methodItem.methodName).content, VALID_CLINIT) == 0) {
+			if (version.major >= 52 && (accessFlags & ACC_STATIC) == 0) {
+				throw err.buildError(methodItem.offset, VerifyErrorManager.ERR_INCOMPATIBLE_ACCESS_FLAGS, "Method.access", accessFlags);
+			}
+			if ((version.major < 46 || version.major > 60) && (accessFlags & ACC_STRICT) != 0) {
+				throw err.buildError(methodItem.offset, VerifyErrorManager.ERR_INCOMPATIBLE_ACCESS_FLAGS, "Method.access", accessFlags);
+			}
+		}
+
+		// TODO Auto-generated method stub
+	}
+
+	private static AttributeItem readAttributeItem(final ByteArrayReader rdr, final ConstantPool pool) {
+		// TODO Auto-generated method stub
+		final int	attrType = rdr.readU2();
+		final int	offset = rdr.offset();
+		final int	size = rdr.readU4();
+		
+		final JavaAttributeType	type = toAttribute(attrType, pool);
+		
+		if (type == null) {
+			rdr.skip(size);
+			return null;
+		}
+		else {
+			switch (type) {
+				case AnnotationDefault	:
+					break;
+				case BootstrapMethods	:
+					break;
+				case Code				:
+					break;
+				case ConstantValue		:
+					break;
+				case Deprecated			:
+					break;
+				case EnclosingMethod	:
+					break;
+				case Exceptions			:
+					break;
+				case InnerClasses		:
+					break;
+				case LineNumberTable	:
+					break;
+				case LocalVariableTable	:
+					break;
+				case LocalVariableTypeTable	:
+					break;
+				case MethodParameters	:
+					break;
+				case Module				:
+					break;
+				case ModuleMainClass	:
+					break;
+				case ModulePackages		:
+					break;
+				case NestHost			:
+					break;
+				case NestMembers		:
+					break;
+				case PermittedSubclasses:
+					break;
+				case Record				:
+					break;
+				case RuntimeInvisibleAnnotations	:
+					break;
+				case RuntimeInvisibleParameterAnnotations	:
+					break;
+				case RuntimeInvisibleTypeAnnotations	:
+					break;
+				case RuntimeVisibleAnnotations		:
+					break;
+				case RuntimeVisibleParameterAnnotations	:
+					break;
+				case RuntimeVisibleTypeAnnotations	:
+					break;
+				case Signature			:
+					break;
+				case SourceDebugExtension	:
+					break;
+				case SourceFile			:
+					break;
+				case StackMapTable		:
+					break;
+				case Synthetic			:
+					break;
+				default			:
+					throw new UnsupportedOperationException("Attribute type ["+type+"] is not supported yet");
+			}
+		}
+	}
+
+	private static JavaAttributeType toAttribute(final int attrType, final ConstantPool pool) {
+		try {
+			return JavaAttributeType.valueOf(pool.deepToString(attrType));
+		} catch (IllegalArgumentException exc) {
+			return null;
+		}
+	}
+	
+
+	private static void verifyAttributeItem(final AttributeItem attributeItem, final ConstantPool pool, final VerifyErrorManager err) {
+		// TODO Auto-generated method stub
+		
 	}
 
 	static boolean isValidUTF8Reference(final int refIndex, final boolean zeroLengthIsValid, final ConstantPool cp) {

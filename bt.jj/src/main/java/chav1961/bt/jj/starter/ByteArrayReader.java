@@ -10,6 +10,11 @@ class ByteArrayReader {
 		this.offset = 0;
 	}
 	
+	public void skip(final int size) {
+		offset = displ;
+		displ += size;
+	}
+	
 	public int read() {
 		offset = displ;
 		return content[displ++];

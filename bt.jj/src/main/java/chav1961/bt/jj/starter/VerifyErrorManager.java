@@ -10,7 +10,7 @@ public class VerifyErrorManager {
 	static final String	ERR_UNSUPPORTED_CONSTANT_POOL_ITEM_TYPE = "Unsupported constant pool item type [%1$d]";	
 	static final String	ERR_INVALID_METHOD_HANDLE_KIND_CP = "Constant pool entry contains reference kind [%1$d] out of range 1..9"; 
 	static final String	ERR_INVALID_NAME_CP = "Invalid entity name [%1$s]"; 
-	static final String	ERR_INVALID_CLASS_SIGNATURE_CP = "Invalid class or method signature [%1$s]"; 
+	static final String	ERR_INVALID_CLASS_OR_METHOD_SIGNATURE_CP = "Invalid class or method signature [%1$s]"; 
 	static final String	ERR_EXTRA_ACCESS_FLAGS = "Extra access flags [%1$x] for entity, only [%2$x] are available"; 
 	static final String	ERR_INCOMPATIBLE_ACCESS_FLAGS = "Incompatible access flags [%1$x] for entity"; 
 	
