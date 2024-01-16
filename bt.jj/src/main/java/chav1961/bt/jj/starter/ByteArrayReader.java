@@ -2,13 +2,23 @@ package chav1961.bt.jj.starter;
 
 class ByteArrayReader {
 	private final byte[]	content;
+	private final int		initialOffset;
 	private int 			displ, offset;
 	
 	public ByteArrayReader(final byte[] content) {
 		this.content = content;
+		this.initialOffset = 0;
 		this.displ = 0;
 		this.offset = 0;
 	}
+
+	public ByteArrayReader(final byte[] content, final int initialOffset) {
+		this.content = content;
+		this.initialOffset = initialOffset;
+		this.displ = 0;
+		this.offset = 0;
+	}
+	
 	
 	public void skip(final int size) {
 		offset = displ;
@@ -84,7 +94,7 @@ class ByteArrayReader {
 	}
 	
 	public int offset() {
-		return offset;
+		return offset + initialOffset;
 	}
 
 	@Override

@@ -1,18 +1,24 @@
 package chav1961.bt.jj.starter;
 
+import java.util.EnumSet;
+
 import chav1961.bt.jj.starter.AnnotationItem.AnnotationValue;
 import chav1961.bt.jj.starter.AnnotationTypeItem.AnnotationTypeValue;
 import chav1961.bt.jj.starter.AnnotationTypeItem.LocalVarTypeDescriptor;
 import chav1961.bt.jj.starter.AnnotationTypeItem.TypePathDescriptor;
 
-class AttributeItem {
-	public final AttributeKind	name;
-	final ConstantPoolItem[]	pool;
+abstract class AttributeItem {
+	public final AttributeKind	kind;
+	final int					offset;
+	final ConstantPool			pool;
 	
-	AttributeItem(final AttributeKind name, final ConstantPoolItem[] pool) {
-		this.name = name;
+	AttributeItem(final int offset, final AttributeKind kind, final ConstantPool pool) {
+		this.offset = offset;
+		this.kind = kind;
 		this.pool = pool;
 	}
+
+	abstract void verifyAttributeItem(final VerifyErrorManager err);
 	
 	private static AnnotationValue getAnnotationValue(final ConstantPoolItem[] pool, final String annotationName, final ByteArrayReader rdr, final int index, final int pairIndex) {
 		final char				tag = (char)rdr.read();
@@ -141,23 +147,20 @@ class AttributeItem {
 	}
 
 	public static class ConstantValue extends AttributeItem {
-		private static final int	VALID_CONSTANT_MASK = (1 << ClassDefinitionLoader.CONSTANT_Integer) | (1 << ClassDefinitionLoader.CONSTANT_Long)
-														| (1 << ClassDefinitionLoader.CONSTANT_Float) | (1 << ClassDefinitionLoader.CONSTANT_Double)
-														| (1 << ClassDefinitionLoader.CONSTANT_String);
 		public final int			constRef;
 		
-		public ConstantValue(final byte[] content, final ConstantPoolItem[] pool) {
-			super(AttributeKind.ConstantValue, pool);
-			final int	ref = new ByteArrayReader(content).readU2(); 
-			
-			if (!ClassDefinitionLoader.isValidReference(ref, pool)) {
-				throw ClassDefinitionLoader.buildError(ClassDefinitionLoader.ERR_NON_EXISTENT_REF_CONSTVALUE, ref); 
+		public ConstantValue(final ByteArrayReader rdr, final ConstantPool pool) {
+			super(rdr.offset(), AttributeKind.ConstantValue, pool);
+			this.constRef = rdr.readU2(); 
+		}
+		
+		@Override
+		void verifyAttributeItem(final VerifyErrorManager err) {
+			if (!pool.isRefValid(constRef)) {
+				throw err.buildError(offset, VerifyErrorManager.ERR_NON_EXISTENT_REF_CP, kind.name(), constRef); 
 			}
-			else if (((1 << pool[ref].itemType) & VALID_CONSTANT_MASK) == 0) {
-				throw ClassDefinitionLoader.buildError(ClassDefinitionLoader.ERR_INVALID_REF_CONSTVALUE, ref); 
-			}
-			else {
-				this.constRef = ref; 
+			else if (pool.hasType(constRef, ClassDefinitionLoader.CONSTANT_Integer, ClassDefinitionLoader.CONSTANT_Long, ClassDefinitionLoader.CONSTANT_Float, ClassDefinitionLoader.CONSTANT_Double, ClassDefinitionLoader.CONSTANT_String)) {
+				throw ClassDefinitionLoader.buildError(ClassDefinitionLoader.ERR_INVALID_REF_CONSTVALUE, constRef, "primitive or string constant"); 
 			}
 		}
 	}
@@ -169,9 +172,8 @@ class AttributeItem {
 		public final ExceptionTable[]	exceptions;
 		public final AttributeItem[]	attributes;
 		
-		Code(final byte[] content, final ConstantPoolItem[] pool) {
-			super(AttributeKind.Code, pool);
-			final ByteArrayReader	rdr = new ByteArrayReader(content);
+		Code(final ByteArrayReader rdr, final ConstantPool pool) {
+			super(rdr.offset(), AttributeKind.Code, pool);
 			
 			this.stackSize = rdr.readU2();
 			this.localSize = rdr.readU2();
@@ -181,39 +183,70 @@ class AttributeItem {
 			
 			this.exceptions = new ExceptionTable[rdr.readU2()];
 			for(int index = 0; index < exceptions.length; index++) {
-				final int	startPC = rdr.readU2();
-				final int	endPC = rdr.readU2();
-				final int	handlerPC = rdr.readU2();
-				final int	catchType = rdr.readU2();
-				
-				if (startPC >= code.length) {
-					throw ClassDefinitionLoader.buildError(ClassDefinitionLoader.ERR_INVALID_START_PC_EXCEPTIONS, index, startPC, code.length); 
-				}
-				else if (endPC > code.length) {
-					throw ClassDefinitionLoader.buildError(ClassDefinitionLoader.ERR_INVALID_END_PC_EXCEPTIONS, index, endPC, code.length); 
-				}
-				else if (handlerPC > code.length) {
-					throw ClassDefinitionLoader.buildError(ClassDefinitionLoader.ERR_INVALID_HANDLER_PC_EXCEPTIONS, index, handlerPC, code.length); 
-				}
-				else if (endPC < startPC) {
-					throw ClassDefinitionLoader.buildError(ClassDefinitionLoader.ERR_END_PC_LESS_START_PC_EXCEPTIONS, index, endPC, startPC); 
-				}
-				else if (catchType != 0) {
-					if (!ClassDefinitionLoader.isValidReference(catchType, pool)) {
-						throw ClassDefinitionLoader.buildError(ClassDefinitionLoader.ERR_NON_EXISTENT_CATCH_EXCEPTIONS, index, catchType); 
-					}
-					else if (pool[catchType].itemType != ClassDefinitionLoader.CONSTANT_Class) {
-						throw ClassDefinitionLoader.buildError(ClassDefinitionLoader.ERR_INVALID_CATCH_EXCEPTIONS, index, catchType); 
-					}
-				}
-				
-				exceptions[index] = new ExceptionTable(startPC, endPC, handlerPC, catchType);
+				exceptions[index] = new ExceptionTable(rdr.readU2(), rdr.readU2(), rdr.readU2(), rdr.readU2());
 			}
 			
 			this.attributes = new AttributeItem[rdr.readU2()];
-			for(int index = 0; index < exceptions.length; index++) {
-				// TODO:
+			for(int index = 0; index < attributes.length; index++) {
+				attributes[index] = DefinitionLoader.readAttributeItem(rdr, pool);
 			}					
+		}
+		
+		@Override
+		void verifyAttributeItem(final VerifyErrorManager err) {
+			err.pushSection("<exceptionTable>");
+			err.pushIndices();
+			for(int index = 0; index < exceptions.length; index++) {
+				final int	startPC = exceptions[index].startPC;
+				final int	endPC = exceptions[index].endPC;
+				final int	handlerPC = exceptions[index].handlerPC;
+				final int	catchType = exceptions[index].catchType;
+				
+				err.setIndex(index);
+				if (startPC >= code.length) {
+					throw ClassDefinitionLoader.buildError(ClassDefinitionLoader.ERR_INVALID_START_PC_EXCEPTIONS, "Code.Exceptions", startPC, code.length); 
+				}
+				else if (endPC > code.length) {
+					throw ClassDefinitionLoader.buildError(ClassDefinitionLoader.ERR_INVALID_END_PC_EXCEPTIONS, "Code.Exceptions", endPC, code.length); 
+				}
+				else if (handlerPC > code.length) {
+					throw ClassDefinitionLoader.buildError(ClassDefinitionLoader.ERR_INVALID_HANDLER_PC_EXCEPTIONS, "Code.Exceptions", handlerPC, code.length); 
+				}
+				else if (endPC < startPC) {
+					throw ClassDefinitionLoader.buildError(ClassDefinitionLoader.ERR_END_PC_LESS_START_PC_EXCEPTIONS, "Code.Exceptions", endPC, startPC); 
+				}
+				else if (catchType != 0) {
+					if (!pool.isRefValid(catchType)) {
+						throw err.buildError(offset, VerifyErrorManager.ERR_NON_EXISTENT_REF_CP, "Code.Exceptions", catchType); 
+					}
+					else if (!pool.hasType(catchType, ClassDefinitionLoader.CONSTANT_Class)) {
+						throw err.buildError(offset, VerifyErrorManager.ERR_INVALID_REF_CP, "Code.Exceptions", catchType, "CONSTANT_Class"); 
+					}
+				}
+			}
+			err.pop();
+			err.pop();	// section
+			
+			final EnumSet<AttributeKind>	attrSet = EnumSet.noneOf(AttributeKind.class);
+			
+			for(AttributeItem item : attributes) {
+				if (attrSet.contains(item.kind)) {
+					throw err.buildError(offset, VerifyErrorManager.ERR_DUPLICATE_ATTRIBUTE, "Code", item.kind); 
+				}
+				else {
+					attrSet.add(item.kind);
+				}
+			}
+			
+			err.pushSection("<attributes>");
+			for(int index = 0; index < attributes.length; index++) {
+				if (attributes[index] != null) {
+					err.pushSection(attributes[index].kind.name());
+					attributes[index].verifyAttributeItem(err);
+					err.pop();
+				}
+			}
+			err.pop();	// section
 		}
 		
 		public static class ExceptionTable {
@@ -234,9 +267,8 @@ class AttributeItem {
 	public static class StackMapTable extends AttributeItem {
 		public final StackMapItem[]	items;
 
-		StackMapTable(final byte[] content, final ConstantPoolItem[] pool) {
-			super(AttributeKind.StackMapTable, pool);
-			final ByteArrayReader	rdr = new ByteArrayReader(content);
+		StackMapTable(final ByteArrayReader rdr, final ConstantPool pool) {
+			super(rdr.offset(), AttributeKind.StackMapTable, pool);
 			
 			this.items = new StackMapItem[rdr.readU2()];
 			
@@ -275,7 +307,7 @@ class AttributeItem {
 						items[index] = new ExtendedStackMapItem(frameType, rdr.readU2(), readVerificationItem(rdr), readVerificationItem(rdr), readVerificationItem(rdr));
 						break;
 					case 255 :
-						final int	offset = rdr.readU2();
+						final int	displ = rdr.readU2();
 						final int	locals = rdr.readU2();
 						final VerificationItem[]	localsArray = new VerificationItem[locals];
 						
@@ -288,17 +320,18 @@ class AttributeItem {
 						for(int item =  0; item < stack; item++) {
 							stackArray[item] = readVerificationItem(rdr);
 						}
-						items[index] = new FullStackMapItem(frameType, offset, localsArray, stackArray);
+						items[index] = new FullStackMapItem(frameType, displ, localsArray, stackArray);
 						break;
 					default :
-						if (frameType >= 128 && frameType <= 246) {
-							throw ClassDefinitionLoader.buildError(ClassDefinitionLoader.ERR_UNSUPPORTED_TAG_STACKMAPTABLE, index, frameType); 
-						}
-						else {
-							throw ClassDefinitionLoader.buildError(ClassDefinitionLoader.ERR_INVALID_TAG_STACKMAPTABLE, index, frameType); 
-						}
+						throw new UnsupportedOperationException("Unsupported tag in the StackMapTable at location "+rdr.offset());
 				}
 			}
+		}
+		
+		@Override
+		void verifyAttributeItem(final VerifyErrorManager err) {
+			// TODO Auto-generated method stub
+			
 		}
 
 		private VerificationItem readVerificationItem(final ByteArrayReader rdr) {
@@ -385,25 +418,28 @@ class AttributeItem {
 	public static class Exceptions extends AttributeItem {
 		public final int[]	exceptions;
 		
-		public Exceptions(final byte[] content, final ConstantPoolItem[] pool) {
-			super(AttributeKind.Exceptions, pool);
-			final ByteArrayReader	rdr = new ByteArrayReader(content);
+		public Exceptions(final ByteArrayReader rdr, final ConstantPool pool) {
+			super(rdr.offset(), AttributeKind.Exceptions, pool);
 			
 			this.exceptions = new int[rdr.readU2()];
-			
 			for(int index = 0; index < exceptions.length; index++) {
-				final int	exception = rdr.readU2();
-				
-				if (!ClassDefinitionLoader.isValidReference(exception, pool)) {
-					throw ClassDefinitionLoader.buildError(ClassDefinitionLoader.ERR_NON_EXISTENT_REF_EXCEPTIONS, exception); 
+				exceptions[index] = rdr.readU2();
+			}
+		}
+		
+		@Override
+		void verifyAttributeItem(final VerifyErrorManager err) {
+			err.pushIndices();
+			for (int index = 0; index < exceptions.length; index++) {
+				err.setIndex(index);
+				if (!pool.isRefValid(exceptions[index])) {
+					throw err.buildError(offset + 2 * index, VerifyErrorManager.ERR_NON_EXISTENT_REF_CP, kind.name(), exceptions[index]); 
 				}
-				else if (pool[exception].itemType != ClassDefinitionLoader.CONSTANT_Class) {
-					throw ClassDefinitionLoader.buildError(ClassDefinitionLoader.ERR_INVALID_REF_EXCEPTIONS, index, exception); 
-				}
-				else {
-					exceptions[index] = exception;
+				else if (pool.hasType(exceptions[index], ClassDefinitionLoader.CONSTANT_Class)) {
+					throw err.buildError(offset + 2 * index, VerifyErrorManager.ERR_INVALID_REF_CP, kind.name(), exceptions[index], "CONSTANT_Class"); 
 				}
 			}
+			err.pop();
 		}
 	}
 	
@@ -416,39 +452,42 @@ class AttributeItem {
 		
 		public final int[][]		classes;
 
-		InnerClasses(final byte[] content, final ConstantPoolItem[] pool) {
-			super(AttributeKind.InnerClasses, pool);
-			final ByteArrayReader		rdr = new ByteArrayReader(content); 
-			final int					amount = rdr.readU2();
+		InnerClasses(final ByteArrayReader rdr, final ConstantPool pool) {
+			super(rdr.offset(), AttributeKind.InnerClasses, pool);
 			
-			this.classes = new int[amount][];
+			this.classes = new int[rdr.readU2()][];
 			
-			for(int index = 0; index < amount; index++) {
+			for(int index = 0; index < classes.length; index++) {
 				final int 	inner = rdr.readU2(), outer = rdr.readU2();
 				final int	innerName = rdr.readU2(), accessFlags = rdr.readU2();
 				
-				if (!ClassDefinitionLoader.isValidReference(inner, pool)) {
-					throw ClassDefinitionLoader.buildError(ClassDefinitionLoader.ERR_NON_EXISTENT_REF_INNER_CLASSES, inner); 
-				}
-				else if (pool[inner].itemType != ClassDefinitionLoader.CONSTANT_Class) {
-					throw ClassDefinitionLoader.buildError(ClassDefinitionLoader.ERR_INVALID_REF_INNER_CLASSES, inner, "CONSTANT_Class"); 
-				}
-				else if (outer != 0 && !ClassDefinitionLoader.isValidReference(outer, pool)) {
-					throw ClassDefinitionLoader.buildError(ClassDefinitionLoader.ERR_NON_EXISTENT_REF_INNER_CLASSES, outer); 
-				}
-				else if (outer != 0 && pool[outer].itemType != ClassDefinitionLoader.CONSTANT_Class) {
-					throw ClassDefinitionLoader.buildError(ClassDefinitionLoader.ERR_INVALID_REF_INNER_CLASSES, outer, "CONSTANT_Class"); 
-				}
-				else if (innerName != 0 && !ClassDefinitionLoader.isValidReference(innerName, pool)) {
-					throw ClassDefinitionLoader.buildError(ClassDefinitionLoader.ERR_NON_EXISTENT_REF_INNER_CLASSES, innerName); 
-				}
-				else if (innerName != 0 && !ClassDefinitionLoader.isValidName(pool[innerName].content)) {
-					throw ClassDefinitionLoader.buildError(ClassDefinitionLoader.ERR_INVALID_NAME_REF_INNER_CLASSES, innerName); 
-				}
-				else if ((accessFlags & ~AVAILABLE_ACC) != 0) {
-					throw ClassDefinitionLoader.buildError(ClassDefinitionLoader.ERR_EXTRA_ACCESS_FLAGS_INNER_CLASSES, accessFlags & ~AVAILABLE_ACC); 
-				}
 				classes[index] = new int[] {inner, outer, innerName, accessFlags};
+			}
+		}
+		
+		@Override
+		void verifyAttributeItem(VerifyErrorManager err) {
+			// TODO Auto-generated method stub
+			if (!ClassDefinitionLoader.isValidReference(inner, pool)) {
+				throw ClassDefinitionLoader.buildError(ClassDefinitionLoader.ERR_NON_EXISTENT_REF_INNER_CLASSES, inner); 
+			}
+			else if (pool[inner].itemType != ClassDefinitionLoader.CONSTANT_Class) {
+				throw ClassDefinitionLoader.buildError(ClassDefinitionLoader.ERR_INVALID_REF_INNER_CLASSES, inner, "CONSTANT_Class"); 
+			}
+			else if (outer != 0 && !ClassDefinitionLoader.isValidReference(outer, pool)) {
+				throw ClassDefinitionLoader.buildError(ClassDefinitionLoader.ERR_NON_EXISTENT_REF_INNER_CLASSES, outer); 
+			}
+			else if (outer != 0 && pool[outer].itemType != ClassDefinitionLoader.CONSTANT_Class) {
+				throw ClassDefinitionLoader.buildError(ClassDefinitionLoader.ERR_INVALID_REF_INNER_CLASSES, outer, "CONSTANT_Class"); 
+			}
+			else if (innerName != 0 && !ClassDefinitionLoader.isValidReference(innerName, pool)) {
+				throw ClassDefinitionLoader.buildError(ClassDefinitionLoader.ERR_NON_EXISTENT_REF_INNER_CLASSES, innerName); 
+			}
+			else if (innerName != 0 && !ClassDefinitionLoader.isValidName(pool[innerName].content)) {
+				throw ClassDefinitionLoader.buildError(ClassDefinitionLoader.ERR_INVALID_NAME_REF_INNER_CLASSES, innerName); 
+			}
+			else if ((accessFlags & ~AVAILABLE_ACC) != 0) {
+				throw ClassDefinitionLoader.buildError(ClassDefinitionLoader.ERR_EXTRA_ACCESS_FLAGS_INNER_CLASSES, accessFlags & ~AVAILABLE_ACC); 
 			}
 		}
 	}	
@@ -457,12 +496,15 @@ class AttributeItem {
 		public final int	clazz;
 		public final int	method;
 
-		EnclosingMethod(final byte[] content, final ConstantPoolItem[] pool) {
-			super(AttributeKind.EnclosingMethod, pool);
-			final ByteArrayReader		rdr = new ByteArrayReader(content);
-			
+		EnclosingMethod(final ByteArrayReader rdr, final ConstantPool pool) {
+			super(rdr.offset(), AttributeKind.EnclosingMethod, pool);
 			this.clazz = rdr.readU2();
 			this.method = rdr.readU2();
+		}
+		
+		@Override
+		void verifyAttributeItem(VerifyErrorManager err) {
+			// TODO Auto-generated method stub
 			if (!ClassDefinitionLoader.isValidReference(clazz, pool)) {
 				throw ClassDefinitionLoader.buildError(ClassDefinitionLoader.ERR_NON_EXISTENT_REF_INNER_CLASSES, clazz); 
 			}
@@ -479,26 +521,45 @@ class AttributeItem {
 	}	
 	
 	public static class Synthetic extends AttributeItem {
-		public Synthetic(final ConstantPoolItem[] pool) {
-			super(AttributeKind.Synthetic, pool);
+		public Synthetic(final int offset, final ConstantPool pool) {
+			super(offset, AttributeKind.Synthetic, pool);
+		}
+		
+		@Override
+		void verifyAttributeItem(VerifyErrorManager err) {
+			// TODO Auto-generated method stub
+			
+		}
+	}
+
+	public static class Deprecated extends AttributeItem {
+		public Deprecated(final int offset, final ConstantPool pool) {
+			super(offset, AttributeKind.Deprecated, pool);
+		}
+		
+		@Override
+		void verifyAttributeItem(VerifyErrorManager err) {
+			// TODO Auto-generated method stub
+			
 		}
 	}
 	
 	public static class Signature extends AttributeItem {
 		public final int		signatureRef;
 		
-		public Signature(final byte[] content, final ConstantPoolItem[] pool) {
-			super(AttributeKind.Signature, pool);
-			final int	ref = new ByteArrayReader(content).readU2(); 
-			
+		public Signature(final ByteArrayReader rdr, final ConstantPool pool) {
+			super(rdr.offset(), AttributeKind.Signature, pool);
+			this.signatureRef = rdr.readU2(); 
+		}
+		
+		@Override
+		void verifyAttributeItem(VerifyErrorManager err) {
+			// TODO Auto-generated method stub
 			if (!ClassDefinitionLoader.isValidReference(ref, pool)) {
 				throw ClassDefinitionLoader.buildError(ClassDefinitionLoader.ERR_NON_EXISTENT_REF_SIGNATURE, ref); 
 			}
 			else if (!ClassDefinitionLoader.isValidUTF8Reference(ref, false, pool)) {
 				throw ClassDefinitionLoader.buildError(ClassDefinitionLoader.ERR_INVALID_REF_SIGNATURE, ref); 
-			}
-			else {
-				this.signatureRef = ref; 
 			}
 		}
 	}
@@ -506,18 +567,19 @@ class AttributeItem {
 	public static class SourceFile extends AttributeItem {
 		public final int		sourceFileRef;
 		
-		public SourceFile(final byte[] content, final ConstantPoolItem[] pool) {
-			super(AttributeKind.SourceFile, pool);
-			final int	ref = new ByteArrayReader(content).readU2(); 
-			
+		public SourceFile(final ByteArrayReader rdr, final ConstantPool pool) {
+			super(rdr.offset(), AttributeKind.SourceFile, pool);
+			this.sourceFileRef = rdr.readU2(); 
+		}
+		
+		@Override
+		void verifyAttributeItem(VerifyErrorManager err) {
+			// TODO Auto-generated method stub
 			if (!ClassDefinitionLoader.isValidReference(ref, pool)) {
 				throw ClassDefinitionLoader.buildError(ClassDefinitionLoader.ERR_NON_EXISTENT_REF_SOURCEFILE, ref); 
 			}
 			else if (!ClassDefinitionLoader.isValidUTF8Reference(ref, false, pool)) {
 				throw ClassDefinitionLoader.buildError(ClassDefinitionLoader.ERR_INVALID_REF_SOURCEFILE, ref); 
-			}
-			else {
-				this.sourceFileRef = ref; 
 			}
 		}
 	}
@@ -525,60 +587,86 @@ class AttributeItem {
 	public static class SourceDebugExtension extends AttributeItem {
 		public final byte[]	content; 
 
-		SourceDebugExtension(final byte[] content, final ConstantPoolItem[] pool) {
-			super(AttributeKind.SourceDebugExtension, pool);
-			this.content = content.clone();
+		SourceDebugExtension(final ByteArrayReader rdr, final int size, final ConstantPool pool) {
+			super(rdr.offset(), AttributeKind.SourceDebugExtension, pool);
+			this.content = new byte[size];
+			rdr.read(content);
+		}
+		
+		@Override
+		void verifyAttributeItem(final VerifyErrorManager err) {
 		}
 	}	
 
 	public static class LineNumberTable extends AttributeItem {
 		public final int[][]	pairs;
 
-		public LineNumberTable(final byte[] content, final ConstantPoolItem[] pool) {
-			super(AttributeKind.LineNumberTable, pool);
-			final ByteArrayReader		rdr = new ByteArrayReader(content);
+		public LineNumberTable(final ByteArrayReader rdr, final ConstantPool pool) {
+			super(rdr.offset(), AttributeKind.LineNumberTable, pool);
 			
 			this.pairs = new int[rdr.readU2()][]; 
 			for(int index = 0; index < pairs.length; index++) {
 				pairs[index] = new int[] {rdr.readU2(), rdr.readU2()};
 			}
 		}
+		
+		@Override
+		void verifyAttributeItem(final VerifyErrorManager err) {
+			// TODO Auto-generated method stub
+			
+		}
 	}
 
 	public static class LocalVariablesTable extends AttributeItem {
 		public final int[][]	pairs;
 
-		public LocalVariablesTable(final byte[] content, final ConstantPoolItem[] pool) {
-			super(AttributeKind.LocalVariableTable, pool);
-			final ByteArrayReader		rdr = new ByteArrayReader(content);
+		public LocalVariablesTable(final ByteArrayReader rdr, final ConstantPool pool) {
+			super(rdr.offset(), AttributeKind.LocalVariableTable, pool);
 			
 			this.pairs = new int[rdr.readU2()][]; 
 			for(int index = 0; index < pairs.length; index++) {
 				final int	varName, varType;
 				
 				pairs[index] = new int[] {rdr.readU2(), rdr.readU2(), varName = rdr.readU2(), varType = rdr.readU2(), rdr.readU2()};
-				if (!ClassDefinitionLoader.isValidReference(varName, pool)) {
-					throw ClassDefinitionLoader.buildError(ClassDefinitionLoader.ERR_NON_EXISTENT_REF_LOCAL_VARIABLE, varName); 
-				}
-				else if (!ClassDefinitionLoader.isValidUTF8Reference(varName, false, pool)) {
-					throw ClassDefinitionLoader.buildError(ClassDefinitionLoader.ERR_INVALID_REF_LOCAL_VARIABLE, varName, "CONSTANT_Utf8"); 
-				}
-				else if (!ClassDefinitionLoader.isValidReference(varType, pool)) {
-					throw ClassDefinitionLoader.buildError(ClassDefinitionLoader.ERR_NON_EXISTENT_REF_LOCAL_VARIABLE, varType); 
-				}
-				else if (pool[varType].itemType != ClassDefinitionLoader.CONSTANT_Fieldref) {
-					throw ClassDefinitionLoader.buildError(ClassDefinitionLoader.ERR_INVALID_REF_LOCAL_VARIABLE, varName, "CONSTANT_Fieldref"); 
-				}
+//				if (!ClassDefinitionLoader.isValidReference(varName, pool)) {
+//					throw ClassDefinitionLoader.buildError(ClassDefinitionLoader.ERR_NON_EXISTENT_REF_LOCAL_VARIABLE, varName); 
+//				}
+//				else if (!ClassDefinitionLoader.isValidUTF8Reference(varName, false, pool)) {
+//					throw ClassDefinitionLoader.buildError(ClassDefinitionLoader.ERR_INVALID_REF_LOCAL_VARIABLE, varName, "CONSTANT_Utf8"); 
+//				}
+//				else if (!ClassDefinitionLoader.isValidReference(varType, pool)) {
+//					throw ClassDefinitionLoader.buildError(ClassDefinitionLoader.ERR_NON_EXISTENT_REF_LOCAL_VARIABLE, varType); 
+//				}
+//				else if (pool[varType].itemType != ClassDefinitionLoader.CONSTANT_Fieldref) {
+//					throw ClassDefinitionLoader.buildError(ClassDefinitionLoader.ERR_INVALID_REF_LOCAL_VARIABLE, varName, "CONSTANT_Fieldref"); 
+//				}
+			}
+		}
+
+		@Override
+		void verifyAttributeItem(final VerifyErrorManager err) {
+			// TODO Auto-generated method stub
+			if (!ClassDefinitionLoader.isValidReference(varName, pool)) {
+				throw ClassDefinitionLoader.buildError(ClassDefinitionLoader.ERR_NON_EXISTENT_REF_LOCAL_VARIABLE, varName); 
+			}
+			else if (!ClassDefinitionLoader.isValidUTF8Reference(varName, false, pool)) {
+				throw ClassDefinitionLoader.buildError(ClassDefinitionLoader.ERR_INVALID_REF_LOCAL_VARIABLE, varName, "CONSTANT_Utf8"); 
+			}
+			else if (!ClassDefinitionLoader.isValidReference(varType, pool)) {
+				throw ClassDefinitionLoader.buildError(ClassDefinitionLoader.ERR_NON_EXISTENT_REF_LOCAL_VARIABLE, varType); 
+			}
+			else if (pool[varType].itemType != ClassDefinitionLoader.CONSTANT_Fieldref) {
+				throw ClassDefinitionLoader.buildError(ClassDefinitionLoader.ERR_INVALID_REF_LOCAL_VARIABLE, varName, "CONSTANT_Fieldref"); 
 			}
 		}
 	}
 
+	
 	public static class LocalVariablesTypeTable extends AttributeItem {
 		public final int[][]	pairs;
 
-		public LocalVariablesTypeTable(final byte[] content, final ConstantPoolItem[] pool) {
-			super(AttributeKind.LocalVariableTypeTable, pool);
-			final ByteArrayReader		rdr = new ByteArrayReader(content);
+		public LocalVariablesTypeTable(final ByteArrayReader rdr, final ConstantPool pool) {
+			super(rdr.offset(), AttributeKind.LocalVariableTypeTable, pool);
 			
 			this.pairs = new int[rdr.readU2()][]; 
 			for(int index = 0; index < pairs.length; index++) {
@@ -586,21 +674,41 @@ class AttributeItem {
 				
 				pairs[index] = new int[] {rdr.readU2(), rdr.readU2(), varName = rdr.readU2(), varType = rdr.readU2(), rdr.readU2()};
 				
-				if (!ClassDefinitionLoader.isValidReference(varName, pool)) {
-					throw ClassDefinitionLoader.buildError(ClassDefinitionLoader.ERR_NON_EXISTENT_REF_LOCAL_VARIABLE_TYPE, varName); 
-				}
-				else if (!ClassDefinitionLoader.isValidUTF8Reference(varName, false, pool)) {
-					throw ClassDefinitionLoader.buildError(ClassDefinitionLoader.ERR_INVALID_REF_LOCAL_VARIABLE_TYPE, varName); 
-				}
-				else if (!ClassDefinitionLoader.isValidReference(varType, pool)) {
-					throw ClassDefinitionLoader.buildError(ClassDefinitionLoader.ERR_NON_EXISTENT_REF_LOCAL_VARIABLE_TYPE, varType); 
-				}
-				else if (!ClassDefinitionLoader.isValidUTF8Reference(varType, false, pool)) {
-					throw ClassDefinitionLoader.buildError(ClassDefinitionLoader.ERR_INVALID_REF_LOCAL_VARIABLE_TYPE, varName); 
-				}
-				else if (!ClassDefinitionLoader.isValidClassSignature(pool[varType].content)) {
-					throw ClassDefinitionLoader.buildError(ClassDefinitionLoader.ERR_INVALID_SIGNATURE_LOCAL_VARIABLE_TYPE, varName, new String(pool[varType].content)); 
-				}
+//				if (!ClassDefinitionLoader.isValidReference(varName, pool)) {
+//					throw ClassDefinitionLoader.buildError(ClassDefinitionLoader.ERR_NON_EXISTENT_REF_LOCAL_VARIABLE_TYPE, varName); 
+//				}
+//				else if (!ClassDefinitionLoader.isValidUTF8Reference(varName, false, pool)) {
+//					throw ClassDefinitionLoader.buildError(ClassDefinitionLoader.ERR_INVALID_REF_LOCAL_VARIABLE_TYPE, varName); 
+//				}
+//				else if (!ClassDefinitionLoader.isValidReference(varType, pool)) {
+//					throw ClassDefinitionLoader.buildError(ClassDefinitionLoader.ERR_NON_EXISTENT_REF_LOCAL_VARIABLE_TYPE, varType); 
+//				}
+//				else if (!ClassDefinitionLoader.isValidUTF8Reference(varType, false, pool)) {
+//					throw ClassDefinitionLoader.buildError(ClassDefinitionLoader.ERR_INVALID_REF_LOCAL_VARIABLE_TYPE, varName); 
+//				}
+//				else if (!ClassDefinitionLoader.isValidClassSignature(pool[varType].content)) {
+//					throw ClassDefinitionLoader.buildError(ClassDefinitionLoader.ERR_INVALID_SIGNATURE_LOCAL_VARIABLE_TYPE, varName, new String(pool[varType].content)); 
+//				}
+			}
+		}
+		
+		@Override
+		void verifyAttributeItem(VerifyErrorManager err) {
+			// TODO Auto-generated method stub
+			if (!ClassDefinitionLoader.isValidReference(varName, pool)) {
+				throw ClassDefinitionLoader.buildError(ClassDefinitionLoader.ERR_NON_EXISTENT_REF_LOCAL_VARIABLE_TYPE, varName); 
+			}
+			else if (!ClassDefinitionLoader.isValidUTF8Reference(varName, false, pool)) {
+				throw ClassDefinitionLoader.buildError(ClassDefinitionLoader.ERR_INVALID_REF_LOCAL_VARIABLE_TYPE, varName); 
+			}
+			else if (!ClassDefinitionLoader.isValidReference(varType, pool)) {
+				throw ClassDefinitionLoader.buildError(ClassDefinitionLoader.ERR_NON_EXISTENT_REF_LOCAL_VARIABLE_TYPE, varType); 
+			}
+			else if (!ClassDefinitionLoader.isValidUTF8Reference(varType, false, pool)) {
+				throw ClassDefinitionLoader.buildError(ClassDefinitionLoader.ERR_INVALID_REF_LOCAL_VARIABLE_TYPE, varName); 
+			}
+			else if (!ClassDefinitionLoader.isValidClassSignature(pool[varType].content)) {
+				throw ClassDefinitionLoader.buildError(ClassDefinitionLoader.ERR_INVALID_SIGNATURE_LOCAL_VARIABLE_TYPE, varName, new String(pool[varType].content)); 
 			}
 		}
 	}
@@ -608,9 +716,8 @@ class AttributeItem {
 	static abstract class RuntimeAnnotations extends AttributeItem {
 		private final AnnotationItem[]	list;
 		
-		public RuntimeAnnotations(final AttributeKind name, final byte[] content, final ConstantPoolItem[] pool) {
-			super(name, pool);
-			final ByteArrayReader	rdr = new ByteArrayReader(content); 
+		public RuntimeAnnotations(final AttributeKind name, final ByteArrayReader rdr, final ConstantPool pool) {
+			super(rdr.offset(), name, pool);
 			final int				amount = rdr.readU2();
 			final AnnotationItem[]	items = new AnnotationItem[amount];
 			
@@ -635,33 +742,44 @@ class AttributeItem {
 	}
 	
 	public static class RuntimeVisibleAnnotations extends RuntimeAnnotations {
-		public RuntimeVisibleAnnotations(final byte[] content, final ConstantPoolItem[] pool) {
-			super(AttributeKind.RuntimeVisibleAnnotations, content, pool);
+		public RuntimeVisibleAnnotations(final ByteArrayReader rdr, final ConstantPool pool) {
+			super(AttributeKind.RuntimeVisibleAnnotations, rdr, pool);
 		}
 		
 		@Override
 		String getAnnotationName() {
 			return "RUNTIMEVISIBLEANNOTATIONS";
 		}
+		
+		@Override
+		void verifyAttributeItem(VerifyErrorManager err) {
+			// TODO Auto-generated method stub
+			
+		}
 	}
 
 	public static class RuntimeInvisibleAnnotations extends RuntimeAnnotations {
-		public RuntimeInvisibleAnnotations(final byte[] content, final ConstantPoolItem[] pool) {
-			super(AttributeKind.RuntimeInvisibleAnnotations, content, pool);
+		public RuntimeInvisibleAnnotations(final ByteArrayReader rdr, final ConstantPool pool) {
+			super(AttributeKind.RuntimeInvisibleAnnotations, rdr, pool);
 		}
 
 		@Override
 		String getAnnotationName() {
 			return "RUNTIMEINVISIBLEANNOTATIONS";
 		}
+		
+		@Override
+		void verifyAttributeItem(VerifyErrorManager err) {
+			// TODO Auto-generated method stub
+			
+		}
 	}
 
 	static abstract class RuntimeTypeAnnotations extends AttributeItem {
 		private final AnnotationTypeItem[]	list;
 
-		RuntimeTypeAnnotations(final AttributeKind name, final byte[] content, final ConstantPoolItem[] pool) {
-			super(name, pool);
-			final ByteArrayReader		rdr = new ByteArrayReader(content); 
+		RuntimeTypeAnnotations(final AttributeKind name, final ByteArrayReader rdr, final ConstantPool pool) {
+			super(rdr.offset(), name, pool);
 			final int					amount = rdr.readU2();
 			final AnnotationTypeItem[]	items = new AnnotationTypeItem[amount];
 			
@@ -754,42 +872,59 @@ class AttributeItem {
 	}
 
 	static class RuntimeVisibleTypeAnnotations extends RuntimeTypeAnnotations {
-		public RuntimeVisibleTypeAnnotations(final byte[] content, final ConstantPoolItem[] pool) {
-			super(AttributeKind.RuntimeVisibleTypeAnnotations, content, pool);
+		public RuntimeVisibleTypeAnnotations(final ByteArrayReader rdr, final ConstantPool pool) {
+			super(AttributeKind.RuntimeVisibleTypeAnnotations, rdr, pool);
 		}
 
 		@Override
 		String getAnnotationName() {
 			return "RUNTIMEVISIBLETYPEANNOTATIONS";
 		}
+		
+		@Override
+		void verifyAttributeItem(VerifyErrorManager err) {
+			// TODO Auto-generated method stub
+			
+		}
 	}
 
 	static class RuntimeInvisibleTypeAnnotations extends RuntimeTypeAnnotations {
-		public RuntimeInvisibleTypeAnnotations(final byte[] content, final ConstantPoolItem[] pool) {
-			super(AttributeKind.RuntimeInvisibleTypeAnnotations, content, pool);
+		public RuntimeInvisibleTypeAnnotations(final ByteArrayReader rdr, final ConstantPool pool) {
+			super(AttributeKind.RuntimeInvisibleTypeAnnotations, rdr, pool);
 		}
 
 		@Override
 		String getAnnotationName() {
 			return "RUNTIMEINVISIBLETYPEANNOTATIONS";
 		}
+		
+		@Override
+		void verifyAttributeItem(VerifyErrorManager err) {
+			// TODO Auto-generated method stub
+			
+		}
 	}
 
 	public static class AnnotationDefault extends AttributeItem {
 		public final AnnotationValue	value;
 
-		AnnotationDefault(final byte[] content, final ConstantPoolItem[] pool) {
-			super(AttributeKind.AnnotationDefault, pool);
-			this.value = getAnnotationValue(pool, "", new ByteArrayReader(content), 0, 0);
+		AnnotationDefault(final ByteArrayReader rdr, final ConstantPool pool) {
+			super(rdr.offset(), AttributeKind.AnnotationDefault, pool);
+			this.value = getAnnotationValue(pool, "", rdr, 0, 0);
+		}
+		
+		@Override
+		void verifyAttributeItem(VerifyErrorManager err) {
+			// TODO Auto-generated method stub
+			
 		}
 	}
 
 	public static class BootstrapMethods extends AttributeItem {
 		public final BootstrapMethod[]	methods;
 
-		BootstrapMethods(final byte[] content, final ConstantPoolItem[] pool) {
-			super(AttributeKind.BootstrapMethods, pool);
-			final ByteArrayReader		rdr = new ByteArrayReader(content); 
+		BootstrapMethods(final ByteArrayReader rdr, final ConstantPool pool) {
+			super(rdr.offset(), AttributeKind.BootstrapMethods, pool);
 
 			this.methods = new BootstrapMethod[rdr.readU2()];
 			
@@ -816,6 +951,12 @@ class AttributeItem {
 			}
 		}
 		
+		@Override
+		void verifyAttributeItem(VerifyErrorManager err) {
+			// TODO Auto-generated method stub
+			
+		}
+		
 		public static class BootstrapMethod {
 			public final int	methodRef;
 			public final int[]	arguments;
@@ -832,9 +973,8 @@ class AttributeItem {
 		
 		public final int[][]		parameters;
 		
-		public MethodParameters(final byte[] content, final ConstantPoolItem[] pool) {
-			super(AttributeKind.MethodParameters, pool);
-			final ByteArrayReader	bar = new ByteArrayReader(content);
+		public MethodParameters(final ByteArrayReader rdr, final ConstantPool pool) {
+			super(rdr.offset(), AttributeKind.MethodParameters, pool);
 			final int[][]			parameters = new int[bar.read()][];
 
 			for (int index = 0; index < parameters.length; index++) {
@@ -858,6 +998,12 @@ class AttributeItem {
 			}
 			this.parameters = parameters;
 		}
+		
+		@Override
+		void verifyAttributeItem(VerifyErrorManager err) {
+			// TODO Auto-generated method stub
+			
+		}
 	}
 	
 
@@ -873,9 +1019,8 @@ class AttributeItem {
 		public final Provides[]	provides;
 		
 
-		Module(final byte[] content, final ConstantPoolItem[] pool) {
-			super(AttributeKind.Module, pool);
-			final ByteArrayReader	rdr = new ByteArrayReader(content);
+		Module(final ByteArrayReader rdr, final ConstantPool pool) {
+			super(rdr.offset(), AttributeKind.Module, pool);
 			
 			this.name = rdr.readU2();
 			this.accessFlags = rdr.readU2();
@@ -924,6 +1069,12 @@ class AttributeItem {
 			}
 		}
 
+		@Override
+		void verifyAttributeItem(VerifyErrorManager err) {
+			// TODO Auto-generated method stub
+			
+		}
+		
 		public static class Requires {
 			public final int	name;
 			public final int	accessFlags;
@@ -969,5 +1120,180 @@ class AttributeItem {
 				this.provides = provides;
 			}
 		}
+	}
+	
+	public static class ModulePackages extends AttributeItem {
+		public final int[]	packages;
+
+		ModulePackages(final ByteArrayReader rdr, final ConstantPool pool) {
+			super(rdr.offset(), AttributeKind.ModulePackages, pool);
+			this.packages = new int[rdr.readU2()];
+			
+			for(int index = 0; index < packages.length; index++) {
+				packages[index] = rdr.readU2();
+			}
+		}
+
+		@Override
+		void verifyAttributeItem(VerifyErrorManager err) {
+			// TODO Auto-generated method stub
+			
+		}
+		
+	}
+	
+	public static class ModuleMainClass extends AttributeItem {
+		public final int	mainClass;
+
+		ModuleMainClass(final ByteArrayReader rdr, final ConstantPool pool) {
+			super(rdr.offset(), AttributeKind.ModuleMainClass, pool);
+			this.mainClass = rdr.readU2();		
+		}
+
+		@Override
+		void verifyAttributeItem(VerifyErrorManager err) {
+			// TODO Auto-generated method stub
+			
+		}
+	}	
+
+	public static class NestHost extends AttributeItem {
+		public final int	nestHost;
+
+		NestHost(final ByteArrayReader rdr, final ConstantPool pool) {
+			super(rdr.offset(), AttributeKind.NestHost, pool);
+			this.nestHost = rdr.readU2();
+		}
+
+		@Override
+		void verifyAttributeItem(VerifyErrorManager err) {
+			// TODO Auto-generated method stub
+			
+		}
+	}
+
+	public static class NestMembers extends AttributeItem {
+		public final int[]	nestMembers;		
+
+		NestMembers(final ByteArrayReader rdr, final ConstantPool pool) {
+			super(rdr.offset(), AttributeKind.NestMembers, pool);
+			this.nestMembers = new int[rdr.readU2()];
+			for(int index = 0; index < nestMembers.length; index++) {
+				nestMembers[index] = rdr.readU2();
+			}
+		}
+
+		@Override
+		void verifyAttributeItem(VerifyErrorManager err) {
+			// TODO Auto-generated method stub
+			
+		}
+	}
+	
+	public static class PermittedSubclasses extends AttributeItem {
+		public final int[]	permittedSubclasses;		
+
+		PermittedSubclasses(final ByteArrayReader rdr, final ConstantPool pool) {
+			super(rdr.offset(), AttributeKind.PermittedSubclasses, pool);
+			this.permittedSubclasses = new int[rdr.readU2()];
+			for(int index = 0; index < permittedSubclasses.length; index++) {
+				permittedSubclasses[index] = rdr.readU2();
+			}
+		}
+
+		@Override
+		void verifyAttributeItem(VerifyErrorManager err) {
+			// TODO Auto-generated method stub
+			
+		}
+	}
+	
+	public static class Record extends AttributeItem {
+		public final RecordComponent[]	components;
+
+		Record(final ByteArrayReader rdr, final ConstantPool pool) {
+			super(rdr.offset(), AttributeKind.Record, pool);
+			this.components = new RecordComponent[rdr.readU2()];
+			for(int index = 0; index < components.length; index++) {
+				final int	name = rdr.readU2(); 
+				final int	offset = rdr.offset();
+				final int	descriptor = rdr.readU2();
+				final AttributeItem[]	attrs = new AttributeItem[rdr.readU2()];
+				
+				for(int attrIndex = 0; attrIndex <  attrs.length; attrIndex++) {
+					attrs[attrIndex] = DefinitionLoader.readAttributeItem(rdr, pool);
+				}
+				components[index] = new RecordComponent(offset, name, descriptor, pool, attrs); 
+			}
+		}
+
+		@Override
+		void verifyAttributeItem(VerifyErrorManager err) {
+			// TODO Auto-generated method stub
+			
+		}
+		
+		public static class RecordComponent {
+			public final int	name;
+			public final int	descriptor;
+			public final AttributeItem[]	attributes;
+			final ConstantPool	pool;
+			final int			offset;
+			
+			public RecordComponent(final int offset, final int name, int descriptor, final ConstantPool pool, final AttributeItem... attributes) {
+				this.name = name;
+				this.descriptor = descriptor;
+				this.attributes = attributes;
+				this.pool = pool;
+				this.offset = offset;
+			}
+		}
+	}
+	
+	
+	public abstract static class RuntimeParameterAnnotations extends AttributeItem {
+		public final RuntimeAnnotations[][]	annotations; 
+
+		RuntimeParameterAnnotations(final ByteArrayReader rdr, final AttributeKind kind, final ConstantPool pool) {
+			super(rdr.offset(), kind, pool);
+			this.annotations = new RuntimeAnnotations[rdr.read()][];
+			
+			for(int index = 0; index < annotations.length; index++) {
+				final RuntimeAnnotations[]	temp = new RuntimeAnnotations[rdr.readU2()];
+				
+				for(int annotationIndex = 0; annotationIndex < temp.length; annotationIndex++) {
+					temp[index] = new RuntimeVisibleAnnotations(rdr, pool);
+				}
+				annotations[index] = temp;
+			}
+		}
+	}
+	
+	public static class RuntimeVisibleParameterAnnotations extends RuntimeParameterAnnotations {
+		RuntimeVisibleParameterAnnotations(final ByteArrayReader rdr,  final ConstantPool pool) {
+			super(rdr, AttributeKind.RuntimeVisibleParameterAnnotations, pool);
+			// TODO Auto-generated constructor stub
+		}
+
+		@Override
+		void verifyAttributeItem(VerifyErrorManager err) {
+			// TODO Auto-generated method stub
+			
+		}
+		
+	}
+
+	public static class RuntimeInvisibleParameterAnnotations extends RuntimeParameterAnnotations {
+		RuntimeInvisibleParameterAnnotations(final ByteArrayReader rdr,  final ConstantPool pool) {
+			super(rdr, AttributeKind.RuntimeInvisibleParameterAnnotations, pool);
+			// TODO Auto-generated constructor stub
+		}
+
+		@Override
+		void verifyAttributeItem(VerifyErrorManager err) {
+			// TODO Auto-generated method stub
+			
+		}
+		
 	}
 }

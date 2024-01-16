@@ -13,6 +13,9 @@ public class VerifyErrorManager {
 	static final String	ERR_INVALID_CLASS_OR_METHOD_SIGNATURE_CP = "Invalid class or method signature [%1$s]"; 
 	static final String	ERR_EXTRA_ACCESS_FLAGS = "Extra access flags [%1$x] for entity, only [%2$x] are available"; 
 	static final String	ERR_INCOMPATIBLE_ACCESS_FLAGS = "Incompatible access flags [%1$x] for entity"; 
+	static final String	ERR_DUPLICATE_ATTRIBUTE = "Duplicate attribute [%1$s] in attribute list"; 
+	static final String	ERR_INVALID_TAG_STACKMAPTABLE = "Invalid attribute tag [%1$x]";
+	static final String	ERR_UNSUPPORTED_TAG_STACKMAPTABLE = "Unsupported attribute tag [%1$x]";
 	
 	
 	

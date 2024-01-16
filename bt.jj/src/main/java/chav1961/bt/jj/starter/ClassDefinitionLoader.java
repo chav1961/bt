@@ -783,12 +783,12 @@ class ClassDefinitionLoader {
 			final EnumSet<AttributeKind>	detected = EnumSet.noneOf(AttributeKind.class);
 			
 			for (AttributeItem item : field.attrs) {
-				if (item.name != AttributeKind.Unknown && detected.contains(item.name)) {
-					throw buildError(ERR_DUPLICATE_ATTRIBUTE, "FIELD", new String(fieldName), item.name); 
+				if (item.kind != AttributeKind.Unknown && detected.contains(item.kind)) {
+					throw buildError(ERR_DUPLICATE_ATTRIBUTE, "FIELD", new String(fieldName), item.kind); 
 				}
 				else {
-					detected.add(item.name);
-					switch (item.name) {
+					detected.add(item.kind);
+					switch (item.kind) {
 						case ConstantValue	:
 							final TypeKind	tk = InternalUtils.typeBySignature(pool[field.fieldDesc].content); 
 							
@@ -807,7 +807,7 @@ class ClassDefinitionLoader {
 									}
 									break;
 								default :
-									throw buildError(ERR_NOT_APPLICABLE_ATTRIBUTE, "FIELD", new String(fieldName), item.name);
+									throw buildError(ERR_NOT_APPLICABLE_ATTRIBUTE, "FIELD", new String(fieldName), item.kind);
 							}
 							break;
 						case Signature	:
@@ -828,7 +828,7 @@ class ClassDefinitionLoader {
 						case Unknown	:
 							break;
 						default :
-							throw buildError(ERR_NOT_APPLICABLE_ATTRIBUTE, "FIELD", new String(fieldName), item.name);
+							throw buildError(ERR_NOT_APPLICABLE_ATTRIBUTE, "FIELD", new String(fieldName), item.kind);
 					}
 				}
 			}

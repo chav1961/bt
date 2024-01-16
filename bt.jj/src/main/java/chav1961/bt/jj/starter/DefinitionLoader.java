@@ -600,10 +600,8 @@ public class DefinitionLoader {
 		// TODO Auto-generated method stub
 	}
 
-	private static AttributeItem readAttributeItem(final ByteArrayReader rdr, final ConstantPool pool) {
-		// TODO Auto-generated method stub
+	static AttributeItem readAttributeItem(final ByteArrayReader rdr, final ConstantPool pool) {
 		final int	attrType = rdr.readU2();
-		final int	offset = rdr.offset();
 		final int	size = rdr.readU4();
 		
 		final JavaAttributeType	type = toAttribute(attrType, pool);
@@ -615,65 +613,65 @@ public class DefinitionLoader {
 		else {
 			switch (type) {
 				case AnnotationDefault	:
-					break;
+					return new AttributeItem.AnnotationDefault(rdr, pool);
 				case BootstrapMethods	:
-					break;
+					return new AttributeItem.BootstrapMethods(rdr, pool);
 				case Code				:
-					break;
+					return new AttributeItem.Code(rdr, pool);
 				case ConstantValue		:
-					break;
+					return new AttributeItem.ConstantValue(rdr, pool);
 				case Deprecated			:
-					break;
+					return new AttributeItem.Deprecated(rdr.offset(), pool);
 				case EnclosingMethod	:
-					break;
+					return new AttributeItem.EnclosingMethod(rdr, pool);
 				case Exceptions			:
-					break;
+					return new AttributeItem.Exceptions(rdr, pool);
 				case InnerClasses		:
-					break;
+					return new AttributeItem.InnerClasses(rdr, pool);
 				case LineNumberTable	:
-					break;
+					return new AttributeItem.LineNumberTable(rdr, pool);
 				case LocalVariableTable	:
-					break;
+					return new AttributeItem.LocalVariablesTable(rdr, pool);
 				case LocalVariableTypeTable	:
-					break;
+					return new AttributeItem.LocalVariablesTypeTable(rdr, pool);
 				case MethodParameters	:
-					break;
+					return new AttributeItem.MethodParameters(rdr, pool);
 				case Module				:
-					break;
+					return new AttributeItem.Module(rdr, pool);
 				case ModuleMainClass	:
-					break;
+					return new AttributeItem.ModuleMainClass(rdr, pool);
 				case ModulePackages		:
-					break;
+					return new AttributeItem.ModulePackages(rdr, pool);
 				case NestHost			:
-					break;
+					return new AttributeItem.NestHost(rdr, pool);
 				case NestMembers		:
-					break;
+					return new AttributeItem.NestMembers(rdr, pool);
 				case PermittedSubclasses:
-					break;
+					return new AttributeItem.PermittedSubclasses(rdr, pool);
 				case Record				:
-					break;
+					return new AttributeItem.Record(rdr, pool);
 				case RuntimeInvisibleAnnotations	:
-					break;
+					return new AttributeItem.RuntimeInvisibleAnnotations(rdr, pool);
 				case RuntimeInvisibleParameterAnnotations	:
-					break;
+					return new AttributeItem.RuntimeInvisibleParameterAnnotations(rdr, pool);
 				case RuntimeInvisibleTypeAnnotations	:
-					break;
+					return new AttributeItem.RuntimeInvisibleTypeAnnotations(rdr, pool);
 				case RuntimeVisibleAnnotations		:
-					break;
+					return new AttributeItem.RuntimeVisibleAnnotations(rdr, pool);
 				case RuntimeVisibleParameterAnnotations	:
-					break;
+					return new AttributeItem.RuntimeVisibleParameterAnnotations(rdr, pool);
 				case RuntimeVisibleTypeAnnotations	:
-					break;
+					return new AttributeItem.RuntimeVisibleTypeAnnotations(rdr, pool);
 				case Signature			:
-					break;
+					return new AttributeItem.Signature(rdr, pool);
 				case SourceDebugExtension	:
-					break;
+					return new AttributeItem.SourceDebugExtension(rdr, size, pool);
 				case SourceFile			:
-					break;
+					return new AttributeItem.SourceFile(rdr, pool);
 				case StackMapTable		:
-					break;
+					return new AttributeItem.StackMapTable(rdr, pool);
 				case Synthetic			:
-					break;
+					return new AttributeItem.Synthetic(rdr.offset(), pool);
 				default			:
 					throw new UnsupportedOperationException("Attribute type ["+type+"] is not supported yet");
 			}
