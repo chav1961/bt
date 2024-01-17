@@ -95,12 +95,12 @@ public class Preloader {
 			while ((length = item.read(buffer)) > 0) {
 				baos.write(buffer, 0, length);
 			}
-			prepareClass(ClassDefinitionLoader.parse(new ByteArrayReader(baos.toByteArray())));
+			prepareClass(DefinitionLoader.parse(new ByteArrayReader(baos.toByteArray())));
 		}
 	}	
 	
 	private void loadClass(final String className, final File item) throws IOException {
-		prepareClass(ClassDefinitionLoader.parse(new ByteArrayReader(Files.readAllBytes(item.toPath()))));
+		prepareClass(DefinitionLoader.parse(new ByteArrayReader(Files.readAllBytes(item.toPath()))));
 	}
 
 	private void prepareClass(final ClassDescriptor desc) throws IOException {

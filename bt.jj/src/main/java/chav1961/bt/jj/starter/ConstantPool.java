@@ -49,27 +49,27 @@ public class ConstantPool {
 		}
 		else {
 			switch (content[ref].itemType) {
-				case ClassDefinitionLoader.CONSTANT_Class				:
+				case DefinitionLoader.CONSTANT_Class				:
 					return deepToString(content[ref].ref1); 
-				case ClassDefinitionLoader.CONSTANT_Fieldref			:
-				case ClassDefinitionLoader.CONSTANT_Methodref			:
-				case ClassDefinitionLoader.CONSTANT_InterfaceMethodref	:
-				case ClassDefinitionLoader.CONSTANT_MethodHandle		:
-				case ClassDefinitionLoader.CONSTANT_MethodType			:
-				case ClassDefinitionLoader.CONSTANT_InvokeDynamic		:
+				case DefinitionLoader.CONSTANT_Fieldref			:
+				case DefinitionLoader.CONSTANT_Methodref			:
+				case DefinitionLoader.CONSTANT_InterfaceMethodref	:
+				case DefinitionLoader.CONSTANT_MethodHandle		:
+				case DefinitionLoader.CONSTANT_MethodType			:
+				case DefinitionLoader.CONSTANT_InvokeDynamic		:
 					return deepToString(content[ref].ref1)+"."+deepToString(content[ref].ref2); 
-				case ClassDefinitionLoader.CONSTANT_String				:
+				case DefinitionLoader.CONSTANT_String				:
 					return deepToString(content[ref].ref1); 
-				case ClassDefinitionLoader.CONSTANT_Integer				:
-				case ClassDefinitionLoader.CONSTANT_Long				:
+				case DefinitionLoader.CONSTANT_Integer				:
+				case DefinitionLoader.CONSTANT_Long				:
 					return String.valueOf(content[ref].value); 
-				case ClassDefinitionLoader.CONSTANT_Float				:
+				case DefinitionLoader.CONSTANT_Float				:
 					return String.valueOf(Float.intBitsToFloat((int)content[ref].value)); 
-				case ClassDefinitionLoader.CONSTANT_Double				:
+				case DefinitionLoader.CONSTANT_Double				:
 					return String.valueOf(Double.longBitsToDouble(content[ref].value)); 
-				case ClassDefinitionLoader.CONSTANT_NameAndType			:
+				case DefinitionLoader.CONSTANT_NameAndType			:
 					return deepToString(content[ref].ref1)+" "+deepToString(content[ref].ref1); 
-				case ClassDefinitionLoader.CONSTANT_Utf8					:
+				case DefinitionLoader.CONSTANT_Utf8					:
 					return new String(content[ref].content); 
 				default :
 					throw new IllegalArgumentException("illegal constain pool item type ["+content[ref].itemType+"] at index ["+ref+"]");

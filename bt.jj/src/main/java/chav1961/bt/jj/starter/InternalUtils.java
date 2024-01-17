@@ -50,13 +50,13 @@ class InternalUtils {
 		}
 	}
 	
-	public static int allocateStaticMemory(final int initialDisplacement, final FieldItem[] fields, final ConstantPoolItem[] pool) {
+	public static int allocateStaticMemory(final int initialDisplacement, final FieldItem[] fields, final ConstantPool pool) {
 		int displ = ((initialDisplacement + JJ.QWORD_SIZE - 1) / JJ.QWORD_SIZE) * JJ.QWORD_SIZE;
 		
 		for(int pass = 0; pass <= 3; pass++) {
 			for (FieldItem item : fields) {
-				if ((item.accessFlags & ClassDefinitionLoader.ACC_STATIC) != 0) {
-					switch (typeBySignature(pool[item.fieldDesc].content)) {
+				if ((item.accessFlags & DefinitionLoader.ACC_STATIC) != 0) {
+					switch (typeBySignature(pool.get(item.fieldDesc).content)) {
 						case TYPE_DOUBLE : case TYPE_LONG : case TYPE_REF : case TYPE_STRING : case TYPE_ARRAY_P : case TYPE_ARRAY_R :
 							if (pass == 0) {
 								item.displacement = displ;
@@ -86,7 +86,7 @@ class InternalUtils {
 							}
 							break;
 						default :
-							throw new IllegalArgumentException("Illegal field type ["+resolveDescriptor(pool, item.fieldDesc)+"]");
+							throw new IllegalArgumentException("Illegal field type ["+pool.deepToString(item.fieldDesc)+"]");
 					}
 				}
 			}
@@ -94,13 +94,13 @@ class InternalUtils {
 		return displ;
 	}
 
-	public static int allocateInstanceMemory(final int initialDisplacement, final FieldItem[] fields, final ConstantPoolItem[] pool) {
+	public static int allocateInstanceMemory(final int initialDisplacement, final FieldItem[] fields, final ConstantPool pool) {
 		int displ = ((initialDisplacement + JJ.QWORD_SIZE - 1) / JJ.QWORD_SIZE) * JJ.QWORD_SIZE;
 		
 		for(int pass = 0; pass <= 3; pass++) {
 			for (FieldItem item : fields) {
-				if ((item.accessFlags & ClassDefinitionLoader.ACC_STATIC) == 0) {
-					switch (typeBySignature(pool[item.fieldDesc].content)) {
+				if ((item.accessFlags & DefinitionLoader.ACC_STATIC) == 0) {
+					switch (typeBySignature(pool.get(item.fieldDesc).content)) {
 						case TYPE_DOUBLE : case TYPE_LONG : case TYPE_REF : case TYPE_STRING : case TYPE_ARRAY_P : case TYPE_ARRAY_R :
 							if (pass == 0) {
 								item.displacement = displ;
@@ -130,7 +130,7 @@ class InternalUtils {
 							}
 							break;
 						default :
-							throw new IllegalArgumentException("Illegal field type ["+resolveDescriptor(pool, item.fieldDesc)+"]");
+							throw new IllegalArgumentException("Illegal field type ["+pool.deepToString(item.fieldDesc)+"]");
 					}
 				}
 			}

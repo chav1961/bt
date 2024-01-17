@@ -7,12 +7,22 @@ import chav1961.bt.jj.starter.AnnotationItem.AnnotationValue;
 public class AnnotationTypeItem {
 	private final int					type;
 	private final AnnotationTypeValue[]	values;
+	final int							offset;
 
-	public AnnotationTypeItem(int type, AnnotationTypeValue... values) {
+	public AnnotationTypeItem(final int offset, final int type, AnnotationTypeValue... values) {
+		this.offset = offset;
 		this.type = type;
 		this.values = values;
 	}
 	
+	public int getType() {
+		return type;
+	}
+
+	public AnnotationTypeValue[] getValues() {
+		return values;
+	}
+
 	@Override
 	public String toString() {
 		return "AnnotationTypeItem [type=" + type + ", values=" + Arrays.toString(values) + "]";

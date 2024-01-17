@@ -9,6 +9,8 @@ class FieldItem {
 	public final int	fieldDesc;
 	public final int	accessFlags;
 	public final AttributeItem[]	attrs;
+	public long			displacement = 0;
+	public long			length = 0;
 	final int			offset;
 	
 	private final ConstantPool	pool;

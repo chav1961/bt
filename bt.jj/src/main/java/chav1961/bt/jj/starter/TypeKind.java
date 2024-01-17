@@ -1,16 +1,16 @@
 package chav1961.bt.jj.starter;
 
 public enum TypeKind {
-	TYPE_BYTE(true, false, false, ClassDefinitionLoader.CONSTANT_Integer, "CONSTANT_Integer"),
-	TYPE_CHAR(true, false, false, ClassDefinitionLoader.CONSTANT_Integer, "CONSTANT_Integer"),
-	TYPE_DOUBLE(true, false, false, ClassDefinitionLoader.CONSTANT_Double, "CONSTANT_Double"),
-	TYPE_FLOAT(true, false, false, ClassDefinitionLoader.CONSTANT_Float, "CONSTANT_Float"),
-	TYPE_INT(true, false, false, ClassDefinitionLoader.CONSTANT_Integer, "CONSTANT_Integer"),
-	TYPE_LONG(true, false, false, ClassDefinitionLoader.CONSTANT_Long, "CONSTANT_Long"),
-	TYPE_SHORT(true, false, false, ClassDefinitionLoader.CONSTANT_Integer, "CONSTANT_Integer"),
-	TYPE_BOOLEAN(true, false, false, ClassDefinitionLoader.CONSTANT_Integer, "CONSTANT_Integer"),
+	TYPE_BYTE(true, false, false, DefinitionLoader.CONSTANT_Integer, "CONSTANT_Integer"),
+	TYPE_CHAR(true, false, false, DefinitionLoader.CONSTANT_Integer, "CONSTANT_Integer"),
+	TYPE_DOUBLE(true, false, false, DefinitionLoader.CONSTANT_Double, "CONSTANT_Double"),
+	TYPE_FLOAT(true, false, false, DefinitionLoader.CONSTANT_Float, "CONSTANT_Float"),
+	TYPE_INT(true, false, false, DefinitionLoader.CONSTANT_Integer, "CONSTANT_Integer"),
+	TYPE_LONG(true, false, false, DefinitionLoader.CONSTANT_Long, "CONSTANT_Long"),
+	TYPE_SHORT(true, false, false, DefinitionLoader.CONSTANT_Integer, "CONSTANT_Integer"),
+	TYPE_BOOLEAN(true, false, false, DefinitionLoader.CONSTANT_Integer, "CONSTANT_Integer"),
 	TYPE_VOID(false, false, false, (byte)-1, ""),
-	TYPE_STRING(false, true, false, ClassDefinitionLoader.CONSTANT_String, "CONSTANT_String"),
+	TYPE_STRING(false, true, false, DefinitionLoader.CONSTANT_String, "CONSTANT_String"),
 	TYPE_ARRAY_P(false, true, true, (byte)-1, ""),
 	TYPE_ARRAY_R(false, true, true, (byte)-1, ""),
 	TYPE_REF(false, true, false, (byte)-1, "");

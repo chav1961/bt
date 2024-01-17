@@ -5,8 +5,10 @@ import java.util.Arrays;
 public class AnnotationItem {
 	private final int				type;
 	private final AnnotationValue[]	values;
+	final int						offset;
 	
-	public AnnotationItem(final int type, final AnnotationValue... values) {
+	public AnnotationItem(final int offset, final int type, final AnnotationValue... values) {
+		this.offset = offset;
 		this.type = type;
 		this.values = values;
 	}
@@ -29,22 +31,26 @@ public class AnnotationItem {
 		private final int	ref1;
 		private final int	ref2;
 		private final AnnotationValue[]	values;
+		final int			offset;
 		
-		public AnnotationValue(final char type, final int ref) {
+		public AnnotationValue(final int offset, final char type, final int ref) {
+			this.offset = offset;
 			this.type = type;
 			this.ref1 = ref;
 			this.ref2 = -1;
 			this.values = null;
 		}
 
-		public AnnotationValue(final char type, final int ref1, final int ref2) {
+		public AnnotationValue(final int offset, final char type, final int ref1, final int ref2) {
+			this.offset = offset;
 			this.type = type;
 			this.ref1 = ref1;
 			this.ref2 = ref2;
 			this.values = null;
 		}
 
-		public AnnotationValue(final char type, final AnnotationValue... refs) {
+		public AnnotationValue(final int offset, final char type, final AnnotationValue... refs) {
+			this.offset = offset;
 			this.type = type;
 			this.ref1 = -1;
 			this.ref2 = -1;

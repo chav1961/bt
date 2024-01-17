@@ -50,11 +50,11 @@ public class DefinitionLoader {
 	static final char[]	VALID_CLINIT = "<clinit>".toCharArray();
 	static final char[]	VALID_INIT = "<init>".toCharArray();
 	
-	public static void parse(final ByteArrayReader rdr) {
-		parse(rdr, true, JavaAttributeProcessing.Execute);
+	public static ClassDescriptor parse(final ByteArrayReader rdr) {
+		return parse(rdr, true, JavaAttributeProcessing.Always);
 	}
 	
-	public static void parse(final ByteArrayReader rdr, final boolean verify, final JavaAttributeProcessing processing) {
+	public static ClassDescriptor parse(final ByteArrayReader rdr, final boolean verify, final JavaAttributeProcessing processing) {
 		if (rdr == null) {
 			throw new NullPointerException("Reader can't be null");
 		}
@@ -172,6 +172,7 @@ public class DefinitionLoader {
 					err.pop();	// name
 				}
 			}
+			return null;
 		}
 	}
 

@@ -5,7 +5,7 @@ import java.lang.reflect.Modifier;
 import chav1961.purelib.cdb.JavaClassVersion;
 
 public class ClassDescriptor {
-	private final ConstantPoolItem[]	pool;
+	private final ConstantPool			pool;
 	private final JavaClassVersion		version;
 	private final int					accessFlags;
 	private final int					thisClass;
@@ -17,7 +17,7 @@ public class ClassDescriptor {
 	private final int					staticPart;
 	private final int					instancePiecePart;
 	
-	ClassDescriptor(final ConstantPoolItem[] pool, final JavaClassVersion version, final int accessFlags, final int thisClass, final int superClass, final InterfaceItem[] interfaces, final FieldItem[] fields, final MethodItem[] methods, final AttributeItem[] attributes) {
+	ClassDescriptor(final ConstantPool pool, final JavaClassVersion version, final int accessFlags, final int thisClass, final int superClass, final InterfaceItem[] interfaces, final FieldItem[] fields, final MethodItem[] methods, final AttributeItem[] attributes) {
 		this.pool = pool;
 		this.version = version;
 		this.accessFlags = accessFlags;
@@ -31,7 +31,7 @@ public class ClassDescriptor {
 		this.instancePiecePart = InternalUtils.allocateInstanceMemory(0, fields, pool); 
 	}
 
-	public ConstantPoolItem[] getConstantPool() {
+	public ConstantPool getConstantPool() {
 		return pool;
 	}
 	
@@ -83,27 +83,27 @@ public class ClassDescriptor {
 	public String toString() {
 		final StringBuilder	sb = new StringBuilder();
 		
-		sb.append(Modifier.toString(accessFlags)).append(' ').append( InternalUtils.resolveDescriptor(pool, thisClass));
+		sb.append(Modifier.toString(accessFlags)).append(' ').append(pool.deepToString(thisClass));
 		if (superClass != 0) {
-			sb.append(" extends ").append(InternalUtils.resolveDescriptor(pool, superClass));
+			sb.append(" extends ").append(pool.deepToString(superClass));
 		}
 		if (interfaces.length > 0) {
 			String	prefix = " implements ";
 			for (InterfaceItem item : interfaces) {
-				sb.append(prefix).append(InternalUtils.resolveDescriptor(pool, item.interfaceRef));
+				sb.append(prefix).append(pool.deepToString(item.interfaceRef));
 				prefix = " , ";
 			}
 		}
 		sb.append(" {\n");
 
 		for (FieldItem item : fields) {
-			sb.append('\t').append(Modifier.toString(item.accessFlags)).append(' ').append(InternalUtils.resolveDescriptor(pool, item.fieldDesc))
-			  .append(' ').append(InternalUtils.resolveDescriptor(pool, item.fieldName)).append(";\n");
+			sb.append('\t').append(Modifier.toString(item.accessFlags)).append(' ').append(pool.deepToString(item.fieldDesc))
+			  .append(' ').append(pool.deepToString(item.fieldName)).append(";\n");
 		}
 
 		for (MethodItem item : methods) {
-			sb.append('\t').append(Modifier.toString(item.accessFlags)).append(' ').append(InternalUtils.resolveDescriptor(pool, item.methodName))
-			  .append(InternalUtils.resolveDescriptor(pool, item.methodDesc)).append(";\n");
+			sb.append('\t').append(Modifier.toString(item.accessFlags)).append(' ').append(pool.deepToString(item.methodName))
+			  .append(pool.deepToString(item.methodDesc)).append(";\n");
 		}
 		return sb.append("}\n").toString();
 	}

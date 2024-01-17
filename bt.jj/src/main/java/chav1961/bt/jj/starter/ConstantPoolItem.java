@@ -19,33 +19,33 @@ class ConstantPoolItem extends AbstractConstantPoolItem {
 	@Override
 	public String toString() {
 		switch (itemType) {
-			case ClassDefinitionLoader.CONSTANT_Class				:
+			case DefinitionLoader.CONSTANT_Class				:
 				return "CONSTANT_Class ["+ref1+"]"; 
-			case ClassDefinitionLoader.CONSTANT_Fieldref			:
+			case DefinitionLoader.CONSTANT_Fieldref			:
 				return "CONSTANT_Fieldref ["+ref1+","+ref2+"]"; 
-			case ClassDefinitionLoader.CONSTANT_Methodref			:
+			case DefinitionLoader.CONSTANT_Methodref			:
 				return "CONSTANT_Methodref ["+ref1+","+ref2+"]"; 
-			case ClassDefinitionLoader.CONSTANT_InterfaceMethodref	:
+			case DefinitionLoader.CONSTANT_InterfaceMethodref	:
 				return "CONSTANT_InterfaceMethodref ["+ref1+","+ref2+"]"; 
-			case ClassDefinitionLoader.CONSTANT_String				:
+			case DefinitionLoader.CONSTANT_String				:
 				return "CONSTANT_String ["+ref1+"]"; 
-			case ClassDefinitionLoader.CONSTANT_Integer				:
+			case DefinitionLoader.CONSTANT_Integer				:
 				return "CONSTANT_Integer ["+value+"]"; 
-			case ClassDefinitionLoader.CONSTANT_Float				:
+			case DefinitionLoader.CONSTANT_Float				:
 				return "CONSTANT_Float ["+Float.intBitsToFloat((int)value) +"]"; 
-			case ClassDefinitionLoader.CONSTANT_Long				:
+			case DefinitionLoader.CONSTANT_Long				:
 				return "CONSTANT_Long ["+value+"]"; 
-			case ClassDefinitionLoader.CONSTANT_Double				:
+			case DefinitionLoader.CONSTANT_Double				:
 				return "CONSTANT_Double ["+Double.longBitsToDouble(value) +"]"; 
-			case ClassDefinitionLoader.CONSTANT_NameAndType			:
+			case DefinitionLoader.CONSTANT_NameAndType			:
 				return "CONSTANT_NameAndType ["+ref1+","+ref2+"]"; 
-			case ClassDefinitionLoader.CONSTANT_Utf8				:
+			case DefinitionLoader.CONSTANT_Utf8				:
 				return "CONSTANT_Utf8 ["+new String(content)+"]"; 
-			case ClassDefinitionLoader.CONSTANT_MethodHandle		:
+			case DefinitionLoader.CONSTANT_MethodHandle		:
 				return "CONSTANT_MethodHandle ["+ref1+","+ref2+"]"; 
-			case ClassDefinitionLoader.CONSTANT_MethodType			:
+			case DefinitionLoader.CONSTANT_MethodType			:
 				return "CONSTANT_MethodType ["+ref1+","+ref2+"]"; 
-			case ClassDefinitionLoader.CONSTANT_InvokeDynamic		:
+			case DefinitionLoader.CONSTANT_InvokeDynamic		:
 				return "CONSTANT_InvokeDynamic ["+ref1+","+ref2+"]"; 
 			default :
 				return super.toString();

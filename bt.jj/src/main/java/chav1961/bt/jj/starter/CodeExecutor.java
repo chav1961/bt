@@ -1733,37 +1733,37 @@ loop:	for(;;) {
 	}
 	
 	private static int loadConst(final ClassDescriptor clazz, final int index, final long[] stack, final byte[] stackContent, int stackTop, final boolean twice) {
-		final ConstantPoolItem	item = clazz.getConstantPool()[index];
+		final ConstantPoolItem	item = clazz.getConstantPool().get(index);
 		
 		switch (item.itemType) {
-			case ClassDefinitionLoader.CONSTANT_Class	:
+			case DefinitionLoader.CONSTANT_Class	:
 				stack[stackTop] = 0;//item.resolveClass(item.ref1);
 				stackContent[stackTop] = 'L';
 				stackTop++;
 				break;
-			case ClassDefinitionLoader.CONSTANT_String	:
+			case DefinitionLoader.CONSTANT_String	:
 				stack[stackTop] = 0;//item.resolveString(item.ref1);
 				stackContent[stackTop] = 'L';
 				stackTop++;
 				break;
-			case ClassDefinitionLoader.CONSTANT_Integer	:
+			case DefinitionLoader.CONSTANT_Integer	:
 				stack[stackTop] = item.ref1;
 				stackContent[stackTop] = 'I';
 				stackTop++;
 				break;
-			case ClassDefinitionLoader.CONSTANT_Float	:
+			case DefinitionLoader.CONSTANT_Float	:
 				stack[stackTop] = item.ref1;
 				stackContent[stackTop] = 'F';
 				stackTop++;
 				break;
-			case ClassDefinitionLoader.CONSTANT_Long	:
+			case DefinitionLoader.CONSTANT_Long	:
 				stackTop += 2;
 				stack[stackTop - 2] = item.value;
 				stackContent[stackTop - 2] = 'J';
 				stack[stackTop - 1] = 0;
 				stackContent[stackTop - 1] = '*';
 				break;
-			case ClassDefinitionLoader.CONSTANT_Double	:
+			case DefinitionLoader.CONSTANT_Double	:
 				stackTop += 2;
 				stack[stackTop - 2] = item.value;
 				stackContent[stackTop - 2] = 'D';

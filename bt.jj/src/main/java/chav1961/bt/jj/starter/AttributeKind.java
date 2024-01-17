@@ -43,7 +43,7 @@ enum AttributeKind {
 		else if (index < 0 || index >= items.length) {
 			throw new IllegalArgumentException("Item index ["+index+"] out of range 0.."+(items.length-1));
 		}
-		else if (items[index].itemType != ClassDefinitionLoader.CONSTANT_Utf8) {
+		else if (items[index].itemType != DefinitionLoader.CONSTANT_Utf8) {
 			throw new VerifyError("Item index ["+index+"] in the constant pool refres to invalid entyty (CONSTANT_Utf8 awaited)");
 		}
 		else {

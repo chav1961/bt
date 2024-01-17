@@ -18,7 +18,7 @@ abstract class AttributeItem {
 		this.pool = pool;
 	}
 
-	abstract void verifyAttributeItem(final VerifyErrorManager err);
+	abstract void verifyAttributeItem(final VerifyErrorManager err, final JavaClassVersion version);
 
 	void checkDuplicates(final VerifyErrorManager err, final AttributeItem... items) {
 		final EnumSet<AttributeKind>	attrSet = EnumSet.noneOf(AttributeKind.class);
@@ -33,132 +33,131 @@ abstract class AttributeItem {
 		}
 	}
 	
-	private static AnnotationValue getAnnotationValue(final ConstantPoolItem[] pool, final String annotationName, final ByteArrayReader rdr, final int index, final int pairIndex) {
-		final char				tag = (char)rdr.read();
-		final int				ref1, ref2;
+	private static AnnotationValue getAnnotationValue(final ConstantPool pool, final ByteArrayReader rdr) {
+		final char	tag = (char)rdr.read();
+		final int	offset = rdr.offset();
 		
 		switch (tag) {
-			case 'B': case 'C': case 'I': case 'S':
-				ref1 = rdr.readU2();
-				if (!ClassDefinitionLoader.isValidReference(ref1, pool)) {
-					throw ClassDefinitionLoader.buildError(ClassDefinitionLoader.ERR_NON_EXISTENT_REF_ANNOTATION_VALUE, annotationName, index, pairIndex, ref1);
-				}
-				else if (pool[ref1].itemType != ClassDefinitionLoader.CONSTANT_Integer) {
-					throw ClassDefinitionLoader.buildError(ClassDefinitionLoader.ERR_INVALID_REF_ANNOTATION_VALUE, annotationName, index, pairIndex, ref1, "CONSTANT_Integer");
-				}
-				else {
-					return new AnnotationValue(tag, ref1);
-				}
-			case 'Z':
-				ref1 = rdr.readU2();
-				if (!ClassDefinitionLoader.isValidReference(ref1, pool)) {
-					throw ClassDefinitionLoader.buildError(ClassDefinitionLoader.ERR_NON_EXISTENT_REF_ANNOTATION_VALUE, annotationName, index, pairIndex, ref1);
-				}
-				else if (pool[ref1].itemType != ClassDefinitionLoader.CONSTANT_Integer) {
-					throw ClassDefinitionLoader.buildError(ClassDefinitionLoader.ERR_INVALID_REF_ANNOTATION_VALUE, annotationName, index, pairIndex, ref1, "CONSTANT_Integer");
-				}
-				else if (pool[ref1].ref1 != 0 && pool[ref1].ref1 != 1) {
-					throw ClassDefinitionLoader.buildError(ClassDefinitionLoader.ERR_INVALID_REF_ANNOTATION_BOOL_VALUE, annotationName, index, pairIndex, ref1, pool[ref1].ref1);
-				}
-				else {
-					return new AnnotationValue(tag, ref1);
-				}
-			case 'D':
-				ref1 = rdr.readU2();
-				if (!ClassDefinitionLoader.isValidReference(ref1, pool)) {
-					throw ClassDefinitionLoader.buildError(ClassDefinitionLoader.ERR_NON_EXISTENT_REF_ANNOTATION_VALUE, annotationName, index, pairIndex, ref1);
-				}
-				else if (pool[ref1].itemType != ClassDefinitionLoader.CONSTANT_Double) {
-					throw ClassDefinitionLoader.buildError(ClassDefinitionLoader.ERR_INVALID_REF_ANNOTATION_VALUE, annotationName, index, pairIndex, ref1, "CONSTANT_Double");
-				}
-				else {
-					return new AnnotationValue(tag, ref1);
-				}
-			case 'F':
-				ref1 = rdr.readU2();
-				if (!ClassDefinitionLoader.isValidReference(ref1, pool)) {
-					throw ClassDefinitionLoader.buildError(ClassDefinitionLoader.ERR_NON_EXISTENT_REF_ANNOTATION_VALUE, annotationName, index, pairIndex, ref1);
-				}
-				else if (pool[ref1].itemType != ClassDefinitionLoader.CONSTANT_Float) {
-					throw ClassDefinitionLoader.buildError(ClassDefinitionLoader.ERR_INVALID_REF_ANNOTATION_VALUE, annotationName, index, pairIndex, ref1, "CONSTANT_Float");
-				}
-				else {
-					return new AnnotationValue(tag, ref1);
-				}
-			case 'J':
-				ref1 = rdr.readU2();
-				if (!ClassDefinitionLoader.isValidReference(ref1, pool)) {
-					throw ClassDefinitionLoader.buildError(ClassDefinitionLoader.ERR_NON_EXISTENT_REF_ANNOTATION_VALUE, annotationName, index, pairIndex, ref1);
-				}
-				else if (pool[ref1].itemType != ClassDefinitionLoader.CONSTANT_Long) {
-					throw ClassDefinitionLoader.buildError(ClassDefinitionLoader.ERR_INVALID_REF_ANNOTATION_VALUE, annotationName, index, pairIndex, ref1, "CONSTANT_Long");
-				}
-				else {
-					return new AnnotationValue(tag, ref1);
-				}
-			case 's':
-				ref1 = rdr.readU2();
-				if (!ClassDefinitionLoader.isValidReference(ref1, pool)) {
-					throw ClassDefinitionLoader.buildError(ClassDefinitionLoader.ERR_NON_EXISTENT_REF_ANNOTATION_VALUE, annotationName, index, pairIndex, ref1);
-				}
-				else if (!ClassDefinitionLoader.isValidUTF8Reference(ref1, true, pool)) {
-					throw ClassDefinitionLoader.buildError(ClassDefinitionLoader.ERR_INVALID_REF_ANNOTATION_VALUE, annotationName, index, pairIndex, ref1, "CONSTANT_UTF8");
-				}
-				else {
-					return new AnnotationValue(tag, ref1);
-				}
+			case 'B': case 'C': case 'I': case 'S': case 'Z': case 'D': case 'F': case 'J': case 's': case 'c':
+				return new AnnotationValue(offset, tag, rdr.readU2());
 			case 'e':
-				ref1 = rdr.readU2();
-				if (!ClassDefinitionLoader.isValidReference(ref1, pool)) {
-					throw ClassDefinitionLoader.buildError(ClassDefinitionLoader.ERR_NON_EXISTENT_REF_ANNOTATION_VALUE, annotationName, index, pairIndex, ref1);
-				}
-				else if (!ClassDefinitionLoader.isValidUTF8Reference(ref1, false, pool)) {
-					throw ClassDefinitionLoader.buildError(ClassDefinitionLoader.ERR_INVALID_REF_ANNOTATION_VALUE, annotationName, index, pairIndex, ref1, "CONSTANT_UTF8");
-				}
-				else if (ClassDefinitionLoader.isValidClassSignature(pool[ref1].content)) {
-					throw ClassDefinitionLoader.buildError(ClassDefinitionLoader.ERR_INVALID_REF_ANNOTATION_CLASS_SIGNATURE, annotationName, index, pairIndex, ref1, new String(pool[ref1].content));
-				}
-				ref2 = rdr.readU2();
-				if (!ClassDefinitionLoader.isValidReference(ref2, pool)) {
-					throw ClassDefinitionLoader.buildError(ClassDefinitionLoader.ERR_NON_EXISTENT_REF_ANNOTATION_VALUE, annotationName, index, pairIndex, ref2);
-				}
-				else if (!ClassDefinitionLoader.isValidUTF8Reference(ref2, false, pool)) {
-					throw ClassDefinitionLoader.buildError(ClassDefinitionLoader.ERR_INVALID_REF_ANNOTATION_VALUE, annotationName, index, pairIndex, ref2, "CONSTANT_UTF8");
-				}
-				else if (ClassDefinitionLoader.isValidName(pool[ref2].content)) {
-					throw ClassDefinitionLoader.buildError(ClassDefinitionLoader.ERR_INVALID_REF_ANNOTATION_NAME, annotationName, index, pairIndex, ref2, new String(pool[ref2].content));
-				}
-				else {
-					return new AnnotationValue(tag, ref1, ref2);
-				}
-			case 'c':
-				ref1 = rdr.readU2();
-				if (!ClassDefinitionLoader.isValidReference(ref1, pool)) {
-					throw ClassDefinitionLoader.buildError(ClassDefinitionLoader.ERR_NON_EXISTENT_REF_ANNOTATION_VALUE, annotationName, index, pairIndex, ref1);
-				}
-				else if (!ClassDefinitionLoader.isValidUTF8Reference(ref1, false, pool)) {
-					throw ClassDefinitionLoader.buildError(ClassDefinitionLoader.ERR_INVALID_REF_ANNOTATION_VALUE, annotationName, index, pairIndex, ref1, "CONSTANT_UTF8");
-				}
-				else if (ClassDefinitionLoader.isValidClassSignature(pool[ref1].content)) {
-					throw ClassDefinitionLoader.buildError(ClassDefinitionLoader.ERR_INVALID_REF_ANNOTATION_CLASS_SIGNATURE, annotationName, index, pairIndex, ref1, new String(pool[ref1].content));
-				}
-				else {
-					return new AnnotationValue(tag, ref1);
-				}
+				return new AnnotationValue(offset, tag, rdr.readU2(), rdr.readU2());
 			case '@':
-				return new AnnotationValue(tag, getAnnotationValue(pool, annotationName, rdr, index, pairIndex));
+				return new AnnotationValue(offset, tag, getAnnotationValue(pool, rdr));
 			case '[':
 				final AnnotationValue[]	list = new AnnotationValue[rdr.readU2()];
 				
 				for(int arrIndex = 0; arrIndex < list.length; arrIndex++) {
-					list[arrIndex] = getAnnotationValue(pool, annotationName, rdr, index, pairIndex);
+					list[arrIndex] = getAnnotationValue(pool, rdr);
 				}
-				return new AnnotationValue(tag, list);
+				return new AnnotationValue(offset, tag, list);
 			default :
-				throw ClassDefinitionLoader.buildError(ClassDefinitionLoader.ERR_INVALID_REF_ANNOTATION_TAG, annotationName, index, pairIndex, tag);
+				throw new UnsupportedOperationException("Annotation tag ["+tag+"] is not supported yet");
 		}
 	}
 
+	private static void checkAnnotationValue(final ConstantPool pool, final AnnotationValue value, final VerifyErrorManager err) {
+		final char	tag = value.getType();
+		final int	ref1 = value.getRef1(), ref2 = value.getRef2();
+		
+		switch (tag) {
+			case 'B': case 'C': case 'I': case 'S':
+				if (!pool.isRefValid(ref1)) {
+					throw err.buildError(value.offset, VerifyErrorManager.ERR_NON_EXISTENT_REF_CP, "Ref", ref1);
+				}
+				else if (!pool.hasType(ref1, DefinitionLoader.CONSTANT_Integer)) {
+					throw err.buildError(value.offset, VerifyErrorManager.ERR_INVALID_REF_CP, "Ref", ref1, "CONSTANT_Integer");
+				}
+				break;
+			case 'Z':
+				if (!pool.isRefValid(ref1)) {
+					throw err.buildError(value.offset, VerifyErrorManager.ERR_NON_EXISTENT_REF_CP, "Ref", ref1);
+				}
+				else if (!pool.hasType(ref1, DefinitionLoader.CONSTANT_Integer)) {
+					throw err.buildError(value.offset, VerifyErrorManager.ERR_INVALID_REF_CP, "Ref", ref1, "CONSTANT_Integer");
+				}
+				else if (pool.get(ref1).value != 0 && pool.get(ref1).value != 1) {
+					throw err.buildError(value.offset, VerifyErrorManager.ERR_INVALID_REF_CP, "Ref", ref1, "'boolean' false or true");
+				}
+				break;
+			case 'D':
+				if (!pool.isRefValid(ref1)) {
+					throw err.buildError(value.offset, VerifyErrorManager.ERR_NON_EXISTENT_REF_CP, "Ref", ref1);
+				}
+				else if (!pool.hasType(ref1, DefinitionLoader.CONSTANT_Double)) {
+					throw err.buildError(value.offset, VerifyErrorManager.ERR_INVALID_REF_CP, "Ref", ref1, "CONSTANT_Double");
+				}
+				break;
+			case 'F':
+				if (!pool.isRefValid(ref1)) {
+					throw err.buildError(value.offset, VerifyErrorManager.ERR_NON_EXISTENT_REF_CP, "Ref", ref1);
+				}
+				else if (!pool.hasType(ref1, DefinitionLoader.CONSTANT_Float)) {
+					throw err.buildError(value.offset, VerifyErrorManager.ERR_INVALID_REF_CP, "Ref", ref1, "CONSTANT_Float");
+				}
+				break;
+			case 'J':
+				if (!pool.isRefValid(ref1)) {
+					throw err.buildError(value.offset, VerifyErrorManager.ERR_NON_EXISTENT_REF_CP, "Ref", ref1);
+				}
+				else if (!pool.hasType(ref1, DefinitionLoader.CONSTANT_Long)) {
+					throw err.buildError(value.offset, VerifyErrorManager.ERR_INVALID_REF_CP, "Ref", ref1, "CONSTANT_Long");
+				}
+				break;
+			case 's':
+				if (!pool.isRefValid(ref1)) {
+					throw err.buildError(value.offset, VerifyErrorManager.ERR_NON_EXISTENT_REF_CP, "Ref", ref1);
+				}
+				else if (!DefinitionLoader.isValidUTF8Reference(ref1, true, pool)) {
+					throw err.buildError(value.offset, VerifyErrorManager.ERR_INVALID_REF_CP, "Ref", ref1, "CONSTANT_Utf8");
+				}
+				break;
+			case 'e':
+				if (!pool.isRefValid(ref1)) {
+					throw err.buildError(value.offset, VerifyErrorManager.ERR_NON_EXISTENT_REF_CP, "Ref", ref1);
+				}
+				else if (!DefinitionLoader.isValidUTF8Reference(ref1, true, pool)) {
+					throw err.buildError(value.offset, VerifyErrorManager.ERR_INVALID_REF_CP, "Ref", ref1, "CONSTANT_Utf8");
+				}
+				else if (!DefinitionLoader.isValidClassSignature(pool.get(ref1).content)) {
+					throw err.buildError(value.offset, VerifyErrorManager.ERR_INVALID_CLASS_OR_METHOD_SIGNATURE_CP, "ref", ref1, new String(pool.get(ref1).content));
+				}
+				if (!pool.isRefValid(ref2)) {
+					throw err.buildError(value.offset, VerifyErrorManager.ERR_NON_EXISTENT_REF_CP, "Ref", ref2);
+				}
+				else if (!DefinitionLoader.isValidUTF8Reference(ref2, true, pool)) {
+					throw err.buildError(value.offset, VerifyErrorManager.ERR_INVALID_REF_CP, "Ref", ref2, "CONSTANT_Utf8");
+				}
+				else if (!DefinitionLoader.isValidName(pool.get(ref2).content)) {
+					throw err.buildError(value.offset, VerifyErrorManager.ERR_INVALID_NAME_CP, "Ref", ref2, new String(pool.get(ref2).content));
+				}
+				break;
+			case 'c':
+				if (!pool.isRefValid(ref1)) {
+					throw err.buildError(value.offset, VerifyErrorManager.ERR_NON_EXISTENT_REF_CP, "Ref", ref1);
+				}
+				else if (!DefinitionLoader.isValidUTF8Reference(ref1, true, pool)) {
+					throw err.buildError(value.offset, VerifyErrorManager.ERR_INVALID_REF_CP, "Ref", ref1, "CONSTANT_Utf8");
+				}
+				else if (!DefinitionLoader.isValidClassSignature(pool.get(ref1).content)) {
+					throw err.buildError(value.offset, VerifyErrorManager.ERR_INVALID_CLASS_OR_METHOD_SIGNATURE_CP, "ref", ref1, new String(pool.get(ref1).content));
+				}
+				break;
+			case '@':
+				checkAnnotationValue(pool, value.getValues()[0], err);
+				break;
+			case '[':
+				final AnnotationValue[]	list = value.getValues();
+				
+				for(int arrIndex = 0; arrIndex < list.length; arrIndex++) {
+					checkAnnotationValue(pool, list[arrIndex], err);
+				}
+				break;
+			default :
+				throw new UnsupportedOperationException("Annotation tag ["+tag+"] is not supported yet");
+		}
+	}
+	
 	public static class ConstantValue extends AttributeItem {
 		public final int			constRef;
 		
@@ -168,12 +167,12 @@ abstract class AttributeItem {
 		}
 		
 		@Override
-		void verifyAttributeItem(final VerifyErrorManager err) {
+		void verifyAttributeItem(final VerifyErrorManager err, final JavaClassVersion version) {
 			if (!pool.isRefValid(constRef)) {
 				throw err.buildError(offset, VerifyErrorManager.ERR_NON_EXISTENT_REF_CP, kind.name(), constRef); 
 			}
-			else if (pool.hasType(constRef, ClassDefinitionLoader.CONSTANT_Integer, ClassDefinitionLoader.CONSTANT_Long, ClassDefinitionLoader.CONSTANT_Float, ClassDefinitionLoader.CONSTANT_Double, ClassDefinitionLoader.CONSTANT_String)) {
-				throw ClassDefinitionLoader.buildError(ClassDefinitionLoader.ERR_INVALID_REF_CONSTVALUE, constRef, "primitive or string constant"); 
+			else if (pool.hasType(constRef, DefinitionLoader.CONSTANT_Integer, DefinitionLoader.CONSTANT_Long, DefinitionLoader.CONSTANT_Float, DefinitionLoader.CONSTANT_Double, DefinitionLoader.CONSTANT_String)) {
+				throw err.buildError(offset, VerifyErrorManager.ERR_INVALID_REF_CP, kind.name(), constRef, "primitive or string constant"); 
 			}
 		}
 	}
@@ -206,7 +205,7 @@ abstract class AttributeItem {
 		}
 		
 		@Override
-		void verifyAttributeItem(final VerifyErrorManager err) {
+		void verifyAttributeItem(final VerifyErrorManager err, final JavaClassVersion version) {
 			err.pushSection("<exceptionTable>");
 			err.pushIndices();
 			for(int index = 0; index < exceptions.length; index++) {
@@ -217,22 +216,22 @@ abstract class AttributeItem {
 				
 				err.setIndex(index);
 				if (startPC >= code.length) {
-					throw ClassDefinitionLoader.buildError(ClassDefinitionLoader.ERR_INVALID_START_PC_EXCEPTIONS, "Code.Exceptions", startPC, code.length); 
+					throw err.buildError(offset, VerifyErrorManager.ERR_INVALID_START_PC_EXCEPTIONS, "Code.Exceptions", startPC, code.length); 
 				}
 				else if (endPC > code.length) {
-					throw ClassDefinitionLoader.buildError(ClassDefinitionLoader.ERR_INVALID_END_PC_EXCEPTIONS, "Code.Exceptions", endPC, code.length); 
+					throw err.buildError(offset, VerifyErrorManager.ERR_INVALID_END_PC_EXCEPTIONS, "Code.Exceptions", endPC, code.length); 
 				}
 				else if (handlerPC > code.length) {
-					throw ClassDefinitionLoader.buildError(ClassDefinitionLoader.ERR_INVALID_HANDLER_PC_EXCEPTIONS, "Code.Exceptions", handlerPC, code.length); 
+					throw err.buildError(offset, VerifyErrorManager.ERR_INVALID_HANDLER_PC_EXCEPTIONS, "Code.Exceptions", handlerPC, code.length); 
 				}
 				else if (endPC < startPC) {
-					throw ClassDefinitionLoader.buildError(ClassDefinitionLoader.ERR_END_PC_LESS_START_PC_EXCEPTIONS, "Code.Exceptions", endPC, startPC); 
+					throw err.buildError(offset, VerifyErrorManager.ERR_END_PC_LESS_START_PC_EXCEPTIONS, "Code.Exceptions", endPC, startPC); 
 				}
 				else if (catchType != 0) {
 					if (!pool.isRefValid(catchType)) {
 						throw err.buildError(offset, VerifyErrorManager.ERR_NON_EXISTENT_REF_CP, "Code.Exceptions", catchType); 
 					}
-					else if (!pool.hasType(catchType, ClassDefinitionLoader.CONSTANT_Class)) {
+					else if (!pool.hasType(catchType, DefinitionLoader.CONSTANT_Class)) {
 						throw err.buildError(offset, VerifyErrorManager.ERR_INVALID_REF_CP, "Code.Exceptions", catchType, "CONSTANT_Class"); 
 					}
 				}
@@ -246,7 +245,7 @@ abstract class AttributeItem {
 			for(int index = 0; index < attributes.length; index++) {
 				if (attributes[index] != null) {
 					err.pushSection(attributes[index].kind.name());
-					attributes[index].verifyAttributeItem(err);
+					attributes[index].verifyAttributeItem(err, version);
 					err.pop();
 				}
 			}
@@ -333,9 +332,7 @@ abstract class AttributeItem {
 		}
 		
 		@Override
-		void verifyAttributeItem(final VerifyErrorManager err) {
-			// TODO Auto-generated method stub
-			
+		void verifyAttributeItem(final VerifyErrorManager err, final JavaClassVersion version) {
 		}
 
 		private VerificationItem readVerificationItem(final ByteArrayReader rdr) {
@@ -432,14 +429,14 @@ abstract class AttributeItem {
 		}
 		
 		@Override
-		void verifyAttributeItem(final VerifyErrorManager err) {
+		void verifyAttributeItem(final VerifyErrorManager err, final JavaClassVersion version) {
 			err.pushIndices();
 			for (int index = 0; index < exceptions.length; index++) {
 				err.setIndex(index);
 				if (!pool.isRefValid(exceptions[index])) {
 					throw err.buildError(offset + 2 * index, VerifyErrorManager.ERR_NON_EXISTENT_REF_CP, kind.name(), exceptions[index]); 
 				}
-				else if (pool.hasType(exceptions[index], ClassDefinitionLoader.CONSTANT_Class)) {
+				else if (pool.hasType(exceptions[index], DefinitionLoader.CONSTANT_Class)) {
 					throw err.buildError(offset + 2 * index, VerifyErrorManager.ERR_INVALID_REF_CP, kind.name(), exceptions[index], "CONSTANT_Class"); 
 				}
 			}
@@ -448,6 +445,10 @@ abstract class AttributeItem {
 	}
 	
 	public static class InnerClasses extends AttributeItem {
+		private static final int	AVAILABLE_FLAGS = DefinitionLoader.ACC_PUBLIC | DefinitionLoader.ACC_PRIVATE | DefinitionLoader.ACC_PROTECTED | DefinitionLoader.ACC_STATIC |
+													  DefinitionLoader.ACC_FINAL | DefinitionLoader.ACC_INTERFACE | DefinitionLoader.ACC_ABSTRACT | DefinitionLoader.ACC_SYNTHETIC | 
+													  DefinitionLoader.ACC_ANNOTATION;
+		
 		public final int[][]		classes;
 
 		InnerClasses(final ByteArrayReader rdr, final ConstantPool pool) {
@@ -464,7 +465,7 @@ abstract class AttributeItem {
 		}
 		
 		@Override
-		void verifyAttributeItem(final VerifyErrorManager err) {
+		void verifyAttributeItem(final VerifyErrorManager err, final JavaClassVersion version) {
 			err.pushIndices();
 			for(int index = 0; index < classes.length; index++) {
 				err.setIndex(index);
@@ -476,20 +477,28 @@ abstract class AttributeItem {
 				if (!pool.isRefValid(innerClass)) {
 					throw err.buildError(offset, VerifyErrorManager.ERR_NON_EXISTENT_REF_CP, "InnerClass", innerClass); 
 				}
-				else if (!pool.hasType(innerClass, ClassDefinitionLoader.CONSTANT_Class)) {
+				else if (!pool.hasType(innerClass, DefinitionLoader.CONSTANT_Class)) {
 					throw err.buildError(offset, VerifyErrorManager.ERR_INVALID_REF_CP, "InnerClass", innerClass, "CONSTANT_Class"); 
 				}
-				else if (outerClass != 0 && !pool.isRefValid(outerClass)) {
+				if (outerClass != 0 && !pool.isRefValid(outerClass)) {
 					throw err.buildError(offset, VerifyErrorManager.ERR_NON_EXISTENT_REF_CP, "OuterClass", outerClass); 
 				}
-				else if (outerClass != 0 && !pool.hasType(outerClass, ClassDefinitionLoader.CONSTANT_Class)) {
+				else if (outerClass != 0 && !pool.hasType(outerClass, DefinitionLoader.CONSTANT_Class)) {
 					throw err.buildError(offset, VerifyErrorManager.ERR_INVALID_REF_CP, "OuterClass", outerClass, "CONSTANT_Class"); 
 				}
-				else if (innerName != 0 && !pool.isRefValid(innerName)) {
+				if (innerName != 0 && !pool.isRefValid(innerName)) {
 					throw err.buildError(offset, VerifyErrorManager.ERR_NON_EXISTENT_REF_CP, "InnerName", innerName); 
 				}
-				else if (innerName != 0 && !ClassDefinitionLoader.isValidName(pool.get(innerName).content)) {
+				else if (innerName != 0 && !DefinitionLoader.isValidName(pool.get(innerName).content)) {
 					throw err.buildError(offset, VerifyErrorManager.ERR_INVALID_NAME_CP, "InnerName", innerName, new String(pool.get(innerName).content)); 
+				}
+				if ((accessFlags & ~AVAILABLE_FLAGS) != 0) {
+					throw err.buildError(offset, VerifyErrorManager.ERR_EXTRA_ACCESS_FLAGS, "AccessFlags", accessFlags & ~AVAILABLE_FLAGS); 
+				}
+				if (version.major >= 51) {
+					if (innerName == 0 && outerClass != 0) {
+						throw err.buildError(offset, VerifyErrorManager.ERR_NON_ZERO_OUTER_CLASS, "OuterClass"); 
+					}
 				}
 			}
 			err.pop();
@@ -507,18 +516,20 @@ abstract class AttributeItem {
 		}
 		
 		@Override
-		void verifyAttributeItem(final VerifyErrorManager err) {
+		void verifyAttributeItem(final VerifyErrorManager err, final JavaClassVersion version) {
 			if (!pool.isRefValid(clazz)) {
 				throw err.buildError(offset, VerifyErrorManager.ERR_NON_EXISTENT_REF_CP, "Class", clazz); 
 			}
-			else if (!pool.hasType(clazz, ClassDefinitionLoader.CONSTANT_Class)) {
+			else if (!pool.hasType(clazz, DefinitionLoader.CONSTANT_Class)) {
 				throw err.buildError(offset, VerifyErrorManager.ERR_INVALID_REF_CP, "Class", clazz, "CONSTANT_Class"); 
 			}
-			else if (method != 0 && !pool.isRefValid(method)) {
-				throw err.buildError(offset, VerifyErrorManager.ERR_INVALID_REF_CP, "Method", method); 
-			}
-			else if (method != 0 && !pool.hasType(clazz, ClassDefinitionLoader.CONSTANT_NameAndType)) {
-				throw err.buildError(offset, VerifyErrorManager.ERR_INVALID_REF_CP, "Method", method, "CONSTANT_NameAndType"); 
+			if (method != 0) {
+				if (!pool.isRefValid(method)) {
+					throw err.buildError(offset, VerifyErrorManager.ERR_INVALID_REF_CP, "Method", method); 
+				}
+				else if (!pool.hasType(clazz, DefinitionLoader.CONSTANT_NameAndType)) {
+					throw err.buildError(offset, VerifyErrorManager.ERR_INVALID_REF_CP, "Method", method, "CONSTANT_NameAndType"); 
+				}
 			}
 		}
 	}	
@@ -529,7 +540,7 @@ abstract class AttributeItem {
 		}
 		
 		@Override
-		void verifyAttributeItem(VerifyErrorManager err) {
+		void verifyAttributeItem(VerifyErrorManager err, final JavaClassVersion version) {
 		}
 	}
 
@@ -539,7 +550,7 @@ abstract class AttributeItem {
 		}
 		
 		@Override
-		void verifyAttributeItem(final VerifyErrorManager err) {
+		void verifyAttributeItem(final VerifyErrorManager err, final JavaClassVersion version) {
 		}
 	}
 	
@@ -552,7 +563,7 @@ abstract class AttributeItem {
 		}
 		
 		@Override
-		void verifyAttributeItem(final VerifyErrorManager err) {
+		void verifyAttributeItem(final VerifyErrorManager err, final JavaClassVersion version) {
 			if (!pool.isRefValid(signatureRef)) {
 				throw err.buildError(offset, VerifyErrorManager.ERR_NON_EXISTENT_REF_CP, "", signatureRef); 
 			}
@@ -571,7 +582,7 @@ abstract class AttributeItem {
 		}
 		
 		@Override
-		void verifyAttributeItem(final VerifyErrorManager err) {
+		void verifyAttributeItem(final VerifyErrorManager err, final JavaClassVersion version) {
 			if (!pool.isRefValid(sourceFileRef)) {
 				throw err.buildError(offset, VerifyErrorManager.ERR_NON_EXISTENT_REF_CP, "", sourceFileRef); 
 			}
@@ -591,7 +602,7 @@ abstract class AttributeItem {
 		}
 		
 		@Override
-		void verifyAttributeItem(final VerifyErrorManager err) {
+		void verifyAttributeItem(final VerifyErrorManager err, final JavaClassVersion version) {
 		}
 	}	
 
@@ -608,7 +619,7 @@ abstract class AttributeItem {
 		}
 		
 		@Override
-		void verifyAttributeItem(final VerifyErrorManager err) {
+		void verifyAttributeItem(final VerifyErrorManager err, final JavaClassVersion version) {
 			// TODO Auto-generated method stub
 			
 		}
@@ -627,7 +638,7 @@ abstract class AttributeItem {
 		}
 
 		@Override
-		void verifyAttributeItem(final VerifyErrorManager err) {
+		void verifyAttributeItem(final VerifyErrorManager err, final JavaClassVersion version) {
 			err.pushIndices();
 			for(int index = 0; index < pairs.length; index++) {
 				final int 	varName = pairs[index][2];
@@ -643,7 +654,7 @@ abstract class AttributeItem {
 				else if (!pool.isRefValid(varType)) {
 					throw err.buildError(offset, VerifyErrorManager.ERR_NON_EXISTENT_REF_CP, "VarType", varType); 
 				}
-				else if (!pool.hasType(varType, ClassDefinitionLoader.CONSTANT_Fieldref)) {
+				else if (!pool.hasType(varType, DefinitionLoader.CONSTANT_Fieldref)) {
 					throw err.buildError(offset, VerifyErrorManager.ERR_INVALID_REF_CP, "VarType", varType, "CONSTANT_Fieldref"); 
 				}
 			}
@@ -665,7 +676,7 @@ abstract class AttributeItem {
 		}
 		
 		@Override
-		void verifyAttributeItem(final VerifyErrorManager err) {
+		void verifyAttributeItem(final VerifyErrorManager err, final JavaClassVersion version) {
 			err.pushIndices();
 			for(int index = 0; index < pairs.length; index++) {
 				final int 	varName = pairs[index][2];
@@ -684,7 +695,7 @@ abstract class AttributeItem {
 				else if (!DefinitionLoader.isValidUTF8Reference(varType, false, pool)) {
 					throw err.buildError(offset, VerifyErrorManager.ERR_INVALID_REF_CP, "VarType", varType); 
 				}
-				else if (!ClassDefinitionLoader.isValidClassSignature(pool.get(varType).content)) {
+				else if (!DefinitionLoader.isValidClassSignature(pool.get(varType).content)) {
 					throw err.buildError(offset, VerifyErrorManager.ERR_INVALID_CLASS_OR_METHOD_SIGNATURE_CP, "VarType", varType, new String(pool.get(varType).content)); 
 				}
 			}
@@ -702,13 +713,14 @@ abstract class AttributeItem {
 			
 			for(int index = 0; index < amount; index++) {
 				final int				type = rdr.readU2();
+				final int				offset = rdr.offset();
 				final int				pairAmount = rdr.readU2();
 				final AnnotationValue[]	pairs = new AnnotationValue[pairAmount];
 				
 				for (int pairIndex = 0; pairIndex < pairAmount; pairIndex++) {
-					pairs[pairIndex] = getAnnotationValue(pool, kind.name(), rdr, index, pairIndex);
+					pairs[pairIndex] = getAnnotationValue(pool, rdr);
 				}
-				items[index] = new AnnotationItem(type, pairs);
+				items[index] = new AnnotationItem(offset, type, pairs);
 			}
 			this.list = items;
 		}
@@ -717,40 +729,45 @@ abstract class AttributeItem {
 			return list;
 		}
 
-		abstract String getAnnotationName();
+		@Override
+		void verifyAttributeItem(final VerifyErrorManager err, final JavaClassVersion version) {
+			err.pushIndices();
+			for(int index = 0; index < list.length; index++) {
+				err.setIndex(index);
+				
+				if (!pool.isRefValid(list[index].getType())) {
+					throw err.buildError(list[index].offset, VerifyErrorManager.ERR_NON_EXISTENT_REF_CP, "Annotation", list[index].getType());
+				}
+				else if (!DefinitionLoader.isValidUTF8Reference(list[index].getType(), false, pool)) {
+					throw err.buildError(list[index].offset, VerifyErrorManager.ERR_INVALID_REF_CP, "Annotation", list[index].getType(), "CONSTANT_Utf8");
+				}
+				else {
+					final AnnotationValue[] values = list[index].getValues();
+					
+					err.pushNames();
+					err.setName(list[index].getType());
+					err.pushIndices();
+					for(int valueIndex = 0; valueIndex < values.length; valueIndex++) {
+						err.setIndex(index);
+						checkAnnotationValue(pool, values[valueIndex], err);
+					}
+					err.pop();	// indices					
+					err.pop();	// names
+				}
+			}
+			err.pop();	// indices
+		}
 	}
 	
 	public static class RuntimeVisibleAnnotations extends RuntimeAnnotations {
 		public RuntimeVisibleAnnotations(final ByteArrayReader rdr, final ConstantPool pool) {
 			super(AttributeKind.RuntimeVisibleAnnotations, rdr, pool);
 		}
-		
-		@Override
-		String getAnnotationName() {
-			return "RUNTIMEVISIBLEANNOTATIONS";
-		}
-		
-		@Override
-		void verifyAttributeItem(VerifyErrorManager err) {
-			// TODO Auto-generated method stub
-			
-		}
 	}
 
 	public static class RuntimeInvisibleAnnotations extends RuntimeAnnotations {
 		public RuntimeInvisibleAnnotations(final ByteArrayReader rdr, final ConstantPool pool) {
 			super(AttributeKind.RuntimeInvisibleAnnotations, rdr, pool);
-		}
-
-		@Override
-		String getAnnotationName() {
-			return "RUNTIMEINVISIBLEANNOTATIONS";
-		}
-		
-		@Override
-		void verifyAttributeItem(VerifyErrorManager err) {
-			// TODO Auto-generated method stub
-			
 		}
 	}
 
@@ -764,12 +781,13 @@ abstract class AttributeItem {
 			
 			for(int index = 0; index < amount; index++) {
 				final int	type = rdr.readU2();
+				final int	offset = rdr.offset();
 				final AnnotationTypeValue[]	pairs = new AnnotationTypeValue[rdr.readU2()];
 				
 				for (int pairIndex = 0; pairIndex < pairs.length; pairIndex++) {
-					pairs[pairIndex] = getAnnotationTypeValue(rdr, index, pairIndex);
+					pairs[pairIndex] = getAnnotationTypeValue(rdr);
 				}
-				items[index] = new AnnotationTypeItem(type, pairs);
+				items[index] = new AnnotationTypeItem(offset, type, pairs);
 			}
 			this.list = items;
 		}
@@ -778,8 +796,7 @@ abstract class AttributeItem {
 			return list;
 		}
 		
-		private AnnotationTypeValue getAnnotationTypeValue(final ByteArrayReader rdr, final int index, final int pairIndex) {
-			// TODO Auto-generated method stub
+		private AnnotationTypeValue getAnnotationTypeValue(final ByteArrayReader rdr) {
 			final byte	type = (byte)rdr.read();
 			final int	ref1, ref2;
 			final LocalVarTypeDescriptor[]	localDesc;
@@ -811,7 +828,7 @@ abstract class AttributeItem {
 					localDesc = new LocalVarTypeDescriptor[rdr.readU2()];
 					
 					for(int localIndex = 0; localIndex < localDesc.length; localIndex++) {
-						localDesc[index] = new LocalVarTypeDescriptor(rdr.readU2(), rdr.readU2(), rdr.readU2());
+						localDesc[localIndex] = new LocalVarTypeDescriptor(rdr.readU2(), rdr.readU2(), rdr.readU2());
 					}
 					break;
 				case 0x47 : case 0x48 : case 0x49 : case 0x4A : case 0x4B :
@@ -820,45 +837,53 @@ abstract class AttributeItem {
 					localDesc = null;
 					break;
 				default :
-					throw ClassDefinitionLoader.buildError(ClassDefinitionLoader.ERR_INVALID_REF_ANNOTATION_TAG, getAnnotationName(), index, pairIndex, type);
+					throw new UnsupportedOperationException("Ref annotation tag ["+type+"] is not syupported yet");
 			}
 			final TypePathDescriptor[]	pathDesc = new TypePathDescriptor[rdr.read()]; 
 			
 			for(int typeIndex = 0; typeIndex < pathDesc.length; typeIndex++) {
-				pathDesc[index] = new TypePathDescriptor(rdr.read(), rdr.read()); 
+				pathDesc[typeIndex] = new TypePathDescriptor(rdr.read(), rdr.read()); 
 			}
 			final int	typeIndex = rdr.readU2();
-			
-			if (!ClassDefinitionLoader.isValidReference(typeIndex, pool)) {
-				throw ClassDefinitionLoader.buildError(ClassDefinitionLoader.ERR_NON_EXISTENT_REF_ANNOTATION_VALUE, getAnnotationName(), index, pairIndex, typeIndex);
-			}
-			else if (!ClassDefinitionLoader.isValidUTF8Reference(typeIndex, false, pool)) {
-				throw ClassDefinitionLoader.buildError(ClassDefinitionLoader.ERR_INVALID_REF_ANNOTATION_VALUE, getAnnotationName(), index, pairIndex, typeIndex, "CONSTANT_UTF8");
-			}
-			else if (!ClassDefinitionLoader.isValidClassSignature(pool[typeIndex].content)) {
-				throw ClassDefinitionLoader.buildError(ClassDefinitionLoader.ERR_INVALID_REF_ANNOTATION_CLASS_SIGNATURE, getAnnotationName(), index, pairIndex, typeIndex, new String(pool[typeIndex].content));
-			}
 			final AnnotationValue[]	pairs = new AnnotationValue[rdr.readU2()];
 			
 			for (int annoIndex = 0; annoIndex < pairs.length; annoIndex++) {
-				pairs[annoIndex] = getAnnotationValue(pool, kind.name(), rdr, index, pairIndex);
+				pairs[annoIndex] = getAnnotationValue(pool, rdr);
 			}
-				
 			return new AnnotationTypeValue(type, ref1, ref2, localDesc, pathDesc, typeIndex, pairs);
 		}
 		
 		@Override
-		void verifyAttributeItem(final VerifyErrorManager err) {
-			// TODO Auto-generated method stub
-			if (!ClassDefinitionLoader.isValidReference(typeIndex, pool)) {
-				throw ClassDefinitionLoader.buildError(ClassDefinitionLoader.ERR_NON_EXISTENT_REF_ANNOTATION_VALUE, getAnnotationName(), index, pairIndex, typeIndex);
+		void verifyAttributeItem(final VerifyErrorManager err, final JavaClassVersion version) {
+			err.pushIndices();
+			for(int index = 0; index < list.length; index++) {
+				final AnnotationTypeItem	value = list[index];
+				err.setIndex(index);
+				
+				if (!pool.isRefValid(value.getType())) {
+					throw err.buildError(value.offset, VerifyErrorManager.ERR_NON_EXISTENT_REF_CP, kind.name(), value.getType());
+				}
+				else if (!DefinitionLoader.isValidUTF8Reference(value.getType(), false, pool)) {
+					throw err.buildError(value.offset, VerifyErrorManager.ERR_INVALID_REF_CP, kind.name(), value.getType(), "CONSTANT_Utf8");
+				}
+				else if (!DefinitionLoader.isValidClassSignature(pool.get(value.getType()).content)) {
+					throw err.buildError(value.offset, VerifyErrorManager.ERR_INVALID_CLASS_OR_METHOD_SIGNATURE_CP, kind.name(), value.getType(), new String(pool.get(value.getType()).content));
+				}
+				
+				err.pushNames();
+				err.setName(value.getType());
+				err.pushIndices();
+				final AnnotationTypeValue[] 	values = value.getValues();
+				
+				for(int valueIndex = 0; valueIndex < values.length; valueIndex++) {
+					err.setIndex(valueIndex);
+	//				checkAnnotationValue(pool, values[valueIndex], err);
+				}
+				
+				err.pop();	// indices
+				err.pop();	// name
 			}
-			else if (!ClassDefinitionLoader.isValidUTF8Reference(typeIndex, false, pool)) {
-				throw ClassDefinitionLoader.buildError(ClassDefinitionLoader.ERR_INVALID_REF_ANNOTATION_VALUE, getAnnotationName(), index, pairIndex, typeIndex, "CONSTANT_UTF8");
-			}
-			else if (!ClassDefinitionLoader.isValidClassSignature(pool[typeIndex].content)) {
-				throw ClassDefinitionLoader.buildError(ClassDefinitionLoader.ERR_INVALID_REF_ANNOTATION_CLASS_SIGNATURE, getAnnotationName(), index, pairIndex, typeIndex, new String(pool[typeIndex].content));
-			}
+			err.pop();
 		}
 		
 	}
@@ -880,13 +905,12 @@ abstract class AttributeItem {
 
 		AnnotationDefault(final ByteArrayReader rdr, final ConstantPool pool) {
 			super(rdr.offset(), AttributeKind.AnnotationDefault, pool);
-			this.value = getAnnotationValue(pool, "", rdr, 0, 0);
+			this.value = getAnnotationValue(pool, rdr);
 		}
 		
 		@Override
-		void verifyAttributeItem(VerifyErrorManager err) {
-			// TODO Auto-generated method stub
-			
+		void verifyAttributeItem(final VerifyErrorManager err, final JavaClassVersion version) {
+			checkAnnotationValue(pool, value, err);
 		}
 	}
 
@@ -900,29 +924,17 @@ abstract class AttributeItem {
 			
 			for(int index = 0; index < methods.length; index++) {
 				final int 	ref = rdr.readU2();
-				
-				if (!ClassDefinitionLoader.isValidReference(ref, pool)) {
-					throw ClassDefinitionLoader.buildError(ClassDefinitionLoader.ERR_NON_EXISTENT_REF_BOOTSTRAP_METHODS, index, ref);
-				}
-				else if (pool[ref].itemType != ClassDefinitionLoader.CONSTANT_MethodHandle) {
-					throw ClassDefinitionLoader.buildError(ClassDefinitionLoader.ERR_INVALID_REF_BOOTSTRAP_METHODS, index, ref);
-				}
-
 				final int[]	args = new int[rdr.readU2()];
 				
 				for(int argIndex = 0; argIndex < args.length; argIndex++) {
 					args[index] = rdr.readU2();
-					
-					if (!ClassDefinitionLoader.isValidReference(args[index], pool)) {
-						throw ClassDefinitionLoader.buildError(ClassDefinitionLoader.ERR_NON_EXISTENT_ARG_REF_BOOTSTRAP_METHODS, index, argIndex, args[index]);
-					}
  				}
 				methods[index] = new BootstrapMethod(ref, args);
 			}
 		}
 		
 		@Override
-		void verifyAttributeItem(final VerifyErrorManager err) {
+		void verifyAttributeItem(final VerifyErrorManager err, final JavaClassVersion version) {
 			err.pushIndices();
 			for(int index = 0; index < methods.length; index++) {
 				final int	ref = methods[index].methodRef;
@@ -932,7 +944,7 @@ abstract class AttributeItem {
 				if (!pool.isRefValid(ref)) {
 					throw err.buildError(offset, VerifyErrorManager.ERR_NON_EXISTENT_REF_CP, "Method", ref);
 				}
-				else if (!pool.hasType(ref, ClassDefinitionLoader.CONSTANT_MethodHandle)) {
+				else if (!pool.hasType(ref, DefinitionLoader.CONSTANT_MethodHandle)) {
 					throw err.buildError(offset, VerifyErrorManager.ERR_INVALID_REF_CP, "Method", ref, "CONSTANT_MethodHandle");
 				}
 
@@ -964,7 +976,7 @@ abstract class AttributeItem {
 	}
 	
 	public static class MethodParameters extends AttributeItem {
-		private static final int	AVAILABLE_ACC = ClassDefinitionLoader.ACC_FINAL | ClassDefinitionLoader.ACC_SYNTHETIC | ClassDefinitionLoader.ACC_MANDATED; 
+		private static final int	AVAILABLE_ACC = DefinitionLoader.ACC_FINAL | DefinitionLoader.ACC_SYNTHETIC | DefinitionLoader.ACC_MANDATED; 
 		
 		public final int[][]		parameters;
 		
@@ -979,7 +991,7 @@ abstract class AttributeItem {
 		}
 		
 		@Override
-		void verifyAttributeItem(final VerifyErrorManager err) {
+		void verifyAttributeItem(final VerifyErrorManager err, final JavaClassVersion version) {
 			err.pushIndices();
 			for (int index = 0; index < parameters.length; index++) {
 				final int	name = parameters[index][0];
@@ -992,7 +1004,7 @@ abstract class AttributeItem {
 				else if (!DefinitionLoader.isValidUTF8Reference(name, false, pool)) {
 					throw err.buildError(offset, VerifyErrorManager.ERR_INVALID_REF_CP, "Name", name); 
 				}
-				else if (!ClassDefinitionLoader.isValidName(pool.get(name).content)) {
+				else if (!DefinitionLoader.isValidName(pool.get(name).content)) {
 					throw err.buildError(offset, VerifyErrorManager.ERR_INVALID_NAME_CP, "Name", name, new String(pool.get(name).content)); 
 				}
 				else if ((accessFlags & ~AVAILABLE_ACC) != 0) {
@@ -1003,7 +1015,6 @@ abstract class AttributeItem {
 		}
 	}
 	
-
 	public static class Module extends AttributeItem {
 		public final int	name;
 		public final int	accessFlags;
@@ -1067,9 +1078,9 @@ abstract class AttributeItem {
 		}
 
 		@Override
-		void verifyAttributeItem(VerifyErrorManager err) {
+		void verifyAttributeItem(VerifyErrorManager err, final JavaClassVersion version) {
 			// TODO Auto-generated method stub
-			
+			throw new UnsupportedOperationException();
 		}
 		
 		public static class Requires {
@@ -1132,8 +1143,9 @@ abstract class AttributeItem {
 		}
 
 		@Override
-		void verifyAttributeItem(VerifyErrorManager err) {
+		void verifyAttributeItem(final VerifyErrorManager err, final JavaClassVersion version) {
 			// TODO Auto-generated method stub
+			throw new UnsupportedOperationException();
 			
 		}
 		
@@ -1148,8 +1160,9 @@ abstract class AttributeItem {
 		}
 
 		@Override
-		void verifyAttributeItem(VerifyErrorManager err) {
+		void verifyAttributeItem(final VerifyErrorManager err, final JavaClassVersion version) {
 			// TODO Auto-generated method stub
+			throw new UnsupportedOperationException();
 			
 		}
 	}	
@@ -1163,8 +1176,9 @@ abstract class AttributeItem {
 		}
 
 		@Override
-		void verifyAttributeItem(VerifyErrorManager err) {
+		void verifyAttributeItem(final VerifyErrorManager err, final JavaClassVersion version) {
 			// TODO Auto-generated method stub
+			throw new UnsupportedOperationException();
 			
 		}
 	}
@@ -1181,8 +1195,9 @@ abstract class AttributeItem {
 		}
 
 		@Override
-		void verifyAttributeItem(VerifyErrorManager err) {
+		void verifyAttributeItem(final VerifyErrorManager err, final JavaClassVersion version) {
 			// TODO Auto-generated method stub
+			throw new UnsupportedOperationException();
 			
 		}
 	}
@@ -1199,8 +1214,9 @@ abstract class AttributeItem {
 		}
 
 		@Override
-		void verifyAttributeItem(VerifyErrorManager err) {
+		void verifyAttributeItem(final VerifyErrorManager err, final JavaClassVersion version) {
 			// TODO Auto-generated method stub
+			throw new UnsupportedOperationException();
 			
 		}
 	}
@@ -1225,8 +1241,9 @@ abstract class AttributeItem {
 		}
 
 		@Override
-		void verifyAttributeItem(VerifyErrorManager err) {
+		void verifyAttributeItem(final VerifyErrorManager err, final JavaClassVersion version) {
 			// TODO Auto-generated method stub
+			throw new UnsupportedOperationException();
 			
 		}
 		
@@ -1264,33 +1281,24 @@ abstract class AttributeItem {
 				annotations[index] = temp;
 			}
 		}
+
+		@Override
+		void verifyAttributeItem(final VerifyErrorManager err, final JavaClassVersion version) {
+			// TODO Auto-generated method stub
+			throw new UnsupportedOperationException();
+			
+		}
 	}
 	
 	public static class RuntimeVisibleParameterAnnotations extends RuntimeParameterAnnotations {
 		RuntimeVisibleParameterAnnotations(final ByteArrayReader rdr,  final ConstantPool pool) {
 			super(rdr, AttributeKind.RuntimeVisibleParameterAnnotations, pool);
-			// TODO Auto-generated constructor stub
 		}
-
-		@Override
-		void verifyAttributeItem(VerifyErrorManager err) {
-			// TODO Auto-generated method stub
-			
-		}
-		
 	}
 
 	public static class RuntimeInvisibleParameterAnnotations extends RuntimeParameterAnnotations {
 		RuntimeInvisibleParameterAnnotations(final ByteArrayReader rdr,  final ConstantPool pool) {
 			super(rdr, AttributeKind.RuntimeInvisibleParameterAnnotations, pool);
-			// TODO Auto-generated constructor stub
 		}
-
-		@Override
-		void verifyAttributeItem(VerifyErrorManager err) {
-			// TODO Auto-generated method stub
-			
-		}
-		
 	}
 }

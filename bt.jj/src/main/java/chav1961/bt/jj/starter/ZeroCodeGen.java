@@ -159,10 +159,10 @@ loop:	while(commandPointer < code.length) {
 				case 0x12: // ldc
 					argument = code[commandPointer + 1];
 					switch (cp[argument].itemType) {
-						case ClassDefinitionLoader.CONSTANT_Integer	:
+						case DefinitionLoader.CONSTANT_Integer	:
 							genPointer = loadImmediate(generated, genPointer, cp[argument].value, TYPE_INT);
 							break;
-						case ClassDefinitionLoader.CONSTANT_Float	:
+						case DefinitionLoader.CONSTANT_Float	:
 							genPointer = loadImmediateF(generated, genPointer, cp[argument].value, TYPE_FLOAT);
 							break;
 						default :
@@ -173,10 +173,10 @@ loop:	while(commandPointer < code.length) {
 				case 0x13: // ldc_w
 					argument = (code[commandPointer + 1] << 8) | (code[commandPointer + 2] & 0xFF);
 					switch (cp[argument].itemType) {
-						case ClassDefinitionLoader.CONSTANT_Integer	:
+						case DefinitionLoader.CONSTANT_Integer	:
 							genPointer = loadImmediate(generated, genPointer, cp[argument].value, TYPE_INT);
 							break;
-						case ClassDefinitionLoader.CONSTANT_Float	:
+						case DefinitionLoader.CONSTANT_Float	:
 							genPointer = loadImmediateF(generated, genPointer, cp[argument].value, TYPE_FLOAT);
 							break;
 						default :
@@ -187,10 +187,10 @@ loop:	while(commandPointer < code.length) {
 				case 0x14: // ldc2_w
 					argument = (code[commandPointer + 1] << 8) | (code[commandPointer + 2] & 0xFF);
 					switch (cp[argument].itemType) {
-						case ClassDefinitionLoader.CONSTANT_Long	:
+						case DefinitionLoader.CONSTANT_Long	:
 							genPointer = loadImmediate(generated, genPointer, cp[argument].value, TYPE_LONG);
 							break;
-						case ClassDefinitionLoader.CONSTANT_Double	:
+						case DefinitionLoader.CONSTANT_Double	:
 							genPointer = loadImmediateF(generated, genPointer, cp[argument].value, TYPE_DOUBLE);
 							break;
 						default :
