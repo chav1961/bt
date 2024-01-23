@@ -37,7 +37,6 @@
   	<module>bt.pythonwrapper</module>
   	<module>bt.clipper</module>
   	<module>bt.paint</module>
-  	<module>bt.neuralnetwork</module>
   	<module>bt.security</module>
   	<module>bt.audio</module>
   	<module>bt.creolenotepad</module>
