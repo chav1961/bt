@@ -35,38 +35,38 @@ public class SimpleLightRepoQuery implements LightRepoQueryInterface {
 	private static final SyntaxTreeInterface<LexType>	PREDEFINED_NAMES = new AndOrTree<>();
 	
 	static {
-		PREDEFINED_NAMES.placeName("or", LexType.OR);
-		PREDEFINED_NAMES.placeName("and", LexType.AND);
-		PREDEFINED_NAMES.placeName("not", LexType.NOT);
-		PREDEFINED_NAMES.placeName("in", LexType.IN);
+		PREDEFINED_NAMES.placeName((CharSequence)"or", LexType.OR);
+		PREDEFINED_NAMES.placeName((CharSequence)"and", LexType.AND);
+		PREDEFINED_NAMES.placeName((CharSequence)"not", LexType.NOT);
+		PREDEFINED_NAMES.placeName((CharSequence)"in", LexType.IN);
 		
-		PREDEFINED_NAMES.placeName(LightRepoInterface.EXISTS_FUNC, LexType.EXISTS);
-		PREDEFINED_NAMES.placeName(LightRepoInterface.CONTAINS_FUNC, LexType.CONTAINS);
-		PREDEFINED_NAMES.placeName(LightRepoInterface.APPEARS_FUNC, LexType.APPEARS);
-		PREDEFINED_NAMES.placeName(LightRepoInterface.DISAPPEARS_FUNC, LexType.DISAPPEARS);
-		PREDEFINED_NAMES.placeName(LightRepoInterface.NOW_FUNC, LexType.NOW);
-		PREDEFINED_NAMES.placeName(LightRepoInterface.CREATED_FUNC, LexType.CREATED);
-		PREDEFINED_NAMES.placeName(LightRepoInterface.CHANGED_FUNC, LexType.CHANGED);
-		PREDEFINED_NAMES.placeName(LightRepoInterface.RENAMED_FUNC, LexType.RENAMED);
-		PREDEFINED_NAMES.placeName(LightRepoInterface.REMOVED_FUNC, LexType.REMOVED);
+		PREDEFINED_NAMES.placeName((CharSequence)LightRepoInterface.EXISTS_FUNC, LexType.EXISTS);
+		PREDEFINED_NAMES.placeName((CharSequence)LightRepoInterface.CONTAINS_FUNC, LexType.CONTAINS);
+		PREDEFINED_NAMES.placeName((CharSequence)LightRepoInterface.APPEARS_FUNC, LexType.APPEARS);
+		PREDEFINED_NAMES.placeName((CharSequence)LightRepoInterface.DISAPPEARS_FUNC, LexType.DISAPPEARS);
+		PREDEFINED_NAMES.placeName((CharSequence)LightRepoInterface.NOW_FUNC, LexType.NOW);
+		PREDEFINED_NAMES.placeName((CharSequence)LightRepoInterface.CREATED_FUNC, LexType.CREATED);
+		PREDEFINED_NAMES.placeName((CharSequence)LightRepoInterface.CHANGED_FUNC, LexType.CHANGED);
+		PREDEFINED_NAMES.placeName((CharSequence)LightRepoInterface.RENAMED_FUNC, LexType.RENAMED);
+		PREDEFINED_NAMES.placeName((CharSequence)LightRepoInterface.REMOVED_FUNC, LexType.REMOVED);
 		
-		PREDEFINED_NAMES.placeName(LightRepoInterface.PREV_MOD, LexType.PREV);
-		PREDEFINED_NAMES.placeName(LightRepoInterface.NEXT_MOD, LexType.NEXT);
-		PREDEFINED_NAMES.placeName(LightRepoInterface.UPPERCASE_MOD, LexType.UPPERCASE);
-		PREDEFINED_NAMES.placeName(LightRepoInterface.LOWERCASE_MOD, LexType.LOWERCASE);
+		PREDEFINED_NAMES.placeName((CharSequence)LightRepoInterface.PREV_MOD, LexType.PREV);
+		PREDEFINED_NAMES.placeName((CharSequence)LightRepoInterface.NEXT_MOD, LexType.NEXT);
+		PREDEFINED_NAMES.placeName((CharSequence)LightRepoInterface.UPPERCASE_MOD, LexType.UPPERCASE);
+		PREDEFINED_NAMES.placeName((CharSequence)LightRepoInterface.LOWERCASE_MOD, LexType.LOWERCASE);
 		
-		PREDEFINED_NAMES.placeName(LightRepoInterface.FILE_VAR, LexType.FILE);
-		PREDEFINED_NAMES.placeName(LightRepoInterface.COMMIT_VAR, LexType.COMMIT);
+		PREDEFINED_NAMES.placeName((CharSequence)LightRepoInterface.FILE_VAR, LexType.FILE);
+		PREDEFINED_NAMES.placeName((CharSequence)LightRepoInterface.COMMIT_VAR, LexType.COMMIT);
 		
-		PREDEFINED_NAMES.placeName(LightRepoInterface.AUTHOR_F, LexType.AUTHOR);
-		PREDEFINED_NAMES.placeName(LightRepoInterface.COMMENT_F, LexType.COMMENT);
-		PREDEFINED_NAMES.placeName(LightRepoInterface.COMMIT_ID_F, LexType.ID);
-		PREDEFINED_NAMES.placeName(LightRepoInterface.PATH_F, LexType.PATH);
-		PREDEFINED_NAMES.placeName(LightRepoInterface.CHANGE_F, LexType.CHANGE);
-		PREDEFINED_NAMES.placeName(LightRepoInterface.TIMESTAMP_F, LexType.TIMESTAMP);
-		PREDEFINED_NAMES.placeName(LightRepoInterface.PARSEABLE_F, LexType.PARSEABLE);
-		PREDEFINED_NAMES.placeName(LightRepoInterface.VERSION_F, LexType.VERSION);
-		PREDEFINED_NAMES.placeName(LightRepoInterface.CONTENT_F, LexType.CONTENT);
+		PREDEFINED_NAMES.placeName((CharSequence)LightRepoInterface.AUTHOR_F, LexType.AUTHOR);
+		PREDEFINED_NAMES.placeName((CharSequence)LightRepoInterface.COMMENT_F, LexType.COMMENT);
+		PREDEFINED_NAMES.placeName((CharSequence)LightRepoInterface.COMMIT_ID_F, LexType.ID);
+		PREDEFINED_NAMES.placeName((CharSequence)LightRepoInterface.PATH_F, LexType.PATH);
+		PREDEFINED_NAMES.placeName((CharSequence)LightRepoInterface.CHANGE_F, LexType.CHANGE);
+		PREDEFINED_NAMES.placeName((CharSequence)LightRepoInterface.TIMESTAMP_F, LexType.TIMESTAMP);
+		PREDEFINED_NAMES.placeName((CharSequence)LightRepoInterface.PARSEABLE_F, LexType.PARSEABLE);
+		PREDEFINED_NAMES.placeName((CharSequence)LightRepoInterface.VERSION_F, LexType.VERSION);
+		PREDEFINED_NAMES.placeName((CharSequence)LightRepoInterface.CONTENT_F, LexType.CONTENT);
 	}
 
 	private static enum LexGroup {
