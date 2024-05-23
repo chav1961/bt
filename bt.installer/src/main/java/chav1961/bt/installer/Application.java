@@ -16,6 +16,7 @@ import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 
 import chav1961.bt.installer.tools.ImagesCollection;
+import chav1961.bt.installer.tools.LocalizingStrings;
 import chav1961.bt.installer.tools.Parameters;
 import chav1961.bt.installer.tools.Settings;
 import chav1961.bt.installer.tools.SplashScreenKeeper;
@@ -63,6 +64,7 @@ public class Application {
 		}
 		repo.addSettings(Settings.fromXML(doc)); 
 		repo.addParameters(Parameters.fromXML(doc)); 
+		repo.addLocalizingStrings(LocalizingStrings.fromXML(doc)); 
 		repo.addImagesCollection(ImagesCollection.fromXML(doc)); 
 	}
 

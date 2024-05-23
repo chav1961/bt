@@ -11,6 +11,7 @@ import java.util.zip.ZipEntry;
 
 import chav1961.bt.installer.executor.Executor;
 import chav1961.bt.installer.tools.ImagesCollection;
+import chav1961.bt.installer.tools.LocalizingStrings;
 import chav1961.bt.installer.tools.Parameters;
 import chav1961.bt.installer.tools.Settings;
 import chav1961.bt.installer.tools.SplashScreenKeeper;
@@ -22,6 +23,7 @@ public class Repository {
 	
 	private Settings			settings = null;
 	private Parameters			parameters = null;
+	private LocalizingStrings	strings = null;
 	private ImagesCollection	imagesCollection = null;
 	private SplashScreenKeeper	splash = null;
 	private String				comment = null;
@@ -45,6 +47,15 @@ public class Repository {
 		}
 		else {
 			this.parameters = parameters;
+		}
+	}
+
+	public void addLocalizingStrings(final LocalizingStrings strings) {
+		if (strings == null) {
+			throw new NullPointerException("Localizing string to add can't be null");
+		}
+		else {
+			this.strings = strings;
 		}
 	}
 	
@@ -102,6 +113,9 @@ public class Repository {
 			dump(jos, InstallerUtils.class2JarEntryName(Executor.class), InstallerUtils.class2URL(Executor.class));
 			if (settings != null) {
 				dump(jos, Executor.class.getPackageName().replace('.','/')+'/'+Executor.SETTINGS_RESOURCE_NAME, settings.getInputStream());
+			}
+			if (strings != null) {
+				dump(jos, Executor.class.getPackageName().replace('.','/')+'/'+Executor.LOCALIZING_STRINGS_RESOURCE_NAME, strings.getInputStream());
 			}
 			if (splash != null) {
 				try(final InputStream	is = splash.getInputStream()) {

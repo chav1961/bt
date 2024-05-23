@@ -6,6 +6,7 @@ import java.util.Properties;
 
 public class Executor {
 	public static final String	SETTINGS_RESOURCE_NAME = "settings.props"; 
+	public static final String	LOCALIZING_STRINGS_RESOURCE_NAME = "i18n.props"; 
 
 	public static void main(String[] args) {
 		// TODO Auto-generated method stub

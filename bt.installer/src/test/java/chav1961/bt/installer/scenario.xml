@@ -32,7 +32,9 @@
 		</dir>
 	</target>
 	<i18n>
-		<item id="" lang="">...</item>
+		<lang name="ru">
+			<item id="value1">...</item>
+		</lang>
 	</i18n>
 	<images>
 		<image name="id1.png" href="root://chav1961.bt.installer.ApplicationTest/chav1961/bt/installer/splash.png"/>
