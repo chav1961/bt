@@ -1,8 +1,11 @@
 <scenario>
-	<splash href="" title="">...</splash>
+	<splash href="root://chav1961.bt.installer.ApplicationTest/chav1961/bt/installer/splash.png" title="splashScreen.png">...</splash>
+	<settings>
+		<value name="p1">sdsdsd</value>
+	</settings>
 	<parameters>
-		<parameter name="" type="" options="" default=""/>
-	<parameters>
+		<parameter name="p1" type="java.lang.String">sdsdsd</parameter>
+	</parameters>
 	<steps size="">
 		<step id="" type="" prev="" next="">
 			<before type="">...</before>
@@ -29,11 +32,9 @@
 		</dir>
 	</target>
 	<i18n>
-		<lang id="ru"> 
-			<item id="s">...</item>
-		</lang>
+		<item id="" lang="">...</item>
 	</i18n>
 	<images>
-		<image id="" hRef="">...</image>
+		<image name="id1.png" href="root://chav1961.bt.installer.ApplicationTest/chav1961/bt/installer/splash.png"/>
 	</images>
 </scenario>

@@ -18,8 +18,8 @@ import java.awt.dnd.DropTargetDragEvent;
 import java.awt.dnd.DropTargetDropEvent;
 import java.awt.dnd.DropTargetEvent;
 import java.awt.dnd.DropTargetListener;
+import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-import java.awt.event.MouseListener;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
@@ -54,7 +54,7 @@ import net.sourceforge.tess4j.ITessAPI;
 import net.sourceforge.tess4j.Tesseract;
 import net.sourceforge.tess4j.TesseractException;
 
-public class OCRWindow extends JBackgroundComponent implements LoggerFacadeOwner, ModuleAccessor {
+public abstract class OCRWindow extends JBackgroundComponent implements LoggerFacadeOwner, ModuleAccessor {
 	private static final long 		serialVersionUID = 7077660700358390745L;
 	private static final URI		LOCALIZER_URI = URI.create("i18n:xml:root://"+OCRWindow.class.getCanonicalName()+"/chav1961/bt/ocr/i18n/i18n.xml");
 	private static final String		KEY_MESSAGE_OCR_FAILED = "";
@@ -89,7 +89,7 @@ public class OCRWindow extends JBackgroundComponent implements LoggerFacadeOwner
 	private Rectangle						selectedArea = null;
 	
 	public OCRWindow(final Localizer localizer, final LoggerFacade logger, final File tesseractDir, final boolean listenClipboard) {
-		super(localizer);
+		super(pushLocalizer(localizer));
 		if (localizer == null) {
 			throw new NullPointerException("Localizer can't be null");
 		}
@@ -114,20 +114,12 @@ public class OCRWindow extends JBackgroundComponent implements LoggerFacadeOwner
 
 			emm.setEnableMaskOn(LANG_CURRENT);
 			
-	        if (!localizer.containsLocalizerAnywhere(LOCALIZER_URI)) {
-				localizer.add(Localizer.Factory.newInstance(LOCALIZER_URI));
-			}
 			if (listenClipboard) {
 				cb.addFlavorListener((e)->listenClipboard(e));
 			}
 			
 			setCursor(Cursor.getPredefinedCursor(Cursor.CROSSHAIR_CURSOR));
-			addMouseListener(new MouseListener() {
-				@Override public void mouseReleased(MouseEvent e) {}
-				@Override public void mouseExited(MouseEvent e) {}
-				@Override public void mouseEntered(MouseEvent e) {}
-				@Override public void mouseClicked(MouseEvent e) {}
-				
+			addMouseListener(new MouseAdapter() {
 				@Override
 				public void mousePressed(MouseEvent e) {
 					if (e.getButton() == MouseEvent.BUTTON3) {
@@ -172,15 +164,9 @@ public class OCRWindow extends JBackgroundComponent implements LoggerFacadeOwner
 		}
 	}
 
-	protected void processAsText(final String text) {
-		System.err.println("TEXT="+text);
-		
-	}
+	protected abstract void processAsText(final String text);
+	protected abstract void processAsImage(final Image image);
 	
-	protected void processAsImage(final Image image) {
-		System.err.println("IMAGE="+image.getWidth(null)+"x"+image.getHeight(null));
-	}
-
 	@Override
 	public LoggerFacade getLogger() {
 		return logger;
@@ -292,7 +278,6 @@ public class OCRWindow extends JBackgroundComponent implements LoggerFacadeOwner
 		final Cursor		oldCursor = getCursor();
 		
 		try{
-			tesseract.setDatapath(tesseractDir.getAbsolutePath());
 			switch (lang) {
 				case en	:
 					tesseract.setLanguage("eng");
@@ -304,13 +289,14 @@ public class OCRWindow extends JBackgroundComponent implements LoggerFacadeOwner
 					throw new UnsupportedOperationException("Language ["+lang+"] is not supported yet");
 			
 			}
+			tesseract.setDatapath(tesseractDir.getAbsolutePath());
 			tesseract.setPageSegMode(ITessAPI.TessPageSegMode.PSM_AUTO_OSD);
 			tesseract.setOcrEngineMode(ITessAPI.TessOcrEngineMode.OEM_LSTM_ONLY);			
 			setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
 			return tesseract.doOCR(image);
 		} catch (TesseractException e) {
 			getLogger().message(Severity.warning, KEY_MESSAGE_OCR_FAILED, e.getLocalizedMessage());
-			return "<failed>";
+			return "<failed: "+e.getLocalizedMessage()+">";
 		} finally {
 			setCursor(oldCursor);
 		}
@@ -331,9 +317,35 @@ public class OCRWindow extends JBackgroundComponent implements LoggerFacadeOwner
 		emm.setEnableMaskTo(PARSE_MASK, sfm.hasSelectionNow());
 		emm.setCheckMaskTo(LANG_CURRENT, selectedLang == null);
 	}
+
+	private static Localizer pushLocalizer(final Localizer parent) {
+        if (!parent.containsLocalizerAnywhere(LOCALIZER_URI)) {
+        	final Localizer	current = Localizer.Factory.newInstance(LOCALIZER_URI); 
+			
+        	parent.push(current);
+        	return current;
+		}
+        else {
+        	return parent.getLocalizerById(LOCALIZER_URI);
+        }
+	}
+
+
 	
 	public static void main(final String[] args) {
-		final OCRWindow	w = new OCRWindow(PureLibSettings.PURELIB_LOCALIZER, PureLibSettings.CURRENT_LOGGER, new File("d:/tesseract/tessdata"), true);
+		final OCRWindow	w = new OCRWindow(PureLibSettings.PURELIB_LOCALIZER, PureLibSettings.CURRENT_LOGGER, new File("d:/tesseract/tessdata"), true) {
+								@Override
+								protected void processAsText(final String text) {
+									// TODO Auto-generated method stub
+									System.err.println("TEXT="+text);
+								}
+					
+								@Override
+								protected void processAsImage(final Image image) {
+									// TODO Auto-generated method stub
+									
+								}
+							};
 		
 		w.setPreferredSize(new Dimension(640,480));
 		JOptionPane.showMessageDialog(null, w);
