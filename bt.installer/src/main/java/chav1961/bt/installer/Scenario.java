@@ -18,7 +18,6 @@ import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
 
-import chav1961.bt.installer.interfaces.StepType;
 import chav1961.purelib.basic.URIUtils;
 import chav1961.purelib.i18n.interfaces.SupportedLanguages;
 
@@ -28,7 +27,6 @@ public class Scenario {
 	private final Map<String, Parameter>		parameters = new HashMap<>();
 	private final Map<String, BufferedImage>	images = new HashMap<>();
 	private final Map<String, String>[]			i18n = new Map[SupportedLanguages.values().length];
-	private final Step[]						steps;
 	
 	public Scenario(final Reader scenario) throws IOException {
 		if (scenario == null) {
@@ -46,7 +44,6 @@ public class Scenario {
 				
 				splash = null;
 				splashTitle = null;
-				steps = null;
 				
 			} catch (ParserConfigurationException | SAXException e) {
 				throw new IOException(e);
@@ -103,11 +100,6 @@ public class Scenario {
 		}
 	}
 	
-	public static class Step {
-		private final StepType	type = null; 
-		
-	}
-
 	private static class ScenarioHandler extends DefaultHandler {
 		private final Map<String, Parameter>		parameters = new HashMap<>();
 		private final Map<String, BufferedImage>	images = new HashMap<>();

@@ -9,19 +9,19 @@ import chav1961.purelib.basic.exceptions.FlowException;
 import chav1961.purelib.basic.exceptions.LocalizationException;
 import chav1961.purelib.ui.interfaces.ErrorProcessing;
 
-public class WelcomeScreen extends AbstractWizardStep {
-	public WelcomeScreen(final String stepId, final String caption, final String description, final String helpId) {
+public class DefineTargetDirectoryScreen extends AbstractWizardStep {
+	public DefineTargetDirectoryScreen(final String stepId, final String caption, final String description, final String helpId) {
 		super(stepId, caption, description, helpId);
 	}
 
 	@Override
 	public StepType getStepType() {
-		return StepType.INITIAL;
+		return StepType.ORDINAL;
 	}
 
 	@Override
 	public ScreenType getScreenType() {
-		return ScreenType.WELCOME;
+		return ScreenType.DEFINE_TARGET_DIRECTORY;
 	}
 	
 	@Override
@@ -33,12 +33,13 @@ public class WelcomeScreen extends AbstractWizardStep {
 	@Override
 	public void beforeShow(final Properties content, final Map<String, Object> temporary, final ErrorProcessing<Properties, ErrorType> err) throws FlowException, LocalizationException, NullPointerException {
 		// TODO Auto-generated method stub
+		
 	}
 
 	@Override
 	public boolean validate(final Properties content, final Map<String, Object> temporary, final ErrorProcessing<Properties, ErrorType> err) throws FlowException, LocalizationException, NullPointerException {
 		// TODO Auto-generated method stub
-		return true;
+		return false;
 	}
 
 	@Override

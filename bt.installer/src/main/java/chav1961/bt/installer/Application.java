@@ -1,89 +1,112 @@
 package chav1961.bt.installer;
 
+import java.awt.SplashScreen;
 import java.io.File;
-import java.io.FileOutputStream;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
 import java.net.URI;
-import java.util.jar.JarOutputStream;
+import java.net.URISyntaxException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Properties;
 
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.parsers.ParserConfigurationException;
-
-import org.w3c.dom.Document;
-import org.xml.sax.SAXException;
-
-import chav1961.bt.installer.tools.ImagesCollection;
-import chav1961.bt.installer.tools.LocalizingStrings;
-import chav1961.bt.installer.tools.Parameters;
-import chav1961.bt.installer.tools.Settings;
-import chav1961.bt.installer.tools.SplashScreenKeeper;
 import chav1961.purelib.basic.ArgParser;
+import chav1961.purelib.basic.PureLibSettings;
+import chav1961.purelib.basic.SubstitutableProperties;
 import chav1961.purelib.basic.exceptions.CommandLineParametersException;
-import chav1961.purelib.basic.exceptions.ContentException;
+import chav1961.purelib.basic.exceptions.EnvironmentException;
+import chav1961.purelib.basic.exceptions.LocalizationException;
+import chav1961.purelib.i18n.LocalizerFactory;
+import chav1961.purelib.i18n.XMLLocalizer;
+import chav1961.purelib.i18n.interfaces.Localizer;
+import chav1961.purelib.ui.interfaces.ErrorProcessing;
+import chav1961.purelib.ui.interfaces.WizardStep;
+import chav1961.purelib.ui.swing.useful.JDialogContainer;
+import chav1961.purelib.ui.swing.useful.JDialogContainer.JDialogContainerOption;
+import chav1961.purelib.ui.swing.useful.JLocalizedOptionPane;
+
+import javax.swing.JFrame;
+import javax.swing.JOptionPane;
+
 
 public class Application {
-	public static final String	ARG_SCENARIO_URI = "scenario";
-	public static final String	ARG_SCENARIO_OUTPUT_FILE = "o";
+	private static final long serialVersionUID = -9219912076315302665L;
+	
+	public static final String	ARG_FORCE = "f";
 
-	public static void main(String[] args) {
-		final ArgParser	parser = new ApplicationArgParser();
-		int		retcode = 0;
+	public static final String	SETTINGS_RESOURCE_NAME = "/settings.props"; 
+	public static final String	LOCALIZING_STRINGS_RESOURCE_NAME = "/i18n.xml"; 
+	
+	public static final String	SETTINGS_TITLE = "installer.title"; 
+	public static final String	SETTINGS_SCREEN_SIZE = "screen.size"; 
+	public static final String	SETTINGS_DEFAULT_SCREEN_SIZE = "640x480";
 
-		try {
-			final ArgParser		parsed = parser.parse(args);
-			
-			try(final InputStream		is = parsed.isTyped(ARG_SCENARIO_URI) ? parsed.getValue(ARG_SCENARIO_URI, URI.class).toURL().openStream() : System.in) {
-				final DocumentBuilder	builder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
-				final Document 			doc = builder.parse(is);
-				final Repository		repo = new Repository();
-				
-				doc.getDocumentElement().normalize();
-				
-				processScenario(doc, repo);
-				upload(repo, parsed.isTyped(ARG_SCENARIO_OUTPUT_FILE) ? new FileOutputStream(parsed.getValue(ARG_SCENARIO_OUTPUT_FILE, File.class)) : System.out);
-			}
-		} catch (CommandLineParametersException exc) {
-			System.err.println(exc.getLocalizedMessage());
-			System.err.println(parser.getUsage("bt.installer"));
-			retcode = 128;
-		} catch (IOException | ParserConfigurationException | SAXException | ContentException exc) {
-			System.err.println(exc.getLocalizedMessage());
-			retcode = 129;
-		}
-		System.exit(retcode);
-	}
-
-	static void processScenario(final Document doc, final Repository repo) throws ContentException {
-		final SplashScreenKeeper	keeper = SplashScreenKeeper.fromXML(doc);
+	public static final File	PREV_SETTINGS = new File(".prev.settings");
+	
+	public static void processMain(final SplashScreen splash, final String[] args) {
+		final Args			arguments = new Args();
 		
-		if (keeper != null) {
-			repo.addSplashScreen(keeper);
-		}
-		repo.addSettings(Settings.fromXML(doc)); 
-		repo.addParameters(Parameters.fromXML(doc)); 
-		repo.addLocalizingStrings(LocalizingStrings.fromXML(doc)); 
-		repo.addImagesCollection(ImagesCollection.fromXML(doc)); 
-	}
-
-	static void upload(final Repository repo, final OutputStream os) throws IOException {
-		try(final JarOutputStream	jos = new JarOutputStream(os, repo.getManifest())) {
+		try {
+			final URI		localizerURI = URI.create(XMLLocalizer.LOCALIZER_SCHEME+":xml:"+Application.class.getResource(LOCALIZING_STRINGS_RESOURCE_NAME).toURI().toASCIIString());
 			
-			repo.upload(jos);
-			jos.finish();
-			jos.flush();
+			try(final Localizer		localizer = LocalizerFactory.getLocalizer(localizerURI, Application.class.getClassLoader())) {
+				final ArgParser 	parms = arguments.parse(args);
+				final Properties	settings = SubstitutableProperties.of(Application.class.getResourceAsStream(SETTINGS_RESOURCE_NAME));
+				final Properties	prevSettings = new Properties();
+
+				System.err.println("Settings: "+settings);
+				
+				PureLibSettings.PURELIB_LOCALIZER.push(localizer);
+				if (!parms.getValue(ARG_FORCE, boolean.class) && PREV_SETTINGS.exists() && PREV_SETTINGS.isFile() && PREV_SETTINGS.canRead()) {
+					if (new JLocalizedOptionPane(localizer).confirm(null, prevSettings, SETTINGS_TITLE, JOptionPane.QUESTION_MESSAGE, JOptionPane.YES_NO_OPTION) == JOptionPane.YES_OPTION) {
+						try(final InputStream	is = new FileInputStream(PREV_SETTINGS)) {
+							
+							prevSettings.load(is);
+						}
+					}
+				}
+				final List<WizardStep>	steps = new ArrayList<>();
+				final ErrorProcessing	errProc = new ErrorProcessing() {
+											@Override
+											public void processWarning(Object content, Enum err, Object... parameters) throws LocalizationException {
+												// TODO Auto-generated method stub
+												
+											}
+										};
+				final JDialogContainer	window = new JDialogContainer(localizer, (JFrame)null, null, errProc, steps.toArray(new WizardStep[steps.size()]));
+				
+				Thread.sleep(5000);
+				
+				if (splash != null) {
+					splash.close();
+				}
+				window.showDialog(JDialogContainerOption.DONT_USE_ENTER_AS_OK);
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			} catch (CommandLineParametersException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		} catch (URISyntaxException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		} finally {
+			if (splash != null && splash.isVisible()) {
+				splash.close();
+			}
 		}
 	}
 	
-	private static class ApplicationArgParser extends ArgParser {
+	private static class Args extends ArgParser {
 		private static final ArgParser.AbstractArg[]	KEYS = {
-			new URIArg(ARG_SCENARIO_URI, false, true, "XML scenario file to build installer. If missing, System.in will be used"),
-			new FileArg(ARG_SCENARIO_OUTPUT_FILE, false, false, "Jar file to store result. If missing, System.out will be used"),
+			new BooleanArg(ARG_FORCE, false, false, "force previous settings"),
 		};
 		
-		private ApplicationArgParser() {
+		private Args() {
 			super(KEYS);
 		}
 	}

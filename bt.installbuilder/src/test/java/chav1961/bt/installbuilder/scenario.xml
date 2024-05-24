@@ -1,5 +1,7 @@
-<scenario>
-	<splash href="root://chav1961.bt.installer.ApplicationTest/chav1961/bt/installer/splash.png" title="splashScreen.png">...</splash>
+<scenario i18n="root://chav1961.bt.installbuilder.ApplicationTest/chav1961/bt/installbuilder/i18n.xml"
+		  purelib="file:/C:/Users/achernomyrdin/.m2/repository/com/github/chav1961/purelib/0.0.7/purelib-0.0.7.jar"
+		  installer="file:/C:/Users/achernomyrdin/.m2/repository/com/github/chav1961/bt.installer/0.0.1-SNAPSHOT/bt.installer-0.0.1-SNAPSHOT.jar">
+	<splash href="root://chav1961.bt.installbuilder.ApplicationTest/chav1961/bt/installbuilder/splash.png" title="splashScreen.png">...</splash>
 	<settings>
 		<value name="p1">sdsdsd</value>
 	</settings>
@@ -31,12 +33,7 @@
 			<url from="" to=""/>
 		</dir>
 	</target>
-	<i18n>
-		<lang name="ru">
-			<item id="value1">...</item>
-		</lang>
-	</i18n>
 	<images>
-		<image name="id1.png" href="root://chav1961.bt.installer.ApplicationTest/chav1961/bt/installer/splash.png"/>
+		<image name="id1.png" href="root://chav1961.bt.installbuilder.ApplicationTest/chav1961/bt/installbuilder/splash.png"/>
 	</images>
 </scenario>

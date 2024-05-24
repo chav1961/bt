@@ -1,5 +1,7 @@
-package chav1961.bt.installer;
+package chav1961.bt.installbuilder.tools;
 
+
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
@@ -9,21 +11,19 @@ import java.util.jar.JarOutputStream;
 import java.util.jar.Manifest;
 import java.util.zip.ZipEntry;
 
-import chav1961.bt.installer.executor.Executor;
-import chav1961.bt.installer.tools.ImagesCollection;
-import chav1961.bt.installer.tools.LocalizingStrings;
-import chav1961.bt.installer.tools.Parameters;
-import chav1961.bt.installer.tools.Settings;
-import chav1961.bt.installer.tools.SplashScreenKeeper;
-import chav1961.bt.installer.utils.InstallerUtils;
+import chav1961.bt.installbuilder.Executor;
+import chav1961.bt.installbuilder.utils.InstallbuilderUtils;
+import chav1961.purelib.basic.PureLibSettings;
 import chav1961.purelib.basic.Utils;
 
 public class Repository {
 	private static final String	IMAGES_DIR = "/images/";
 	
+	private URL					pureLibLocation = null;
+	private URL					installerLocation = null;
 	private Settings			settings = null;
 	private Parameters			parameters = null;
-	private LocalizingStrings	strings = null;
+	private String				strings = null;
 	private ImagesCollection	imagesCollection = null;
 	private SplashScreenKeeper	splash = null;
 	private String				comment = null;
@@ -50,7 +50,25 @@ public class Repository {
 		}
 	}
 
-	public void addLocalizingStrings(final LocalizingStrings strings) {
+	public void addPureLibLocation(final URL location) {
+		if (location == null) {
+			throw new NullPointerException("PureLib location to add can't be null");
+		}
+		else {
+			this.pureLibLocation = location;
+		}
+	}
+
+	public void addInstallerLocation(final URL location) {
+		if (location == null) {
+			throw new NullPointerException("Installer location to add can't be null");
+		}
+		else {
+			this.installerLocation = location;
+		}
+	}
+	
+	public void addLocalizingStrings(final String strings) {
 		if (strings == null) {
 			throw new NullPointerException("Localizing string to add can't be null");
 		}
@@ -110,12 +128,12 @@ public class Repository {
 			if (comment != null) {
 				jos.setComment(comment);
 			}
-			dump(jos, InstallerUtils.class2JarEntryName(Executor.class), InstallerUtils.class2URL(Executor.class));
+			dump(jos, InstallbuilderUtils.class2JarEntryName(Executor.class), InstallbuilderUtils.class2URL(Executor.class));
 			if (settings != null) {
-				dump(jos, Executor.class.getPackageName().replace('.','/')+'/'+Executor.SETTINGS_RESOURCE_NAME, settings.getInputStream());
+				dump(jos, Executor.SETTINGS_RESOURCE_NAME, settings.getInputStream());
 			}
 			if (strings != null) {
-				dump(jos, Executor.class.getPackageName().replace('.','/')+'/'+Executor.LOCALIZING_STRINGS_RESOURCE_NAME, strings.getInputStream());
+				dump(jos, Executor.LOCALIZING_STRINGS_RESOURCE_NAME, new ByteArrayInputStream(strings.getBytes(PureLibSettings.DEFAULT_CONTENT_ENCODING)));
 			}
 			if (splash != null) {
 				try(final InputStream	is = splash.getInputStream()) {
@@ -126,6 +144,12 @@ public class Repository {
 				for(String item : imagesCollection.names()) {
 					dump(jos, IMAGES_DIR+item, imagesCollection.getInputStream(item));
 				}
+			}
+			try(final InputStream	is = pureLibLocation.openStream()) {
+				dump(jos, Executor.PURELIB_NAME, is);
+			}
+			try(final InputStream	is = installerLocation.openStream()) {
+				dump(jos, Executor.INSTALLER_NAME, is);
 			}
 		}
 	}

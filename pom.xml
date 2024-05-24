@@ -39,10 +39,10 @@
   	<module>bt.paint</module>
   	<module>bt.security</module>
   	<module>bt.audio</module>
-  	<module>bt.creolenotepad</module>
   	<module>bt.voice</module>
   	<module>bt.installer</module>
   	<module>bt.ocr</module>
   	<module>bt.jj</module>
+  	<module>bt.installbuilder</module>
   </modules>
 </project>

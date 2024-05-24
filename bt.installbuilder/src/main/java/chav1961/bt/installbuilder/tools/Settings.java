@@ -1,4 +1,4 @@
-package chav1961.bt.installer.tools;
+package chav1961.bt.installbuilder.tools;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
