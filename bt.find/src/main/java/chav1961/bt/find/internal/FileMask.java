@@ -3,6 +3,7 @@ package chav1961.bt.find.internal;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Consumer;
 
 import chav1961.purelib.basic.AndOrTree;
 import chav1961.purelib.basic.CharUtils;
@@ -12,7 +13,7 @@ import chav1961.purelib.basic.interfaces.SyntaxTreeInterface;
 import chav1961.purelib.cdb.SyntaxNode;
 
 /*
- * File mask syntax:
+ *	File mask syntax:
  * 
  *  <mask> ::= {'/'|'./'}<component>['/'<component>...]
  *  <component> ::= {<alter>|'{'<alter>['|'<alter>]...'}'}
@@ -25,7 +26,8 @@ import chav1961.purelib.cdb.SyntaxNode;
  *  <add> ::= <unary>[{'+'|'-'}<unary>...]
  *  <unary> ::= ['-']<term>
  *  <term> ::= {<predefined>|<constant>|'('<expression>')'}
- *  <predefined> ::= {'name'|'length'|'canRead'|'canWrite'|'canExecute'|'lastModified'}  
+ *  <predefined> ::= {'name'|'length'|'canRead'|'canWrite'|'canExecute'|'lastModified'}
+ *  
  */
 
 public class FileMask {
@@ -52,6 +54,8 @@ public class FileMask {
 												new Symbols("canWrite", PREDEFINED_CAN_WRITE),
 												new Symbols("canExecute", PREDEFINED_CAN_EXECUTE)
 											};
+	private static final Operand	TRUE = new Operand(true);
+	private static final Operand	FALSE = new Operand(false);
 			
 	
 	private final SyntaxNode<SyntaxNodeType, SyntaxNode<?,?>>	root;
@@ -127,14 +131,14 @@ public class FileMask {
 				clone = (SyntaxNode<SyntaxNodeType, SyntaxNode<?, ?>>) node.clone();
 				clone.col = content[from].from;
 				clone.type = SyntaxNodeType.ANY_NAME;
-				clone.value = content[from].id;
+				clone.value = 0;
 				children = new SyntaxNode[] {null, clone};
 				break;
 			case ANY_SUBTREE	:
 				clone = (SyntaxNode<SyntaxNodeType, SyntaxNode<?, ?>>) node.clone();
 				clone.col = content[from].from;
 				clone.type = SyntaxNodeType.ANY_SUBTREE;
-				clone.value = content[from].id;
+				clone.value = 0;
 				children = new SyntaxNode[] {null, clone};
 				break;
 			case ORDINAL_NAME	:
@@ -339,44 +343,44 @@ loop:	for (;;) {
 			}
 			switch (content[index]) {
 				case '\n' :
-					result.add(new Lexema(LexType.EOF, index++, index));
+					result.add(new Lexema(LexType.EOF, index++, 0));
 					break loop;
 				case '/' :
-					result.add(new Lexema(LexType.SEPARATOR, index++, index));
+					result.add(new Lexema(LexType.SEPARATOR, index++, 0));
 					separatorDetected = true;
 					break;
 				case '(' :
-					result.add(new Lexema(LexType.OPEN, index++, index));
+					result.add(new Lexema(LexType.OPEN, index++, 0));
 					continue loop;
 				case ')' :
-					result.add(new Lexema(LexType.CLOSE, index++, index));
+					result.add(new Lexema(LexType.CLOSE, index++, 0));
 					continue loop;
 				case '{' :
-					result.add(new Lexema(LexType.START_ALTER, index++, index));
+					result.add(new Lexema(LexType.START_ALTER, index++, 0));
 					continue loop;
 				case '}' :
-					result.add(new Lexema(LexType.END_ALTER, index++, index));
+					result.add(new Lexema(LexType.END_ALTER, index++, 0));
 					continue loop;
 				case '[' :
-					result.add(new Lexema(LexType.START_EXPR, index++, index));
+					result.add(new Lexema(LexType.START_EXPR, index++, 0));
 					expressionDetected = true;
 					continue loop;
 				case ']' :
-					result.add(new Lexema(LexType.END_EXPR, index++, index));
+					result.add(new Lexema(LexType.END_EXPR, index++, 0));
 					expressionDetected = false;
 					continue loop;
 				case '=' :
-					result.add(new Lexema(LexType.COMPARE, index++, index));
+					result.add(new Lexema(LexType.COMPARE, index++, SYMBOL_EQ));
 					continue loop;
 				case '+' :
-					result.add(new Lexema(LexType.ADD, index++, index));
+					result.add(new Lexema(LexType.ADD, index++, 0));
 					continue loop;
 				case '-' :
-					result.add(new Lexema(LexType.SUBTRACT, index++, index));
+					result.add(new Lexema(LexType.SUBTRACT, index++, 0));
 					continue loop;
 				case '&' :
 					if (content[index + 1] == '&') {
-						result.add(new Lexema(LexType.AND, index += 2, index));
+						result.add(new Lexema(LexType.AND, index += 2, 0));
 						continue loop;
 					}
 					else {
@@ -384,46 +388,46 @@ loop:	for (;;) {
 					}
 				case '|' :
 					if (content[index + 1] == '|') {
-						result.add(new Lexema(LexType.OR, index += 2, index));
+						result.add(new Lexema(LexType.OR, index += 2, 0));
 					}
 					else {
-						result.add(new Lexema(LexType.ALTER, index++, index));
+						result.add(new Lexema(LexType.ALTER, index++, 0));
 					}
 					continue loop;
 				case '!' :
 					if (content[index + 1] == '=') {
-						result.add(new Lexema(LexType.COMPARE, index += 2, index));
+						result.add(new Lexema(LexType.COMPARE, index += 2, SYMBOL_NE));
 					}
 					else {
-						result.add(new Lexema(LexType.NOT, index++, index));
+						result.add(new Lexema(LexType.NOT, index++, 0));
 					}
 					continue loop;
 				case '>' :
 					if (content[index + 1] == '=') {
-						result.add(new Lexema(LexType.COMPARE, index += 2, index));
+						result.add(new Lexema(LexType.COMPARE, index += 2, SYMBOL_GE));
 					}
 					else {
-						result.add(new Lexema(LexType.COMPARE, index++, index));
+						result.add(new Lexema(LexType.COMPARE, index++, SYMBOL_GT));
 					}
 					continue loop;
 				case '<' :
 					if (content[index + 1] == '=') {
-						result.add(new Lexema(LexType.COMPARE, index += 2, index));
+						result.add(new Lexema(LexType.COMPARE, index += 2, SYMBOL_LE));
 					}
 					else if (content[index + 1] == '>') {
-						result.add(new Lexema(LexType.COMPARE, index += 2, index));
+						result.add(new Lexema(LexType.COMPARE, index += 2, SYMBOL_NE));
 					}
 					else {
-						result.add(new Lexema(LexType.COMPARE, index++, index));
+						result.add(new Lexema(LexType.COMPARE, index++, SYMBOL_LT));
 					}
 					continue loop;
 				case '.' :
 					if (sameFirst) {
 						if (content[index + 1] == '.' && content[index + 2] == '/') {
-							result.add(new Lexema(LexType.DOT_SEPARATOR, index += 3, index));
+							result.add(new Lexema(LexType.DOT_SEPARATOR, index += 3, 0));
 						}
 						else if (content[index + 1] == '/') {
-							result.add(new Lexema(LexType.DOT_SEPARATOR, index += 2, index));
+							result.add(new Lexema(LexType.DOT_SEPARATOR, index += 2, 0));
 						}
 						sameFirst = false;
 						continue loop;
@@ -432,10 +436,10 @@ loop:	for (;;) {
 				case '*' :
 					if (separatorDetected) {
 						if (content[index + 1] == '*') {
-							result.add(new Lexema(LexType.ANY_SUBTREE, index += 2, index));
+							result.add(new Lexema(LexType.ANY_SUBTREE, index += 2, 0));
 						}
 						else if (content[index + 1] == '/') {
-							result.add(new Lexema(LexType.ANY_NAME, index += 2, index));
+							result.add(new Lexema(LexType.ANY_NAME, index += 2, 0));
 						}
 						separatorDetected = false;
 						continue loop;
@@ -493,7 +497,9 @@ loop:	for (;;) {
 					index++;
 				}
 				if (from != index) {
-					result.add(new Lexema(wildCard ? LexType.WILDCARD_NAME : LexType.ORDINAL_NAME, from, index));
+					final long	name = names.placeOrChangeName(content, from, index, null);
+					
+					result.add(new Lexema(wildCard ? LexType.WILDCARD_NAME : LexType.ORDINAL_NAME, from, name));
 				}
 			}
 		}
@@ -501,6 +507,117 @@ loop:	for (;;) {
 		return result.toArray(new Lexema[result.size()]);
 	}
 
+	static Operand calculateExpr(final File file, final SyntaxNode<SyntaxNodeType, SyntaxNode<?, ?>> node) throws SyntaxException {
+		switch (node.type) {
+			case OR			:
+				for(int index = 0; index < node.children.length; index++) {
+					final Operand	value = calculateExpr(file, (SyntaxNode<SyntaxNodeType, SyntaxNode<?, ?>>) node.children[index]);
+					
+					if (value.getType() == OperandType.BOOLEAN) {
+						if ((Boolean)value.getValue()) {
+							return TRUE; 
+						}
+					}
+					else {
+						throw new SyntaxException(0, node.children[index].col, "Boolean operand awaiting");
+					}
+				}
+				return FALSE;
+			case AND		:
+				for(int index = 0; index < node.children.length; index++) {
+					final Operand	value = calculateExpr(file, (SyntaxNode<SyntaxNodeType, SyntaxNode<?, ?>>) node.children[index]);
+					
+					if (value.getType() == OperandType.BOOLEAN) {
+						if (!(Boolean)value.getValue()) {
+							return FALSE; 
+						}
+					}
+					else {
+						throw new SyntaxException(0, node.children[index].col, "Boolean operand awaiting");
+					}
+				}
+				return TRUE;
+			case NOT		:
+				final Operand	notValue = calculateExpr(file, (SyntaxNode<SyntaxNodeType, SyntaxNode<?, ?>>) node.children[0]);
+				
+				if (notValue.getType() == OperandType.BOOLEAN) {
+					return (Boolean)notValue.getValue() ? FALSE : TRUE;
+				}
+				else {
+					throw new SyntaxException(0, node.col, "Boolean operand awaiting");
+				}
+			case COMPARE	:
+				final Operand	left = calculateExpr(file, (SyntaxNode<SyntaxNodeType, SyntaxNode<?, ?>>) node.children[0]);
+				final Operand	right = calculateExpr(file, (SyntaxNode<SyntaxNodeType, SyntaxNode<?, ?>>) node.children[1]);
+				
+				switch ((int)node.value) {
+					case SYMBOL_GT	:
+						return (Long)left.getValue() > (Long)right.getValue() ? TRUE : FALSE; 
+					case SYMBOL_GE	:
+						return (Long)left.getValue() >= (Long)right.getValue() ? TRUE : FALSE; 
+					case SYMBOL_LT	:
+						return (Long)left.getValue() < (Long)right.getValue() ? TRUE : FALSE; 
+					case SYMBOL_LE	:
+						return (Long)left.getValue() <= (Long)right.getValue() ? TRUE : FALSE; 
+					case SYMBOL_EQ	:
+						return (Long)left.getValue() == (Long)right.getValue() ? TRUE : FALSE; 
+					case SYMBOL_NE	:
+						return (Long)left.getValue() != (Long)right.getValue() ? TRUE : FALSE; 
+					default :
+						throw new SyntaxException(0, node.col, "Unsupported comparison type in the expression");
+				}
+			case ADD		:
+				long		sum = 0;
+				final long	mask = node.value;
+				
+				for(int index = 0; index < node.children.length; index++) {
+					final Operand	value = calculateExpr(file, (SyntaxNode<SyntaxNodeType, SyntaxNode<?, ?>>) node.children[index]);
+					
+					if (value.getType() == OperandType.NUMERIC) {
+						if ((mask & (1L << index)) != 0) {
+							sum -= (Long)value.getValue();
+						}
+						else {
+							sum += (Long)value.getValue();
+						}
+					}
+					else {
+						throw new SyntaxException(0, node.children[index].col, "Boolean operand awaiting");
+					}
+				}
+				return new Operand(sum);
+			case MINUS		:
+				final Operand	minusValue = calculateExpr(file, (SyntaxNode<SyntaxNodeType, SyntaxNode<?, ?>>) node.children[0]);
+				
+				if (minusValue.getType() == OperandType.BOOLEAN) {
+					return new Operand(-(Long)minusValue.getValue());
+				}
+				else {
+					throw new SyntaxException(0, node.col, "Numeric operand awaiting");
+				}
+			case CONSTANT	:
+				return new Operand(node.value);
+			case PREDEFINED	:
+				switch ((int)node.value) {
+					case PREDEFINED_LENGTH		:
+						return new Operand(file.length());
+					case PREDEFINED_LAST_UPDATE	:
+						return new Operand(file.lastModified());
+					case PREDEFINED_CAN_READ	:
+						return new Operand(file.canRead());
+					case PREDEFINED_CAN_WRITE	:
+						return new Operand(file.canWrite());
+					case PREDEFINED_CAN_EXECUTE	:
+						return new Operand(file.canExecute());
+					default :
+						throw new UnsupportedOperationException("Predefined name id ["+node.value+"] is not supported yet");
+				}
+			default:
+				throw new SyntaxException(0, node.col, "Unsupported node type in the expression");
+		}
+	}
+	
+	
 	static enum LexType {
 		SEPARATOR,
 		DOT_SEPARATOR,
@@ -552,6 +669,12 @@ loop:	for (;;) {
 		TERM
 	}
 	
+	static enum OperandType {
+		NUMERIC,
+		STRING,
+		BOOLEAN
+	}
+	
 	static class Lexema {
 		final LexType	type;
 		final int 		from;
@@ -581,6 +704,65 @@ loop:	for (;;) {
 		@Override
 		public String toString() {
 			return "Symbols [symbol=" + symbol + ", id=" + id + "]";
+		}
+	}
+	
+	static class Operand {
+		private final OperandType	type;
+		private final Object		value;
+		
+		private Operand(final OperandType type, final Object value) {
+			this.type = type;
+			this.value = value;
+		}
+		
+		private Operand(final boolean value) {
+			this(OperandType.BOOLEAN, Boolean.valueOf(value));
+		}
+
+		private Operand(final long value) {
+			this(OperandType.NUMERIC, Long.valueOf(value));
+		}
+		
+		private Operand(final String value) {
+			this(OperandType.STRING, value);
+		}
+		
+		OperandType getType() {
+			return type;
+		}
+		
+		<V> V getValue() {
+			return (V) value;
+		}
+
+		@Override
+		public String toString() {
+			return "Operand [type=" + type + ", value=" + value + "]";
+		}
+	}
+
+	static void walk(final File root, final SyntaxNode<SyntaxNodeType, SyntaxNode<?, ?>> current, final Consumer<File> callback) throws SyntaxException {
+		// TODO Auto-generated method stub
+		if (root.exists()) {
+			switch (current.type) {
+				case ANY_NAME		:
+					if (root.isFile()) {
+						
+					}
+					else {
+						
+					}
+					break;
+				case ANY_SUBTREE	:
+					break;
+				case ORDINAL_NAME	:
+					break;
+				case WILDCARD_NAME	:
+					break;
+				default :
+					throw new SyntaxException(0, current.col, "Illegal tree node");
+			}
 		}
 	}
 }
