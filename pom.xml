@@ -44,5 +44,6 @@
   	<module>bt.ocr</module>
   	<module>bt.jj</module>
   	<module>bt.installbuilder</module>
+  	<module>bt.find</module>
   </modules>
 </project>

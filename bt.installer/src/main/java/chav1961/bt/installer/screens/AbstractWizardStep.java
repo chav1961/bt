@@ -1,11 +1,15 @@
 package chav1961.bt.installer.screens;
 
+import java.io.Serializable;
 import java.util.Properties;
 import javax.swing.JPanel;
 
+import chav1961.bt.installer.interfaces.ErrorType;
 import chav1961.purelib.ui.interfaces.WizardStep;
 
-abstract class AbstractWizardStep implements WizardStep<Properties, ErrorType, JPanel> {
+abstract class AbstractWizardStep implements WizardStep<Properties, ErrorType, JPanel>, Serializable {
+	private static final long 	serialVersionUID = -3076932844155699652L;
+	
 	private final String	stepId;
 	private final String	caption;
 	private final String	description;
@@ -38,5 +42,8 @@ abstract class AbstractWizardStep implements WizardStep<Properties, ErrorType, J
 	@Override
 	public String getHelpId() {
 		return helpId;
+	}
+	
+	public static abstract class WizardStepOption {
 	}
 }

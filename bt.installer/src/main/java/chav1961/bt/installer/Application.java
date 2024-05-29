@@ -5,17 +5,21 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.ObjectInput;
+import java.io.ObjectInputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
 
+import javax.swing.JFrame;
+import javax.swing.JOptionPane;
+
 import chav1961.purelib.basic.ArgParser;
 import chav1961.purelib.basic.PureLibSettings;
 import chav1961.purelib.basic.SubstitutableProperties;
 import chav1961.purelib.basic.exceptions.CommandLineParametersException;
-import chav1961.purelib.basic.exceptions.EnvironmentException;
 import chav1961.purelib.basic.exceptions.LocalizationException;
 import chav1961.purelib.i18n.LocalizerFactory;
 import chav1961.purelib.i18n.XMLLocalizer;
@@ -26,17 +30,13 @@ import chav1961.purelib.ui.swing.useful.JDialogContainer;
 import chav1961.purelib.ui.swing.useful.JDialogContainer.JDialogContainerOption;
 import chav1961.purelib.ui.swing.useful.JLocalizedOptionPane;
 
-import javax.swing.JFrame;
-import javax.swing.JOptionPane;
-
 
 public class Application {
-	private static final long serialVersionUID = -9219912076315302665L;
-	
 	public static final String	ARG_FORCE = "f";
 
 	public static final String	SETTINGS_RESOURCE_NAME = "/settings.props"; 
 	public static final String	LOCALIZING_STRINGS_RESOURCE_NAME = "/i18n.xml"; 
+	public static final String	WIZARD_STEPS = "/steps.bin"; 
 	
 	public static final String	SETTINGS_TITLE = "installer.title"; 
 	public static final String	SETTINGS_SCREEN_SIZE = "screen.size"; 
@@ -66,7 +66,13 @@ public class Application {
 						}
 					}
 				}
-				final List<WizardStep>	steps = new ArrayList<>();
+				final WizardStep[]			steps;
+				
+				try(final InputStream		is = Application.class.getResourceAsStream(WIZARD_STEPS);
+					final ObjectInputStream	ois = new ObjectInputStream(is)) {
+					
+					steps = (WizardStep[])ois.readObject();
+				}
 				final ErrorProcessing	errProc = new ErrorProcessing() {
 											@Override
 											public void processWarning(Object content, Enum err, Object... parameters) throws LocalizationException {
@@ -74,20 +80,16 @@ public class Application {
 												
 											}
 										};
-				final JDialogContainer	window = new JDialogContainer(localizer, (JFrame)null, null, errProc, steps.toArray(new WizardStep[steps.size()]));
-				
-				Thread.sleep(5000);
+				final JDialogContainer	window = new JDialogContainer(localizer, (JFrame)null, null, errProc, steps);
 				
 				if (splash != null) {
 					splash.close();
 				}
 				window.showDialog(JDialogContainerOption.DONT_USE_ENTER_AS_OK);
-			} catch (InterruptedException e) {
-				e.printStackTrace();
 			} catch (CommandLineParametersException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
-			} catch (IOException e) {
+			} catch (IOException | ClassCastException | ClassNotFoundException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}

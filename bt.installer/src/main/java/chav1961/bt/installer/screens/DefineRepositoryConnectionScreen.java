@@ -5,13 +5,18 @@ import java.util.Properties;
 
 import javax.swing.JPanel;
 
+import chav1961.bt.installer.interfaces.ErrorType;
+import chav1961.bt.installer.screens.AbstractWizardStep.WizardStepOption;
 import chav1961.purelib.basic.exceptions.FlowException;
 import chav1961.purelib.basic.exceptions.LocalizationException;
 import chav1961.purelib.ui.interfaces.ErrorProcessing;
 
 public class DefineRepositoryConnectionScreen extends AbstractWizardStep {
-	public DefineRepositoryConnectionScreen(final String stepId, final String caption, final String description, final String helpId) {
+	private final WizardStepOption[]	options;
+	
+	public DefineRepositoryConnectionScreen(final String stepId, final String caption, final String description, final String helpId, final WizardStepOption... options) {
 		super(stepId, caption, description, helpId);
+		this.options = options;
 	}
 
 	@Override

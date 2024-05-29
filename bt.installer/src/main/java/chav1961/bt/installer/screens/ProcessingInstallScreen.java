@@ -1,18 +1,34 @@
 package chav1961.bt.installer.screens;
 
+import java.awt.Image;
+import java.io.IOException;
+import java.net.URI;
 import java.util.Map;
 import java.util.Properties;
+import java.util.Set;
 
+import javax.imageio.ImageIO;
+import javax.swing.JEditorPane;
+import javax.swing.JList;
 import javax.swing.JPanel;
+import javax.swing.JProgressBar;
+import javax.swing.JSplitPane;
 
+import chav1961.bt.installer.interfaces.ErrorType;
+import chav1961.bt.installer.screens.AbstractWizardStep.WizardStepOption;
+import chav1961.purelib.basic.AbstractLoggerFacade;
+import chav1961.purelib.basic.exceptions.EnvironmentException;
 import chav1961.purelib.basic.exceptions.FlowException;
 import chav1961.purelib.basic.exceptions.LocalizationException;
+import chav1961.purelib.basic.interfaces.LoggerFacade;
 import chav1961.purelib.ui.interfaces.ErrorProcessing;
 
 public class ProcessingInstallScreen extends AbstractWizardStep {
+	private final WizardStepOption[]	options;
 
-	public ProcessingInstallScreen(String stepId, String caption, String description, String helpId) {
+	public ProcessingInstallScreen(final String stepId, final String caption, final String description, final String helpId, final WizardStepOption... options) {
 		super(stepId, caption, description, helpId);
+		this.options = options;
 	}
 
 	@Override
@@ -29,6 +45,8 @@ public class ProcessingInstallScreen extends AbstractWizardStep {
 	@Override
 	public JPanel getContent() {
 		// TODO Auto-generated method stub
+		final JList<ExecutionStep>	steps = new JList<>();
+		final JSplitPane			split = new JSplitPane();
 		return null;
 	}
 
@@ -39,26 +57,37 @@ public class ProcessingInstallScreen extends AbstractWizardStep {
 	}
 	
 	@Override
-	public void beforeShow(Properties content, Map<String, Object> temporary,
-			ErrorProcessing<Properties, ErrorType> err)
-			throws FlowException, LocalizationException, NullPointerException {
+	public void beforeShow(final Properties content, final Map<String, Object> temporary, final ErrorProcessing<Properties, ErrorType> err) throws FlowException, LocalizationException, NullPointerException {
 		// TODO Auto-generated method stub
 		
 	}
 
 	@Override
-	public boolean validate(Properties content, Map<String, Object> temporary,
-			ErrorProcessing<Properties, ErrorType> err)
-			throws FlowException, LocalizationException, NullPointerException {
+	public boolean validate(final Properties content, final Map<String, Object> temporary, final ErrorProcessing<Properties, ErrorType> err) throws FlowException, LocalizationException, NullPointerException {
 		// TODO Auto-generated method stub
 		return false;
 	}
 
 	@Override
-	public void afterShow(Properties content, Map<String, Object> temporary, ErrorProcessing<Properties, ErrorType> err)
-			throws FlowException, LocalizationException, NullPointerException {
+	public void afterShow(final Properties content, final Map<String, Object> temporary, final ErrorProcessing<Properties, ErrorType> err) throws FlowException, LocalizationException, NullPointerException {
 		// TODO Auto-generated method stub
 		
 	}
 
+	private static class ExecutionStep {
+		private static final Image	IMAGE_BEFORE = loadImage("");
+		private static final Image	IMAGE_PROCESSING = loadImage("");
+		private static final Image	IMAGE_FINISHED = loadImage("");
+		private static final Image	IMAGE_COMPLETED = loadImage("");
+		
+		private static final JProgressBar	bar = new JProgressBar();
+		
+		private static Image loadImage(final String resourceName) {
+			try {
+				return ImageIO.read(ExecutionStep.class.getResourceAsStream(resourceName));
+			} catch (IOException e) {
+				throw new EnvironmentException(e);
+			}
+		}
+	}
 }
