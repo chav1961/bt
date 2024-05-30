@@ -2,6 +2,7 @@ package chav1961.bt.find.internal;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.function.Consumer;
 
@@ -66,7 +67,7 @@ public class FileMask {
 		
 	}
 	
-	public void walk(final File root) {
+	public void walk(final File root, final Consumer<File> callback) {
 		
 	}
 	
@@ -128,37 +129,36 @@ public class FileMask {
 		
 		switch (content[from].type) {
 			case ANY_NAME		:
-				clone = (SyntaxNode<SyntaxNodeType, SyntaxNode<?, ?>>) node.clone();
-				clone.col = content[from].from;
-				clone.type = SyntaxNodeType.ANY_NAME;
-				clone.value = 0;
-				children = new SyntaxNode[] {null, clone};
+				node.col = content[from].from;
+				node.type = SyntaxNodeType.ANY_NAME;
+				node.value = 0;
+				from++;
 				break;
 			case ANY_SUBTREE	:
-				clone = (SyntaxNode<SyntaxNodeType, SyntaxNode<?, ?>>) node.clone();
-				clone.col = content[from].from;
-				clone.type = SyntaxNodeType.ANY_SUBTREE;
-				clone.value = 0;
-				children = new SyntaxNode[] {null, clone};
+				node.col = content[from].from;
+				node.type = SyntaxNodeType.ANY_SUBTREE;
+				node.value = 0;
+				from++;
 				break;
 			case ORDINAL_NAME	:
-				clone = (SyntaxNode<SyntaxNodeType, SyntaxNode<?, ?>>) node.clone();
-				clone.col = content[from].from;
-				clone.type = SyntaxNodeType.ORDINAL_NAME;
-				clone.value = content[from].id;
-				children = new SyntaxNode[] {null, clone};
+				node.col = content[from].from;
+				node.type = SyntaxNodeType.ORDINAL_NAME;
+				node.value = content[from].id;
+				from++;
 				break;
 			case WILDCARD_NAME	:
-				clone = (SyntaxNode<SyntaxNodeType, SyntaxNode<?, ?>>) node.clone();
-				clone.col = content[from].from;
-				clone.type = SyntaxNodeType.WILDCARD_NAME;
-				clone.value = content[from].id;
-				children = new SyntaxNode[] {null, clone};
+				node.col = content[from].from;
+				node.type = SyntaxNodeType.WILDCARD_NAME;
+				node.value = content[from].id;
+				from++;
 				break;
 			case START_ALTER	:
 				final List<SyntaxNode<SyntaxNodeType, SyntaxNode<?, ?>>>	list = new ArrayList<>();
 				
 				list.add(null);
+				node.col = from;
+				node.value = 0;
+				node.type = SyntaxNodeType.LIST;
 				do {
 					clone = (SyntaxNode<SyntaxNodeType, SyntaxNode<?, ?>>) node.clone();
 					from = buildCurrentName(content, from + 1, clone);
@@ -194,8 +194,13 @@ public class FileMask {
 		if (content[from].type == LexType.SEPARATOR) {
 			final SyntaxNode<SyntaxNodeType, SyntaxNode<?, ?>> child = (SyntaxNode<SyntaxNodeType, SyntaxNode<?, ?>>) node.clone();
 			
-			from = buildCurrentName(content, from + 1, node);
-			children[0] = child;
+			from = buildCurrentName(content, from + 1, child);
+			if (children == null) {
+				children = new SyntaxNode[] {child};
+			}
+			else {
+				children[0] = child;
+			}
 		}
 		node.children = children;
 		return from;
@@ -255,7 +260,7 @@ public class FileMask {
 					final SyntaxNode<SyntaxNodeType, SyntaxNode<?, ?>>	right = (SyntaxNode<SyntaxNodeType, SyntaxNode<?, ?>>) node.clone();
 					final long	compareId = content[from].id;
 					
-					from = buildExpression(content, from + 1, ExprPriority.ADD, node);
+					from = buildExpression(content, from + 1, ExprPriority.ADD, right);
 					node.type = SyntaxNodeType.COMPARE;
 					node.children = new SyntaxNode[] {left, right};
 					node.value = compareId;
@@ -271,7 +276,7 @@ public class FileMask {
 					items.add((SyntaxNode<SyntaxNodeType, SyntaxNode<?, ?>>) node.clone());
 					do {
 						if (content[from].type == LexType.SUBTRACT) {
-							operations |= (1L << count);
+							operations |= (2L << count);
 						}
 						final SyntaxNode<SyntaxNodeType, SyntaxNode<?, ?>>	clone = (SyntaxNode<SyntaxNodeType, SyntaxNode<?, ?>>) node.clone();
 						
@@ -346,9 +351,14 @@ loop:	for (;;) {
 					result.add(new Lexema(LexType.EOF, index++, 0));
 					break loop;
 				case '/' :
-					result.add(new Lexema(LexType.SEPARATOR, index++, 0));
-					separatorDetected = true;
-					break;
+					if (expressionDetected) {
+						throw new SyntaxException(0, index, "Unsupported lexema in this context");
+					}
+					else {
+						result.add(new Lexema(LexType.SEPARATOR, index++, 0));
+						separatorDetected = true;
+						continue loop;
+					}
 				case '(' :
 					result.add(new Lexema(LexType.OPEN, index++, 0));
 					continue loop;
@@ -435,11 +445,14 @@ loop:	for (;;) {
 					break;
 				case '*' :
 					if (separatorDetected) {
+						while (content[index] <= ' ' && content[index] != '\n') {
+							index++;
+						}
 						if (content[index + 1] == '*') {
 							result.add(new Lexema(LexType.ANY_SUBTREE, index += 2, 0));
 						}
-						else if (content[index + 1] == '/') {
-							result.add(new Lexema(LexType.ANY_NAME, index += 2, 0));
+						else if (content[index + 1] == '/' || content[index + 1] == '\n') {
+							result.add(new Lexema(LexType.ANY_NAME, index++, 0));
 						}
 						separatorDetected = false;
 						continue loop;
@@ -589,7 +602,7 @@ loop:	for (;;) {
 			case MINUS		:
 				final Operand	minusValue = calculateExpr(file, (SyntaxNode<SyntaxNodeType, SyntaxNode<?, ?>>) node.children[0]);
 				
-				if (minusValue.getType() == OperandType.BOOLEAN) {
+				if (minusValue.getType() == OperandType.NUMERIC) {
 					return new Operand(-(Long)minusValue.getValue());
 				}
 				else {
@@ -649,6 +662,7 @@ loop:	for (;;) {
 		WILDCARD_NAME,
 		ANY_NAME,
 		ANY_SUBTREE,
+		LIST,
 		OR,
 		AND,
 		NOT,
