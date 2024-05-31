@@ -309,10 +309,10 @@ public class FileMaskTest {
 
 	@Test
 	public void walkTemplateTest() throws SyntaxException {
-		final File	root = new File("");
 		List<File>	found;
 		
-		found = walkTemplate(root, "");
+		found = walkTemplate(TEST_DIR, "./test.txt");
+		System.err.println("Found="+found);
 	}
 	
 	@Test
@@ -355,14 +355,35 @@ public class FileMaskTest {
 		final SyntaxNode<SyntaxNodeType, SyntaxNode<?, ?>>	node = buildExpression(expr);
 		final File	file = new File("test.txt");
 	
-		return FileMask.calculateExpr(file, node);
+		return FileMask.calculateExpr((s)->calc(file, s), node);
 	}
 	
 	private static List<File> walkTemplate(final File file, final String expr) throws SyntaxException {
-		final SyntaxNode<SyntaxNodeType, SyntaxNode<?, ?>>	node = buildCurrentName(expr);
-		final List<File>	result = new ArrayList<>();
+		final SyntaxTreeInterface<String>	names = FileMask.prepareSyntaxTree();
+		final SyntaxNode<SyntaxNodeType, SyntaxNode<?, ?>>	node = new SyntaxNode<>(0, 0, SyntaxNodeType.ROOT, 0, null);
+		final Lexema[]						lex = FileMask.parse(CharUtils.terminateAndConvert2CharArray(expr, '\n'), names); 
+		final List<File>					result = new ArrayList<>();
 	
-		FileMask.walk(file, node, (f)->result.add(f));
+		FileMask.buildCurrentName(lex, 1, node);
+		FileMask.walk(file, node, names, (f)->result.add(f));
 		return result;
 	}
+	
+	private static Operand calc(final File file, final String predefined) {
+		switch (predefined) {
+			case "length" :
+				return new Operand(file.length());
+			case "lastUpdate" :
+				return new Operand(file.lastModified());
+			case "canRead" :
+				return new Operand(file.canRead());
+			case "canWrite" :
+				return new Operand(file.canWrite());
+			case "canExecute" :
+				return new Operand(file.canExecute());
+			default :
+				return new Operand(false);
+		}
+	}
+	
 }

@@ -5,7 +5,9 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.function.Consumer;
+import java.util.function.Function;
 
+import chav1961.bt.find.internal.FileMask.Operand;
 import chav1961.purelib.basic.AndOrTree;
 import chav1961.purelib.basic.CharUtils;
 import chav1961.purelib.basic.Utils;
@@ -57,7 +59,12 @@ public class FileMask {
 											};
 	private static final Operand	TRUE = new Operand(true);
 	private static final Operand	FALSE = new Operand(false);
-			
+
+	@FunctionalInterface
+	static interface WalkCallback {
+		boolean process(File file, SyntaxNode<SyntaxNodeType, SyntaxNode<?, ?>> node, SyntaxTreeInterface<String> names, WalkCallback callback, Consumer<File> fileCallback) throws SyntaxException;
+	}
+	
 	
 	private final SyntaxNode<SyntaxNodeType, SyntaxNode<?,?>>	root;
 	
@@ -520,11 +527,11 @@ loop:	for (;;) {
 		return result.toArray(new Lexema[result.size()]);
 	}
 
-	static Operand calculateExpr(final File file, final SyntaxNode<SyntaxNodeType, SyntaxNode<?, ?>> node) throws SyntaxException {
+	static Operand calculateExpr(final Function<String,Operand> func, final SyntaxNode<SyntaxNodeType, SyntaxNode<?, ?>> node) throws SyntaxException {
 		switch (node.type) {
 			case OR			:
 				for(int index = 0; index < node.children.length; index++) {
-					final Operand	value = calculateExpr(file, (SyntaxNode<SyntaxNodeType, SyntaxNode<?, ?>>) node.children[index]);
+					final Operand	value = calculateExpr(func, (SyntaxNode<SyntaxNodeType, SyntaxNode<?, ?>>) node.children[index]);
 					
 					if (value.getType() == OperandType.BOOLEAN) {
 						if ((Boolean)value.getValue()) {
@@ -538,7 +545,7 @@ loop:	for (;;) {
 				return FALSE;
 			case AND		:
 				for(int index = 0; index < node.children.length; index++) {
-					final Operand	value = calculateExpr(file, (SyntaxNode<SyntaxNodeType, SyntaxNode<?, ?>>) node.children[index]);
+					final Operand	value = calculateExpr(func, (SyntaxNode<SyntaxNodeType, SyntaxNode<?, ?>>) node.children[index]);
 					
 					if (value.getType() == OperandType.BOOLEAN) {
 						if (!(Boolean)value.getValue()) {
@@ -551,7 +558,7 @@ loop:	for (;;) {
 				}
 				return TRUE;
 			case NOT		:
-				final Operand	notValue = calculateExpr(file, (SyntaxNode<SyntaxNodeType, SyntaxNode<?, ?>>) node.children[0]);
+				final Operand	notValue = calculateExpr(func, (SyntaxNode<SyntaxNodeType, SyntaxNode<?, ?>>) node.children[0]);
 				
 				if (notValue.getType() == OperandType.BOOLEAN) {
 					return (Boolean)notValue.getValue() ? FALSE : TRUE;
@@ -560,8 +567,8 @@ loop:	for (;;) {
 					throw new SyntaxException(0, node.col, "Boolean operand awaiting");
 				}
 			case COMPARE	:
-				final Operand	left = calculateExpr(file, (SyntaxNode<SyntaxNodeType, SyntaxNode<?, ?>>) node.children[0]);
-				final Operand	right = calculateExpr(file, (SyntaxNode<SyntaxNodeType, SyntaxNode<?, ?>>) node.children[1]);
+				final Operand	left = calculateExpr(func, (SyntaxNode<SyntaxNodeType, SyntaxNode<?, ?>>) node.children[0]);
+				final Operand	right = calculateExpr(func, (SyntaxNode<SyntaxNodeType, SyntaxNode<?, ?>>) node.children[1]);
 				
 				switch ((int)node.value) {
 					case SYMBOL_GT	:
@@ -584,7 +591,7 @@ loop:	for (;;) {
 				final long	mask = node.value;
 				
 				for(int index = 0; index < node.children.length; index++) {
-					final Operand	value = calculateExpr(file, (SyntaxNode<SyntaxNodeType, SyntaxNode<?, ?>>) node.children[index]);
+					final Operand	value = calculateExpr(func, (SyntaxNode<SyntaxNodeType, SyntaxNode<?, ?>>) node.children[index]);
 					
 					if (value.getType() == OperandType.NUMERIC) {
 						if ((mask & (1L << index)) != 0) {
@@ -600,7 +607,7 @@ loop:	for (;;) {
 				}
 				return new Operand(sum);
 			case MINUS		:
-				final Operand	minusValue = calculateExpr(file, (SyntaxNode<SyntaxNodeType, SyntaxNode<?, ?>>) node.children[0]);
+				final Operand	minusValue = calculateExpr(func, (SyntaxNode<SyntaxNodeType, SyntaxNode<?, ?>>) node.children[0]);
 				
 				if (minusValue.getType() == OperandType.NUMERIC) {
 					return new Operand(-(Long)minusValue.getValue());
@@ -613,15 +620,15 @@ loop:	for (;;) {
 			case PREDEFINED	:
 				switch ((int)node.value) {
 					case PREDEFINED_LENGTH		:
-						return new Operand(file.length());
+						return func.apply("length");
 					case PREDEFINED_LAST_UPDATE	:
-						return new Operand(file.lastModified());
+						return func.apply("lastUpdate");
 					case PREDEFINED_CAN_READ	:
-						return new Operand(file.canRead());
+						return func.apply("canRead");
 					case PREDEFINED_CAN_WRITE	:
-						return new Operand(file.canWrite());
+						return func.apply("canWrite");
 					case PREDEFINED_CAN_EXECUTE	:
-						return new Operand(file.canExecute());
+						return func.apply("canExecute");
 					default :
 						throw new UnsupportedOperationException("Predefined name id ["+node.value+"] is not supported yet");
 				}
@@ -730,15 +737,15 @@ loop:	for (;;) {
 			this.value = value;
 		}
 		
-		private Operand(final boolean value) {
+		Operand(final boolean value) {
 			this(OperandType.BOOLEAN, Boolean.valueOf(value));
 		}
 
-		private Operand(final long value) {
+		Operand(final long value) {
 			this(OperandType.NUMERIC, Long.valueOf(value));
 		}
 		
-		private Operand(final String value) {
+		Operand(final String value) {
 			this(OperandType.STRING, value);
 		}
 		
@@ -756,27 +763,144 @@ loop:	for (;;) {
 		}
 	}
 
-	static void walk(final File root, final SyntaxNode<SyntaxNodeType, SyntaxNode<?, ?>> current, final Consumer<File> callback) throws SyntaxException {
+	static boolean walk(final File root, final SyntaxNode<SyntaxNodeType, SyntaxNode<?, ?>> current, final SyntaxTreeInterface<String> names, final Consumer<File> callback) throws SyntaxException {
+		return walk(root, current, names, (_root, _current, _names, _callback, _fileCallback)->walk(_root, _current, _names, _callback, _fileCallback), callback);
+	}
+	
+	private static boolean walk(final File root, final SyntaxNode<SyntaxNodeType, SyntaxNode<?, ?>> current, final SyntaxTreeInterface<String> names, final WalkCallback callback, final Consumer<File> fileCallback) throws SyntaxException {
 		// TODO Auto-generated method stub
-		if (root.exists()) {
+		if (current == null || !root.exists()) {
+			return false;
+		}
+		else {
 			switch (current.type) {
+				case WILDCARD_NAME	:
+					if (!matches(root.getName(), names.getCargo(current.value))) {
+						return false;
+					}
 				case ANY_NAME		:
-					if (root.isFile()) {
-						
+					if (root.isDirectory()) {
+						if (current.children != null && current.children.length > 0) {
+							final File[]	content = root.listFiles((f)->{
+												try {
+													return callback.process(f, (SyntaxNode<SyntaxNodeType, SyntaxNode<?, ?>>)current.children[0], names, callback, fileCallback);
+												} catch (SyntaxException e) {
+													return false;
+												}
+											});
+							return content != null && content.length != 0;
+						}
+						else {
+							return false;
+						}
 					}
 					else {
-						
+						try2Accept(root, current, fileCallback);
+						return true;
 					}
-					break;
-				case ANY_SUBTREE	:
-					break;
 				case ORDINAL_NAME	:
-					break;
-				case WILDCARD_NAME	:
-					break;
+					final File	currentFile = new File(root, names.getCargo(current.value));
+					
+					if (currentFile.exists()) {
+						if (currentFile.isFile()) {
+							return try2Accept(currentFile, current, fileCallback);
+						}
+						else if (current.children != null && current.children.length > 0) {
+							return walk(currentFile, (SyntaxNode<SyntaxNodeType, SyntaxNode<?, ?>>) current.children[0], names, callback, fileCallback);
+						}
+						else {
+							return false;
+						}
+					}
+					else {
+						return false;
+					}
+				case ANY_SUBTREE	:
+					if (root.isDirectory()) {
+						if (current.children != null && current.children.length > 0) {
+							return walkSubtree(root, (SyntaxNode<SyntaxNodeType, SyntaxNode<?, ?>>) current.children[0], names, callback, fileCallback);							
+						}
+						else {
+							return false;
+						}
+					}
+					else {
+						try2Accept(root, current, fileCallback);
+						return true;
+					}
+				case LIST			:
+					boolean	anyTrue = false;
+					
+					for (int index = 1; index < current.children.length; index++) {
+						anyTrue |= walk(root, (SyntaxNode<SyntaxNodeType, SyntaxNode<?, ?>>) current.children[index], names, callback, fileCallback);
+					}
+					return anyTrue;
 				default :
 					throw new SyntaxException(0, current.col, "Illegal tree node");
 			}
 		}
+	}
+
+	private static boolean walkSubtree(final File root, final SyntaxNode<SyntaxNodeType, SyntaxNode<?, ?>> current, final SyntaxTreeInterface<String> names, final WalkCallback callback, final Consumer<File> fileCallback) {
+		if (root.isDirectory()) {
+			final File[]	content = root.listFiles((f)->{
+								try{
+									if (callback.process(f, current, names, callback, fileCallback)) {
+										return true;
+									}
+									else {
+										return walkSubtree(f, current, names, callback, fileCallback);
+									}
+								} catch (SyntaxException exc) {
+									return false;
+								}
+							});
+			return content != null && content.length > 0;
+		}
+		else {
+			return false;
+		}
+	}	
+	
+	static boolean calc(final Function<String,Operand> func, final SyntaxNode<SyntaxNodeType, SyntaxNode<?, ?>> node) throws SyntaxException {
+		final Operand	result = calculateExpr(func, node);
+		
+		if (result.getType() != OperandType.BOOLEAN) {
+			throw new SyntaxException(0, node.col, "Awaited result is [BOOLEAN], but ["+result.getType()+"] was detected");
+		}
+		else {
+			return ((Boolean)result.getValue()).booleanValue();
+		}
+	}
+	
+	private static boolean matches(final String name, final String template) {
+		return true;
+	}
+
+	private static Operand calc(final File file, final String predefined) {
+		switch (predefined) {
+			case "length" :
+				return new Operand(file.length());
+			case "lastUpdate" :
+				return new Operand(file.lastModified());
+			case "canRead" :
+				return new Operand(file.canRead());
+			case "canWrite" :
+				return new Operand(file.canWrite());
+			case "canExecute" :
+				return new Operand(file.canExecute());
+			default :
+				return new Operand(false);
+		}
+	}
+
+	private static boolean try2Accept(final File file, final SyntaxNode<SyntaxNodeType, SyntaxNode<?, ?>> node, final Consumer<File> callback) throws SyntaxException {
+		if (file.isFile() && (node.children == null || node.children.length == 0)) {
+			if (node.cargo == null || calc((s)->calc(file, s), (SyntaxNode<SyntaxNodeType, SyntaxNode<?, ?>>) node.cargo)) {
+				callback.accept(file);
+				return true;
+			}
+		}
+		return false;
 	}
 }
