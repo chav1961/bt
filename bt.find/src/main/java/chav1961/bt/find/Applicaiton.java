@@ -6,18 +6,28 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.PrintStream;
 import java.io.Reader;
+import java.nio.CharBuffer;
+import java.nio.MappedByteBuffer;
+import java.nio.channels.FileChannel;
 import java.nio.charset.Charset;
+import java.nio.file.Files;
+import java.nio.file.StandardOpenOption;
+import java.util.EnumSet;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.IntConsumer;
 import java.util.function.Predicate;
 import java.util.regex.Pattern;
 
+import chav1961.bt.find.internal.ContentPattern;
 import chav1961.bt.find.internal.FileMask;
 import chav1961.purelib.basic.ArgParser;
+import chav1961.purelib.basic.PureLibSettings;
+import chav1961.purelib.basic.Utils;
 import chav1961.purelib.basic.exceptions.CommandLineParametersException;
 
 public class Applicaiton {
@@ -59,40 +69,49 @@ public class Applicaiton {
 	}
 
 	private static void seek(final ArgParser parsed, final PrintStream ps) throws Exception {
-		// TODO Auto-generated method stub
 		final String			mask = parsed.getValue(ARG_FILE_MASK, String.class);
 		final File				root = mask.startsWith("/") ? new File("/") : new File("./");
 		final FileMask			fileMask = FileMask.compile(mask);
-		final Pattern			pattern = parsed.isTyped(ARG_CONTENT_PATTERN) ? parsed.getValue(ARG_CONTENT_PATTERN, Pattern.class) : null;
-		final IntConsumer		linePrinter = parsed.isTyped(ARG_PRINT_LINE) ? (l)->ps.print(l) : (l)->{};
+		final ContentPattern	pattern = parsed.isTyped(ARG_CONTENT_PATTERN) ? ContentPattern.compile(getPatternDescriptor(parsed)) : null;
 		final Consumer<File>	filePrinter = parsed.isTyped(ARG_PRINT_ABSOLUTE_PATH) 
 												? (f)->ps.println(f.getAbsolutePath()) 
 												: parsed.isTyped(ARG_PRINT_PATH) 
 													? (f)->ps.println(f.getPath()) : (f)->ps.println(f.getName());
-		seek(root, fileMask, pattern, linePrinter, filePrinter);
+		seek(root, fileMask, pattern, filePrinter);
 	}
 
-	static void seek(final File root, final FileMask fileMask, final Pattern pattern, final IntConsumer linePrinter, final Consumer<File> filePrinter) {
+	private static String getPatternDescriptor(final ArgParser parsed) throws CommandLineParametersException {
+		String	pattern = parsed.getValue(ARG_CONTENT_PATTERN, String.class);
+		
+		if ("@".equals(pattern)) {
+			try(final Reader	rdr = new InputStreamReader(System.in)) {
+				
+				pattern = Utils.fromResource(rdr);
+			} catch (IOException e) {
+				throw new CommandLineParametersException("I/O error reading pattern from System.in: "+e.getLocalizedMessage());
+			}
+		}
+		return pattern;
+	}
+	
+	static void seek(final File root, final FileMask fileMask, final ContentPattern pattern, final Consumer<File> filePrinter) {
 		if (root.exists() && root.canRead()) {
 			if (root.isFile() && fileMask.matches(root)) {
 				if (pattern != null) {
-					try(final Reader			rdr = new FileReader(root);
-						final BufferedReader	brdr = 	new BufferedReader(rdr)) {
-						int		lineNo = 1;						
-						String	line;
-						
-						while ((line = brdr.readLine()) != null) {
-							if (pattern.matcher(line).matches()) {
-								linePrinter.accept(lineNo);
+					try(final FileChannel 		fileChannel = (FileChannel) Files.newByteChannel(root.toPath(), EnumSet.of(StandardOpenOption.READ))) {
+					    final MappedByteBuffer	mappedByteBuffer = fileChannel.map(FileChannel.MapMode.READ_ONLY, 0, fileChannel.size());
+
+					    if (mappedByteBuffer != null) {
+					        final CharBuffer 	charBuffer = Charset.forName(PureLibSettings.DEFAULT_CONTENT_ENCODING).decode(mappedByteBuffer);
+					        
+					        if (pattern.match(charBuffer)) {
 								filePrinter.accept(root);
-							}
-							lineNo++;
-						}						
+					        }
+					    }
 					} catch (IOException exc) {
 					}
 				}
 				else {
-					linePrinter.accept(0);
 					filePrinter.accept(root);
 				}
 			}
@@ -101,7 +120,7 @@ public class Applicaiton {
 				
 				if (content != null) {
 					for(File item : content) {
-						seek(item, fileMask, pattern, linePrinter, filePrinter);
+						seek(item, fileMask, pattern, filePrinter);
 					}
 				}
 			}
@@ -111,7 +130,7 @@ public class Applicaiton {
 	private static class ApplicationArgParser extends ArgParser {
 		private static final ArgParser.AbstractArg[]	KEYS = {
 			new StringArg(ARG_FILE_MASK, true, true, "File mask to seek (for example ./a/**/{*.txt[@length>=1M]|*.doc[@canRead=true]}"),
-			new PatternArg(ARG_CONTENT_PATTERN, false, true, "Content pattern to seek inside the file"),
+			new StringArg(ARG_CONTENT_PATTERN, false, true, "Content pattern to seek inside the file or '@' to get pattern from System.in"),
 			new FileArg(ARG_OUTPUT_FILE, false, false, "File to store find results. If missing, System.out will be used"),
 			new StringArg(ARG_ENCODING, false, false, "File content encoding to see content pattern inside. If missing, default system encoding will be used"),
 			new BooleanArg(ARG_PRINT_PATH, false, "Print full path instead of file name only", true),

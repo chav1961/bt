@@ -311,18 +311,47 @@ public class FileMaskTest {
 	public void walkTemplateTest() throws SyntaxException {
 		List<File>	found;
 		
-		found = walkTemplate(TEST_DIR, "./test.txt");
-		System.err.println("Found="+found);
-	}
-	
-	@Test
-	public void complexTest() throws SyntaxException {
-		final List<File>	result = new ArrayList<>();
+		found = walkTemplate(TEST_DIR, "./s.txt");
+		Assert.assertEquals(1, found.size());
+		Assert.assertEquals("s.txt", found.get(0).getName());
 
-		result.clear();
-		FileMask.compile("").walk(TEST_DIR,(f)->result.add(f));
-	}	
-	
+		found = walkTemplate(TEST_DIR, "./{s.txt|t.txt}");
+		Assert.assertEquals(1, found.size());
+		Assert.assertEquals("s.txt", found.get(0).getName());
+		
+		found = walkTemplate(TEST_DIR, "./*/t.txt");
+		Assert.assertEquals(1, found.size());
+		Assert.assertEquals("t.txt", found.get(0).getName());
+
+		found = walkTemplate(TEST_DIR, "./subdir1/t.txt");
+		Assert.assertEquals(1, found.size());
+		Assert.assertEquals("t.txt", found.get(0).getName());
+
+		found = walkTemplate(TEST_DIR, "./*1/t.txt");
+		Assert.assertEquals(1, found.size());
+		Assert.assertEquals("t.txt", found.get(0).getName());
+
+		found = walkTemplate(TEST_DIR, "./**/t.txt");
+		Assert.assertEquals(1, found.size());
+		Assert.assertEquals("t.txt", found.get(0).getName());
+
+		found = walkTemplate(TEST_DIR, "./**/{s.txt|t.txt}");
+		Assert.assertEquals(2, found.size());
+		Assert.assertEquals("s.txt", found.get(0).getName());
+		Assert.assertEquals("t.txt", found.get(1).getName());
+
+		found = walkTemplate(TEST_DIR, "./**/{s.txt|*}/t.txt");
+		Assert.assertEquals(2, found.size());
+		Assert.assertEquals("s.txt", found.get(0).getName());
+		Assert.assertEquals("t.txt", found.get(1).getName());
+		
+		found = walkTemplate(TEST_DIR, "./**/t.txt[length<1000]");
+		Assert.assertEquals(1, found.size());
+		Assert.assertEquals("t.txt", found.get(0).getName());
+
+		found = walkTemplate(TEST_DIR, "./**/t.txt[length>1000]");
+		Assert.assertEquals(0, found.size());
+	}
 	
 	private static boolean allMatches(final Lexema[] source, final LexType... awaited) {
 		for(int index = 0, maxIndex = Math.min(source.length, awaited.length); index < maxIndex; index++) {

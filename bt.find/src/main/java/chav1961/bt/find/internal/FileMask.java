@@ -446,6 +446,7 @@ loop:	for (;;) {
 						else if (content[index + 1] == '/') {
 							result.add(new Lexema(LexType.DOT_SEPARATOR, index += 2, 0));
 						}
+						separatorDetected = true;
 						sameFirst = false;
 						continue loop;
 					}
@@ -458,7 +459,7 @@ loop:	for (;;) {
 						if (content[index + 1] == '*') {
 							result.add(new Lexema(LexType.ANY_SUBTREE, index += 2, 0));
 						}
-						else if (content[index + 1] == '/' || content[index + 1] == '\n') {
+						else if (!(Character.isJavaIdentifierPart(content[index + 1]) || content[index + 1] == '.' || content[index + 1] == '?')) {
 							result.add(new Lexema(LexType.ANY_NAME, index++, 0));
 						}
 						separatorDetected = false;
@@ -517,7 +518,7 @@ loop:	for (;;) {
 					index++;
 				}
 				if (from != index) {
-					final long	name = names.placeOrChangeName(content, from, index, null);
+					final long	name = names.placeOrChangeName(content, from, index, new String(content, from, index-from));
 					
 					result.add(new Lexema(wildCard ? LexType.WILDCARD_NAME : LexType.ORDINAL_NAME, from, name));
 				}
@@ -763,14 +764,16 @@ loop:	for (;;) {
 		}
 	}
 
-	static boolean walk(final File root, final SyntaxNode<SyntaxNodeType, SyntaxNode<?, ?>> current, final SyntaxTreeInterface<String> names, final Consumer<File> callback) throws SyntaxException {
-		return walk(root, current, names, (_root, _current, _names, _callback, _fileCallback)->walk(_root, _current, _names, _callback, _fileCallback), callback);
+	static boolean walk(final File root, final SyntaxNode<SyntaxNodeType, SyntaxNode<?, ?>> current, final SyntaxTreeInterface<String> names, final Consumer<File> fileCallback) throws SyntaxException {
+		return walk(root, current, new ArrayList<>(), names, fileCallback);
 	}
 	
-	private static boolean walk(final File root, final SyntaxNode<SyntaxNodeType, SyntaxNode<?, ?>> current, final SyntaxTreeInterface<String> names, final WalkCallback callback, final Consumer<File> fileCallback) throws SyntaxException {
-		// TODO Auto-generated method stub
-		if (current == null || !root.exists()) {
+	private static boolean walk(final File root, final SyntaxNode<SyntaxNodeType, SyntaxNode<?, ?>> current, final List<SyntaxNode<SyntaxNodeType, SyntaxNode<?, ?>>> continued, final SyntaxTreeInterface<String> names, final Consumer<File> fileCallback) throws SyntaxException {
+		if (!root.exists()) {
 			return false;
+		}
+		else if (current == null) {
+			return walkContinued(root, current, continued, names, fileCallback);
 		}
 		else {
 			switch (current.type) {
@@ -781,17 +784,22 @@ loop:	for (;;) {
 				case ANY_NAME		:
 					if (root.isDirectory()) {
 						if (current.children != null && current.children.length > 0) {
-							final File[]	content = root.listFiles((f)->{
-												try {
-													return callback.process(f, (SyntaxNode<SyntaxNodeType, SyntaxNode<?, ?>>)current.children[0], names, callback, fileCallback);
-												} catch (SyntaxException e) {
-													return false;
-												}
-											});
-							return content != null && content.length != 0;
+							final File[]	content = root.listFiles();
+							
+							if (content != null) {
+								boolean	anyTrue = false;
+								
+								for(File item : content) {
+									anyTrue |= walk(item, (SyntaxNode<SyntaxNodeType, SyntaxNode<?, ?>>) current.children[0], continued, names, fileCallback);
+								}
+								return anyTrue;
+							}
+							else {
+								return false;
+							}
 						}
 						else {
-							return false;
+							return walkContinued(root, current, continued, names, fileCallback);
 						}
 					}
 					else {
@@ -799,17 +807,17 @@ loop:	for (;;) {
 						return true;
 					}
 				case ORDINAL_NAME	:
-					final File	currentFile = new File(root, names.getCargo(current.value));
+					final File	currentFile = new File(root, names.getCargo(current.value)); 
 					
 					if (currentFile.exists()) {
 						if (currentFile.isFile()) {
 							return try2Accept(currentFile, current, fileCallback);
 						}
 						else if (current.children != null && current.children.length > 0) {
-							return walk(currentFile, (SyntaxNode<SyntaxNodeType, SyntaxNode<?, ?>>) current.children[0], names, callback, fileCallback);
+							return walk(currentFile, (SyntaxNode<SyntaxNodeType, SyntaxNode<?, ?>>) current.children[0], continued, names, fileCallback);
 						}
 						else {
-							return false;
+							return walkContinued(root, current, continued, names, fileCallback);
 						}
 					}
 					else {
@@ -818,7 +826,17 @@ loop:	for (;;) {
 				case ANY_SUBTREE	:
 					if (root.isDirectory()) {
 						if (current.children != null && current.children.length > 0) {
-							return walkSubtree(root, (SyntaxNode<SyntaxNodeType, SyntaxNode<?, ?>>) current.children[0], names, callback, fileCallback);							
+							boolean	anyTrue = false;
+							
+							anyTrue |= walk(root, (SyntaxNode<SyntaxNodeType, SyntaxNode<?, ?>>) current.children[0], continued, names, fileCallback);
+							final File[]	inner = root.listFiles();
+							
+							if (inner != null) {
+								for(File item : inner) {
+									anyTrue |= walk(item, current, continued, names, fileCallback);
+								}
+							}
+							return anyTrue;
 						}
 						else {
 							return false;
@@ -831,8 +849,14 @@ loop:	for (;;) {
 				case LIST			:
 					boolean	anyTrue = false;
 					
+					if (current.children[0] != null) {
+						continued.add(0, (SyntaxNode<SyntaxNodeType, SyntaxNode<?, ?>>) current.children[0]);
+					}
 					for (int index = 1; index < current.children.length; index++) {
-						anyTrue |= walk(root, (SyntaxNode<SyntaxNodeType, SyntaxNode<?, ?>>) current.children[index], names, callback, fileCallback);
+						anyTrue |= walk(root, (SyntaxNode<SyntaxNodeType, SyntaxNode<?, ?>>) current.children[index], continued, names, fileCallback);
+					}
+					if (current.children[0] != null) {
+						continued.remove(0);
 					}
 					return anyTrue;
 				default :
@@ -841,21 +865,13 @@ loop:	for (;;) {
 		}
 	}
 
-	private static boolean walkSubtree(final File root, final SyntaxNode<SyntaxNodeType, SyntaxNode<?, ?>> current, final SyntaxTreeInterface<String> names, final WalkCallback callback, final Consumer<File> fileCallback) {
-		if (root.isDirectory()) {
-			final File[]	content = root.listFiles((f)->{
-								try{
-									if (callback.process(f, current, names, callback, fileCallback)) {
-										return true;
-									}
-									else {
-										return walkSubtree(f, current, names, callback, fileCallback);
-									}
-								} catch (SyntaxException exc) {
-									return false;
-								}
-							});
-			return content != null && content.length > 0;
+	private static boolean walkContinued(final File root, final SyntaxNode<SyntaxNodeType, SyntaxNode<?, ?>> current, final List<SyntaxNode<SyntaxNodeType, SyntaxNode<?, ?>>> continued, final SyntaxTreeInterface<String> names, final Consumer<File> fileCallback) throws SyntaxException {
+		if (!continued.isEmpty()) {
+			final SyntaxNode<SyntaxNodeType, SyntaxNode<?, ?>> temp = continued.remove(0);
+			final boolean	result = walk(root, temp, continued, names, fileCallback);
+			
+			continued.add(0, temp);
+			return result;
 		}
 		else {
 			return false;
