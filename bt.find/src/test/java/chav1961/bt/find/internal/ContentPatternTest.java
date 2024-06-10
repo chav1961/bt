@@ -9,12 +9,12 @@ import java.util.regex.Pattern;
 import org.junit.Assert;
 import org.junit.Test;
 
+import chav1961.bt.find.internal.ContentPattern.LexType;
 import chav1961.bt.find.internal.ContentPattern.Lexema;
+import chav1961.bt.find.internal.ContentPattern.Operand;
 import chav1961.bt.find.internal.ContentPattern.OperandPrty;
 import chav1961.bt.find.internal.ContentPattern.OperandType;
-import chav1961.bt.find.internal.ContentPattern.LexType;
 import chav1961.bt.find.internal.ContentPattern.SyntaxNodeType;
-import chav1961.bt.find.internal.ContentPattern.Operand;
 import chav1961.purelib.basic.CharUtils;
 import chav1961.purelib.basic.ReusableInstances;
 import chav1961.purelib.basic.exceptions.SyntaxException;
@@ -253,6 +253,7 @@ public class ContentPatternTest {
 		}
 
 		// Expressions test
+		
 		root = buildSyntaxTree("/.*/(10=10)");
 		Assert.assertEquals(SyntaxNodeType.NODE, root.getType());
 		Assert.assertTrue(root.cargo instanceof Pattern);
@@ -390,6 +391,25 @@ public class ContentPatternTest {
 
 	@Test
 	public void matchTest() throws SyntaxException {
+		// Test pattern
+		
+		Assert.assertTrue(match("/\\Qassa\\E/", "assa"));
+		Assert.assertFalse(match("/\\Qassa\\E/", "as_sa"));
+		
+		// Test repeaters
+		
+		Assert.assertTrue(match("/\\Qassa\\E/{2}", "assa\nassa"));
+		Assert.assertFalse(match("/\\Qassa\\E/{2}", "assa"));
+		
+		// Test expressions
+		
+		Assert.assertTrue(match("/\\Qassa\\E(\\d+)/(group1='123')", "assa123"));
+		Assert.assertFalse(match("/\\Qassa\\E(\\d+)/(group1='10')", "assa123"));
+		
+		// Test sequences
+		
+		Assert.assertTrue(match("/\\Qassa\\E/->/\\Qassa\\E/", "assa\n123\nassa"));
+		Assert.assertFalse(match("/\\Qassa\\E/->/\\Qassa\\E/", "assa\n123\nass"));
 		
 	}	
 	
@@ -446,6 +466,23 @@ public class ContentPatternTest {
 			final ReusableInstances<Operand>	ops = new ReusableInstances<>(()->new Operand());
 			
 			return ContentPattern.testExpr(root, getter, ops);
+		}
+	}
+
+	private boolean match(final String expression, final String content) throws SyntaxException {
+		final SyntaxTreeInterface<String>	names  = ContentPattern.prepareSyntaxTree();
+		final Lexema[]						parsed = ContentPattern.parse(CharUtils.terminateAndConvert2CharArray(expression, '\n'), names);
+		final SyntaxNode<SyntaxNodeType, SyntaxNode<?, ?>>	root = new SyntaxNode<>(0, 0, SyntaxNodeType.UNKNOWN, 0, parsed);
+		
+		final int 	theEnd = ContentPattern.buildSyntaxTree(parsed, 0, root, names);
+		
+		if (parsed[theEnd].type != LexType.EOF) {
+			throw new SyntaxException(0, theEnd, "Dust in the tail");
+		}
+		else {
+			final CharBuffer					buffer = CharBuffer.wrap(content);
+			
+			return ContentPattern.match(buffer, 0, root);
 		}
 	}
 }

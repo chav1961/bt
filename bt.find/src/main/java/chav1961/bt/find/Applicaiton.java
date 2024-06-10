@@ -29,6 +29,7 @@ import chav1961.purelib.basic.ArgParser;
 import chav1961.purelib.basic.PureLibSettings;
 import chav1961.purelib.basic.Utils;
 import chav1961.purelib.basic.exceptions.CommandLineParametersException;
+import chav1961.purelib.basic.exceptions.SyntaxException;
 
 public class Applicaiton {
 	public static final String		ARG_FILE_MASK = "fileMask";			
@@ -108,7 +109,7 @@ public class Applicaiton {
 								filePrinter.accept(root);
 					        }
 					    }
-					} catch (IOException exc) {
+					} catch (IOException | SyntaxException exc) {
 					}
 				}
 				else {
