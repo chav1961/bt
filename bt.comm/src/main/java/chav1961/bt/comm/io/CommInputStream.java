@@ -7,11 +7,13 @@ import java.net.URI;
 
 import com.fazecast.jSerialComm.SerialPort;
 
+import chav1961.bt.comm.utils.CommUtils;
 import chav1961.purelib.basic.SubstitutableProperties;
 import chav1961.purelib.basic.URIUtils;
 
 public class CommInputStream extends InputStream {
-	private final SerialPort nested;
+	private final SerialPort 	nested;
+	private final InputStream	nestedStream;	
 	
 	public CommInputStream(final URI comm) throws IOException {
 		if (comm == null || !comm.isAbsolute()) {
@@ -25,11 +27,24 @@ public class CommInputStream extends InputStream {
 			if (this.nested == null) {
 				throw new FileNotFoundException("Unknown comm port name ["+name+"]"); 
 			}
+			else if (!nested.openPort()) {				
+				throw new IOException("Comm port ["+name+"] error #"+nested.getLastErrorCode()); 
+			}
+			else {
+				this.nestedStream = nested.getInputStream();
+			}
 		}
 	}
 
 	@Override
 	public int read() throws IOException {
-		return nested.getInputStream().read();
+		return nestedStream.read();
+	}
+	
+	@Override
+	public void close() throws IOException {
+		super.close();
+		nestedStream.close();
+		nested.closePort();
 	}
 }

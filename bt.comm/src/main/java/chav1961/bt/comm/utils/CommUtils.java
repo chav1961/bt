@@ -1,4 +1,4 @@
-package chav1961.bt.comm.io;
+package chav1961.bt.comm.utils;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -126,7 +126,7 @@ public class CommUtils {
 		}
 	}
 
-	static SerialPort prepareCommPort(final String name, final SubstitutableProperties props) {
+	public static SerialPort prepareCommPort(final String name, final SubstitutableProperties props) {
 		for (SerialPort comPort : SerialPort.getCommPorts()) {
 			if (comPort.getSystemPortName().equals(name)) {
 				comPort.setComPortParameters(props.getProperty(BAUD_RATE, int.class, DEFAULT_BAUD_RATE), 
@@ -140,7 +140,7 @@ public class CommUtils {
 		return null;
 	}
 	
-	static SubstitutableProperties parseCommQueryParameters(final Hashtable<String,String[]> source) {
+	public static SubstitutableProperties parseCommQueryParameters(final Hashtable<String,String[]> source) {
 		final SubstitutableProperties	result = new SubstitutableProperties();
 		
 		if (source.containsKey(DATA_BITS)) {
