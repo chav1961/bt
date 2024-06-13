@@ -32,7 +32,6 @@ public class Application {
 	public static final String		ARG_OUTPUT_FILE = "f";			
 	public static final String		ARG_PRINT_PATH = "p";			
 	public static final String		ARG_PRINT_ABSOLUTE_PATH = "pp";			
-	public static final String		ARG_PRINT_LINE = "l";			
 
 	public static void main(String[] args) {
 		final ArgParser			parser = new ApplicationArgParser();
@@ -68,7 +67,7 @@ public class Application {
 		final String			mask = unwrapQuotes(parsed.getValue(ARG_FILE_MASK, String.class));
 		final File				root = mask.startsWith("/") ? new File("/") : new File("./");
 		final FileMask			fileMask = FileMask.compile(mask);
-		final ContentPattern	pattern = parsed.isTyped(ARG_CONTENT_PATTERN) ? ContentPattern.compile(getPatternDescriptor(parsed)) : null;
+		final ContentPattern	pattern = parsed.isTyped(ARG_CONTENT_PATTERN) ? ContentPattern.compile(unwrapQuotes(getPatternDescriptor(parsed))) : null;
 		final boolean			printPath = parsed.getValue(ARG_PRINT_PATH, boolean.class);
 		final boolean			printAbsolutePath = parsed.getValue(ARG_PRINT_ABSOLUTE_PATH, boolean.class);
 		final Consumer<File>	filePrinter = printAbsolutePath 
@@ -126,15 +125,16 @@ public class Application {
 
 	private static class ApplicationArgParser extends ArgParser {
 		private static final ArgParser.AbstractArg[]	KEYS = {
-			new StringArg(ARG_FILE_MASK, true, true, "File mask to seek (for example ./a/**/{*.txt[length>=1M]|*.doc[canRead=true]}. \n"
+			new StringArg(ARG_FILE_MASK, true, true, "File mask to seek (for example ./a/**/{*.txt[length>=1M]|*.doc[canRead=true]}.\n"
 					+ "To escape '>' and '<' signs inside the expressions, use caret char (^) before.\n"
 					+"It's strongly recommended to wrap the mask with apostrophes (')"),
-			new StringArg(ARG_CONTENT_PATTERN, false, true, "Content pattern to seek inside the file or '@' to get pattern from System.in"),
+			new StringArg(ARG_CONTENT_PATTERN, false, true, "Content pattern to seek inside the file or '@' to get pattern from System.in\n"
+					+ "To escape '>' and '<' signs inside the expressions, use caret char (^) before.\n"
+					+"It's strongly recommended to wrap the pattern with apostrophes (')"),
 			new FileArg(ARG_OUTPUT_FILE, false, false, "File to store find results. If missing, System.out will be used"),
 			new StringArg(ARG_ENCODING, false, "File content encoding to see content pattern inside. If missing, default system encoding will be used", PureLibSettings.DEFAULT_CONTENT_ENCODING),
 			new BooleanArg(ARG_PRINT_PATH, false, "Print full path instead of file name only", true),
-			new BooleanArg(ARG_PRINT_ABSOLUTE_PATH, false, "Print absolute path instead of file name or path only", false),
-			new BooleanArg(ARG_PRINT_LINE, false, "Print line inside the file where content pattern found", false)
+			new BooleanArg(ARG_PRINT_ABSOLUTE_PATH, false, "Print absolute path instead of file name or path only", false)
 		};
 		
 		ApplicationArgParser() {
