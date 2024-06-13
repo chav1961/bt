@@ -7,7 +7,6 @@ import java.util.List;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
-import chav1961.bt.find.internal.FileMask.Operand;
 import chav1961.purelib.basic.AndOrTree;
 import chav1961.purelib.basic.CharUtils;
 import chav1961.purelib.basic.Utils;
@@ -59,27 +58,31 @@ public class FileMask {
 											};
 	private static final Operand	TRUE = new Operand(true);
 	private static final Operand	FALSE = new Operand(false);
+	private static final String		ERROR_PREFIX = "Error parsing file mask []: ";
 
 	@FunctionalInterface
 	static interface WalkCallback {
 		boolean process(File file, SyntaxNode<SyntaxNodeType, SyntaxNode<?, ?>> node, SyntaxTreeInterface<String> names, WalkCallback callback, Consumer<File> fileCallback) throws SyntaxException;
 	}
 	
-	
+	private final SyntaxTreeInterface<String>					names;
 	private final SyntaxNode<SyntaxNodeType, SyntaxNode<?,?>>	root;
 	
-	
-	private FileMask(final SyntaxNode<SyntaxNodeType, SyntaxNode<?,?>> root) {
-		this.root = root;
-		
+	private FileMask(final SyntaxTreeInterface<String> names, final SyntaxNode<SyntaxNodeType, SyntaxNode<?,?>> root) {
+		this.names = names;
+		this.root = root;		
 	}
 	
-	public void walk(final File root, final Consumer<File> callback) {
-		
-	}
-	
-	public boolean matches(final File file) {
-		return true;
+	public void walk(final File file, final Consumer<File> callback) throws SyntaxException {
+		if (file == null) {
+			throw new NullPointerException("Root file to walk from can't be null");
+		}
+		else if (callback == null) {
+			throw new NullPointerException("Callback can't be null");
+		}
+		else {
+			walk(file, root, names, (f)->callback.accept(f));
+		}
 	}
 	
 	public static FileMask compile(final String source) throws SyntaxException {
@@ -87,7 +90,11 @@ public class FileMask {
 			throw new IllegalArgumentException("File mask string can't be null or empty");
 		}
 		else {
-			return compile(CharUtils.terminateAndConvert2CharArray(source, '\n'));
+			try {
+				return compile(CharUtils.terminateAndConvert2CharArray(source, '\n'));
+			} catch (SyntaxException exc) {
+				throw new SyntaxException(1, exc.getCol() + 1, exc.getLocalizedMessage().replace("[]", "["+source+"]"));
+			}
 		}
 	}
 	
@@ -109,14 +116,14 @@ public class FileMask {
 			final int 			stop = buildSyntaxTree(parsed, 1, root);
 		
 			if (parsed[stop].type != LexType.EOF) {
-				throw new SyntaxException(0, parsed[stop].from, "Unparsed tail in the expression");
+				throw new SyntaxException(0, parsed[stop].from, ERROR_PREFIX+"Unparsed tail in the expression");
 			}
 			else {
-				return new FileMask(root);
+				return new FileMask(names, root);
 			}
 		}
 		else {
-			throw new SyntaxException(0, parsed[0].from, "Expression must be started from separator '/' or './' or '../");
+			throw new SyntaxException(0, parsed[0].from, ERROR_PREFIX+"Expression must be started with separator '/' or './' or '../");
 		}
 	}
 	
@@ -177,11 +184,11 @@ public class FileMask {
 					from++;
 				}
 				else {
-					throw new SyntaxException(0, content[from].from, "Missing '}'");
+					throw new SyntaxException(0, content[from].from, ERROR_PREFIX+"Missing '}'");
 				}
 				break;
 			default:
-				throw new SyntaxException(0, content[from].from, "Inwaited lexema");
+				throw new SyntaxException(0, content[from].from, ERROR_PREFIX+"Unwaited lexema");
 		}
 		if (content[from].type == LexType.START_EXPR) {
 			final SyntaxNode<SyntaxNodeType, SyntaxNode<?, ?>> expr = (SyntaxNode<SyntaxNodeType, SyntaxNode<?, ?>>) node.clone();
@@ -191,7 +198,7 @@ public class FileMask {
 				from++;
 			}
 			else {
-				throw new SyntaxException(0, content[from].from, "Missing ']'");
+				throw new SyntaxException(0, content[from].from, ERROR_PREFIX+"Missing ']'");
 			}
 			node.cargo = expr; 
 		}
@@ -324,7 +331,7 @@ public class FileMask {
 							from++;
 						}
 						else {
-							throw new SyntaxException(0, content[from].from, "Missing ')'");
+							throw new SyntaxException(0, content[from].from, ERROR_PREFIX+"Missing ')'");
 						}
 						break;
 					case PREDEFINED	:
@@ -333,7 +340,7 @@ public class FileMask {
 						from++;
 						break;
 					default:
-						throw new SyntaxException(0, content[from].from, "Term is missing");
+						throw new SyntaxException(0, content[from].from, ERROR_PREFIX+"Term is missing");
 				}
 				break;
 			default:
@@ -359,7 +366,7 @@ loop:	for (;;) {
 					break loop;
 				case '/' :
 					if (expressionDetected) {
-						throw new SyntaxException(0, index, "Unsupported lexema in this context");
+						throw new SyntaxException(0, index, ERROR_PREFIX+"Unsupported lexema in this context");
 					}
 					else {
 						result.add(new Lexema(LexType.SEPARATOR, index++, 0));
@@ -401,7 +408,7 @@ loop:	for (;;) {
 						continue loop;
 					}
 					else {
-						throw new SyntaxException(0, index, "Unknown lexema");
+						throw new SyntaxException(0, index, ERROR_PREFIX+"Unknown lexema");
 					}
 				case '|' :
 					if (content[index + 1] == '|') {
@@ -466,6 +473,9 @@ loop:	for (;;) {
 						continue loop;
 					}
 					break;
+				case '^' :	// Escape '<' and '>' in command lines
+					index++;
+					continue loop;
 			}
 			int			from = index;
 			
@@ -480,7 +490,7 @@ loop:	for (;;) {
 						result.add(new Lexema(LexType.PREDEFINED, from, name));
 					}
 					else {
-						throw new SyntaxException(0, index, "Unknown predefined name");
+						throw new SyntaxException(0, index, ERROR_PREFIX+"Unknown predefined name");
 					}
 				}
 				else if (content[index] >= '0' && content[index] <= '9') {
@@ -505,7 +515,7 @@ loop:	for (;;) {
 					result.add(new Lexema(LexType.CONST, from, value));
 				}
 				else {
-					throw new SyntaxException(0, index, "Unsupported lexema in this context");
+					throw new SyntaxException(0, index, ERROR_PREFIX+"Unsupported lexema in this context");
 				}
 			}
 			else {
@@ -521,6 +531,9 @@ loop:	for (;;) {
 					final long	name = names.placeOrChangeName(content, from, index, new String(content, from, index-from));
 					
 					result.add(new Lexema(wildCard ? LexType.WILDCARD_NAME : LexType.ORDINAL_NAME, from, name));
+				}
+				else {
+					throw new SyntaxException(0, index, ERROR_PREFIX+"Neither name nor wildcard was detected");
 				}
 			}
 		}
@@ -540,7 +553,7 @@ loop:	for (;;) {
 						}
 					}
 					else {
-						throw new SyntaxException(0, node.children[index].col, "Boolean operand awaiting");
+						throw new SyntaxException(0, node.children[index].col, ERROR_PREFIX+"Boolean operand awaiting");
 					}
 				}
 				return FALSE;
@@ -554,7 +567,7 @@ loop:	for (;;) {
 						}
 					}
 					else {
-						throw new SyntaxException(0, node.children[index].col, "Boolean operand awaiting");
+						throw new SyntaxException(0, node.children[index].col, ERROR_PREFIX+"Boolean operand awaiting");
 					}
 				}
 				return TRUE;
@@ -565,7 +578,7 @@ loop:	for (;;) {
 					return (Boolean)notValue.getValue() ? FALSE : TRUE;
 				}
 				else {
-					throw new SyntaxException(0, node.col, "Boolean operand awaiting");
+					throw new SyntaxException(0, node.col, ERROR_PREFIX+"Boolean operand awaiting");
 				}
 			case COMPARE	:
 				final Operand	left = calculateExpr(func, (SyntaxNode<SyntaxNodeType, SyntaxNode<?, ?>>) node.children[0]);
@@ -585,7 +598,7 @@ loop:	for (;;) {
 					case SYMBOL_NE	:
 						return (Long)left.getValue() != (Long)right.getValue() ? TRUE : FALSE; 
 					default :
-						throw new SyntaxException(0, node.col, "Unsupported comparison type in the expression");
+						throw new SyntaxException(0, node.col, ERROR_PREFIX+"Unsupported comparison type in the expression");
 				}
 			case ADD		:
 				long		sum = 0;
@@ -603,7 +616,7 @@ loop:	for (;;) {
 						}
 					}
 					else {
-						throw new SyntaxException(0, node.children[index].col, "Boolean operand awaiting");
+						throw new SyntaxException(0, node.children[index].col, ERROR_PREFIX+"Numeric operand awaiting");
 					}
 				}
 				return new Operand(sum);
@@ -614,7 +627,7 @@ loop:	for (;;) {
 					return new Operand(-(Long)minusValue.getValue());
 				}
 				else {
-					throw new SyntaxException(0, node.col, "Numeric operand awaiting");
+					throw new SyntaxException(0, node.col, ERROR_PREFIX+"Numeric operand awaiting");
 				}
 			case CONSTANT	:
 				return new Operand(node.value);
@@ -634,7 +647,7 @@ loop:	for (;;) {
 						throw new UnsupportedOperationException("Predefined name id ["+node.value+"] is not supported yet");
 				}
 			default:
-				throw new SyntaxException(0, node.col, "Unsupported node type in the expression");
+				throw new SyntaxException(0, node.col, ERROR_PREFIX+"Unsupported node type in the expression");
 		}
 	}
 	
@@ -798,8 +811,23 @@ loop:	for (;;) {
 								return false;
 							}
 						}
+						else if (walkContinued(root, current, continued, names, fileCallback)) {
+							return true;
+						}
 						else {
-							return walkContinued(root, current, continued, names, fileCallback);
+							final File[]	content = root.listFiles((f)->f.isFile());
+							
+							if (content != null) {
+								boolean	anyTrue = false;
+								
+								for(File item : content) {
+									anyTrue |= try2Accept(item, current, fileCallback);
+								}
+								return anyTrue;
+							}
+							else {
+								return false;
+							}
 						}
 					}
 					else {
@@ -860,7 +888,7 @@ loop:	for (;;) {
 					}
 					return anyTrue;
 				default :
-					throw new SyntaxException(0, current.col, "Illegal tree node");
+					throw new SyntaxException(0, current.col, ERROR_PREFIX+"Illegal tree node");
 			}
 		}
 	}
@@ -882,7 +910,7 @@ loop:	for (;;) {
 		final Operand	result = calculateExpr(func, node);
 		
 		if (result.getType() != OperandType.BOOLEAN) {
-			throw new SyntaxException(0, node.col, "Awaited result is [BOOLEAN], but ["+result.getType()+"] was detected");
+			throw new SyntaxException(0, node.col, ERROR_PREFIX+"Awaited result is [BOOLEAN], but ["+result.getType()+"] was detected");
 		}
 		else {
 			return ((Boolean)result.getValue()).booleanValue();

@@ -1,10 +1,7 @@
 package chav1961.bt.find;
 
-import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
-import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
@@ -16,12 +13,9 @@ import java.nio.channels.FileChannel;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.StandardOpenOption;
+import java.util.Arrays;
 import java.util.EnumSet;
-import java.util.function.BiConsumer;
 import java.util.function.Consumer;
-import java.util.function.IntConsumer;
-import java.util.function.Predicate;
-import java.util.regex.Pattern;
 
 import chav1961.bt.find.internal.ContentPattern;
 import chav1961.bt.find.internal.FileMask;
@@ -31,13 +25,13 @@ import chav1961.purelib.basic.Utils;
 import chav1961.purelib.basic.exceptions.CommandLineParametersException;
 import chav1961.purelib.basic.exceptions.SyntaxException;
 
-public class Applicaiton {
+public class Application {
 	public static final String		ARG_FILE_MASK = "fileMask";			
 	public static final String		ARG_CONTENT_PATTERN = "contentPattern";
 	public static final String		ARG_ENCODING = "enc";
 	public static final String		ARG_OUTPUT_FILE = "f";			
 	public static final String		ARG_PRINT_PATH = "p";			
-	public static final String		ARG_PRINT_ABSOLUTE_PATH = "P";			
+	public static final String		ARG_PRINT_ABSOLUTE_PATH = "pp";			
 	public static final String		ARG_PRINT_LINE = "l";			
 
 	public static void main(String[] args) {
@@ -60,6 +54,7 @@ public class Applicaiton {
 			System.exit(0);
 		} catch (CommandLineParametersException exc) {
 			System.err.println(exc.getLocalizedMessage());
+			System.err.println("Calling args are: "+Arrays.toString(args));
 			System.err.println(parser.getUsage("bt.find"));
 			System.exit(128);
 		} catch (Exception exc) {
@@ -70,14 +65,17 @@ public class Applicaiton {
 	}
 
 	private static void seek(final ArgParser parsed, final PrintStream ps) throws Exception {
-		final String			mask = parsed.getValue(ARG_FILE_MASK, String.class);
+		final String			mask = unwrapQuotes(parsed.getValue(ARG_FILE_MASK, String.class));
 		final File				root = mask.startsWith("/") ? new File("/") : new File("./");
 		final FileMask			fileMask = FileMask.compile(mask);
 		final ContentPattern	pattern = parsed.isTyped(ARG_CONTENT_PATTERN) ? ContentPattern.compile(getPatternDescriptor(parsed)) : null;
-		final Consumer<File>	filePrinter = parsed.isTyped(ARG_PRINT_ABSOLUTE_PATH) 
+		final boolean			printPath = parsed.getValue(ARG_PRINT_PATH, boolean.class);
+		final boolean			printAbsolutePath = parsed.getValue(ARG_PRINT_ABSOLUTE_PATH, boolean.class);
+		final Consumer<File>	filePrinter = printAbsolutePath 
 												? (f)->ps.println(f.getAbsolutePath()) 
-												: parsed.isTyped(ARG_PRINT_PATH) 
+												: printPath 
 													? (f)->ps.println(f.getPath()) : (f)->ps.println(f.getName());
+		
 		seek(root, fileMask, pattern, filePrinter);
 	}
 
@@ -94,46 +92,46 @@ public class Applicaiton {
 		}
 		return pattern;
 	}
-	
-	static void seek(final File root, final FileMask fileMask, final ContentPattern pattern, final Consumer<File> filePrinter) {
-		if (root.exists() && root.canRead()) {
-			if (root.isFile() && fileMask.matches(root)) {
-				if (pattern != null) {
-					try(final FileChannel 		fileChannel = (FileChannel) Files.newByteChannel(root.toPath(), EnumSet.of(StandardOpenOption.READ))) {
-					    final MappedByteBuffer	mappedByteBuffer = fileChannel.map(FileChannel.MapMode.READ_ONLY, 0, fileChannel.size());
 
-					    if (mappedByteBuffer != null) {
-					        final CharBuffer 	charBuffer = Charset.forName(PureLibSettings.DEFAULT_CONTENT_ENCODING).decode(mappedByteBuffer);
-					        
-					        if (pattern.match(charBuffer)) {
-								filePrinter.accept(root);
-					        }
-					    }
-					} catch (IOException | SyntaxException exc) {
-					}
-				}
-				else {
-					filePrinter.accept(root);
-				}
-			}
-			if (root.isDirectory() && fileMask.matches(root)) {
-				final File[]	content = root.listFiles((f)->fileMask.matches(f));
-				
-				if (content != null) {
-					for(File item : content) {
-						seek(item, fileMask, pattern, filePrinter);
-					}
-				}
-			}
+	private static String unwrapQuotes(final String value) {
+		if (value.charAt(0) == '\'' && value.charAt(value.length() - 1) == '\'') {
+			return value.substring(1, value.length()-1); 
 		}
+		else {
+			return value;
+		}
+	}
+	
+	static void seek(final File root, final FileMask fileMask, final ContentPattern pattern, final Consumer<File> filePrinter) throws SyntaxException {
+		fileMask.walk(root, (f)->{
+			if (pattern != null) {
+				try(final FileChannel 		fileChannel = (FileChannel) Files.newByteChannel(f.toPath(), EnumSet.of(StandardOpenOption.READ))) {
+				    final MappedByteBuffer	mappedByteBuffer = fileChannel.map(FileChannel.MapMode.READ_ONLY, 0, fileChannel.size());
+
+				    if (mappedByteBuffer != null) {
+				        final CharBuffer 	charBuffer = Charset.forName(PureLibSettings.DEFAULT_CONTENT_ENCODING).decode(mappedByteBuffer);
+				        
+				        if (pattern.match(charBuffer)) {
+							filePrinter.accept(f);
+				        }
+				    }
+				} catch (IOException | SyntaxException exc) {
+				}
+			}
+			else {
+				filePrinter.accept(f);
+			}
+		});
 	}
 
 	private static class ApplicationArgParser extends ArgParser {
 		private static final ArgParser.AbstractArg[]	KEYS = {
-			new StringArg(ARG_FILE_MASK, true, true, "File mask to seek (for example ./a/**/{*.txt[@length>=1M]|*.doc[@canRead=true]}"),
+			new StringArg(ARG_FILE_MASK, true, true, "File mask to seek (for example ./a/**/{*.txt[length>=1M]|*.doc[canRead=true]}. \n"
+					+ "To escape '>' and '<' signs inside the expressions, use caret char (^) before.\n"
+					+"It's strongly recommended to wrap the mask with apostrophes (')"),
 			new StringArg(ARG_CONTENT_PATTERN, false, true, "Content pattern to seek inside the file or '@' to get pattern from System.in"),
 			new FileArg(ARG_OUTPUT_FILE, false, false, "File to store find results. If missing, System.out will be used"),
-			new StringArg(ARG_ENCODING, false, false, "File content encoding to see content pattern inside. If missing, default system encoding will be used"),
+			new StringArg(ARG_ENCODING, false, "File content encoding to see content pattern inside. If missing, default system encoding will be used", PureLibSettings.DEFAULT_CONTENT_ENCODING),
 			new BooleanArg(ARG_PRINT_PATH, false, "Print full path instead of file name only", true),
 			new BooleanArg(ARG_PRINT_ABSOLUTE_PATH, false, "Print absolute path instead of file name or path only", false),
 			new BooleanArg(ARG_PRINT_LINE, false, "Print line inside the file where content pattern found", false)

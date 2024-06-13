@@ -341,9 +341,10 @@ public class FileMaskTest {
 		Assert.assertEquals("t.txt", found.get(1).getName());
 
 		found = walkTemplate(TEST_DIR, "./**/{s.txt|*}/t.txt");
-		Assert.assertEquals(2, found.size());
+		Assert.assertEquals(3, found.size());
 		Assert.assertEquals("s.txt", found.get(0).getName());
-		Assert.assertEquals("t.txt", found.get(1).getName());
+		Assert.assertEquals("s.txt", found.get(1).getName());
+		Assert.assertEquals("t.txt", found.get(2).getName());
 		
 		found = walkTemplate(TEST_DIR, "./**/t.txt[length<1000]");
 		Assert.assertEquals(1, found.size());
