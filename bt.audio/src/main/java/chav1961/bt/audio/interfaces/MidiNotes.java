@@ -1,5 +1,10 @@
 package chav1961.bt.audio.interfaces;
 
+import java.util.HashMap;
+import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
 import chav1961.purelib.basic.Utils;
 
 public enum MidiNotes {
@@ -28,7 +33,7 @@ public enum MidiNotes {
 	Ax0(0,22,"A#"),
 	B0(0,23,"B"),
 	C1(1,24,"C"),
-	Cx1(1,25,"CC"),
+	Cx1(1,25,"C#"),
 	D1(1,26,"D"),
 	Dx1(1,27,"D#"),
 	E1(1,28,"E"),
@@ -136,6 +141,30 @@ public enum MidiNotes {
 	Ax9(9,130,"A#"),
 	B9(9,131,"B");
 	
+	private static final Pattern	PARSER = Pattern.compile("([-]{0,1}\\d)([a-gA-G])([#b]{0,1})");
+	private static final Map<String, String>	AVAILABLE_NOTES = new HashMap<>();
+	private static final Map<String, String>	BEMOLLES = new HashMap<>();
+	
+	static {
+		for(MidiNotes item : values()) {
+			AVAILABLE_NOTES.put(item.getPresentation(), item.getPresentation());
+		}
+		AVAILABLE_NOTES.put("Db", "C#");
+		AVAILABLE_NOTES.put("Eb", "D#");
+		AVAILABLE_NOTES.put("Gb", "F#");
+		AVAILABLE_NOTES.put("Ab", "G#");
+		AVAILABLE_NOTES.put("Bb", "A#");
+		AVAILABLE_NOTES.put("B#", "C");
+		AVAILABLE_NOTES.put("E#", "F");
+		AVAILABLE_NOTES.put("Cb", "B");
+		AVAILABLE_NOTES.put("Fb", "E");
+		BEMOLLES.put("A#", "Bb");
+		BEMOLLES.put("C#", "Db");
+		BEMOLLES.put("D#", "Eb");
+		BEMOLLES.put("F#", "Gb");
+		BEMOLLES.put("G#", "Ab");
+	}
+	
 	private final int		octaveNumber;
 	private final int		noteNumber;
 	private final String	presentation;
@@ -157,8 +186,33 @@ public enum MidiNotes {
 	public String getPresentation() {
 		return presentation;
 	}
+
+	public String getPresentation(final boolean bemollePreferred) {
+		if (bemollePreferred) {
+			return presentation.length() == 2 && presentation.charAt(1) == '#' ? BEMOLLES.get(presentation) : presentation;
+		}
+		else {
+			return presentation;
+		}
+	}
 	
-	public MidiNotes valueOf(final int noteNumber) {
+	public boolean hasPrev() {
+		return getNoteNumber() > 0;
+	}
+
+	public MidiNotes prev() {
+		return valueOf(getNoteNumber()-1);
+	}
+
+	public boolean hasNext() {
+		return getNoteNumber() < values().length - 1;
+	}
+	
+	public MidiNotes next() {
+		return valueOf(getNoteNumber()+1);
+	}
+	
+	public static MidiNotes valueOf(final int noteNumber) {
 		for (MidiNotes item : values()) {
 			if (item.getNoteNumber() == noteNumber) {
 				return item;
@@ -167,7 +221,39 @@ public enum MidiNotes {
 		throw new IllegalArgumentException("Unsupported note number ["+noteNumber+"] for MIDI notes"); 
 	}
 
-	public MidiNotes valueOf(final int octaveNumber, final String presentation) {
+	public static MidiNotes valueOfX(final String presentation) {
+		if (Utils.checkEmptyOrNullString(presentation)) {
+			throw new IllegalArgumentException("Note presentation can't be null or empty");
+		}
+		else {
+			final Matcher	m = PARSER.matcher(presentation);
+			
+			if (m.find()) {
+				final int		octaveNumber = Integer.valueOf(m.group(1).trim());
+				final String	halfTone = Utils.checkEmptyOrNullString(m.group(3)) ? m.group(3) : "";
+				final String	note = m.group(2).toUpperCase() + halfTone;
+				
+				if (AVAILABLE_NOTES.containsKey(note)) {
+					final String	normalized = AVAILABLE_NOTES.get(note);
+					
+					for (MidiNotes item : values()) {
+						if (item.getOctaveNumber() == octaveNumber && item.getPresentation().equalsIgnoreCase(normalized)) {
+							return item;
+						}
+					}
+					throw new IllegalArgumentException("Unsupported octave number ["+octaveNumber+"] and/or note presentation ["+note+"] for MIDI notes"); 
+				}
+				else {
+					throw new IllegalArgumentException("Non-existent note presentation ["+note+"] for MIDI notes"); 
+				}
+			}
+			else {
+				throw new IllegalArgumentException("Error parse presentation string ["+presentation+"]. Must be "+PARSER.pattern()); 
+			}
+		}
+	}	
+	
+	public static MidiNotes valueOf(final int octaveNumber, final String presentation) {
 		if (Utils.checkEmptyOrNullString(presentation)) {
 			throw new IllegalArgumentException("Note presentation can't be null or empty");
 		}
@@ -177,7 +263,7 @@ public enum MidiNotes {
 					return item;
 				}
 			}
-			throw new IllegalArgumentException("Unsupported octave number ["+noteNumber+"] and/or notep presentation ["+presentation+"] for MIDI notes"); 
+			throw new IllegalArgumentException("Unsupported octave number ["+octaveNumber+"] and/or note presentation ["+presentation+"] for MIDI notes"); 
 		}
 	}
 }
