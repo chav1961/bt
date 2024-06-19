@@ -45,5 +45,6 @@
   	<module>bt.jj</module>
   	<module>bt.installbuilder</module>
   	<module>bt.find</module>
+  	<module>bt.etc</module>
   </modules>
 </project>
