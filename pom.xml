@@ -46,5 +46,6 @@
   	<module>bt.installbuilder</module>
   	<module>bt.find</module>
   	<module>bt.etc</module>
+  	<module>bt.matrix</module>
   </modules>
 </project>
