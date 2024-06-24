@@ -349,6 +349,10 @@ public class Matrix implements AutoCloseable {
 		return new Matrix(lib, type(), rows, cols, newMemory);
 	}
 
+	public Matrix power(final double power) {
+		return null;
+	}
+	
 	public double track() {
 		if (numberOfRows() != numberOfColumns()) {
 			throw new IllegalStateException("Track can be calculated for quadratic matrices only");
