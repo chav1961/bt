@@ -11,7 +11,7 @@ public class Calculator implements AutoCloseable {
 	private final int		stackDepth;
 	private final Command[]	commands;
 	
-	private Calculator(final int stackDepth, final Command... commands) {
+	Calculator(final int stackDepth, final Command... commands) {
 		this.stackDepth = stackDepth;
 		this.commands = commands;
 	}
@@ -50,11 +50,11 @@ public class Calculator implements AutoCloseable {
 						stack.pushMatrix(stack.popMatrix((f,m)->{if (f) temporary[0] = m;}).inv(), true);
 						break;
 					case LOAD_MATRIX	:
-						if (item.operand >= operands.length) {
+						if (item.operand - 1 >= operands.length) {
 							throw new CalculationException("Matrix name #"+item.operand+" is missing in the parameters");
 						}
 						else {
-							stack.pushMatrix(operands[(int)item.operand], false);
+							stack.pushMatrix(operands[(int)item.operand - 1], false);
 						}
 						break;
 					case LOAD_VALUE		:

@@ -34,7 +34,7 @@ import chav1961.purelib.cdb.SyntaxNode;
  * <add>::=<mul>[{'*'|'**'|'***'}<mul>...]
  * <mul>::=['-']<term>['^'<value>]
  * <term>::={<name>['.'{'T'|'inv'|'det'|'sp'}]|<value>|'('<expr>')'}
- * <name>::='#'<number>
+ * <name>::='%'<number>
  */
 
 public class MatrixLib implements AutoCloseable {
@@ -429,7 +429,7 @@ public class MatrixLib implements AutoCloseable {
 		}
 	}
 
-	public Calculator compile(final String expression) throws SyntaxException {
+	public static Calculator compile(final String expression) throws SyntaxException {
 		if (Utils.checkEmptyOrNullString(expression)) {
 			throw new IllegalArgumentException("Expression string cam't be null or empty");
 		}
@@ -463,11 +463,18 @@ public class MatrixLib implements AutoCloseable {
 			throw new SyntaxException(0, parsed[theEnd].pos, "Unparsed tail");
 		}
 		else {
-			final List<Command>	commands = new ArrayList<>();
+			final List<Command>	temp = new ArrayList<>();
 			
-			buildCommands(root, commands);
+			buildCommands(root, temp);
+			final Command[]		commands = temp.toArray(new Command[temp.size()]);
+			int		depth = 0, maxDepth = 0;
+			
+			for(Command item : commands) {
+				depth += item.op.getStackDelta();
+				maxDepth = Math.max(maxDepth, depth);						
+			}
+			return new Calculator(maxDepth, commands); 
 		}
-		return null;
 	}
 	
 	static Lexema[] parse(final char[] source) throws SyntaxException {
@@ -483,6 +490,12 @@ loop:	for (;;) {
 				case '\0' :
 					result.add(new Lexema(from, LexType.EOF));
 					break loop;
+				case '(' :
+					result.add(new Lexema(from++, LexType.OPEN));
+					break;
+				case ')' :
+					result.add(new Lexema(from++, LexType.CLOSE));
+					break;
 				case '+' :
 					result.add(new Lexema(from++, LexType.PLUS));
 					break;
@@ -510,7 +523,7 @@ loop:	for (;;) {
 						result.add(new Lexema(from++, LexType.MUL));
 					}
 					break;
-				case '#' :
+				case '%' :
 					int		value = 0;
 					
 					while (source[++from] >= '0' && source[from] <= '9') {
@@ -524,19 +537,19 @@ loop:	for (;;) {
 					break;
 				default :
 					if (Character.isJavaIdentifierStart(source[from])) {
-						if (CharUtils.compare(source, from, SUFFIX_T)) {
+						if (CharUtils.compareIgnoreCase(source, from, SUFFIX_T)) {
 							result.add(new Lexema(from, LexType.PREDEFINED, PREDEF_T));
 							from += SUFFIX_T.length;
 						}
-						else if (CharUtils.compare(source, from, SUFFIX_INV)) {
+						else if (CharUtils.compareIgnoreCase(source, from, SUFFIX_INV)) {
 							result.add(new Lexema(from, LexType.PREDEFINED, PREDEF_INV));
 							from += SUFFIX_INV.length;
 						}
-						else if (CharUtils.compare(source, from, SUFFIX_DET)) {
+						else if (CharUtils.compareIgnoreCase(source, from, SUFFIX_DET)) {
 							result.add(new Lexema(from, LexType.PREDEFINED, PREDEF_DET));
 							from += SUFFIX_DET.length;
 						}
-						else if (CharUtils.compare(source, from, SUFFIX_SP)) {
+						else if (CharUtils.compareIgnoreCase(source, from, SUFFIX_SP)) {
 							result.add(new Lexema(from, LexType.PREDEFINED, PREDEF_SP));
 							from += SUFFIX_SP.length;
 						}
@@ -567,6 +580,7 @@ loop:	for (;;) {
 						opers.add(source[from].type);
 						
 						from = buildTree(OperType.MUL, source, from + 1, right);
+						list.add(right);
 					} while (source[from].type == LexType.PLUS || source[from].type == LexType.MINUS);
 					node.type = Operation.ADD;
 					node.cargo = opers.toArray(new LexType[opers.size()]);
@@ -585,6 +599,7 @@ loop:	for (;;) {
 						opers.add(source[from].type);
 						
 						from = buildTree(OperType.UNARY, source, from + 1, right);
+						list.add(right);
 					} while (source[from].type == LexType.MUL || source[from].type == LexType.MUL_H || source[from].type == LexType.MUL_K);
 					node.type = Operation.MUL;
 					node.cargo = opers.toArray(new LexType[opers.size()]);
@@ -599,7 +614,12 @@ loop:	for (;;) {
 					final SyntaxNode<Operation, SyntaxNode<?, ?>>	child = (SyntaxNode<Operation, SyntaxNode<?, ?>>) node.clone();
 					
 					from = buildTree(OperType.TERM, source, from + 1, child);
-					node.type = Operation.NEGATE;
+					if (calcOperandType((SyntaxNode<Operation, SyntaxNode<?, ?>>) child) == OperandType.VALUE) {
+						node.type = Operation.MINUS;
+					}
+					else {
+						node.type = Operation.NEGATE;
+					}
 					node.cargo = null;
 					node.children = new SyntaxNode[] {child};
 				}
@@ -635,6 +655,8 @@ loop:	for (;;) {
 							if (source[from + 2].type == LexType.PREDEFINED) {
 								final SyntaxNode<Operation, SyntaxNode<?, ?>>	child = (SyntaxNode<Operation, SyntaxNode<?, ?>>) node.clone();
 
+								child.type = Operation.LOAD_MATRIX;
+								child.value = index;
 								switch ((int)source[from + 2].value) {
 									case PREDEF_T	:
 										node.type = Operation.TRANSPOSE;
@@ -805,13 +827,22 @@ loop:	for (;;) {
 			case LOAD_VALUE	:
 				commands.add(new Command(Operation.LOAD_VALUE, node.value));
 				break;
+			case MINUS		:
+				buildCommands((SyntaxNode<Operation, SyntaxNode<?, ?>>) node.children[0], commands);
+				if (calcOperandType((SyntaxNode<Operation, SyntaxNode<?, ?>>) node.children[0]) == OperandType.VALUE) {
+					commands.add(new Command(Operation.MINUS, 0));
+				}
+				else {
+					throw new SyntaxException(0, node.col, "Unwaited operand type (value awaited)"); 
+				}
+				break;
 			case NEGATE		:
 				buildCommands((SyntaxNode<Operation, SyntaxNode<?, ?>>) node.children[0], commands);
 				if (calcOperandType((SyntaxNode<Operation, SyntaxNode<?, ?>>) node.children[0]) == OperandType.MATRIX) {
 					commands.add(new Command(Operation.NEGATE, 0));
 				}
 				else {
-					commands.add(new Command(Operation.MINUS, 0));
+					throw new SyntaxException(0, node.col, "Unwaited operand type (matrix awaited)"); 
 				}
 				break;
 			case POWER		:
@@ -955,31 +986,41 @@ loop:	for (;;) {
 	}
 
 	static enum Operation {
-		LOAD_VALUE,
-		LOAD_MATRIX,
-		ADD,
-		ADD_VAL,
-		ADD_VAL_MATRIX,
-		ADD_MATRIX_VAL,
-		SUB,
-		SUB_VAL,
-		SUB_VAL_MATRIX,
-		SUB_MATRIX_VAL,
-		MUL,
-		MUL_VAL,
-		MUL_VAL_MATRIX,
-		MUL_MATRIX_VAL,
-		MUL_H,
-		MUL_K,
-		TRANSPOSE,
-		INVERT,
-		DET,
-		SPOOR,
-		NEGATE,
-		MINUS,
-		POWER,
-		POWER_VAL,
-		UNKNOWN
+		LOAD_VALUE(1),
+		LOAD_MATRIX(1),
+		ADD(-1),
+		ADD_VAL(-1),
+		ADD_VAL_MATRIX(-1),
+		ADD_MATRIX_VAL(-1),
+		SUB(-1),
+		SUB_VAL(-1),
+		SUB_VAL_MATRIX(-1),
+		SUB_MATRIX_VAL(-1),
+		MUL(-1),
+		MUL_VAL(-1),
+		MUL_VAL_MATRIX(-1),
+		MUL_MATRIX_VAL(-1),
+		MUL_H(-1),
+		MUL_K(-1),
+		TRANSPOSE(0),
+		INVERT(0),
+		DET(0),
+		SPOOR(0),
+		NEGATE(0),
+		MINUS(0),
+		POWER(-1),
+		POWER_VAL(-1),
+		UNKNOWN(0);
+		
+		private final int	stackDelta;
+		
+		private Operation(final int stackDelta) {
+			this.stackDelta = stackDelta;
+		}
+		
+		public int getStackDelta() {
+			return stackDelta;
+		}
 	}
 
 	static enum OperandType {
