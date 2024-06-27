@@ -91,6 +91,15 @@ public class MatrixLib implements AutoCloseable {
 								        + "    int gid = get_global_id(0);\n"
 								        + "    c[gid] = a[gid] + scalar;\n"
 								        + "}\n";
+	static final String				PROGRAM_SUBTRACT_FROM_SCALAR_NAME = "subtractFromScalarKernel";
+	private static final String		PROGRAM_SUBTRACT_FROM_SCALAR =  "__kernel void \n"
+										+ "subtractFromScalarKernel(__global const float *a,\n"
+								        + "                const float scalar,\n"
+								        + "                __global float *c)\n"
+								        + "{\n"
+								        + "    int gid = get_global_id(0);\n"
+								        + "    c[gid] = scalar - a[gid];\n"
+								        + "}\n";
 	static final String				PROGRAM_MUL_NAME = "mulMatrixKernel";
 	private static final String		PROGRAM_MUL =  "__kernel void \n"
 										+ "mulMatrixKernel(int dim,\n"
@@ -154,6 +163,16 @@ public class MatrixLib implements AutoCloseable {
 										+ "    int iRow = get_global_id(1);\n"
 										+ "    C[iRow*dim + iCol] = a[iCol*dim + iRow];\n"
 										+ "}\n";
+	static final String				PROGRAM_POWER_NAME = "powerMatrixKernel";
+	private static final String		PROGRAM_POWER =  "__kernel void \n"
+										+ "powerMatrixKernel(__global const float *a,\n"
+										+ "                  const int dim,\n"
+										+ "                  const float power,\n"
+										+ "                  __global float *C){\n"
+										+ "    int iCol = get_global_id(0);\n"
+										+ "    int iRow = get_global_id(1);\n"
+										+ "    C[iRow*dim + iCol] = pow(a[iRow*dim + iCol], power);\n"
+										+ "}\n";
 	static final String				PROGRAM_TRACK_NAME = "trackMatrixKernel";
 	private static final String		PROGRAM_TRACK =  "__kernel void \n"
 										+ "trackMatrixKernel(__global const float *a,\n"
@@ -192,43 +211,46 @@ public class MatrixLib implements AutoCloseable {
 										+ "        a[group * dim + i] -= k * line[i];\n"
 										+ "    }\n"
 										+ "}\n";
-	static final String				PROGRAM_INV_REDUCE_DOWN_NAME = "invReduceDownMatrixKernel";
-	private static final String		PROGRAM_INV_REDUCE_DOWN =  "__kernel void \n"
-										+ "invReduceDownMatrixKernel(__global float *a,\n"
+	static final String				PROGRAM_INV_DIVIDE1_NAME = "invDivide1MatrixKernel";
+	private static final String		PROGRAM_INV_DIVIDE1 =  "__kernel void \n"
+										+ "invDivide1MatrixKernel(__global float *current,\n"
+										+ "                  __global float *identity,\n"
 										+ "                  const int dim,\n"
-										+ "                  const int from){\n"
-										+ "    __global float *line = a + dim * from;\n"
-										+ "    int group = get_global_id(0) + from + 1;\n"
-										+ "    float k = a[group * dim + from] / line[from];\n"
-										+ "    for(int i = 0; i < dim; i++) {\n"
-										+ "        a[group * dim + i] -= k * line[i];\n"
+										+ "                  const int line){\n"
+										+ "    int cell = get_global_id(0);\n"
+										+ "    float k = 1 / current[line * dim + line];\n"
+										+ "    if (cell != line) {\n"
+										+ "        current[line * dim + cell] *= k;\n"
+										+ "        identity[line * dim + cell] *= k;\n"
 										+ "    }\n"
 										+ "}\n";
-	static final String				PROGRAM_INV_REDUCE_UP_NAME = "invReduceUpMatrixKernel";
-	private static final String		PROGRAM_INV_REDUCE_UP =  "__kernel void \n"
-										+ "invReduceUpMatrixKernel(__global float *a,\n"
+	static final String				PROGRAM_INV_DIVIDE2_NAME = "invDivide2MatrixKernel";
+	private static final String		PROGRAM_INV_DIVIDE2 =  "__kernel void \n"
+										+ "invDivide2MatrixKernel(__global float *current,\n"
+										+ "                  __global float *identity,\n"
 										+ "                  const int dim,\n"
-										+ "                  const int from){\n"
-										+ "    __global float *line = a + dim * from;\n"
-										+ "    int group = get_global_id(0) + from + 1;\n"
-										+ "    float k = a[group * dim + from] / line[from];\n"
-										+ "    for(int i = 0; i < dim; i++) {\n"
-										+ "        a[group * dim + i] -= k * line[i];\n"
-										+ "    }\n"
+										+ "                  const int cell){\n"
+										+ "    float k = 1 / current[cell * dim + cell];\n"
+										+ "    current[cell * dim + cell] = 1;\n"
+										+ "    identity[cell * dim + cell] *= k;\n"
 										+ "}\n";
-	static final String				PROGRAM_INV_NORMALIZE_NAME = "invNormalizeMatrixKernel";
-	private static final String		PROGRAM_INV_NORMALIZE =  "__kernel void \n"
-										+ "invNormalizeMatrixKernel(__global float *a,\n"
-										+ "                  __global float *b,\n"
-										+ "                  const int dim){\n"
-										+ "    int line = get_global_id(0);\n"
-										+ "    float k = 1 / a[line * dim + line];\n"
-										+ "    for(int i = 0; i < dim; i++) {\n"
-										+ "        a[line * dim + i] *= k;\n"
-										+ "        b[line * dim + i] *= k;\n"
+	static final String				PROGRAM_INV_SUBTRACT_NAME = "invSubtractMatrixKernel";
+	private static final String		PROGRAM_INV_SUBTRACT =  "__kernel void \n"
+										+ "invSubtractMatrixKernel(__global float *current,\n"
+										+ "                  __global float *identity,\n"
+										+ "                  const int dim,\n"
+										+ "                  const int cell){\n"
+										+ "    int row = get_global_id(0);\n"
+										+ "    int col = get_global_id(1);\n"
+										+ "    if (row != cell) {\n"
+										+ "        float k = current[row * dim + cell];\n"
+										+ "        current[row * dim + col] -= k * current[cell * dim + col];\n"
+										+ "        identity[row * dim + col] -= k * identity[cell * dim + col];\n"
 										+ "    }\n"
 										+ "}\n";
 
+	
+	
 	private static final String[][]	PROGRAM_LIST = new String[][] {
 										{PROGRAM_ZERO_NAME, PROGRAM_ZERO},
 										{PROGRAM_IDENTITY_NAME, PROGRAM_IDENTITY},
@@ -236,17 +258,19 @@ public class MatrixLib implements AutoCloseable {
 										{PROGRAM_ADD_NAME, PROGRAM_ADD},
 										{PROGRAM_SUBTRACT_NAME, PROGRAM_SUBTRACT},
 										{PROGRAM_ADD_SCALAR_NAME, PROGRAM_ADD_SCALAR},
+										{PROGRAM_SUBTRACT_FROM_SCALAR_NAME, PROGRAM_SUBTRACT_FROM_SCALAR},
 										{PROGRAM_MUL_NAME, PROGRAM_MUL},
 										{PROGRAM_MUL_HADAMARD_NAME, PROGRAM_MUL_HADAMARD},
 										{PROGRAM_MUL_SCALAR_NAME, PROGRAM_MUL_SCALAR},
 										{PROGRAM_MUL_TENZOR_NAME, PROGRAM_MUL_TENZOR},
 										{PROGRAM_TRANSPOSE_NAME, PROGRAM_TRANSPOSE},
+										{PROGRAM_POWER_NAME, PROGRAM_POWER},
 										{PROGRAM_TRACK_NAME, PROGRAM_TRACK},
 										{PROGRAM_DET_REDUCE_NAME, PROGRAM_DET_REDUCE},
 										{PROGRAM_DET_TRIANGLE_NAME, PROGRAM_DET_TRIANGLE},
-										{PROGRAM_INV_REDUCE_DOWN_NAME, PROGRAM_INV_REDUCE_DOWN},
-										{PROGRAM_INV_REDUCE_UP_NAME, PROGRAM_INV_REDUCE_UP},
-										{PROGRAM_INV_NORMALIZE_NAME, PROGRAM_INV_NORMALIZE},
+										{PROGRAM_INV_DIVIDE1_NAME, PROGRAM_INV_DIVIDE1},
+										{PROGRAM_INV_DIVIDE2_NAME, PROGRAM_INV_DIVIDE2},
+										{PROGRAM_INV_SUBTRACT_NAME, PROGRAM_INV_SUBTRACT},
 									} ;
 	
 	private static final char[]		SUFFIX_T = "t".toCharArray();

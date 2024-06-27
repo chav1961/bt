@@ -16,7 +16,7 @@ public class Calculator implements AutoCloseable {
 		this.commands = commands;
 	}
 	
-	public Matrix calculate(final Matrix... operands) throws CalculationException {
+	public <T> T calculate(final Matrix... operands) throws CalculationException {
 		if (operands == null || Utils.checkArrayContent4Nulls(operands) >= 0) {
 			throw new IllegalArgumentException("Operands are null or contain nulls inside");
 		}
@@ -46,6 +46,7 @@ public class Calculator implements AutoCloseable {
 						break;
 					case DET			:
 						stack.pushValue(stack.popMatrix((f,m)->{if (f) temporary[0] = m;}).det());
+						break;
 					case INVERT			:
 						stack.pushMatrix(stack.popMatrix((f,m)->{if (f) temporary[0] = m;}).inv(), true);
 						break;
@@ -93,11 +94,10 @@ public class Calculator implements AutoCloseable {
 						stack.pushMatrix(stack.popMatrix((f,m)->{if (f) temporary[0] = m;}).mul(-1), true);
 						break;
 					case POWER			:
+						stack.pushMatrix(stack.popMatrix((f,m)->{if (f) temporary[0] = m;}).power(Double.longBitsToDouble(item.operand)), true);
 						break;
 					case POWER_VAL		:
-						val = stack.popValue();
-						
-						stack.pushMatrix(stack.popMatrix((f,m)->{if (f) temporary[0] = m;}).power(val), true);
+						stack.pushValue(Math.pow(stack.popValue(), Double.longBitsToDouble(item.operand)));
 						break;
 					case SPOOR			:
 						stack.pushValue(stack.popMatrix((f,m)->{if (f) temporary[0] = m;}).track());
@@ -116,7 +116,7 @@ public class Calculator implements AutoCloseable {
 						stack.pushValue(- stack.popValue() + stack.popValue());
 						break;
 					case SUB_VAL_MATRIX	:
-						stack.pushMatrix(stack.popMatrix((f,m)->{if (f) temporary[0] = m;}).add(-stack.popValue()), true);
+						stack.pushMatrix(stack.popMatrix((f,m)->{if (f) temporary[0] = m;}).subFrom(stack.popValue()), true);
 						break;
 					case TRANSPOSE		:
 						stack.pushMatrix(stack.popMatrix((f,m)->{if (f) temporary[0] = m;}).trans(), true);
@@ -129,7 +129,12 @@ public class Calculator implements AutoCloseable {
 					temporary[0] = null;
 				}
 			}
-			return stack.popMatrix((f,m)->{});
+			if (stack.isValue()) {
+				return (T)Double.valueOf(stack.popValue());
+			}
+			else {
+				return (T)stack.popMatrix((f,m)->{});
+			}
 		}
 	}
 	
