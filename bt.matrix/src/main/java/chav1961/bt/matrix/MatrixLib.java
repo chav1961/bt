@@ -1,26 +1,25 @@
 package chav1961.bt.matrix;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
 import org.jocl.CL;
-import org.jocl.CLException;
 import org.jocl.Pointer;
 import org.jocl.Sizeof;
 import org.jocl.cl_command_queue;
 import org.jocl.cl_context;
 import org.jocl.cl_context_properties;
 import org.jocl.cl_device_id;
-import org.jocl.cl_kernel;
 import org.jocl.cl_mem;
 import org.jocl.cl_platform_id;
-import org.jocl.cl_program;
 import org.jocl.cl_queue_properties;
 
 import chav1961.bt.matrix.Matrix.Type;
+import chav1961.bt.matrix.utils.ProgramDescriptor;
 import chav1961.purelib.basic.CharUtils;
 import chav1961.purelib.basic.Utils;
 import chav1961.purelib.basic.exceptions.CalculationException;
@@ -37,10 +36,14 @@ import chav1961.purelib.cdb.SyntaxNode;
  * <name>::='%'<number>
  */
 
+
+/*
+ * 
+ */
+
+
 public class MatrixLib implements AutoCloseable {
-	private static final int 		platformIndex = 0;
-	private static final long 		deviceType = CL.CL_DEVICE_TYPE_ALL;
-	private static final int 		deviceIndex = 0;
+	private static final long 		DEVICE_TYPE = CL.CL_DEVICE_TYPE_ALL;
 	private static final String		PROGRAM_ZERO_NAME = "zeroMatrixKernel";
 	private static final String		PROGRAM_ZERO =  "__kernel void \n"
 								        + "zeroMatrixKernel(__global float *c)\n"
@@ -286,51 +289,52 @@ public class MatrixLib implements AutoCloseable {
 	private final cl_command_queue 					commandQueue;
 	private final Map<String, ProgramDescriptor>	programs = new HashMap<>();
 	
-	private MatrixLib() {
+	private MatrixLib(final Type... typesSupported) {
+		final int[]	temp = new int[1];
+		
 	    // Enable exceptions and subsequently omit error checks in this sample
 	    CL.setExceptionsEnabled(true);
 
-	    // Obtain the number of platforms
-	    final int 	numPlatformsArray[] = new int[1];
-	    
-	    CL.clGetPlatformIDs(0, null, numPlatformsArray);
-	    int numPlatforms = numPlatformsArray[0];
-
-	    // Obtain a platform ID
-	    final cl_platform_id 	platforms[] = new cl_platform_id[numPlatforms];
+	    // Obtain the number of platforms and platform IDs
+	    CL.clGetPlatformIDs(0, null, temp);
+	    final cl_platform_id 	platforms[] = new cl_platform_id[temp[0]];
 	    
 	    CL.clGetPlatformIDs(platforms.length, platforms, null);
-	    final cl_platform_id 	platform = platforms[platformIndex];
 
-	    // Initialize the context properties
-	    final cl_context_properties 	contextProperties = new cl_context_properties();
-	    
-	    contextProperties.addProperty(CL.CL_CONTEXT_PLATFORM, platform);
-	        
-	    // Obtain the number of devices for the platform
-	    final int 				numDevicesArray[] = new int[1];
-	    
-	    CL.clGetDeviceIDs(platform, deviceType, 0, null, numDevicesArray);
-	    final int 				numDevices = numDevicesArray[0];
-	        
-	    // Obtain a device ID 
-	    final cl_device_id 		devices[] = new cl_device_id[numDevices];
-	    
-	    CL.clGetDeviceIDs(platform, deviceType, numDevices, devices, null);
-	    final cl_device_id 		device = devices[deviceIndex];
-		
-	    // Create platform context 
-		this.context = CL.clCreateContext(contextProperties, 1, new cl_device_id[]{device}, null, null, null);		
+	    for (int platformIndex = 0; platformIndex < platforms.length; platformIndex++) {
+		    final cl_platform_id 	platform = platforms[platformIndex];
+	
+		    // Initialize the context properties
+		    final cl_context_properties 	contextProperties = new cl_context_properties();
+		    
+		    contextProperties.addProperty(CL.CL_CONTEXT_PLATFORM, platform);
+	
+		    // Obtain the number of devices for the platform and device IDs 
+		    CL.clGetDeviceIDs(platform, DEVICE_TYPE, 0, null, temp);
+		    final cl_device_id 		devices[] = new cl_device_id[temp[0]];
+		    
+		    CL.clGetDeviceIDs(platform, DEVICE_TYPE, devices.length, devices, null);
 
-		  // Create a command queue for the selected device
-		final cl_queue_properties		queueProperties = new cl_queue_properties();
+		    for (int deviceIndex = 0; deviceIndex < devices.length; deviceIndex++) {
+			    final cl_device_id 			device = devices[deviceIndex];
+				
+			    // Create platform context 
+				final cl_context			tempContext = CL.clCreateContext(contextProperties, 1, new cl_device_id[]{device}, null, null, null);		
 		
-		this.commandQueue = CL.clCreateCommandQueue(context, device, 0L, null);
-		
-		// Prepare programs requested
-		for(String[] item : PROGRAM_LIST) {
-			programs.put(item[0], new ProgramDescriptor(context, item[0], item[1]));
-		}
+				  // Create a command queue for the selected device
+				final cl_queue_properties	queueProperties = new cl_queue_properties();
+				final cl_command_queue 		tempQueue = CL.clCreateCommandQueue(tempContext, device, 0L, null);
+				
+				// Prepare programs requested
+				for(String[] item : PROGRAM_LIST) {
+					programs.put(item[0], new ProgramDescriptor(tempContext, item[0], item[1]));
+				}
+				this.context = tempContext;
+				this.commandQueue = tempQueue;
+				return;
+		    }		    
+	    }
+	    throw new IllegalArgumentException("No device with matrix types supported ["+Arrays.toString(typesSupported)+"] found");
 	}
 	
 	@Override
@@ -462,8 +466,8 @@ public class MatrixLib implements AutoCloseable {
 		}
 	}
 
-	public static MatrixLib getInstance() {
-		return new MatrixLib();
+	public static MatrixLib getInstance(final Type... typesSupported) {
+		return new MatrixLib(typesSupported);
 	}
 
 	ProgramDescriptor getProgramDescriptor(final String programName) {
@@ -955,34 +959,6 @@ loop:	for (;;) {
 				throw new SyntaxException(0, node.col, "Unknown node type"); 
 			default :
 				throw new UnsupportedOperationException("Node type ["+node.type+"] is not supported yet");
-		}
-	}
-
-	static class ProgramDescriptor implements AutoCloseable {
-		final String		programName;
-		final cl_program	program;
-		final cl_kernel		kernel;
-		
-		ProgramDescriptor(final cl_context context, final String programName, final String programBody) {
-			try {
-				this.programName = programName;
-				this.program = CL.clCreateProgramWithSource(context, 1, new String[]{ programBody}, null, null);
-				
-				CL.clBuildProgram(program, 0, null, null, null, null);
-				this.kernel = CL.clCreateKernel(program, programName, null);
-			} catch (CLException exc) {
-				throw new EnvironmentException("Error creating program ["+programName+"]: "+exc.getLocalizedMessage().trim()+"\nProgram code is:\n"+programBody);
-			}
-		}
-		
-		@Override
-		public void close() throws EnvironmentException {
-			try {
-				CL.clReleaseKernel(kernel);
-			    CL.clReleaseProgram(program);	
-			} catch (CLException exc) {
-				throw new EnvironmentException("Error closing program ["+programName+"]: "+exc.getLocalizedMessage().trim());
-			}
 		}
 	}
 

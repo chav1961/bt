@@ -56,7 +56,7 @@ public class CalculatorTest {
 		try(final Calculator	calc = MatrixLib.compile(expr)) {
 			final Matrix		m = calc.calculate(operands);
 		
-			Assert.assertArrayEquals(result, m.extract(), 0.001f);
+			Assert.assertArrayEquals(result, m.extractFloats(), 0.001f);
 		}
 	}
 	

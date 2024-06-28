@@ -34,7 +34,7 @@ public class MatrixLibTest {
 			Assert.assertEquals(10, zero.numberOfRows());
 			Assert.assertEquals(10, zero.numberOfColumns());
 			
-			final float[]	content = zero.extract();
+			final float[]	content = zero.extractFloats();
 			
 			Assert.assertEquals(100, content.length);
 			
@@ -62,7 +62,7 @@ public class MatrixLibTest {
 			Assert.assertEquals(10, identity.numberOfRows());
 			Assert.assertEquals(10, identity.numberOfColumns());
 			
-			final float[]	content2 = identity.extract();
+			final float[]	content2 = identity.extractFloats();
 			
 			Assert.assertEquals(100, content2.length);
 			
@@ -94,13 +94,13 @@ public class MatrixLibTest {
 			Assert.assertEquals(10, any.numberOfRows());
 			Assert.assertEquals(10, any.numberOfColumns());
 			
-			final float[]	content3 = any.extract();
+			final float[]	content3 = any.extractFloats();
 			
 			Assert.assertEquals(100, content3.length);
 			
 			any.assign(new float[] {10, 20, 30});
 			
-			final float[]	content4 = any.extract();
+			final float[]	content4 = any.extractFloats();
 			
 			Assert.assertEquals(10, content4[0], 0.0001f);
 			Assert.assertEquals(20, content4[1], 0.0001f);

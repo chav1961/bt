@@ -1,0 +1,235 @@
+-
+    programName: zeroMatrixKernel
+    programBody: |
+        __kernel void zeroMatrixKernelRD(__global double *c) {
+           int gid = get_global_id(0);
+           c[gid] = 0;
+        }
+
+-
+    programName: identityMatrixKernel
+    programBody: |
+        __kernel void identityMatrixKernelRD(int dim,
+                                           __global double *C){
+            int iCol = get_global_id(0);
+            int iRow = get_global_id(1);
+            C[iRow*dim + iCol] = iCol == iRow ? 1 : 0;
+        }
+
+-
+    programName: assignMatrixKernel
+    programBody: |
+        __kernel void assignMatrixKernelRD(__global const double *a,
+                                         __global double *c) {
+           int gid = get_global_id(0);
+           c[gid] = a[gid];
+        }
+
+-
+    programName: addMatrixKernel
+    programBody: |
+        __kernel void addMatrixKernelRD(__global const double *a,
+                                      __global const double *b,
+                                      __global double *c\n) {
+            int gid = get_global_id(0);
+            c[gid] = a[gid] + b[gid];
+        }
+
+-
+    programName: subtractMatrixKernel
+    programBody: |
+        __kernel void subtractMatrixKernelRD(__global const double *a,
+                                           __global const double *b,
+                                           __global double *c) {
+           int gid = get_global_id(0);
+           c[gid] = a[gid] - b[gid];
+        }
+
+-
+    programName: addScalarKernel
+    programBody: |
+        __kernel void addScalarKernelRD(__global const double *a,
+                                      const double scalar,
+                                      __global double *c) {
+            int gid = get_global_id(0);
+            c[gid] = a[gid] + scalar;
+        }
+
+-
+    programName: subtractFromScalarKernel
+    programBody: |
+        __kernel void subtractFromScalarKernelRD(__global const double *a,
+                                               const double scalar,
+                                               __global double *c) {
+            int gid = get_global_id(0);
+            c[gid] = scalar - a[gid];
+        }
+
+-
+    programName: mulMatrixKernel
+    programBody: |
+        __kernel void mulMatrixKernelRD(int dim,
+                                      __global const double *A,
+                                      __global const double *B,
+                                      __global double *C) {
+            int iCol = get_global_id(0);
+            int iRow = get_global_id(1);
+            double result = 0.0;
+            for(int i = 0; i < dim; i++) {
+                result += A[iRow*dim + i] * B[i*dim + iCol];
+            }
+            C[iRow*dim + iCol] = result;
+        }
+
+-
+    programName: mulHadamardMatrixKernel
+    programBody: |
+        __kernel void mulHadamardMatrixKernelRD(__global const double *a,
+                                              __global const double *b,
+                                              __global double *c) {
+            int gid = get_global_id(0);
+            c[gid] = a[gid] * b[gid];
+        }
+
+-
+    programName: mulScalarKernel
+    programBody: |
+        __kernel void mulScalarKernelRD(__global const double *a,
+                                      const double scalar,
+                                      __global double *c) {
+            int gid = get_global_id(0);
+            c[gid] = a[gid] * scalar;
+        }
+
+-
+    programName: mulKronekerMatrixKernel
+    programBody: |
+        __kernel void mulKronekerMatrixKernelRD(__global const double *a,
+                                              __global const double *b,
+                                              __global double *C,
+                                              const int rowDim,
+                                              const int colDim,
+                                              const int bRows,
+                                              const int bCols) {
+            int aRow = get_global_id(0);
+            int aCol = get_global_id(1);
+            int lineSize = colDim * bCols;
+            double k = a[aRow*colDim + aCol];
+            for (int bRow = 0; bRow < bRows; bRow++) {
+                for (int bCol = 0; bCol < bCols; bCol++) {
+                    int rowIndex = aRow*rowDim + bRow;
+                    int colIndex = aCol*colDim + bCol;
+                    C[rowIndex*lineSize + colIndex] = k * b[bRow*bCols + bCol];
+                }
+            }
+        }
+
+-
+    programName: transposeMatrixKernel
+    programBody: |
+        __kernel void transposeMatrixKernelRD(__global const double *a,
+                                            const int dim,
+                                            __global double *C) {
+            int iCol = get_global_id(0);
+            int iRow = get_global_id(1);
+            C[iRow*dim + iCol] = a[iCol*dim + iRow];
+        }
+
+-
+    programName: powerMatrixKernel
+    programBody: |
+        __kernel void powerMatrixKernelRD(__global const double *a,
+                                        const int dim,
+                                        const double power,
+                                        __global double *C) {
+            int iCol = get_global_id(0);
+            int iRow = get_global_id(1);
+            C[iRow*dim + iCol] = pow(a[iRow*dim + iCol], power);
+        }
+
+-
+    programName: trackMatrixKernel
+    programBody: |
+        __kernel void trackMatrixKernelRD(__global const double *a,
+                                        const int dim,
+                                        const int groupSize,
+                                        __global double *C) {
+            int group = get_global_id(0);
+            double sum = 0;
+            for(int i = group; i < dim; i += groupSize) {
+                sum += a[i*dim + i];
+            }
+            C[group] = sum;
+        }
+
+-
+    programName: detTriangleMatrixKernel
+    programBody: |
+        __kernel void detTriangleMatrixKernelRD(__global const double *a,
+                                              const int dim,
+                                              const int groupSize,
+                                              __global double *C) {
+            int group = get_global_id(0);
+            double prod = 1;
+            for(int i = group; i < dim; i += groupSize) {
+                prod *= a[i*dim + i];
+            }
+            C[group] = prod;
+        }
+
+-
+    programName: detReduceMatrixKernel
+    programBody: |
+        __kernel void detReduceMatrixKernelRD(__global double *a,
+                                            const int dim,
+                                            const int from) {
+            __global double *line = a + dim * from;
+            int group = get_global_id(0) + from + 1;
+            double k = a[group * dim + from] / line[from];
+            for(int i = 0; i < dim; i++) {
+                a[group * dim + i] -= k * line[i];
+            }
+        }
+
+-
+    programName: invDivide1MatrixKernel
+    programBody: |
+        __kernel void invDivide1MatrixKernelRD(__global double *current,
+                                             __global double *identity,
+                                             const int dim,
+                                             const int line) {
+            int cell = get_global_id(0);
+            double k = 1 / current[line * dim + line];
+            if (cell != line) {
+                current[line * dim + cell] *= k;
+                identity[line * dim + cell] *= k;
+            }
+        }
+
+-
+    programName: invDivide2MatrixKernel
+    programBody: |
+        __kernel void invDivide2MatrixKernelRD(__global double *current,
+                                             __global double *identity,
+                                             const int dim,
+                                             const int cell) {
+            double k = 1 / current[cell * dim + cell];
+            current[cell * dim + cell] = 1;
+            identity[cell * dim + cell] *= k;
+        }
+
+-
+    programName: invSubtractMatrixKernel
+    programBody: |
+        __kernel void invSubtractMatrixKernelRD(__global double *current,
+                                              __global double *identity,
+                                              const int dim,
+                                              const int cell) {
+            int row = get_global_id(0);
+            int col = get_global_id(1);
+            if (row != cell) {
+                double k = current[row * dim + cell];
+                current[row * dim + col] -= k * current[cell * dim + col];
+                identity[row * dim + col] -= k * identity[cell * dim + col];
+            }
+        }

@@ -8,16 +8,32 @@ import org.jocl.Pointer;
 import org.jocl.Sizeof;
 import org.jocl.cl_mem;
 
-import chav1961.bt.matrix.MatrixLib.ProgramDescriptor;
+import chav1961.bt.matrix.utils.ProgramDescriptor;
 import chav1961.purelib.basic.exceptions.EnvironmentException;
 
 // https://blogs.oracle.com/javamagazine/post/programming-the-gpu-in-java
 public class Matrix implements AutoCloseable {
 	public static enum Type {
-		REAL_FLOAT,
-		COMPLEX_FLOAT,
-		REAL_DOUBLE,
-		COMPLEX_DOUBLE
+		REAL_FLOAT(1, Sizeof.cl_float),
+		COMPLEX_FLOAT(2, Sizeof.cl_float),
+		REAL_DOUBLE(1, Sizeof.cl_double),
+		COMPLEX_DOUBLE(2, Sizeof.cl_double);
+		
+		private final int	numberOfItems;
+		private final int	itemSize;
+		
+		private Type(final int numberOfItems, final int itemSize) {
+			this.numberOfItems = numberOfItems;
+			this.itemSize = itemSize;
+		}
+		
+		public int getNumberOfItems() {
+			return numberOfItems;
+		}
+		
+		public int getItemSize() {
+			return itemSize;
+		}
 	}
 	
 	private final MatrixLib		lib;
@@ -46,7 +62,7 @@ public class Matrix implements AutoCloseable {
 		}
 	}
 	
-	public Matrix.Type type() {
+	public Matrix.Type getType() {
 		return type;
 	}
 	
@@ -58,13 +74,40 @@ public class Matrix implements AutoCloseable {
 		return cols;
 	}
 
-	public float[] extract() {
+	public float[] extractFloats() {
 		ensureIsClosed();
-		final int		totalSize = numberOfRows() * numberOfColumns();
-		final float[]	result = new float[totalSize];
-		
-        CL.clEnqueueReadBuffer(lib.getCommandQueue(), memory, CL.CL_TRUE, 0, totalSize * Sizeof.cl_float, Pointer.to(result), 0, null, null);
-        return result;
+		switch (type) {
+			case REAL_FLOAT		:
+			case COMPLEX_FLOAT	:
+				final int		totalSize = numberOfRows() * numberOfColumns();
+				final float[]	result = new float[getType().getNumberOfItems() * totalSize];
+				
+		        CL.clEnqueueReadBuffer(lib.getCommandQueue(), memory, CL.CL_TRUE, 0, result.length * getType().getItemSize(), Pointer.to(result), 0, null, null);
+		        return result;
+			case REAL_DOUBLE	:
+			case COMPLEX_DOUBLE	:
+				throw new IllegalStateException("Matrix type["+type+"] contains doubles, not floats. Use extractDoubles() instead");
+			default :
+				throw new UnsupportedOperationException("Matrix type["+type+"] is not supported yet"); 
+		}
+	}
+
+	public double[] extractDoubless() {
+		ensureIsClosed();
+		switch (type) {
+			case REAL_DOUBLE	:
+			case COMPLEX_DOUBLE	:
+				final int		totalSize = numberOfRows() * numberOfColumns();
+				final double[]	result = new double[getType().getNumberOfItems() * totalSize];
+				
+		        CL.clEnqueueReadBuffer(lib.getCommandQueue(), memory, CL.CL_TRUE, 0, result.length * getType().getItemSize(), Pointer.to(result), 0, null, null);
+		        return result;
+			case REAL_FLOAT		:
+			case COMPLEX_FLOAT	:
+				throw new IllegalStateException("Matrix type["+type+"] contains floats, not doubles. Use extractFloats() instead");
+			default :
+				throw new UnsupportedOperationException("Matrix type["+type+"] is not supported yet"); 
+		}
 	}
 	
 	public void assign(final float[] content) {
@@ -76,6 +119,16 @@ public class Matrix implements AutoCloseable {
 		}
 	}
 
+	public void assign(final double[] content) {
+		if (content == null) {
+			throw new NullPointerException("Content to assign can't be null");
+		}
+		else {
+			assign(content, 0, content.length - 1);
+		}
+	}
+	
+	
 	public void assign(float[] content, final int from, final int to) {
 		if (content == null) {
 			throw new NullPointerException("Content to assign can't be null");
@@ -100,13 +153,44 @@ public class Matrix implements AutoCloseable {
 			else {
 				piece = content;
 			}
-			CL.clEnqueueWriteBuffer(lib.getCommandQueue(), memory, CL.CL_TRUE, 0, (to - from + 1) * Sizeof.cl_float, Pointer.to(piece), 0, null, null);
+			CL.clEnqueueWriteBuffer(lib.getCommandQueue(), memory, CL.CL_TRUE, 0, (to - from + 1) * getType().getItemSize(), Pointer.to(piece), 0, null, null);
 		}
 	}
 
+	public void assign(double[] content, final int from, final int to) {
+		if (content == null) {
+			throw new NullPointerException("Content to assign can't be null");
+		}
+		else if (from < 0 || from >= content.length) {
+			throw new IllegalArgumentException("From position ["+from+"] out of range 0.."+(content.length-1));
+		}
+		else if (to < 0 || to >= content.length) {
+			throw new IllegalArgumentException("To position ["+to+"] out of range 0.."+(content.length-1));
+		}
+		else if (to < from) {
+			throw new IllegalArgumentException("To position ["+to+"] is less than from position ["+from+"]");
+		}
+		else if (to != from) {
+			ensureIsClosed();
+			final double[]	piece;
+			
+			if (from != 0) {
+				piece = new double[to - from + 1];
+				System.arraycopy(content, from, piece, 0, piece.length);
+			}
+			else {
+				piece = content;
+			}
+			CL.clEnqueueWriteBuffer(lib.getCommandQueue(), memory, CL.CL_TRUE, 0, (to - from + 1) * getType().getItemSize(), Pointer.to(piece), 0, null, null);
+		}
+	}
+	
 	public Matrix assign(final Matrix another) {
 		if (another == null) {
 			throw new NullPointerException("Matrix to assign can't be null");
+		}
+		else if (another.type != type) {
+			throw new IllegalArgumentException("Incompatible matrix types: own "+getType()+" and another "+another.type);
 		}
 		else if (numberOfRows() != another.numberOfRows() || numberOfColumns() != another.numberOfColumns()) {
 			throw new IllegalArgumentException("Different matrix size: own "+numberOfRows()+'x'+numberOfColumns()+" and another "+another.numberOfRows()+'x'+another.numberOfColumns());
@@ -114,7 +198,7 @@ public class Matrix implements AutoCloseable {
 		else {
 			ensureIsClosed();
 			final ProgramDescriptor	desc = lib.getProgramDescriptor(MatrixLib.PROGRAM_ASSIGN_NAME);
-			final long				totalSize = 1L * numberOfRows() * numberOfColumns();
+			final long				totalSize = getType().getNumberOfItems() * numberOfRows() * numberOfColumns();
 			final long 				global_work_size[] = new long[]{totalSize};
 		    final long 				local_work_size[] = new long[]{1, 1};
 
@@ -146,7 +230,7 @@ public class Matrix implements AutoCloseable {
 		final cl_mem			newMemory = CL.clCreateBuffer(lib.getContext(), CL.CL_MEM_READ_WRITE, totalSize * Sizeof.cl_float, null, null);
 
 	    executeProgram(lib.getProgramDescriptor(MatrixLib.PROGRAM_ADD_SCALAR_NAME), new long[]{totalSize}, memory, value, newMemory);
-		return new Matrix(lib, type(), rows, cols, newMemory);
+		return new Matrix(lib, getType(), rows, cols, newMemory);
 	}
 	
 	public Matrix subFrom(final double value) {
@@ -155,7 +239,7 @@ public class Matrix implements AutoCloseable {
 		final cl_mem			newMemory = CL.clCreateBuffer(lib.getContext(), CL.CL_MEM_READ_WRITE, totalSize * Sizeof.cl_float, null, null);
 
 	    executeProgram(lib.getProgramDescriptor(MatrixLib.PROGRAM_SUBTRACT_FROM_SCALAR_NAME), new long[]{totalSize}, memory, (float)value, newMemory);
-		return new Matrix(lib, type(), rows, cols, newMemory);
+		return new Matrix(lib, getType(), rows, cols, newMemory);
 	}
 	
 	public Matrix add(final Matrix another) {
@@ -171,7 +255,7 @@ public class Matrix implements AutoCloseable {
 			final cl_mem			newMemory = CL.clCreateBuffer(lib.getContext(), CL.CL_MEM_READ_WRITE, totalSize * Sizeof.cl_float, null, null);
 
 		    executeProgram(lib.getProgramDescriptor(MatrixLib.PROGRAM_ADD_NAME), new long[]{totalSize}, memory, another.memory, newMemory);
-			return new Matrix(lib, type(), rows, cols, newMemory);
+			return new Matrix(lib, getType(), rows, cols, newMemory);
 		}
 	}
 
@@ -197,7 +281,7 @@ public class Matrix implements AutoCloseable {
 	        // Execute the kernel
 			CL.clEnqueueNDRangeKernel(lib.getCommandQueue(), desc.kernel, 1, null, global_work_size, local_work_size, 0, null, null);
 			
-			return new Matrix(lib, type(), rows, cols, newMemory);
+			return new Matrix(lib, getType(), rows, cols, newMemory);
 		}
 	}
 
@@ -216,7 +300,7 @@ public class Matrix implements AutoCloseable {
         // Execute the kernel
 		CL.clEnqueueNDRangeKernel(lib.getCommandQueue(), desc.kernel, 1, null, global_work_size, local_work_size, 0, null, null);
 		
-		return new Matrix(lib, type(), rows, cols, newMemory);
+		return new Matrix(lib, getType(), rows, cols, newMemory);
 	}	
 	
 	public Matrix mul(final Matrix another) {
@@ -242,7 +326,7 @@ public class Matrix implements AutoCloseable {
 	        // Execute the kernel
 			CL.clEnqueueNDRangeKernel(lib.getCommandQueue(), desc.kernel, 2, null, global_work_size, local_work_size, 0, null, null);
 			
-			return new Matrix(lib, type(), rows, cols, newMemory);
+			return new Matrix(lib, getType(), rows, cols, newMemory);
 		}
 	}
 
@@ -268,7 +352,7 @@ public class Matrix implements AutoCloseable {
 	        // Execute the kernel
 			CL.clEnqueueNDRangeKernel(lib.getCommandQueue(), desc.kernel, 1, null, global_work_size, local_work_size, 0, null, null);
 			
-			return new Matrix(lib, type(), rows, cols, newMemory);
+			return new Matrix(lib, getType(), rows, cols, newMemory);
 		}
 	}
 
@@ -296,7 +380,7 @@ public class Matrix implements AutoCloseable {
 	        // Execute the kernel
 			CL.clEnqueueNDRangeKernel(lib.getCommandQueue(), desc.kernel, 2, null, global_work_size, local_work_size, 0, null, null);
 			
-			return new Matrix(lib, type(), totalRows, totalCols, newMemory);
+			return new Matrix(lib, getType(), totalRows, totalCols, newMemory);
 		}
 	}
 
@@ -338,7 +422,7 @@ public class Matrix implements AutoCloseable {
         // Execute the kernel
 		CL.clEnqueueNDRangeKernel(lib.getCommandQueue(), desc.kernel, 2, null, global_work_size, local_work_size, 0, null, null);
 		
-		return new Matrix(lib, type(), rows, cols, newMemory);
+		return new Matrix(lib, getType(), rows, cols, newMemory);
 	}
 
 	public Matrix power(final double power) {
@@ -357,7 +441,7 @@ public class Matrix implements AutoCloseable {
         // Execute the kernel
 		CL.clEnqueueNDRangeKernel(lib.getCommandQueue(), desc.kernel, 2, null, global_work_size, local_work_size, 0, null, null);
 		
-		return new Matrix(lib, type(), rows, cols, newMemory);
+		return new Matrix(lib, getType(), rows, cols, newMemory);
 	}
 	
 	public double track() {
@@ -450,7 +534,7 @@ public class Matrix implements AutoCloseable {
 		else if (!lib.isTypeSupported(target)) {
 			throw new IllegalArgumentException("Target matrix type ["+target+"] is not supported by library");
 		}
-		else if (type() == target){
+		else if (getType() == target){
 			return this;
 		}
 		else {
