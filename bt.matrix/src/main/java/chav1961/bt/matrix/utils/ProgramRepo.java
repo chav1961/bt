@@ -78,7 +78,7 @@ public class ProgramRepo implements AutoCloseable {
 			try{
 				switch (item) {
 					case COMPLEX_DOUBLE	:
-						items = ProgramItem.load(fileName = REAL_FLOAT_FILE);
+						items = ProgramItem.load(fileName = COMPLEX_DOUBLE_FILE);
 						break;
 					case COMPLEX_FLOAT	:
 						items = ProgramItem.load(fileName = COMPLEX_FLOAT_FILE);
@@ -87,12 +87,12 @@ public class ProgramRepo implements AutoCloseable {
 						items = ProgramItem.load(fileName = REAL_DOUBLE_FILE);
 						break;
 					case REAL_FLOAT		:
-						items = ProgramItem.load(fileName = COMPLEX_DOUBLE_FILE);
+						items = ProgramItem.load(fileName = REAL_FLOAT_FILE);
 						break;
 					default :
 						throw new UnsupportedOperationException("Matrix type ["+item+"] is not supported yet"); 
 				}
-				compile(context, fileName, programs, items, item.ordinal());
+				compile(context, fileName, item.getProgramSuffix(), programs, items, item.ordinal());
 				reallySupportedTypes.add(item);
 			} catch (IOException e) {
 				e.printStackTrace();
@@ -129,6 +129,10 @@ public class ProgramRepo implements AutoCloseable {
 			return false;
 		}
 	}
+
+	public ProgramDescriptor getProgram(final String programName) {
+		return getProgram(Type.REAL_FLOAT, programName);
+	}	
 	
 	public ProgramDescriptor getProgram(final Type type, final String programName) {
 		if (type == null) {
@@ -160,10 +164,10 @@ public class ProgramRepo implements AutoCloseable {
 		}
 	}
 
-	private static void compile(final cl_context context, final String fileName, final Map<String, ProgramDescriptor[]> programs, final ProgramItem[] items, final int ordinal) {
+	private static void compile(final cl_context context, final String fileName, final String suffix, final Map<String, ProgramDescriptor[]> programs, final ProgramItem[] items, final int ordinal) {
 		for(ProgramItem item : items) {
 			if (isNameSupported(item.programName)) {
-				programs.get(item.programName)[ordinal] = new ProgramDescriptor(context, item.programName, item.programBody);
+				programs.get(item.programName)[ordinal] = new ProgramDescriptor(context, item.programName+suffix, item.programBody);
 			}
 			else {
 				throw new EnvironmentException("File ["+fileName+"], program name ["+item.programName+"] is not known in the repo");

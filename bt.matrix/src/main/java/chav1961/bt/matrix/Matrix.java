@@ -9,22 +9,25 @@ import org.jocl.Sizeof;
 import org.jocl.cl_mem;
 
 import chav1961.bt.matrix.utils.ProgramDescriptor;
+import chav1961.bt.matrix.utils.ProgramRepo;
 import chav1961.purelib.basic.exceptions.EnvironmentException;
 
 // https://blogs.oracle.com/javamagazine/post/programming-the-gpu-in-java
 public class Matrix implements AutoCloseable {
 	public static enum Type {
-		REAL_FLOAT(1, Sizeof.cl_float),
-		COMPLEX_FLOAT(2, Sizeof.cl_float),
-		REAL_DOUBLE(1, Sizeof.cl_double),
-		COMPLEX_DOUBLE(2, Sizeof.cl_double);
+		REAL_FLOAT(1, Sizeof.cl_float, "RF"),
+		COMPLEX_FLOAT(2, Sizeof.cl_float, "CF"),
+		REAL_DOUBLE(1, Sizeof.cl_double, "RD"),
+		COMPLEX_DOUBLE(2, Sizeof.cl_double, "CD");
 		
-		private final int	numberOfItems;
-		private final int	itemSize;
+		private final int		numberOfItems;
+		private final int		itemSize;
+		private final String	suffix;
 		
-		private Type(final int numberOfItems, final int itemSize) {
+		private Type(final int numberOfItems, final int itemSize, final String suffix) {
 			this.numberOfItems = numberOfItems;
 			this.itemSize = itemSize;
+			this.suffix = suffix;
 		}
 		
 		public int getNumberOfItems() {
@@ -33,6 +36,10 @@ public class Matrix implements AutoCloseable {
 		
 		public int getItemSize() {
 			return itemSize;
+		}
+		
+		public String getProgramSuffix() {
+			return suffix;
 		}
 	}
 	
@@ -197,7 +204,7 @@ public class Matrix implements AutoCloseable {
 		}
 		else {
 			ensureIsClosed();
-			final ProgramDescriptor	desc = lib.getProgramDescriptor(MatrixLib.PROGRAM_ASSIGN_NAME);
+			final ProgramDescriptor	desc = lib.getProgramDescriptor(ProgramRepo.PROGRAM_ASSIGN_NAME);
 			final long				totalSize = getType().getNumberOfItems() * numberOfRows() * numberOfColumns();
 			final long 				global_work_size[] = new long[]{totalSize};
 		    final long 				local_work_size[] = new long[]{1, 1};
@@ -229,7 +236,7 @@ public class Matrix implements AutoCloseable {
 		final long				totalSize = 1L * numberOfRows() * numberOfColumns();
 		final cl_mem			newMemory = CL.clCreateBuffer(lib.getContext(), CL.CL_MEM_READ_WRITE, totalSize * Sizeof.cl_float, null, null);
 
-	    executeProgram(lib.getProgramDescriptor(MatrixLib.PROGRAM_ADD_SCALAR_NAME), new long[]{totalSize}, memory, value, newMemory);
+	    executeProgram(lib.getProgramDescriptor(ProgramRepo.PROGRAM_ADD_SCALAR_NAME), new long[]{totalSize}, memory, value, newMemory);
 		return new Matrix(lib, getType(), rows, cols, newMemory);
 	}
 	
@@ -238,7 +245,7 @@ public class Matrix implements AutoCloseable {
 		final long				totalSize = 1L * numberOfRows() * numberOfColumns();
 		final cl_mem			newMemory = CL.clCreateBuffer(lib.getContext(), CL.CL_MEM_READ_WRITE, totalSize * Sizeof.cl_float, null, null);
 
-	    executeProgram(lib.getProgramDescriptor(MatrixLib.PROGRAM_SUBTRACT_FROM_SCALAR_NAME), new long[]{totalSize}, memory, (float)value, newMemory);
+	    executeProgram(lib.getProgramDescriptor(ProgramRepo.PROGRAM_SUBTRACT_FROM_SCALAR_NAME), new long[]{totalSize}, memory, (float)value, newMemory);
 		return new Matrix(lib, getType(), rows, cols, newMemory);
 	}
 	
@@ -254,7 +261,7 @@ public class Matrix implements AutoCloseable {
 			final long				totalSize = 1L * numberOfRows() * numberOfColumns();
 			final cl_mem			newMemory = CL.clCreateBuffer(lib.getContext(), CL.CL_MEM_READ_WRITE, totalSize * Sizeof.cl_float, null, null);
 
-		    executeProgram(lib.getProgramDescriptor(MatrixLib.PROGRAM_ADD_NAME), new long[]{totalSize}, memory, another.memory, newMemory);
+		    executeProgram(lib.getProgramDescriptor(ProgramRepo.PROGRAM_ADD_NAME), new long[]{totalSize}, memory, another.memory, newMemory);
 			return new Matrix(lib, getType(), rows, cols, newMemory);
 		}
 	}
@@ -268,7 +275,7 @@ public class Matrix implements AutoCloseable {
 		}
 		else {
 			ensureIsClosed();
-			final ProgramDescriptor	desc = lib.getProgramDescriptor(MatrixLib.PROGRAM_SUBTRACT_NAME);
+			final ProgramDescriptor	desc = lib.getProgramDescriptor(ProgramRepo.PROGRAM_SUBTRACT_NAME);
 			final long				totalSize = 1L * numberOfRows() * numberOfColumns();
 			final cl_mem			newMemory = CL.clCreateBuffer(lib.getContext(), CL.CL_MEM_READ_WRITE, totalSize * Sizeof.cl_float, null, null);
 			final long 				global_work_size[] = new long[]{totalSize};
@@ -287,7 +294,7 @@ public class Matrix implements AutoCloseable {
 
 	public Matrix mul(final double value) {
 		ensureIsClosed();
-		final ProgramDescriptor	desc = lib.getProgramDescriptor(MatrixLib.PROGRAM_MUL_SCALAR_NAME);
+		final ProgramDescriptor	desc = lib.getProgramDescriptor(ProgramRepo.PROGRAM_MUL_SCALAR_NAME);
 		final long				totalSize = 1L * numberOfRows() * numberOfColumns();
 		final cl_mem			newMemory = CL.clCreateBuffer(lib.getContext(), CL.CL_MEM_READ_WRITE, totalSize * Sizeof.cl_float, null, null);
 		final long 				global_work_size[] = new long[]{totalSize};
@@ -312,7 +319,7 @@ public class Matrix implements AutoCloseable {
 		}
 		else {
 			ensureIsClosed();
-			final ProgramDescriptor	desc = lib.getProgramDescriptor(MatrixLib.PROGRAM_MUL_NAME);
+			final ProgramDescriptor	desc = lib.getProgramDescriptor(ProgramRepo.PROGRAM_MUL_NAME);
 			final long				totalSize = 1L * numberOfRows() * another.numberOfColumns();
 			final cl_mem			newMemory = CL.clCreateBuffer(lib.getContext(), CL.CL_MEM_READ_WRITE, totalSize * Sizeof.cl_float, null, null);
 			final long 				global_work_size[] = new long[]{numberOfRows(), another.numberOfColumns()};
@@ -339,7 +346,7 @@ public class Matrix implements AutoCloseable {
 		}
 		else {
 			ensureIsClosed();
-			final ProgramDescriptor	desc = lib.getProgramDescriptor(MatrixLib.PROGRAM_MUL_HADAMARD_NAME);
+			final ProgramDescriptor	desc = lib.getProgramDescriptor(ProgramRepo.PROGRAM_MUL_HADAMARD_NAME);
 			final long				totalSize = 1L * numberOfRows() * numberOfColumns();
 			final cl_mem			newMemory = CL.clCreateBuffer(lib.getContext(), CL.CL_MEM_READ_WRITE, totalSize * Sizeof.cl_float, null, null);
 			final long 				global_work_size[] = new long[]{totalSize};
@@ -362,7 +369,7 @@ public class Matrix implements AutoCloseable {
 		}
 		else {
 			ensureIsClosed();
-			final ProgramDescriptor	desc = lib.getProgramDescriptor(MatrixLib.PROGRAM_MUL_TENZOR_NAME);
+			final ProgramDescriptor	desc = lib.getProgramDescriptor(ProgramRepo.PROGRAM_MUL_TENZOR_NAME);
 			final int				totalRows = numberOfRows() * another.numberOfRows();
 			final int				totalCols = numberOfColumns() * another.numberOfColumns();
 			final cl_mem			newMemory = CL.clCreateBuffer(lib.getContext(), CL.CL_MEM_READ_WRITE, totalRows * totalCols * Sizeof.cl_float, null, null);
@@ -395,9 +402,9 @@ public class Matrix implements AutoCloseable {
 				copy.assign(this);
 				
 				final Matrix			identity = lib.getIdentityMatrix(numberOfRows(), numberOfColumns());
-				final ProgramDescriptor	divide1 = lib.getProgramDescriptor(MatrixLib.PROGRAM_INV_DIVIDE1_NAME);
-				final ProgramDescriptor	divide2 = lib.getProgramDescriptor(MatrixLib.PROGRAM_INV_DIVIDE2_NAME);
-				final ProgramDescriptor	subtract = lib.getProgramDescriptor(MatrixLib.PROGRAM_INV_SUBTRACT_NAME);
+				final ProgramDescriptor	divide1 = lib.getProgramDescriptor(ProgramRepo.PROGRAM_INV_DIVIDE1_NAME);
+				final ProgramDescriptor	divide2 = lib.getProgramDescriptor(ProgramRepo.PROGRAM_INV_DIVIDE2_NAME);
+				final ProgramDescriptor	subtract = lib.getProgramDescriptor(ProgramRepo.PROGRAM_INV_SUBTRACT_NAME);
 
 				for(int index = 0; index < numberOfRows(); index++) {
 					invIterate(divide1, divide2, subtract, index, copy, identity);
@@ -409,7 +416,7 @@ public class Matrix implements AutoCloseable {
 
 	public Matrix trans() {
 		ensureIsClosed();
-		final ProgramDescriptor	desc = lib.getProgramDescriptor(MatrixLib.PROGRAM_TRANSPOSE_NAME);
+		final ProgramDescriptor	desc = lib.getProgramDescriptor(ProgramRepo.PROGRAM_TRANSPOSE_NAME);
 		final long				totalSize = 1L * numberOfRows() * numberOfColumns();
 		final cl_mem			newMemory = CL.clCreateBuffer(lib.getContext(), CL.CL_MEM_READ_WRITE, totalSize * Sizeof.cl_float, null, null);
 		final long 				global_work_size[] = new long[]{numberOfRows(), numberOfColumns()};
@@ -427,7 +434,7 @@ public class Matrix implements AutoCloseable {
 
 	public Matrix power(final double power) {
 		ensureIsClosed();
-		final ProgramDescriptor	desc = lib.getProgramDescriptor(MatrixLib.PROGRAM_POWER_NAME);
+		final ProgramDescriptor	desc = lib.getProgramDescriptor(ProgramRepo.PROGRAM_POWER_NAME);
 		final long				totalSize = 1L * numberOfRows() * numberOfColumns();
 		final cl_mem			newMemory = CL.clCreateBuffer(lib.getContext(), CL.CL_MEM_READ_WRITE, totalSize * Sizeof.cl_float, null, null);
 		final long 				global_work_size[] = new long[]{numberOfRows(), numberOfColumns()};
@@ -450,7 +457,7 @@ public class Matrix implements AutoCloseable {
 		}
 		else {
 			ensureIsClosed();
-			final ProgramDescriptor	desc = lib.getProgramDescriptor(MatrixLib.PROGRAM_TRACK_NAME);
+			final ProgramDescriptor	desc = lib.getProgramDescriptor(ProgramRepo.PROGRAM_TRACK_NAME);
 			final int				groupSize = (int)Math.sqrt(numberOfRows());
 			final cl_mem			newMemory = CL.clCreateBuffer(lib.getContext(), CL.CL_MEM_READ_WRITE, groupSize * Sizeof.cl_float, null, null);
 			final long 				global_work_size[] = new long[]{groupSize};
@@ -488,14 +495,14 @@ public class Matrix implements AutoCloseable {
 		else {
 			ensureIsClosed();
 			try(final Matrix			temp = lib.getMatrix(numberOfRows(), numberOfColumns())) {
-				final ProgramDescriptor	descIterate = lib.getProgramDescriptor(MatrixLib.PROGRAM_DET_REDUCE_NAME);
+				final ProgramDescriptor	descIterate = lib.getProgramDescriptor(ProgramRepo.PROGRAM_DET_REDUCE_NAME);
 				
 				temp.assign(this);	// Make triangle matrix from source;
 				for(int index = 0; index < numberOfRows() - 1; index++) {
 					detIterate(descIterate, index, temp);
 				}
 				
-				final ProgramDescriptor	desc = lib.getProgramDescriptor(MatrixLib.PROGRAM_DET_TRIANGLE_NAME);
+				final ProgramDescriptor	desc = lib.getProgramDescriptor(ProgramRepo.PROGRAM_DET_TRIANGLE_NAME);
 				final int				groupSize = (int)Math.sqrt(numberOfRows());
 				final cl_mem			newMemory = CL.clCreateBuffer(lib.getContext(), CL.CL_MEM_READ_WRITE, groupSize * Sizeof.cl_float, null, null);
 				final long 				global_work_size[] = new long[]{groupSize};
