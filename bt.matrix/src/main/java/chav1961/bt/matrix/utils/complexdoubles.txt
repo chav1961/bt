@@ -2,7 +2,7 @@
     programName: zeroMatrixKernel
     programBody: |
         #pragma OPENCL EXTENSION cl_khr_fp64 : enable
-        __kernel void zeroMatrixKernelRD(__global double *c) {
+        __kernel void zeroMatrixKernelRD(__global double2 *c) {
            int gid = get_global_id(0);
            c[gid] = 0;
         }
@@ -11,7 +11,7 @@
     programName: identityMatrixKernel
     programBody: |
         __kernel void identityMatrixKernelRD(int dim,
-                                           __global double *C){
+                                           __global double2 *C){
             int iCol = get_global_id(0);
             int iRow = get_global_id(1);
             C[iRow*dim + iCol] = iCol == iRow ? 1 : 0;
@@ -20,8 +20,8 @@
 -
     programName: assignMatrixKernel
     programBody: |
-        __kernel void assignMatrixKernelRD(__global const double *a,
-                                         __global double *c) {
+        __kernel void assignMatrixKernelRD(__global const double2 *a,
+                                         __global double2 *c) {
            int gid = get_global_id(0);
            c[gid] = a[gid];
         }
@@ -29,9 +29,9 @@
 -
     programName: addMatrixKernel
     programBody: |
-        __kernel void addMatrixKernelRD(__global const double *a,
-                                      __global const double *b,
-                                      __global double *c) {
+        __kernel void addMatrixKernelRD(__global const double2 *a,
+                                      __global const double2 *b,
+                                      __global double2 *c) {
             int gid = get_global_id(0);
             c[gid] = a[gid] + b[gid];
         }
@@ -39,9 +39,9 @@
 -
     programName: subtractMatrixKernel
     programBody: |
-        __kernel void subtractMatrixKernelRD(__global const double *a,
-                                           __global const double *b,
-                                           __global double *c) {
+        __kernel void subtractMatrixKernelRD(__global const double2 *a,
+                                           __global const double2 *b,
+                                           __global double2 *c) {
            int gid = get_global_id(0);
            c[gid] = a[gid] - b[gid];
         }
@@ -49,9 +49,9 @@
 -
     programName: addScalarKernel
     programBody: |
-        __kernel void addScalarKernelRD(__global const double *a,
-                                      const double scalar,
-                                      __global double *c) {
+        __kernel void addScalarKernelRD(__global const double2 *a,
+                                      const double2 scalar,
+                                      __global double2 *c) {
             int gid = get_global_id(0);
             c[gid] = a[gid] + scalar;
         }
@@ -59,9 +59,9 @@
 -
     programName: subtractFromScalarKernel
     programBody: |
-        __kernel void subtractFromScalarKernelRD(__global const double *a,
-                                               const double scalar,
-                                               __global double *c) {
+        __kernel void subtractFromScalarKernelRD(__global const double2 *a,
+                                               const double2 scalar,
+                                               __global double2 *c) {
             int gid = get_global_id(0);
             c[gid] = scalar - a[gid];
         }
@@ -70,9 +70,9 @@
     programName: mulMatrixKernel
     programBody: |
         __kernel void mulMatrixKernelRD(int dim,
-                                      __global const double *A,
-                                      __global const double *B,
-                                      __global double *C) {
+                                      __global const double2 *A,
+                                      __global const double2 *B,
+                                      __global double2 *C) {
             int iCol = get_global_id(0);
             int iRow = get_global_id(1);
             double result = 0.0;
@@ -85,9 +85,9 @@
 -
     programName: mulHadamardMatrixKernel
     programBody: |
-        __kernel void mulHadamardMatrixKernelRD(__global const double *a,
-                                              __global const double *b,
-                                              __global double *c) {
+        __kernel void mulHadamardMatrixKernelRD(__global const double2 *a,
+                                              __global const double2 *b,
+                                              __global double2 *c) {
             int gid = get_global_id(0);
             c[gid] = a[gid] * b[gid];
         }
@@ -95,9 +95,9 @@
 -
     programName: mulScalarKernel
     programBody: |
-        __kernel void mulScalarKernelRD(__global const double *a,
-                                      const double scalar,
-                                      __global double *c) {
+        __kernel void mulScalarKernelRD(__global const double2 *a,
+                                      const double2 scalar,
+                                      __global double2 *c) {
             int gid = get_global_id(0);
             c[gid] = a[gid] * scalar;
         }
@@ -105,9 +105,9 @@
 -
     programName: mulKronekerMatrixKernel
     programBody: |
-        __kernel void mulKronekerMatrixKernelRD(__global const double *a,
-                                              __global const double *b,
-                                              __global double *C,
+        __kernel void mulKronekerMatrixKernelRD(__global const double2 *a,
+                                              __global const double2 *b,
+                                              __global double2 *C,
                                               const int rowDim,
                                               const int colDim,
                                               const int bRows,
@@ -128,9 +128,9 @@
 -
     programName: transposeMatrixKernel
     programBody: |
-        __kernel void transposeMatrixKernelRD(__global const double *a,
+        __kernel void transposeMatrixKernelRD(__global const double2 *a,
                                             const int dim,
-                                            __global double *C) {
+                                            __global double2 *C) {
             int iCol = get_global_id(0);
             int iRow = get_global_id(1);
             C[iRow*dim + iCol] = a[iCol*dim + iRow];
@@ -139,10 +139,10 @@
 -
     programName: powerMatrixKernel
     programBody: |
-        __kernel void powerMatrixKernelRD(__global const double *a,
+        __kernel void powerMatrixKernelRD(__global const double2 *a,
                                         const int dim,
                                         const double power,
-                                        __global double *C) {
+                                        __global double2 *C) {
             int iCol = get_global_id(0);
             int iRow = get_global_id(1);
             C[iRow*dim + iCol] = pow(a[iRow*dim + iCol], power);
@@ -151,10 +151,10 @@
 -
     programName: trackMatrixKernel
     programBody: |
-        __kernel void trackMatrixKernelRD(__global const double *a,
+        __kernel void trackMatrixKernelRD(__global const double2 *a,
                                         const int dim,
                                         const int groupSize,
-                                        __global double *C) {
+                                        __global double2 *C) {
             int group = get_global_id(0);
             double sum = 0;
             for(int i = group; i < dim; i += groupSize) {
@@ -166,10 +166,10 @@
 -
     programName: detTriangleMatrixKernel
     programBody: |
-        __kernel void detTriangleMatrixKernelRD(__global const double *a,
+        __kernel void detTriangleMatrixKernelRD(__global const double2 *a,
                                               const int dim,
                                               const int groupSize,
-                                              __global double *C) {
+                                              __global double2 *C) {
             int group = get_global_id(0);
             double prod = 1;
             for(int i = group; i < dim; i += groupSize) {
@@ -181,7 +181,7 @@
 -
     programName: detReduceMatrixKernel
     programBody: |
-        __kernel void detReduceMatrixKernelRD(__global double *a,
+        __kernel void detReduceMatrixKernelRD(__global double2 *a,
                                             const int dim,
                                             const int from) {
             __global double *line = a + dim * from;
@@ -195,8 +195,8 @@
 -
     programName: invDivide1MatrixKernel
     programBody: |
-        __kernel void invDivide1MatrixKernelRD(__global double *current,
-                                             __global double *identity,
+        __kernel void invDivide1MatrixKernelRD(__global double2 *current,
+                                             __global double2 *identity,
                                              const int dim,
                                              const int line) {
             int cell = get_global_id(0);
@@ -210,8 +210,8 @@
 -
     programName: invDivide2MatrixKernel
     programBody: |
-        __kernel void invDivide2MatrixKernelRD(__global double *current,
-                                             __global double *identity,
+        __kernel void invDivide2MatrixKernelRD(__global double2 *current,
+                                             __global double2 *identity,
                                              const int dim,
                                              const int cell) {
             double k = 1 / current[cell * dim + cell];
@@ -222,8 +222,8 @@
 -
     programName: invSubtractMatrixKernel
     programBody: |
-        __kernel void invSubtractMatrixKernelRD(__global double *current,
-                                              __global double *identity,
+        __kernel void invSubtractMatrixKernelRD(__global double2 *current,
+                                              __global double2 *identity,
                                               const int dim,
                                               const int cell) {
             int row = get_global_id(0);

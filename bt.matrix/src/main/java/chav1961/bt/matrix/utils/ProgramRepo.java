@@ -59,6 +59,9 @@ public class ProgramRepo implements AutoCloseable {
 										PROGRAM_INV_DIVIDE2_NAME,
 										PROGRAM_INV_SUBTRACT_NAME
 									};
+	private static final String		TEST_DOUBLES = "#pragma OPENCL EXTENSION cl_khr_fp64 : enable\n"
+										+ "__kernel void testDoubles(__global double *c) {\n"
+										+ "}\n";
 
 	private final Map<String, ProgramDescriptor[]>	programs = new HashMap<>();
 	private final Type[]	reallySupported;
@@ -66,26 +69,43 @@ public class ProgramRepo implements AutoCloseable {
 	public ProgramRepo(final cl_context context, final Type... typesSupported) throws EnvironmentException {
 		final Set<Type>	reallySupportedTypes = new HashSet<>(); 
 		final int		numberOfTypes = Type.values().length;
+		boolean			doublesSupported = false;
 
+		try{new ProgramDescriptor(context, "testDoubles", TEST_DOUBLES).close();;
+			doublesSupported = true;
+		} catch (EnvironmentException exc) {
+		}
+		
 		for (String item : PROGRAMS) {
 			programs.put(item, new ProgramDescriptor[numberOfTypes]);
 		}
 		
-		for(Type item : typesSupported) {
+		
+loop:	for(Type item : typesSupported) {
 			final ProgramItem[]	items;
 			final String		fileName;
 			
 			try{
 				switch (item) {
 					case COMPLEX_DOUBLE	:
-						items = ProgramItem.load(fileName = COMPLEX_DOUBLE_FILE);
-						break;
+						if (doublesSupported) {
+							items = ProgramItem.load(fileName = COMPLEX_DOUBLE_FILE);
+							break;
+						}
+						else {
+							continue loop;
+						}
 					case COMPLEX_FLOAT	:
 						items = ProgramItem.load(fileName = COMPLEX_FLOAT_FILE);
 						break;
 					case REAL_DOUBLE	:
-						items = ProgramItem.load(fileName = REAL_DOUBLE_FILE);
-						break;
+						if (doublesSupported) {
+							items = ProgramItem.load(fileName = REAL_DOUBLE_FILE);
+							break;
+						}
+						else {
+							continue loop;
+						}
 					case REAL_FLOAT		:
 						items = ProgramItem.load(fileName = REAL_FLOAT_FILE);
 						break;

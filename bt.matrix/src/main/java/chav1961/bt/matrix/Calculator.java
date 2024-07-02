@@ -105,7 +105,7 @@ public class Calculator implements AutoCloseable {
 					case SUB			:
 						mat = stack.popMatrix((f,m)->{if (f) temporary[0] = m;});
 						
-						stack.pushMatrix(stack.popMatrix((f,m)->{if (f) temporary[0] = m;}).sub(mat), true);
+						stack.pushMatrix(stack.popMatrix((f,m)->{if (f) temporary[0] = m;}).subtract(mat), true);
 						break;
 					case SUB_MATRIX_VAL	:
 						val = stack.popValue();
@@ -116,7 +116,7 @@ public class Calculator implements AutoCloseable {
 						stack.pushValue(- stack.popValue() + stack.popValue());
 						break;
 					case SUB_VAL_MATRIX	:
-						stack.pushMatrix(stack.popMatrix((f,m)->{if (f) temporary[0] = m;}).subFrom(stack.popValue()), true);
+						stack.pushMatrix(stack.popMatrix((f,m)->{if (f) temporary[0] = m;}).subtractFrom(stack.popValue()), true);
 						break;
 					case TRANSPOSE		:
 						stack.pushMatrix(stack.popMatrix((f,m)->{if (f) temporary[0] = m;}).trans(), true);

@@ -390,7 +390,7 @@ public class MatrixLib implements AutoCloseable {
 		}
 		else {
 			final long				totalSize = 1L * rows * cols;
-			final cl_mem			mem = CL.clCreateBuffer(context, CL.CL_MEM_READ_WRITE, totalSize * Sizeof.cl_float, null, null);
+			final cl_mem			mem = CL.clCreateBuffer(context, CL.CL_MEM_READ_WRITE, totalSize * type.getItemSize() * type.getNumberOfItems(), null, null);
 
 			return new Matrix(this, type, rows, cols, mem);
 		}
@@ -414,9 +414,9 @@ public class MatrixLib implements AutoCloseable {
 			throw new IllegalArgumentException("Number of columns ["+cols+"] must be greater than 0");
 		}
 		else {
-			final ProgramDescriptor	desc = repo.getProgram(ProgramRepo.PROGRAM_ZERO_NAME);
+			final ProgramDescriptor	desc = repo.getProgram(type, ProgramRepo.PROGRAM_ZERO_NAME);
 			final long				totalSize = 1L * rows * cols;
-			final cl_mem			mem = CL.clCreateBuffer(context, CL.CL_MEM_READ_WRITE, totalSize * Sizeof.cl_float, null, null);
+			final cl_mem			mem = CL.clCreateBuffer(context, CL.CL_MEM_READ_WRITE, totalSize * type.getItemSize() * type.getNumberOfItems(), null, null);
 			final long 				global_work_size[] = new long[]{totalSize};
 		    final long 				local_work_size[] = new long[]{1};
 
@@ -447,9 +447,9 @@ public class MatrixLib implements AutoCloseable {
 			throw new IllegalArgumentException("Number of columns ["+cols+"] must be greater than 0");
 		}
 		else {
-			final ProgramDescriptor	desc = repo.getProgram(ProgramRepo.PROGRAM_IDENTITY_NAME);
+			final ProgramDescriptor	desc = repo.getProgram(type, ProgramRepo.PROGRAM_IDENTITY_NAME);
 			final long				totalSize = 1L * rows * cols;
-			final cl_mem			mem = CL.clCreateBuffer(context, CL.CL_MEM_READ_WRITE, totalSize * Sizeof.cl_float, null, null);
+			final cl_mem			mem = CL.clCreateBuffer(context, CL.CL_MEM_READ_WRITE, totalSize * type.getItemSize() * type.getNumberOfItems(), null, null);
 			final long 				global_work_size[] = new long[]{rows, cols};
 		    final long 				local_work_size[] = new long[]{1, 1};
 
@@ -491,8 +491,8 @@ public class MatrixLib implements AutoCloseable {
 		return new MatrixLib(typesSupported == null || typesSupported.length == 0 ? new Type[] {Type.REAL_FLOAT} :  typesSupported);
 	}
 
-	ProgramDescriptor getProgramDescriptor(final String programName) {
-		return repo.getProgram(programName);
+	ProgramDescriptor getProgramDescriptor(final Type type, final String programName) {
+		return repo.getProgram(type, programName);
 	}
 	
 	cl_context getContext() {
