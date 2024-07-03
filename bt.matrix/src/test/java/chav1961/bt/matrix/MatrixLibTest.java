@@ -126,7 +126,7 @@ public class MatrixLibTest {
 	@Test
 	public void parseTest() throws SyntaxException {
 		final Lexema[]	parsed = MatrixLib.parse("+-* ** ***^22.5%1.T InV DeT Sp ()\0".toCharArray());
-		final LexType[]	awaited = {LexType.PLUS, LexType.MINUS, LexType.MUL, LexType.MUL_H, LexType.MUL_K, LexType.POWER, LexType.VALUE, LexType.NAME, LexType.DOT, LexType.PREDEFINED, LexType.PREDEFINED, LexType.PREDEFINED, LexType.PREDEFINED, LexType.OPEN, LexType.CLOSE, LexType.EOF};
+		final LexType[]	awaited = {LexType.PLUS, LexType.MINUS, LexType.MUL, LexType.MUL_H, LexType.MUL_K, LexType.POWER, LexType.REAL_VALUE, LexType.NAME, LexType.DOT, LexType.PREDEFINED, LexType.PREDEFINED, LexType.PREDEFINED, LexType.PREDEFINED, LexType.OPEN, LexType.CLOSE, LexType.EOF};
 		
 		Assert.assertEquals(16, parsed.length);
 		for(int index = 0; index < parsed.length; index++) {
@@ -164,7 +164,7 @@ public class MatrixLibTest {
 		Assert.assertEquals(1, node.value);
 		
 		node = buildTree("22.5",1);
-		Assert.assertEquals(Operation.LOAD_VALUE, node.getType());
+		Assert.assertEquals(Operation.LOAD_REAL, node.getType());
 		Assert.assertEquals(22.5, Double.longBitsToDouble(node.value), 0.0001);
 
 		node = buildTree("%1.t",3);
@@ -203,7 +203,7 @@ public class MatrixLibTest {
 		Assert.assertEquals(Operation.MINUS, node.getType());
 		Assert.assertNotNull(node.children);
 		Assert.assertEquals(1, node.children.length);
-		Assert.assertEquals(Operation.LOAD_VALUE, node.children[0].getType());
+		Assert.assertEquals(Operation.LOAD_REAL, node.children[0].getType());
 
 		node = buildTree("%1^2",3);
 		Assert.assertEquals(Operation.POWER, node.getType());
@@ -217,7 +217,7 @@ public class MatrixLibTest {
 		Assert.assertEquals(2, Double.longBitsToDouble(node.value), 0.0001);
 		Assert.assertNotNull(node.children);
 		Assert.assertEquals(1, node.children.length);
-		Assert.assertEquals(Operation.LOAD_VALUE, node.children[0].getType());
+		Assert.assertEquals(Operation.LOAD_REAL, node.children[0].getType());
 
 		// mul processing
 		
@@ -259,7 +259,7 @@ public class MatrixLibTest {
 		Assert.assertNotNull(node.children);
 		Assert.assertEquals(2, node.children.length);
 		Assert.assertEquals(Operation.LOAD_MATRIX, node.children[0].getType());
-		Assert.assertEquals(Operation.LOAD_VALUE, node.children[1].getType());
+		Assert.assertEquals(Operation.LOAD_REAL, node.children[1].getType());
 
 		node = buildTree("2.5*%1",3);
 		Assert.assertEquals(Operation.MUL, node.getType());
@@ -268,7 +268,7 @@ public class MatrixLibTest {
 		Assert.assertEquals(LexType.MUL, ((LexType[])node.cargo)[0]);
 		Assert.assertNotNull(node.children);
 		Assert.assertEquals(2, node.children.length);
-		Assert.assertEquals(Operation.LOAD_VALUE, node.children[0].getType());
+		Assert.assertEquals(Operation.LOAD_REAL, node.children[0].getType());
 		Assert.assertEquals(Operation.LOAD_MATRIX, node.children[1].getType());
 
 		// add processing
@@ -301,7 +301,7 @@ public class MatrixLibTest {
 		Assert.assertNotNull(node.children);
 		Assert.assertEquals(2, node.children.length);
 		Assert.assertEquals(Operation.LOAD_MATRIX, node.children[0].getType());
-		Assert.assertEquals(Operation.LOAD_VALUE, node.children[1].getType());
+		Assert.assertEquals(Operation.LOAD_REAL, node.children[1].getType());
 
 		node = buildTree("%1-2.5",3);
 		Assert.assertEquals(Operation.ADD, node.getType());
@@ -311,7 +311,7 @@ public class MatrixLibTest {
 		Assert.assertNotNull(node.children);
 		Assert.assertEquals(2, node.children.length);
 		Assert.assertEquals(Operation.LOAD_MATRIX, node.children[0].getType());
-		Assert.assertEquals(Operation.LOAD_VALUE, node.children[1].getType());
+		Assert.assertEquals(Operation.LOAD_REAL, node.children[1].getType());
 
 		// error built
 		
@@ -373,7 +373,7 @@ public class MatrixLibTest {
 
 		cmds = buildCommands("-2.5");
 		Assert.assertEquals(2, cmds.length);
-		Assert.assertEquals(Operation.LOAD_VALUE, cmds[0].op);
+		Assert.assertEquals(Operation.LOAD_REAL, cmds[0].op);
 		Assert.assertEquals(Operation.MINUS, cmds[1].op);
 		
 		cmds = buildCommands("%1^2.5");
@@ -384,7 +384,7 @@ public class MatrixLibTest {
 
 		cmds = buildCommands("3^2.5");
 		Assert.assertEquals(2, cmds.length);
-		Assert.assertEquals(Operation.LOAD_VALUE, cmds[0].op);
+		Assert.assertEquals(Operation.LOAD_REAL, cmds[0].op);
 		Assert.assertEquals(3, Double.longBitsToDouble(cmds[0].operand), 0.0001);
 		Assert.assertEquals(Operation.POWER_VAL, cmds[1].op);
 		Assert.assertEquals(2.5, Double.longBitsToDouble(cmds[1].operand), 0.0001);
@@ -399,14 +399,14 @@ public class MatrixLibTest {
 		
 		cmds = buildCommands("2.5 * %2");
 		Assert.assertEquals(3, cmds.length);
-		Assert.assertEquals(Operation.LOAD_VALUE, cmds[0].op);
+		Assert.assertEquals(Operation.LOAD_REAL, cmds[0].op);
 		Assert.assertEquals(Operation.LOAD_MATRIX, cmds[1].op);
 		Assert.assertEquals(Operation.MUL_VAL_MATRIX, cmds[2].op);
 
 		cmds = buildCommands("%2 * 2.5");
 		Assert.assertEquals(3, cmds.length);
 		Assert.assertEquals(Operation.LOAD_MATRIX, cmds[0].op);
-		Assert.assertEquals(Operation.LOAD_VALUE, cmds[1].op);
+		Assert.assertEquals(Operation.LOAD_REAL, cmds[1].op);
 		Assert.assertEquals(Operation.MUL_MATRIX_VAL, cmds[2].op);
 
 		cmds = buildCommands("%1 ** %2");
@@ -432,19 +432,19 @@ public class MatrixLibTest {
 		cmds = buildCommands("%1 + 2.5");
 		Assert.assertEquals(3, cmds.length);
 		Assert.assertEquals(Operation.LOAD_MATRIX, cmds[0].op);
-		Assert.assertEquals(Operation.LOAD_VALUE, cmds[1].op);
+		Assert.assertEquals(Operation.LOAD_REAL, cmds[1].op);
 		Assert.assertEquals(Operation.ADD_MATRIX_VAL, cmds[2].op);
 
 		cmds = buildCommands("2.5 + %2");
 		Assert.assertEquals(3, cmds.length);
-		Assert.assertEquals(Operation.LOAD_VALUE, cmds[0].op);
+		Assert.assertEquals(Operation.LOAD_REAL, cmds[0].op);
 		Assert.assertEquals(Operation.LOAD_MATRIX, cmds[1].op);
 		Assert.assertEquals(Operation.ADD_VAL_MATRIX, cmds[2].op);
 
 		cmds = buildCommands("1 + 2");
 		Assert.assertEquals(3, cmds.length);
-		Assert.assertEquals(Operation.LOAD_VALUE, cmds[0].op);
-		Assert.assertEquals(Operation.LOAD_VALUE, cmds[1].op);
+		Assert.assertEquals(Operation.LOAD_REAL, cmds[0].op);
+		Assert.assertEquals(Operation.LOAD_REAL, cmds[1].op);
 		Assert.assertEquals(Operation.ADD_VAL, cmds[2].op);
 
 		cmds = buildCommands("%1 - %2");
@@ -456,19 +456,19 @@ public class MatrixLibTest {
 		cmds = buildCommands("%1 - 2.5");
 		Assert.assertEquals(3, cmds.length);
 		Assert.assertEquals(Operation.LOAD_MATRIX, cmds[0].op);
-		Assert.assertEquals(Operation.LOAD_VALUE, cmds[1].op);
+		Assert.assertEquals(Operation.LOAD_REAL, cmds[1].op);
 		Assert.assertEquals(Operation.SUB_MATRIX_VAL, cmds[2].op);
 
 		cmds = buildCommands("2.5 - %2");
 		Assert.assertEquals(3, cmds.length);
-		Assert.assertEquals(Operation.LOAD_VALUE, cmds[0].op);
+		Assert.assertEquals(Operation.LOAD_REAL, cmds[0].op);
 		Assert.assertEquals(Operation.LOAD_MATRIX, cmds[1].op);
 		Assert.assertEquals(Operation.SUB_VAL_MATRIX, cmds[2].op);
 
 		cmds = buildCommands("1 - 2");
 		Assert.assertEquals(3, cmds.length);
-		Assert.assertEquals(Operation.LOAD_VALUE, cmds[0].op);
-		Assert.assertEquals(Operation.LOAD_VALUE, cmds[1].op);
+		Assert.assertEquals(Operation.LOAD_REAL, cmds[0].op);
+		Assert.assertEquals(Operation.LOAD_REAL, cmds[1].op);
 		Assert.assertEquals(Operation.SUB_VAL, cmds[2].op);
 	}	
 	

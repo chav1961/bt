@@ -3,6 +3,7 @@ package chav1961.bt.matrix;
 import java.util.Arrays;
 import java.util.function.BiConsumer;
 
+import chav1961.bt.matrix.Matrix.Type;
 import chav1961.bt.matrix.MatrixLib.Command;
 import chav1961.purelib.basic.Utils;
 import chav1961.purelib.basic.exceptions.CalculationException;
@@ -23,7 +24,7 @@ public class Calculator implements AutoCloseable {
 		else {
 			final Stack		stack = new Stack(stackDepth);
 			final Matrix[]	temporary = new Matrix[1];
-			double			val;
+			double[]		val;
 			Matrix			mat;
 			
 			for(Command item : commands) {
@@ -35,14 +36,16 @@ public class Calculator implements AutoCloseable {
 						break;
 					case ADD_MATRIX_VAL	:
 						val = stack.popValue();
-						
-						stack.pushMatrix(stack.popMatrix((f,m)->{if (f) temporary[0] = m;}).add(val), true);
+						mat = stack.popMatrix((f,m)->{if (f) temporary[0] = m;});
+						stack.pushMatrix(mat.add(castValue(val, mat.getType())), true);
 						break;
 					case ADD_VAL		:
-						stack.pushValue(stack.popValue() + stack.popValue());
+						stack.pushValue(add(stack.popValue(), stack.popValue()));
 						break;
 					case ADD_VAL_MATRIX	:
-						stack.pushMatrix(stack.popMatrix((f,m)->{if (f) temporary[0] = m;}).add(stack.popValue()), true);
+						mat = stack.popMatrix((f,m)->{if (f) temporary[0] = m;});
+						val = stack.popValue();
+						stack.pushMatrix(mat.add(castValue(val, mat.getType())), true);
 						break;
 					case DET			:
 						stack.pushValue(stack.popMatrix((f,m)->{if (f) temporary[0] = m;}).det());
@@ -58,11 +61,14 @@ public class Calculator implements AutoCloseable {
 							stack.pushMatrix(operands[(int)item.operand - 1], false);
 						}
 						break;
-					case LOAD_VALUE		:
-						stack.pushValue(item.operand);
+					case LOAD_REAL		:
+						stack.pushValue(new double[] {Double.longBitsToDouble(item.operand), 0.0});
+						break;
+					case LOAD_IMAGE		:
+						stack.pushValue(new double[] {0.0, Double.longBitsToDouble(item.operand)});
 						break;
 					case MINUS			:
-						stack.pushValue(-stack.popValue());
+						stack.pushValue(negate(stack.popValue()));
 						break;
 					case MUL			:
 						mat = stack.popMatrix((f,m)->{if (f) temporary[0] = m;});
@@ -81,14 +87,15 @@ public class Calculator implements AutoCloseable {
 						break;
 					case MUL_MATRIX_VAL	:
 						val = stack.popValue();
-						
-						stack.pushMatrix(stack.popMatrix((f,m)->{if (f) temporary[0] = m;}).mul(val), true);
+						mat = stack.popMatrix((f,m)->{if (f) temporary[0] = m;});
+						stack.pushMatrix(mat.mul(castValue(val, mat.getType())), true);
 						break;
 					case MUL_VAL		:
-						stack.pushValue(stack.popValue() * stack.popValue());
+						stack.pushValue(mul(stack.popValue(), stack.popValue()));
 						break;
 					case MUL_VAL_MATRIX	:
-						stack.pushMatrix(stack.popMatrix((f,m)->{if (f) temporary[0] = m;}).mul(stack.popValue()), true);
+						mat = stack.popMatrix((f,m)->{if (f) temporary[0] = m;});
+						stack.pushMatrix(mat.mul(castValue(stack.popValue(), mat.getType())), true);
 						break;
 					case NEGATE			:
 						stack.pushMatrix(stack.popMatrix((f,m)->{if (f) temporary[0] = m;}).mul(-1), true);
@@ -97,7 +104,7 @@ public class Calculator implements AutoCloseable {
 						stack.pushMatrix(stack.popMatrix((f,m)->{if (f) temporary[0] = m;}).power(Double.longBitsToDouble(item.operand)), true);
 						break;
 					case POWER_VAL		:
-						stack.pushValue(Math.pow(stack.popValue(), Double.longBitsToDouble(item.operand)));
+						stack.pushValue(Math.pow(stack.popValue()[0], Double.longBitsToDouble(item.operand)));
 						break;
 					case SPOOR			:
 						stack.pushValue(stack.popMatrix((f,m)->{if (f) temporary[0] = m;}).track());
@@ -109,14 +116,16 @@ public class Calculator implements AutoCloseable {
 						break;
 					case SUB_MATRIX_VAL	:
 						val = stack.popValue();
-						
-						stack.pushMatrix(stack.popMatrix((f,m)->{if (f) temporary[0] = m;}).add(-val), true);
+						mat = stack.popMatrix((f,m)->{if (f) temporary[0] = m;});
+						stack.pushMatrix(mat.add(negate(castValue(val, mat.getType()))), true);
 						break;
 					case SUB_VAL		:
-						stack.pushValue(- stack.popValue() + stack.popValue());
+						stack.pushValue(add(negate(stack.popValue()), stack.popValue()));
 						break;
 					case SUB_VAL_MATRIX	:
-						stack.pushMatrix(stack.popMatrix((f,m)->{if (f) temporary[0] = m;}).subtractFrom(stack.popValue()), true);
+						mat = stack.popMatrix((f,m)->{if (f) temporary[0] = m;});
+						val = stack.popValue();
+						stack.pushMatrix(mat.subtractFrom(castValue(val, mat.getType())), true);
 						break;
 					case TRANSPOSE		:
 						stack.pushMatrix(stack.popMatrix((f,m)->{if (f) temporary[0] = m;}).trans(), true);
@@ -130,7 +139,7 @@ public class Calculator implements AutoCloseable {
 				}
 			}
 			if (stack.isValue()) {
-				return (T)Double.valueOf(stack.popValue());
+				return (T)stack.popValue();
 			}
 			else {
 				return (T)stack.popMatrix((f,m)->{});
@@ -147,15 +156,44 @@ public class Calculator implements AutoCloseable {
 		return "Calculator [commands=" + Arrays.toString(commands) + "]";
 	}
 	
+	private static double[] add(final double[] x, final double[] y) {
+		return new double[] {x[0] + y[0], x[1] + y[1]};
+	}
+
+	private static double[] mul(final double[] x, final double[] y) {
+		return new double[] {x[0]*y[0] - x[1]*y[1], x[0]*y[1] + x[1]*y[0]};
+	}
+	
+	private static double[] negate(final double[] x) {
+		final double[] result = x.clone();
+		
+		for(int index = 0; index < result.length; index++) {
+			result[index] = - result[index];
+		}
+		return result;
+	}
+
+	private static double[] castValue(final double[] source, final Type type) {
+		if (source.length == type.getNumberOfItems()) {
+			return source;
+		}
+		else if (type.getNumberOfItems() == 1) {
+			return new double[] {Math.sqrt(source[0]*source[0]+source[1]*source[1])};
+		}
+		else {
+			return new double[] {source[0], 0.0};
+		}
+	}
+	
 	private static class Stack {
-		private final Matrix[]	matrices;
-		private final double[]	values;
-		private final boolean[]	temp;
-		private int				current = -1;
+		private final Matrix[]		matrices;
+		private final double[][]	values;
+		private final boolean[]		temp;
+		private int					current = -1;
 		
 		private Stack(final int depth) {
 			this.matrices = new Matrix[depth];
-			this.values = new double[depth];
+			this.values = new double[depth][2];
 			this.temp = new boolean[depth];
 		}
 		
@@ -163,18 +201,18 @@ public class Calculator implements AutoCloseable {
 			current++;
 			matrices[current] = matrix;
 			temp[current] = temporary;
-			values[current] = 0;
+			values[current] = null;
 		}
 		
-		void pushValue(final long value) {
-			pushValue(Double.longBitsToDouble(value));
+		void pushValue(final double value) {
+			pushValue(new double[] {value, 0});
 		}
 
-		void pushValue(final double value) {
+		void pushValue(final double[] value) {
 			current++;
 			matrices[current] = null;
 			temp[current] = false;
-			values[current] = value;
+			values[current] = value.clone();
 		}
 		
 		boolean isValue() {
@@ -190,7 +228,7 @@ public class Calculator implements AutoCloseable {
 			return matrices[current--];
 		}
 		
-		double popValue() {
+		double[] popValue() {
 			return values[current--];
 		}
 

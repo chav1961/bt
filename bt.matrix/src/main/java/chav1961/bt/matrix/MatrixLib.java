@@ -582,7 +582,16 @@ loop:	for (;;) {
 					break;
 				case '0' : case '1' : case '2' : case '3' : case '4' : case '5' : case '6' : case '7' : case '8' : case '9' :
 					from = CharUtils.parseDouble(source, from, forValues, false);
-					result.add(new Lexema(from, LexType.VALUE, Double.doubleToLongBits(forValues[0])));
+					while (source[from] <= ' ' && source[from] != '\0') {
+						from++;
+					}
+					if (source[from] == 'i' || source[from] == 'i') {
+						result.add(new Lexema(from, LexType.IMAGE_VALUE, Double.doubleToLongBits(forValues[0])));
+						from++;
+					}
+					else {
+						result.add(new Lexema(from, LexType.REAL_VALUE, Double.doubleToLongBits(forValues[0])));
+					}
 					break;
 				default :
 					if (Character.isJavaIdentifierStart(source[from])) {
@@ -676,7 +685,7 @@ loop:	for (;;) {
 					from = buildTree(OperType.TERM, source, from, node);
 				}
 				if (source[from].type == LexType.POWER) {
-					if (source[from + 1].type == LexType.VALUE) {
+					if (source[from + 1].type == LexType.REAL_VALUE) {
 						final SyntaxNode<Operation, SyntaxNode<?, ?>>	child = (SyntaxNode<Operation, SyntaxNode<?, ?>>) node.clone();
 						
 						node.type = Operation.POWER;
@@ -692,8 +701,8 @@ loop:	for (;;) {
 				break;
 			case TERM	:
 				switch (source[from].type) {
-					case VALUE	:
-						node.type = Operation.LOAD_VALUE;
+					case REAL_VALUE	:
+						node.type = Operation.LOAD_REAL;
 						node.value = source[from].value;
 						from++;
 						break;
@@ -873,8 +882,8 @@ loop:	for (;;) {
 			case LOAD_MATRIX:
 				commands.add(new Command(Operation.LOAD_MATRIX, node.value));
 				break;
-			case LOAD_VALUE	:
-				commands.add(new Command(Operation.LOAD_VALUE, node.value));
+			case LOAD_REAL	:
+				commands.add(new Command(Operation.LOAD_REAL, node.value));
 				break;
 			case MINUS		:
 				buildCommands((SyntaxNode<Operation, SyntaxNode<?, ?>>) node.children[0], commands);
@@ -949,7 +958,7 @@ loop:	for (;;) {
 				}
 			case LOAD_MATRIX:
 				return OperandType.MATRIX;
-			case LOAD_VALUE	:
+			case LOAD_REAL	:
 				return OperandType.VALUE;
 			case NEGATE		:
 				return calcOperandType((SyntaxNode<Operation, SyntaxNode<?, ?>>) node.children[0]);
@@ -996,7 +1005,8 @@ loop:	for (;;) {
 		NAME,
 		DOT,
 		PREDEFINED,
-		VALUE		
+		REAL_VALUE,
+		IMAGE_VALUE
 	}
 	
 	static enum OperType {
@@ -1007,7 +1017,8 @@ loop:	for (;;) {
 	}
 
 	static enum Operation {
-		LOAD_VALUE(1),
+		LOAD_REAL(1),
+		LOAD_IMAGE(1),
 		LOAD_MATRIX(1),
 		ADD(-1),
 		ADD_VAL(-1),
