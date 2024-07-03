@@ -3,7 +3,7 @@
     programBody: |
         __kernel void zeroMatrixKernelCF(__global float2 *c) {
            int gid = get_global_id(0);
-           c[gid] = (0.0, 0.0);
+           c[gid] = (float2)(0.0, 0.0);
         }
 
 -
@@ -13,7 +13,7 @@
                                            __global float2 *C){
             int iCol = get_global_id(0);
             int iRow = get_global_id(1);
-            C[iRow*dim + iCol] = iCol == iRow ? (1.0, 0.0) : (0.0, 0.0);
+            C[iRow*dim + iCol] = iCol == iRow ? (float2)(1.0, 0.0) : (float2)(0.0, 0.0);
         }
 
 -
@@ -222,40 +222,41 @@
 -
     programName: invDivide1MatrixKernel
     programBody: |
-        inline float2 cmul(float2 a, float2 b){
-            return (float2)( a.x*b.x - a.y*b.y, a.x*b.y + a.y*b.x);
-        }
-        inline float2 cdiv(float2 a, float2 b){
-            return (float2)((a.x*b.x + a.y*b.y)/(b.x*b.x + b.y*b.y), (a.y*b.x - a.x*b.y)/(b.x*b.x + b.y*b.y));
-        }
         __kernel void invDivide1MatrixKernelCF(__global float2 *current,
                                              __global float2 *identity,
                                              const int dim,
                                              const int line) {
             int cell = get_global_id(0);
-            float2 k = cdiv((float2)(1.0, 0.0), current[line * dim + line]);
+            float2 cur = (float2)current[line * dim + line];
+            float curRe = (1*cur.x + 0*cur.y)/(cur.x*cur.x + cur.y*cur.y);
+            float curIm = (0*cur.x - 1*cur.y)/(cur.x*cur.x + cur.y*cur.y);
             if (cell != line) {
-                current[line * dim + cell] = cmul(current[line * dim + cell], k);
-                identity[line * dim + cell] = cmul(identity[line * dim + cell], k);
+            	float2 c = (float2)current[line * dim + cell];
+            	float cRe = curRe*c.x - curIm*c.y;  
+            	float cIm = curRe*c.y + curIm*c.x;
+                current[line * dim + cell] = (float2)(cRe, cIm);
+            	float2 i = (float2)identity[line * dim + cell];
+            	float iRe = curRe*i.x - curIm*i.y;  
+            	float iIm = curRe*i.y + curIm*i.x;
+                identity[line * dim + cell] = (float2)(iRe, iIm);
             }
         }
 
 -
     programName: invDivide2MatrixKernel
     programBody: |
-        inline float2 cmul(float2 a, float2 b){
-            return (float2)( a.x*b.x - a.y*b.y, a.x*b.y + a.y*b.x);
-        }
-        inline float2 cdiv(float2 a, float2 b){
-            return (float2)((a.x*b.x + a.y*b.y)/(b.x*b.x + b.y*b.y), (a.y*b.x - a.x*b.y)/(b.x*b.x + b.y*b.y));
-        }
         __kernel void invDivide2MatrixKernelCF(__global float2 *current,
                                              __global float2 *identity,
                                              const int dim,
                                              const int cell) {
-            float2 k = cdiv(1, current[cell * dim + cell]);
-            current[cell * dim + cell] = (1.0, 0.0);
-            identity[cell * dim + cell] = cmul(identity[cell * dim + cell], k);
+            float2 cur = (float2)current[cell * dim + cell];
+            float kRe = (1*cur.x + 0*cur.y)/(cur.x*cur.x + cur.y*cur.y);
+            float kIm = (0*cur.x - 1*cur.y)/(cur.x*cur.x + cur.y*cur.y);
+            current[cell * dim + cell] = (float2)(1.0, 0.0);
+            float2 id = (float2)identity[cell * dim + cell];
+            float iRe = kRe*id.x - kIm*id.y;
+            float iIm = kRe*id.y + kIm*id.x;
+            identity[cell * dim + cell] = (float2)(iRe, iIm);
         }
 
 -

@@ -1,7 +1,6 @@
 package chav1961.bt.matrix;
 
 import java.lang.reflect.Array;
-import java.util.Arrays;
 
 import org.jocl.CL;
 import org.jocl.CLException;
@@ -87,11 +86,7 @@ public class Matrix implements AutoCloseable {
 		switch (type) {
 			case REAL_FLOAT		:
 			case COMPLEX_FLOAT	:
-				final int		totalSize = numberOfRows() * numberOfColumns();
-				final float[]	result = new float[getType().getNumberOfItems() * totalSize];
-				
-		        CL.clEnqueueReadBuffer(lib.getCommandQueue(), memory, CL.CL_TRUE, 0, result.length * getType().getItemSize(), Pointer.to(result), 0, null, null);
-		        return result;
+				return extractFloat(memory, type, numberOfRows() * numberOfColumns());
 			case REAL_DOUBLE	:
 			case COMPLEX_DOUBLE	:
 				throw new IllegalStateException("Matrix type["+type+"] contains doubles, not floats. Use extractDoubles() instead");
@@ -100,16 +95,12 @@ public class Matrix implements AutoCloseable {
 		}
 	}
 
-	public double[] extractDoubless() {
+	public double[] extractDoubles() {
 		ensureIsClosed();
 		switch (type) {
 			case REAL_DOUBLE	:
 			case COMPLEX_DOUBLE	:
-				final int		totalSize = numberOfRows() * numberOfColumns();
-				final double[]	result = new double[getType().getNumberOfItems() * totalSize];
-				
-		        CL.clEnqueueReadBuffer(lib.getCommandQueue(), memory, CL.CL_TRUE, 0, result.length * getType().getItemSize(), Pointer.to(result), 0, null, null);
-		        return result;
+				return extractDouble(memory, type, numberOfRows() * numberOfColumns());
 			case REAL_FLOAT		:
 			case COMPLEX_FLOAT	:
 				throw new IllegalStateException("Matrix type["+type+"] contains floats, not doubles. Use extractFloats() instead");
@@ -205,17 +196,9 @@ public class Matrix implements AutoCloseable {
 		}
 		else {
 			ensureIsClosed();
-			final ProgramDescriptor	desc = lib.getProgramDescriptor(getType(), ProgramRepo.PROGRAM_ASSIGN_NAME);
 			final long				totalSize = getType().getNumberOfItems() * numberOfRows() * numberOfColumns();
-			final long 				global_work_size[] = new long[]{totalSize};
-		    final long 				local_work_size[] = new long[]{1, 1};
 
-		    // Set arguments
-			CL.clSetKernelArg(desc.kernel, 0, Sizeof.cl_mem, Pointer.to(another.memory));
-			CL.clSetKernelArg(desc.kernel, 1, Sizeof.cl_mem, Pointer.to(memory));
-	        // Execute the kernel
-			CL.clEnqueueNDRangeKernel(lib.getCommandQueue(), desc.kernel, 1, null, global_work_size, local_work_size, 0, null, null);
-			
+			executeProgram(lib.getProgramDescriptor(getType(), ProgramRepo.PROGRAM_ASSIGN_NAME), new long[]{totalSize}, another.memory, memory);
 			return this;
 		}
 	}
@@ -366,23 +349,9 @@ public class Matrix implements AutoCloseable {
 		}
 		else {
 			ensureIsClosed();
-//			final ProgramDescriptor	desc = lib.getProgramDescriptor(getType(), ProgramRepo.PROGRAM_MUL_TENZOR_NAME);
 			final int				totalRows = numberOfRows() * another.numberOfRows();
 			final int				totalCols = numberOfColumns() * another.numberOfColumns();
 			final cl_mem			newMemory = CL.clCreateBuffer(lib.getContext(), CL.CL_MEM_READ_WRITE, totalRows * totalCols * getType().getNumberOfItems() * getType().getItemSize(), null, null);
-//			final long 				global_work_size[] = new long[]{numberOfRows(), numberOfColumns()};
-//		    final long 				local_work_size[] = new long[]{1, 1};
-//			
-//		    // Set arguments
-//			CL.clSetKernelArg(desc.kernel, 0, Sizeof.cl_mem, Pointer.to(memory));
-//			CL.clSetKernelArg(desc.kernel, 1, Sizeof.cl_mem, Pointer.to(another.memory));
-//			CL.clSetKernelArg(desc.kernel, 2, Sizeof.cl_mem, Pointer.to(newMemory));
-//			CL.clSetKernelArg(desc.kernel, 3, Sizeof.cl_int, Pointer.to(new int[] {numberOfRows()}));
-//			CL.clSetKernelArg(desc.kernel, 4, Sizeof.cl_int, Pointer.to(new int[] {numberOfColumns()}));
-//			CL.clSetKernelArg(desc.kernel, 5, Sizeof.cl_int, Pointer.to(new int[] {another.numberOfRows()}));
-//			CL.clSetKernelArg(desc.kernel, 6, Sizeof.cl_int, Pointer.to(new int[] {another.numberOfColumns()}));
-//	        // Execute the kernel
-//			CL.clEnqueueNDRangeKernel(lib.getCommandQueue(), desc.kernel, 2, null, global_work_size, local_work_size, 0, null, null);
 			
 			executeProgram(lib.getProgramDescriptor(getType(), ProgramRepo.PROGRAM_MUL_TENZOR_NAME), new long[]{numberOfRows(), numberOfColumns()}, memory, another.memory, newMemory, numberOfRows(), numberOfColumns(), another.numberOfRows(), another.numberOfColumns());
 			return new Matrix(lib, getType(), totalRows, totalCols, newMemory);
@@ -423,55 +392,49 @@ public class Matrix implements AutoCloseable {
 
 	//https://cyclowiki.org/wiki/%D0%92%D0%BE%D0%B7%D0%B2%D0%B5%D0%B4%D0%B5%D0%BD%D0%B8%D0%B5_%D0%B2_%D0%BA%D0%BE%D0%BC%D0%BF%D0%BB%D0%B5%D0%BA%D1%81%D0%BD%D1%83%D1%8E_%D1%81%D1%82%D0%B5%D0%BF%D0%B5%D0%BD%D1%8C_%D0%BA%D0%BE%D0%BC%D0%BF%D0%BB%D0%B5%D0%BA%D1%81%D0%BD%D0%BE%D0%B3%D0%BE_%D1%87%D0%B8%D1%81%D0%BB%D0%B0	
 	public Matrix power(final double power) {
-		ensureIsClosed();
-		final ProgramDescriptor	desc = lib.getProgramDescriptor(getType(), ProgramRepo.PROGRAM_POWER_NAME);
-		final long				totalSize = 1L * numberOfRows() * numberOfColumns();
-		final cl_mem			newMemory = CL.clCreateBuffer(lib.getContext(), CL.CL_MEM_READ_WRITE, totalSize * Sizeof.cl_float, null, null);
-		final long 				global_work_size[] = new long[]{numberOfRows(), numberOfColumns()};
-	    final long 				local_work_size[] = new long[]{1, 1};
-
-	    // Set arguments
-		CL.clSetKernelArg(desc.kernel, 0, Sizeof.cl_mem, Pointer.to(memory));
-		CL.clSetKernelArg(desc.kernel, 1, Sizeof.cl_int, Pointer.to(new int[] {numberOfColumns()}));
-		CL.clSetKernelArg(desc.kernel, 2, Sizeof.cl_float, Pointer.to(new float[] {(float)power}));
-		CL.clSetKernelArg(desc.kernel, 3, Sizeof.cl_mem, Pointer.to(newMemory));
-        // Execute the kernel
-		CL.clEnqueueNDRangeKernel(lib.getCommandQueue(), desc.kernel, 2, null, global_work_size, local_work_size, 0, null, null);
-		
-		return new Matrix(lib, getType(), rows, cols, newMemory);
+		throw new UnsupportedOperationException("Not implemented yet");
+//		ensureIsClosed();
+//		final ProgramDescriptor	desc = lib.getProgramDescriptor(getType(), ProgramRepo.PROGRAM_POWER_NAME);
+//		final long				totalSize = 1L * numberOfRows() * numberOfColumns();
+//		final cl_mem			newMemory = CL.clCreateBuffer(lib.getContext(), CL.CL_MEM_READ_WRITE, totalSize * Sizeof.cl_float, null, null);
+//		final long 				global_work_size[] = new long[]{numberOfRows(), numberOfColumns()};
+//	    final long 				local_work_size[] = new long[]{1, 1};
+//
+//	    // Set arguments
+//		CL.clSetKernelArg(desc.kernel, 0, Sizeof.cl_mem, Pointer.to(memory));
+//		CL.clSetKernelArg(desc.kernel, 1, Sizeof.cl_int, Pointer.to(new int[] {numberOfColumns()}));
+//		CL.clSetKernelArg(desc.kernel, 2, Sizeof.cl_float, Pointer.to(new float[] {(float)power}));
+//		CL.clSetKernelArg(desc.kernel, 3, Sizeof.cl_mem, Pointer.to(newMemory));
+//        // Execute the kernel
+//		CL.clEnqueueNDRangeKernel(lib.getCommandQueue(), desc.kernel, 2, null, global_work_size, local_work_size, 0, null, null);
+//		
+//		return new Matrix(lib, getType(), rows, cols, newMemory);
 	}
 	
-	public double track() {
+	public double[] track() {
 		if (numberOfRows() != numberOfColumns()) {
 			throw new IllegalStateException("Track can be calculated for quadratic matrices only");
 		}
 		else {
 			ensureIsClosed();
-			final ProgramDescriptor	desc = lib.getProgramDescriptor(getType(), ProgramRepo.PROGRAM_TRACK_NAME);
 			final int				groupSize = (int)Math.sqrt(numberOfRows());
-			final cl_mem			newMemory = CL.clCreateBuffer(lib.getContext(), CL.CL_MEM_READ_WRITE, groupSize * Sizeof.cl_float, null, null);
-			final long 				global_work_size[] = new long[]{groupSize};
-		    final long 				local_work_size[] = new long[]{1};
+			final cl_mem			newMemory = CL.clCreateBuffer(lib.getContext(), CL.CL_MEM_READ_WRITE, groupSize * getType().getNumberOfItems() * getType().getItemSize(), null, null);
 
-		    try {
-			    // Set arguments
-				CL.clSetKernelArg(desc.kernel, 0, Sizeof.cl_mem, Pointer.to(memory));
-				CL.clSetKernelArg(desc.kernel, 1, Sizeof.cl_int, Pointer.to(new int[] {numberOfColumns()}));
-				CL.clSetKernelArg(desc.kernel, 2, Sizeof.cl_int, Pointer.to(new int[] {groupSize}));
-				CL.clSetKernelArg(desc.kernel, 3, Sizeof.cl_mem, Pointer.to(newMemory));
-		        // Execute the kernel
-				CL.clEnqueueNDRangeKernel(lib.getCommandQueue(), desc.kernel, 1, null, global_work_size, local_work_size, 0, null, null);
+			try {
+				executeProgram(lib.getProgramDescriptor(getType(), ProgramRepo.PROGRAM_TRACK_NAME), new long[]{groupSize}, memory, numberOfColumns(), groupSize, newMemory);
 				
-				final float[]		group = new float[groupSize];
-		        float	sum = 0;
-		        
-		        // Extract result and calculate sum
-		        CL.clEnqueueReadBuffer(lib.getCommandQueue(), newMemory, CL.CL_TRUE, 0, groupSize * Sizeof.cl_float, Pointer.to(group), 0, null, null);
-		        
-		        for(float item : group) {
-		        	sum += item;
-		        }
-		        return sum;
+				switch (getType()) {
+					case COMPLEX_DOUBLE	:
+						return calc(extractDouble(newMemory, getType(), groupSize), new double[] {0.0, 0.0}, (target,source)->{target[0] += source[0]; target[1] += source[1];});
+					case COMPLEX_FLOAT	:
+						return calc(extractFloat(newMemory, getType(), groupSize), new double[] {0.0, 0.0}, (target,source)->{target[0] += source[0]; target[1] += source[1];});
+					case REAL_DOUBLE	:
+						return calc(extractDouble(newMemory, getType(), groupSize), new double[] {0.0}, (target,source)->{target[0] += source[0];});
+					case REAL_FLOAT		:
+						return calc(extractFloat(newMemory, getType(), groupSize), new double[] {0.0}, (target,source)->{target[0] += source[0];});
+					default :
+						throw new UnsupportedOperationException("Matrix type ["+getType()+"] is not supported yet");
+				}
 		    } finally {
 				CL.clReleaseMemObject(newMemory);
 		    }
@@ -497,31 +460,29 @@ public class Matrix implements AutoCloseable {
 	
 			    try {
 			    	executeProgram(lib.getProgramDescriptor(getType(), ProgramRepo.PROGRAM_DET_TRIANGLE_NAME), new long[]{groupSize}, temp.memory, numberOfColumns(), groupSize, newMemory);
-					final float[]		group = new float[groupSize * getType().getNumberOfItems()];
-			        
-			        // Extract result and calculate prod
-			        CL.clEnqueueReadBuffer(lib.getCommandQueue(), newMemory, CL.CL_TRUE, 0, groupSize * getType().getNumberOfItems() * getType().getItemSize(), Pointer.to(group), 0, null, null);
-			        
-			        if (type.getNumberOfItems() == 1) {
-				        double	prod = 1;
-				        
-				        for(float item : group) {
-				        	prod *= item;
-				        }
-				        return new double[] {prod, 0};
-			        }
-			        else {
-				        double	prodReal = 1, prodImage = 0;
-				        
-				        for(int index = 0; index < group.length; index += 2) {
-				        	final double	tempReal = prodReal * group[index] - prodImage * group[index + 1];
-				        	final double	tempImage = prodReal * group[index + 1] + prodImage * group[index];
-				        	
-				        	prodReal = tempReal;
-				        	prodImage = tempImage;
-				        }
-				        return new double[] {prodReal, prodImage};
-			        }
+			    	
+					switch (getType()) {
+						case COMPLEX_DOUBLE	:
+							return calc(extractDouble(newMemory, getType(), groupSize), new double[] {1.0, 0.0}, (target,source)->{
+								final double	re = source[0] * target[0] - source[1] * target[1];  
+								final double	im = source[0] * target[1] + source[1] * target[0];  
+								target[0] = re; 
+								target[1] = im;
+							});
+						case COMPLEX_FLOAT	:
+							return calc(extractFloat(newMemory, getType(), groupSize), new double[] {1.0, 0.0}, (target,source)->{
+								final double	re = source[0] * target[0] - source[1] * target[1];  
+								final double	im = source[0] * target[1] + source[1] * target[0];  
+								target[0] = re; 
+								target[1] = im;
+							});
+						case REAL_DOUBLE	:
+							return calc(extractDouble(newMemory, getType(), groupSize), new double[] {1.0}, (target,source)->{target[0] *= source[0];});
+						case REAL_FLOAT		:
+							return calc(extractFloat(newMemory, getType(), groupSize), new double[] {1.0}, (target,source)->{target[0] *= source[0];});
+						default :
+							throw new UnsupportedOperationException("Matrix type ["+getType()+"] is not supported yet");
+					}
 			    } finally {
 					CL.clReleaseMemObject(newMemory);
 			    }
@@ -540,7 +501,7 @@ public class Matrix implements AutoCloseable {
 			return this;
 		}
 		else {
-			return null;
+			throw new UnsupportedOperationException("Not implemented yet");
 		}
 	}
 
@@ -563,52 +524,21 @@ public class Matrix implements AutoCloseable {
 	
 	private void detIterate(final ProgramDescriptor desc, final int index, final Matrix temp) {
 		final int				groupSize = numberOfRows() - index - 1;
-//		final long 				global_work_size[] = new long[]{groupSize};
-//	    final long 				local_work_size[] = new long[]{1};
-//
-//	    // Set arguments
-//		CL.clSetKernelArg(desc.kernel, 0, Sizeof.cl_mem, Pointer.to(temp.memory));
-//		CL.clSetKernelArg(desc.kernel, 1, Sizeof.cl_int, Pointer.to(new int[] {numberOfColumns()}));
-//		CL.clSetKernelArg(desc.kernel, 2, Sizeof.cl_int, Pointer.to(new int[] {index}));
-//        // Execute the kernel
-//		CL.clEnqueueNDRangeKernel(lib.getCommandQueue(), desc.kernel, 1, null, global_work_size, local_work_size, 0, null, null);
-		
+
 		executeProgram(desc, new long[]{groupSize}, temp.memory, numberOfColumns(), index);
 	}
 
 	private void invIterate(final ProgramDescriptor divide1, final ProgramDescriptor divide2, final ProgramDescriptor subtract, final int cell, final Matrix source, final Matrix target) {
-		// TODO Auto-generated method stub
 		final int	groupSize = numberOfRows();
-	    final long 	local_work_size[] = new long[]{1, 1};
 		
-	    // Set arguments
-		CL.clSetKernelArg(divide1.kernel, 0, Sizeof.cl_mem, Pointer.to(source.memory));
-		CL.clSetKernelArg(divide1.kernel, 1, Sizeof.cl_mem, Pointer.to(target.memory));
-		CL.clSetKernelArg(divide1.kernel, 2, Sizeof.cl_int, Pointer.to(new int[] {groupSize}));
-		CL.clSetKernelArg(divide1.kernel, 3, Sizeof.cl_int, Pointer.to(new int[] {cell}));
-        // Execute the kernel
-		CL.clEnqueueNDRangeKernel(lib.getCommandQueue(), divide1.kernel, 1, null, new long[]{groupSize}, local_work_size, 0, null, null);
-
-	    // Set arguments
-		CL.clSetKernelArg(divide2.kernel, 0, Sizeof.cl_mem, Pointer.to(source.memory));
-		CL.clSetKernelArg(divide2.kernel, 1, Sizeof.cl_mem, Pointer.to(target.memory));
-		CL.clSetKernelArg(divide2.kernel, 2, Sizeof.cl_int, Pointer.to(new int[] {groupSize}));
-		CL.clSetKernelArg(divide2.kernel, 3, Sizeof.cl_int, Pointer.to(new int[] {cell}));
-        // Execute the kernel
-		CL.clEnqueueNDRangeKernel(lib.getCommandQueue(), divide2.kernel, 1, null, new long[] {1}, local_work_size, 0, null, null);
-
-	    // Set arguments
-		CL.clSetKernelArg(subtract.kernel, 0, Sizeof.cl_mem, Pointer.to(source.memory));
-		CL.clSetKernelArg(subtract.kernel, 1, Sizeof.cl_mem, Pointer.to(target.memory));
-		CL.clSetKernelArg(subtract.kernel, 2, Sizeof.cl_int, Pointer.to(new int[] {groupSize}));
-		CL.clSetKernelArg(subtract.kernel, 3, Sizeof.cl_int, Pointer.to(new int[] {cell}));
-        // Execute the kernel
-		CL.clEnqueueNDRangeKernel(lib.getCommandQueue(), subtract.kernel, 2, null, new long[] {groupSize, groupSize}, local_work_size, 0, null, null);
+		executeProgram(divide1, new long[]{groupSize}, source.memory, target.memory, groupSize, cell);
+		executeProgram(divide2, new long[]{1}, source.memory, target.memory, groupSize, cell);
+		executeProgram(subtract, new long[]{groupSize, groupSize}, source.memory, target.memory, groupSize, cell);
 	}
 
 	private void ensureIsClosed() {
 		if (isClosed) {
-			throw new IllegalStateException("Can't perform oepration - matrix is already closed");
+			throw new IllegalStateException("Can't perform operation - matrix is already closed");
 		}
 	}
 
@@ -671,5 +601,55 @@ public class Matrix implements AutoCloseable {
 		} catch (CLException exc) {
 			throw new EnvironmentException("Program execution ["+desc.programName+"] for ["+type+"] type failed: "+exc.getLocalizedMessage()); 
 		}
+	}
+
+	private float[] extractFloat(final cl_mem memory, final Type type, final int size) {
+		final float[] 	result = new float[type.getNumberOfItems() * size];
+		
+        CL.clEnqueueReadBuffer(lib.getCommandQueue(), memory, CL.CL_TRUE, 0, size * type.getNumberOfItems() * type.getItemSize(), Pointer.to(result), 0, null, null);
+		return result;
+	}
+
+	private double[] extractDouble(final cl_mem memory, final Type type, final int size) {
+		final double[] 	result = new double[type.getNumberOfItems() * size];
+		
+        CL.clEnqueueReadBuffer(lib.getCommandQueue(), memory, CL.CL_TRUE, 0, size * type.getNumberOfItems() * type.getItemSize(), Pointer.to(result), 0, null, null);
+		return result;
+	}
+	
+	@FunctionalInterface
+	private static interface FloatProcessor {
+		void process(double[] target, float[] source);
+	}
+
+	@FunctionalInterface
+	private static interface DoubleProcessor {
+		void process(double[] target, double[] source);
+	}
+	
+	private static double[] calc(final float[] source, final double[] initial, final FloatProcessor callback) {
+		final double[]	result = initial.clone();
+		final float[]	current = new float[result.length];
+		
+		for(int index = 0; index < source.length; index += result.length) {
+			for (int innerIndex = 0; innerIndex < current.length; innerIndex++) {
+				current[innerIndex] = source[index + innerIndex];
+			}
+			callback.process(result, current);
+		}
+		return result;
+	}
+
+	private static double[] calc(final double[] source, final double[] initial, final DoubleProcessor callback) {
+		final double[]	result = initial.clone();
+		final double[]	current = new double[result.length];
+		
+		for(int index = 0; index < source.length; index += result.length) {
+			for (int innerIndex = 0; innerIndex < current.length; innerIndex++) {
+				current[innerIndex] = source[index + innerIndex];
+			}
+			callback.process(result, current);
+		}
+		return result;
 	}
 }

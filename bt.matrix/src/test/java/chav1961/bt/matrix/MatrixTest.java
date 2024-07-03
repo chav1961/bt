@@ -69,11 +69,11 @@ public class MatrixTest {
 				Assert.assertEquals(3, matrix.numberOfRows());
 				Assert.assertEquals(3, matrix.numberOfColumns());
 				
-				Assert.assertArrayEquals(new double[] {0,0,0,0,0,0,0,0,0}, matrix.extractDoubless(),  0.0001);
+				Assert.assertArrayEquals(new double[] {0,0,0,0,0,0,0,0,0}, matrix.extractDoubles(),  0.0001);
 				
 				matrix.assign(new double[] {1,2,3,4,5,6,7,8,9});
 				
-				Assert.assertArrayEquals(new double[] {1,2,3,4,5,6,7,8,9}, matrix.extractDoubless(),  0.0001);
+				Assert.assertArrayEquals(new double[] {1,2,3,4,5,6,7,8,9}, matrix.extractDoubles(),  0.0001);
 				
 				try{
 					matrix.assign((double[])null);
@@ -237,14 +237,14 @@ public class MatrixTest {
 			matrix1.assign(new float[] {1f, 2f, 3f, 4f, 5f, 6f, 7f, 8f, 9f});
 			matrix2.assign(new float[] {1f, 2f, 3f, 4f, 5f, 6f, 7f, 8f, 9f});
 			
-			Assert.assertEquals(15, matrix1.track(), 0.0001f);
+			Assert.assertArrayEquals(new double[] {15}, matrix1.track(), 0.0001f);
 
 			Assert.assertArrayEquals(new float[] {30, 36, 42, 66, 81, 96, 102, 126, 150}, matrix1.mul(matrix2).extractFloats(), 0.0001f);
 			
 			final Matrix	matrix3 = lib.getZeroMatrix(4, 4);
 			
 			matrix3.assign(new float[] {1f, 2f, 3f, 4f, 5f, 6f, 7f, 8f, 9f, 10f, 9f, 8f, 7f, 6f, 5f, 2f});
-			Assert.assertArrayEquals(new double[] {-16, 0}, matrix3.det(), 0.0001f);
+			Assert.assertArrayEquals(new double[] {-16}, matrix3.det(), 0.0001f);
 			
 			final Matrix	matrix4 = lib.getZeroMatrix(2, 2);
 			final Matrix	matrix5 = lib.getZeroMatrix(2, 2);
@@ -272,7 +272,7 @@ public class MatrixTest {
 				matrix1.assign(new float[] {1f, 2f, 3f, 4f, 5f, 6f, 7f, 8f, 9f});
 				matrix2.assign(new float[] {1f, 2f, 3f, 4f, 5f, 6f, 7f, 8f, 9f});
 				
-				Assert.assertEquals(15, matrix1.track(), 0.0001f);
+				Assert.assertArrayEquals(new double[] {15, 0}, matrix1.track(), 0.0001f);
 	
 				Assert.assertArrayEquals(new float[] {30, 36, 42, 66, 81, 96, 102, 126, 150}, matrix1.mul(matrix2).extractFloats(), 0.0001f);
 				
@@ -307,7 +307,7 @@ public class MatrixTest {
 			matrix1.assign(new float[] {1f, 0f, 2f, 0f, 3f, 0f, 4f, 0f, 5f, 0f, 6f, 0f, 7f, 0f, 8f, 0f, 9f, 0f});
 			matrix2.assign(new float[] {1f, 0f, 2f, 0f, 3f, 0f, 4f, 0f, 5f, 0f, 6f, 0f, 7f, 0f, 8f, 0f, 9f, 0f});
 			
-			Assert.assertEquals(15, matrix1.track(), 0.0001f);
+			Assert.assertArrayEquals(new double[] {15, 0}, matrix1.track(), 0.0001f);
 
 			Assert.assertArrayEquals(new float[] {30f, 0f, 36f, 0f, 42f, 0f, 66f, 0f, 81f, 0f, 96f, 0f, 102f, 0f, 126f, 0f, 150f, 0f}, matrix1.mul(matrix2).extractFloats(), 0.0001f);
 			
