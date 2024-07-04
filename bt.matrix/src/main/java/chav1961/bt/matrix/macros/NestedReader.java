@@ -6,6 +6,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
@@ -13,22 +14,34 @@ import java.util.Arrays;
 import java.util.List;
 
 public class NestedReader implements Closeable {
-	private final List<StackRecord>	stack = new ArrayList<>();
+	private static final int		INITIAL_BUFFER_SIZE = 8192;	
+	private static final char[]		NL = new char[] {'\n'};
 	
+	private final List<StackRecord>	stack = new ArrayList<>(16);
+	private final int				bufferSize;
+
 	public NestedReader(final Reader reader) throws IOException {
+		this(reader, INITIAL_BUFFER_SIZE);
+	}	
+	
+	public NestedReader(final Reader reader, final int bufferSize) throws IOException {
 		if (reader == null) {
 			throw new NullPointerException("Reader toa dd can't be null");
 		}
+		else if (bufferSize <= 0) {
+			throw new IllegalArgumentException("Buffer size ["+bufferSize+"] must be greater than 0");
+		}
 		else {
-			pushSource(reader, false);
+			this.bufferSize = bufferSize;
+			pushSource(null, reader, false);
 		}
 	}
 
 	public boolean next(final Line line) throws IOException {
 		if (line == null) {
-			throw new NullPointerException("Line to store parameetrs can't be null");
+			throw new NullPointerException("Line to store parameters can't be null");
 		}
-		else if (getDepth() == 0) {
+		else if (getDepth() <= 0) {
 			return false;
 		}
 		else if (hasNext()){
@@ -38,6 +51,7 @@ public class NestedReader implements Closeable {
 			line.lineNo = rec.lineNo;
 			line.from = rec.from;
 			line.len = rec.len;
+			line.source = rec.uri;
 			return true;
 		}
 		else {
@@ -67,7 +81,11 @@ public class NestedReader implements Closeable {
 										}
 								};
 			
-			pushSource(rdr, true);
+			try {
+				pushSource(source.toURI(), rdr, true);
+			} catch (URISyntaxException e) {
+				throw new IOException(e);
+			}
 		}
 	}
 
@@ -95,8 +113,9 @@ public class NestedReader implements Closeable {
 		}
 	}
 
-	private void pushSource(final Reader reader, final boolean closeRequired) {
-		stack.add(0, new StackRecord(reader, closeRequired));
+	private void pushSource(final URI uri, final Reader reader, final boolean closeRequired) throws IOException {
+		stack.add(0, new StackRecord(uri, reader, bufferSize, closeRequired));
+		appendBuffer(stack.get(0));
 	}
 
 	private boolean hasNext() throws IOException {
@@ -107,22 +126,29 @@ public class NestedReader implements Closeable {
 		}
 		else {
 			shiftBuffer(rec);
-			appendBuffer(rec);
-			while (!hasNextInside(rec)) {
-				expandBuffer(rec);
-				if (!appendBuffer(rec)) {
-					return false;
+			if (appendBuffer(rec)) {
+				while (!hasNextInside(rec)) {
+					expandBuffer(rec);
+					if (!appendBuffer(rec)) {
+						return false;
+					}
 				}
+				return true;
 			}
-			return true;
+			else {
+				return false;
+			}
 		}
 	}
 
 	private boolean hasNextInside(final StackRecord	rec) {
-		for(int index = 0, maxIndex = rec.to - rec.from; index < maxIndex; index++) {
-			if (rec.buffer[rec.from + index] == '\n') {
-				rec.len = index;
-				rec.to += index + 1;
+		final int 	newStart = rec.from + rec.len;
+		
+		for(int index = newStart, maxIndex = rec.to; index < maxIndex; index++) {
+			if (rec.buffer[index] == '\n') {
+				rec.from = newStart;
+				rec.len = index - newStart + 1;
+				rec.lineNo++;
 				return true;
 			}
 		}
@@ -130,15 +156,44 @@ public class NestedReader implements Closeable {
 	}
 
 	private void shiftBuffer(final StackRecord rec) {
-		System.arraycopy(rec.buffer, rec.from, rec.buffer, 0, rec.to - rec.from);
-		rec.to -= rec.from;
+		final int	newStart = rec.from + rec.len;
+		
+		System.arraycopy(rec.buffer, newStart, rec.buffer, 0, rec.to - newStart);
+		rec.to -= newStart;
 		rec.from = 0;
 		rec.len = 0;
 	}
 
-	private boolean appendBuffer(final StackRecord rec) {
-		// TODO Auto-generated method stub
-		return false;
+	private boolean appendBuffer(final StackRecord rec) throws IOException {
+		final int	available = rec.buffer.length - rec.to;
+		int	len = rec.rdr.read(rec.buffer, rec.to, available);
+		
+		if (len < 0) {
+			return false;
+		}
+		else if (len == available) {
+			rec.to = rec.buffer.length;
+			return true;
+		}
+		else {
+			rec.to += len;
+			do {
+				len = rec.rdr.read(rec.buffer, rec.to, rec.buffer.length - rec.to);
+				if (len <= 0) {
+					if (rec.buffer[rec.to - 1] != '\n') {
+						if (rec.to == rec.buffer.length - 1) {
+							expandBuffer(rec);
+						}
+						rec.buffer[rec.to++] = '\n';
+					}
+					break;
+				}
+				else {
+					rec.to += len;
+				}
+			} while (rec.to < rec.buffer.length);
+			return true;
+		}
 	}
 
 	private void expandBuffer(final StackRecord rec) {
@@ -175,8 +230,7 @@ public class NestedReader implements Closeable {
 	}
 	
 	private static class StackRecord {
-		private static final int	INITIAL_BUFFER_SIZE = 8192; 
-		
+		final URI		uri;
 		final Reader	rdr;
 		final boolean	closeRequired;
 		char[]			buffer;
@@ -184,11 +238,12 @@ public class NestedReader implements Closeable {
 		int				from;
 		int				to;
 		int				len;
-		
-		public StackRecord(final Reader rdr, final boolean closeRequired) {
+
+		private StackRecord(final URI uri, final Reader rdr, final int bufferSize, final boolean closeRequired) {
+			this.uri = uri;
 			this.rdr = rdr;
 			this.closeRequired = closeRequired;
-			this.buffer = new char[INITIAL_BUFFER_SIZE];
+			this.buffer = new char[bufferSize];
 			this.lineNo = 0;
 			this.from = 0;
 			this.to = 0;

@@ -12,9 +12,13 @@ import java.io.Writer;
 import java.net.URI;
 import java.nio.charset.Charset;
 import java.util.Iterator;
+import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.BiFunction;
+import java.util.function.Function;
 
+import chav1961.bt.matrix.macros.NestedReader.Line;
 import chav1961.purelib.basic.exceptions.SyntaxException;
 
 /*
@@ -64,40 +68,61 @@ import chav1961.purelib.basic.exceptions.SyntaxException;
  */
 
 public class MacroReader extends Reader {
-	private static final char[][]	MACRO_OPERATORS = {
-										".version".toCharArray(),
-										".param".toCharArray(),
-										".var".toCharArray(),
-										".set".toCharArray(),
-										".if".toCharArray(),
-										".elsif".toCharArray(),
-										".endif".toCharArray(),
-										".while".toCharArray(),
-										".endwhile".toCharArray(),
-										".for".toCharArray(),
-										".endfor".toCharArray(),
-										".case".toCharArray(),
-										".of".toCharArray(),
-										".default".toCharArray(),
-										".endcase".toCharArray(),
-										".break".toCharArray(),
-										".continue".toCharArray(),
-										".error".toCharArray(),
-										".warning".toCharArray(),
-										".print".toCharArray(),
-										".insert".toCharArray(),
-										".include".toCharArray()
-									};
+	public static final String		SETTING_INSERT_NL_AFTER_POP = "insertNLAfterPop";
+	
 	private static final AtomicInteger	UNIQUE = new AtomicInteger();
 	
-	private final NestedReader			nested;
-	
-	public MacroReader(final Reader nested, final Properties parameters) throws IOException, SyntaxException {
+	private final Function<String, Object> 				parameters;
+	private final BiFunction<String, Object, Object>	settings;
+	private final NestedReader	nested;
+	private final Line			line = new Line();
+
+	public MacroReader(final Reader nested, final Function<String, Object> parameters, final BiFunction<String, Object, Object> settings) throws IOException, SyntaxException {
 		if (nested == null) {
 			throw new NullPointerException("Nested reader can't be null");
 		}
+		else if (parameters == null) {
+			throw new NullPointerException("Parameters can't be null");
+		}
+		else if (settings == null) {
+			throw new NullPointerException("Settings can't be null");
+		}
 		else {
-			this.nested = new NestedReader(nested);
+			this.parameters = parameters;
+			this.settings = settings;
+			this.nested = new NestedReader(nested, getSetting(SETTING_INSERT_NL_AFTER_POP, boolean.class, false));
+		}
+	}	
+	
+	public MacroReader(final Reader nested, final Map<String, Object> parameters, final Map<String, Object> settings) throws IOException, SyntaxException {
+		if (nested == null) {
+			throw new NullPointerException("Nested reader can't be null");
+		}
+		else if (parameters == null) {
+			throw new NullPointerException("Parameters can't be null");
+		}
+		else if (settings == null) {
+			throw new NullPointerException("Settings can't be null");
+		}
+		else {
+			this.parameters = new Function<String,Object>(){
+									@Override
+									public Object apply(String name) {
+										return parameters.get(name);
+									}
+								};
+			this.settings = new BiFunction<String, Object, Object>() {
+								@Override
+								public Object apply(final String name, final Object defaultValue) {
+									if (settings.containsKey(name)) {
+										return settings.get(name);
+									}
+									else {
+										return defaultValue;
+									}
+								}
+							};
+			this.nested = new NestedReader(nested, getSetting(SETTING_INSERT_NL_AFTER_POP, boolean.class, false));
 		}
 	}
 
@@ -110,5 +135,12 @@ public class MacroReader extends Reader {
 	public void close() throws IOException {
 	}
 
+	private <T> T getSetting(final String name, final Class<T> awaited) {
+		return getSetting(name, awaited, null);
+	}
+	
+	private <T> T getSetting(final String name, final Class<T> awaited, final T defaultValue) {
+		return awaited.cast(settings.apply(name, defaultValue));
+	}
 	
 }
