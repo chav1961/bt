@@ -1,8 +1,12 @@
 package chav1961.bt.matrix.macros;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
 import chav1961.bt.matrix.macros.NestedReader.Line;
+import chav1961.purelib.basic.CharUtils;
+import chav1961.purelib.basic.exceptions.SyntaxException;
 
 public class MacroParser {
 	private static final char[][]	MACRO_OPERATORS = {
@@ -36,14 +40,15 @@ public class MacroParser {
 	private final char[]		substSuffix;
 	private final boolean		suffixIsMandatory;
 	private final StringBuilder	sbTemp = new StringBuilder();
+	private ParseStack			stack = new ParseStack(null);
 	
-	private static enum LineType {
+	static enum LineType {
 		ORDINAL,
 		SUBSTITUTION,
 		OPERATOR
 	}
 
-	private static enum OperatorType {
+	static enum OperatorType {
 		PARAM("param", LineType.OPERATOR), 
 		VAR("var", LineType.OPERATOR),
 		SET("set", LineType.OPERATOR),
@@ -115,23 +120,194 @@ public class MacroParser {
 		else {
 			final OperatorType	type = classifyLine(line);
 			
-			switch (type.getLineType()) {
-				case OPERATOR		:
-					parseOperator(type, line);
+			switch (type) {
+				case BREAK		:
+					parseBreak(line);
 					break;
-				case ORDINAL		:
+				case CALL		:
+					parseCall(line);
+					break;
+				case CASE		:
+					parseCase(line);
+					break;
+				case CONTINUE	:
+					parseContinue(line);
+					break;
+				case DEFAULT	:
+					parseDefault(line);
+					break;
+				case ELSIF		:
+					parseElsif(line);
+					break;
+				case ENDCASE	:
+					parseEndCase(line);
+					break;
+				case ENDFOR		:
+					parseEndFor(line);
+					break;
+				case ENDIF		:
+					parseEndIf(line);
+					break;
+				case ENDWHILE	:
+					parseEndWhile(line);
+					break;
+				case ERROR		:
+					parseError(line);
+					break;
+				case FOR		:
+					parseFor(line);
+					break;
+				case IF			:
+					parseIf(line);
+					break;
+				case INCLUDE	:
+					parseInclude(line);
+					break;
+				case INSERT		:
+					parseInsert(line);
+					break;
+				case OF			:
+					parseOf(line);
+					break;
+				case ORDINAL	:
 					addOrdinal(line);
 					break;
-				case SUBSTITUTION	:
+				case PARAM		:
+					parseParam(line);
+					break;
+				case PRINT		:
+					parsePrint(line);
+					break;
+				case SET		:
+					parseSet(line);
+					break;
+				case SUBST		:
 					processSubstitution(line);
 					break;
-				default :
+				case VAR		:
+					parseVar(line);
+					break;
+				case WARNING	:
+					parseWarning(line);
+					break;
+				case WHILE		:
+					parseWhile(line);
+					break;
+				default:
 					throw new UnsupportedOperationException("Line type ["+type.getLineType()+"] is nto supported yet");
 			}
 			return refreshLine(line);
 		}
 	}
 	
+	private void parseWhile(Line line) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	private void parseWarning(Line line) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	private void parseVar(final Line line) {
+	}
+
+	private void parseSet(Line line) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	private void parsePrint(Line line) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	private void parseParam(final Line line) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	private void parseOf(Line line) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	private void parseInsert(Line line) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	private void parseInclude(Line line) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	private void parseIf(Line line) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	private void parseFor(Line line) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	private void parseError(Line line) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	private void parseEndWhile(Line line) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	private void parseEndIf(Line line) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	private void parseEndFor(Line line) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	private void parseEndCase(Line line) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	private void parseElsif(Line line) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	private void parseDefault(Line line) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	private void parseContinue(Line line) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	private void parseCase(Line line) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	private void parseCall(Line line) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	private void parseBreak(Line line) {
+		// TODO Auto-generated method stub
+		
+	}
+
 	private static boolean isArrayValid(final char[] toTest) {
 		return toTest != null && toTest.length > 0;
 	}
@@ -142,23 +318,18 @@ public class MacroParser {
 		final char		startSubst = substPrefix[0];
 		
 		for(int index = line.from, maxIndex = line.from + line.len; index < maxIndex; index++) {
-			if (source[index] == startOperator && compare(source, index, macroPrefix)) {
+			if (source[index] == startOperator && MacroUtils.equals(source, index, macroPrefix)) {
 				for(OperatorType item : OperatorType.values()) {
-					if (item.getLineType() == LineType.OPERATOR && compare(source, index + macroPrefix.length, item.getMnemonics())) {
+					if (item.getLineType() == LineType.OPERATOR && MacroUtils.equals(source, index + macroPrefix.length, item.getMnemonics())) {
 						return item;
 					}
 				}
 			}
-			else if (source[index] == startSubst && compare(source, index, substPrefix) && isSubstVariableHere(source, index)) {
+			else if (source[index] == startSubst && MacroUtils.equals(source, index, substPrefix) && isSubstVariableHere(source, index)) {
 				return OperatorType.SUBST;
 			}
 		}
 		return OperatorType.ORDINAL;
-	}
-
-	private void parseOperator(final OperatorType type, final Line line) {
-		// TODO Auto-generated method stub
-		
 	}
 
 	private void addOrdinal(final Line line) {
@@ -180,15 +351,31 @@ public class MacroParser {
 
 	
 	
-	private boolean compare(final char[] source, final int from, final char[] template) {
-		for(int index = 0; index < template.length; index++) {
-			if (source[from + index] != template[index]) {
-				return false;
-			}
+	
+	private int skipBlank(final char[] source, int from) {
+		while (source[from] <= ' ' && source[from] != '\n') {
+			from++;
 		}
-		return true;
+		return from;
 	}
 
+	private int skipName(final char[] source, int from) {
+		if (Character.isJavaIdentifierStart(source[from])) {
+			while (Character.isJavaIdentifierPart(source[from])) {
+				from++;
+			}
+		}
+		return from;
+	}
+
+	private int skipKeyword(final char[] source, int from, final OperatorType operator) {
+		from = skipBlank(source, from);
+		from += macroPrefix.length;
+		from += operator.getMnemonics().length;
+		return from;
+	}
+	
+	
 	private boolean isSubstVariableHere(final char[] source, final int from) {
 		int index = from + substPrefix.length;
 		
@@ -199,7 +386,7 @@ public class MacroParser {
 			while (Character.isJavaIdentifierPart(source[index])) {
 				index++;
 			}
-			if (!suffixIsMandatory || compare(source, index, substSuffix)) {
+			if (!suffixIsMandatory || MacroUtils.equals(source, index, substSuffix)) {
 				return true;
 			}
 			else {
@@ -207,4 +394,5 @@ public class MacroParser {
 			}
 		}
 	}
+	
 }
