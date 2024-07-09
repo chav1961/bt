@@ -1,5 +1,7 @@
 package chav1961.bt.matrix.macros.runtime.interfaces;
 
+import java.util.Arrays;
+
 import chav1961.purelib.basic.CharUtils;
 import chav1961.purelib.basic.exceptions.ContentException;
 import chav1961.purelib.cdb.CompilerUtils;
@@ -113,6 +115,33 @@ public interface Value {
 		@Override
 		public <T> void setValue(final Class<T> awaited, final T value) throws ContentException {
 			throw new IllegalStateException("This implementation is read-only");
+		}
+
+		@Override
+		public int hashCode() {
+			final int prime = 31;
+			int result = 1;
+			result = prime * result + Arrays.hashCode(charContent);
+			result = prime * result + (int) (numberContent ^ (numberContent >>> 32));
+			result = prime * result + ((type == null) ? 0 : type.hashCode());
+			return result;
+		}
+
+		@Override
+		public boolean equals(Object obj) {
+			if (this == obj) return true;
+			if (obj == null) return false;
+			if (getClass() != obj.getClass()) return false;
+			ValueImpl other = (ValueImpl) obj;
+			if (!Arrays.equals(charContent, other.charContent)) return false;
+			if (numberContent != other.numberContent) return false;
+			if (type != other.type) return false;
+			return true;
+		}
+
+		@Override
+		public String toString() {
+			return "ValueImpl [type=" + type + ", numberContent=" + numberContent + ", charContent=" + Arrays.toString(charContent) + "]";
 		}
 	}
 }

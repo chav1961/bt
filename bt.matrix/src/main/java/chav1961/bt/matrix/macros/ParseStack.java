@@ -2,13 +2,16 @@ package chav1961.bt.matrix.macros;
 
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 
 import javax.print.attribute.standard.NumberOfInterveningJobs;
 
+import chav1961.bt.matrix.macros.InternalParser.Lexema;
 import chav1961.bt.matrix.macros.MacroParser.OperatorType;
+import chav1961.bt.matrix.macros.interfaces.VariableRepo;
 
 class ParseStack implements VariableRepo {
 	private static final AtomicInteger	UNIQUE = new AtomicInteger();
@@ -50,11 +53,22 @@ class ParseStack implements VariableRepo {
 		return unique;
 	}
 
-	public void push(OperatorType type) {
-		
+	public int createForwardLabel() {
+		return 0;
+	}
+
+	public int createBackwardLabel() {
+		return 0;
+	}
+	
+	public void push(OperatorType type, Object... cargo) {
 	}
 	
 	public OperatorType getTopType() {
+		return null;
+	}
+
+	public Object[] getTopCargo() {
 		return null;
 	}
 	

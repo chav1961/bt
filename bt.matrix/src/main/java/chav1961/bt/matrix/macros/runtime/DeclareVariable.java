@@ -6,17 +6,15 @@ import chav1961.bt.matrix.macros.runtime.interfaces.Value;
 public class DeclareVariable extends AbstractNonResumedCommand {
 	private final int 				name;
 	private final Value.ValueType	type;
-	private final Value 			initialValue;
 
-	protected DeclareVariable(final int name, final Value.ValueType type, final Value initialValue) {
+	protected DeclareVariable(final int name, final Value.ValueType type) {
 		this.name = name;
 		this.type = type;
-		this.initialValue = initialValue;
 	}
 
 	@Override
 	public long execute(final MacrosRuntime rt) {
-		rt.getProgramStack().declare(name, type, initialValue);
+		rt.getProgramStack().declare(name, type);
 		return 1;
 	}
 

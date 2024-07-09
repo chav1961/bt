@@ -1,6 +1,6 @@
-package chav1961.bt.matrix.macros;
+package chav1961.bt.matrix.macros.interfaces;
 
-interface VariableRepo {
+public interface VariableRepo {
 	<T> void addVariable(int nameId, Class<T> type);		
 	boolean hasVariable(int nameId);
 	<T> Class<T> getVariableType(int nameId);

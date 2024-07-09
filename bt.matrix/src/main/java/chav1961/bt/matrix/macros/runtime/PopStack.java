@@ -10,7 +10,7 @@ public class PopStack extends AbstractNonResumedCommand {
 
 	@Override
 	public long execute(final MacrosRuntime rt) {
-		rt.getProgramStack().pop();
+		rt.getProgramStack().popStackValue();
 		return 1;
 	}
 

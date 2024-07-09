@@ -15,6 +15,7 @@ public class InternalParser {
 	private static final SyntaxTreeInterface<Lexema>	NAMES = new AndOrTree<>(1, 1);
 	private static final char[]							TRUE = "true".toCharArray();
 	private static final char[]							FALSE = "false".toCharArray();
+	private static final char[]							IN = "in".toCharArray();
 	
 	static {
 		NAMES.placeName((CharSequence)"param", new Lexema(0, LexType.KWD_PARAM));
@@ -37,7 +38,6 @@ public class InternalParser {
 		NAMES.placeName((CharSequence)"error", new Lexema(0, LexType.KWD_ERROR));
 		NAMES.placeName((CharSequence)"warning", new Lexema(0, LexType.KWD_WARNING));
 		NAMES.placeName((CharSequence)"print", new Lexema(0, LexType.KWD_PRINT));
-		NAMES.placeName((CharSequence)"insert", new Lexema(0, LexType.KWD_INSERT));
 		NAMES.placeName((CharSequence)"include", new Lexema(0, LexType.KWD_INCLUDE));
 		NAMES.placeName((CharSequence)"call", new Lexema(0, LexType.KWD_CALL));
 	}
@@ -211,6 +211,9 @@ loop:	for(;;) {
 						else if (CharUtils.compare(source, startName, FALSE) && forInt[1] - forInt[0] == FALSE.length) {
 							result.add(new Lexema(startName, LexType.CONSTANT_B, 0));
 						}
+						else if (CharUtils.compare(source, startName, IN) && forInt[1] - forInt[0] == IN.length) {
+							result.add(new Lexema(startName, LexType.KWD_IN, 0));
+						}
 						else {
 							result.add(new Lexema(startName, LexType.NAME, Arrays.copyOfRange(source, forInt[0], forInt[1])));
 						}
@@ -286,10 +289,10 @@ loop:	for(;;) {
 	
 	static enum LexType {
 		EOF,
-		CONSTANT_C,
-		CONSTANT_I,
-		CONSTANT_R,
-		CONSTANT_B,
+		CONSTANT_C(Priority.TERM),
+		CONSTANT_I(Priority.TERM),
+		CONSTANT_R(Priority.TERM),
+		CONSTANT_B(Priority.TERM),
 		NAME,
 		TYPE,
 		ARRAY,
@@ -303,21 +306,22 @@ loop:	for(;;) {
 		COLON,
 		LIST,
 		RANGE,
-		ASSIGN,
-		ADD,
-		SUB,
-		MUL,
-		DIV,
-		MOD,
-		EQ,
-		LT,
-		LE,
-		GT,
-		GE,
-		NE,
-		NOT,
-		AND,
-		OR,
+		ASSIGN(Priority.ASSIGN),
+		ADD(Priority.ADD),
+		SUB(Priority.ADD),
+		MUL(Priority.MUL),
+		DIV(Priority.MUL),
+		MOD(Priority.MUL),
+		EQ(Priority.COMPARE),
+		LT(Priority.COMPARE),
+		LE(Priority.COMPARE),
+		GT(Priority.COMPARE),
+		GE(Priority.COMPARE),
+		NE(Priority.COMPARE),
+		NOT(Priority.NOT),
+		AND(Priority.AND),
+		OR(Priority.OR),
+		KWD_IN,
 		KWD_PARAM,
 		KWD_VAR,
 		KWD_SET,
@@ -338,9 +342,22 @@ loop:	for(;;) {
 		KWD_ERROR,
 		KWD_WARNING,
 		KWD_PRINT,
-		KWD_INSERT,
 		KWD_INCLUDE,
-		KWD_CALL
+		KWD_CALL;
+		
+		private final Priority	prty;
+		
+		private LexType() {
+			this.prty = Priority.UNKNOWN;
+		}
+
+		private LexType(final Priority prty) {
+			this.prty = prty;
+		}
+		
+		public Priority getPriority() {
+			return prty;
+		}
 	}
 	
 	

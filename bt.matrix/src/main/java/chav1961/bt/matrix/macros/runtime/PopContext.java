@@ -2,15 +2,15 @@ package chav1961.bt.matrix.macros.runtime;
 
 import chav1961.bt.matrix.macros.runtime.interfaces.MacrosRuntime;
 
-public class PushStack extends AbstractNonResumedCommand {
-	public static final PushStack	SINGLETON = new PushStack(); 
+public class PopContext extends AbstractNonResumedCommand {
+	public static final PopContext	SINGLETON = new PopContext(); 
 	
-	private PushStack() {
+	private PopContext() {
 	}
 
 	@Override
 	public long execute(final MacrosRuntime rt) {
-		rt.getProgramStack().pushStackValue(null);
+		rt.getProgramStack().popBlock();
 		return 1;
 	}
 
