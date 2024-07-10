@@ -3,6 +3,7 @@ package chav1961.bt.matrix.macros.runtime;
 import java.io.PrintStream;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import chav1961.bt.matrix.macros.runtime.interfaces.CharAppendable;
 import chav1961.bt.matrix.macros.runtime.interfaces.MacrosRuntime;
 import chav1961.bt.matrix.macros.runtime.interfaces.ProgramStack;
 
@@ -52,8 +53,31 @@ public class SingleMacrosRuntime implements MacrosRuntime {
 	}
 
 	@Override
-	public StringBuilder getBuffer() {
-		return sb;
+	public CharAppendable getBuffer() {
+		return new CharAppendable() {
+			@Override
+			public CharAppendable append(char[] content) {
+				sb.append(content);
+				return this;
+			}
+			
+			@Override
+			public CharAppendable append(CharSequence csq) {
+				sb.append(csq);
+				return this;
+			}
+			
+			@Override
+			public CharAppendable append(CharSequence csq, int start, int end) {
+				sb.append(csq, start, end);
+				return this;
+			}
+			
+			@Override
+			public CharAppendable append(char c) {
+				sb.append(c);
+				return this;
+			}
+		};
 	}
-
 }

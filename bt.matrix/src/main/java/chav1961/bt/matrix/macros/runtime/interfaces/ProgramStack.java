@@ -11,6 +11,8 @@ public interface ProgramStack {
 	void setVarValue(final int name, final Value value);
 	void popBlock();
 	void pushStackValue(final Value value);
+	int getStackDepth();
 	Value getStackValue();
+	void setStackValue(final Value value);
 	Value popStackValue();
 }

@@ -3,6 +3,7 @@ package chav1961.bt.matrix.macros.runtime;
 import java.util.function.Function;
 
 import chav1961.bt.matrix.macros.runtime.interfaces.MacrosRuntime;
+import chav1961.purelib.basic.exceptions.CalculationException;
 
 public class PutSubstitution extends AbstractCommand {
 	private final Function<char[], char[]>[]	callbacks;
@@ -12,7 +13,7 @@ public class PutSubstitution extends AbstractCommand {
 	}
 
 	@Override
-	public long execute(final MacrosRuntime rt) {
+	public long execute(final MacrosRuntime rt) throws CalculationException {
 		rt.resetBuffer();
 		for(Function<char[], char[]> item : callbacks) {
 			rt.append(item.apply(null));

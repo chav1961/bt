@@ -3,7 +3,7 @@ package chav1961.bt.matrix.macros.runtime.interfaces;
 import java.io.PrintStream;
 
 public interface MacrosRuntime {
-	StringBuilder getBuffer();
+	CharAppendable getBuffer();
 	PrintStream getPrintStream();
 	
 	int incLockCount();

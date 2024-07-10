@@ -1,8 +1,9 @@
 package chav1961.bt.matrix.macros.runtime;
 
 import chav1961.bt.matrix.macros.runtime.interfaces.MacrosRuntime;
+import chav1961.purelib.basic.exceptions.CalculationException;
 
-public class BackwardBrunch extends AbstractNonResumedCommand{
+public class BackwardBrunch extends AbstractNonResumedCommand {
 	private final long	label;
 
 	protected BackwardBrunch(final long label) {
@@ -10,7 +11,7 @@ public class BackwardBrunch extends AbstractNonResumedCommand{
 	}
 
 	@Override
-	public long execute(final MacrosRuntime rt) {
+	public long execute(final MacrosRuntime rt) throws CalculationException {
 		return label;
 	}
 

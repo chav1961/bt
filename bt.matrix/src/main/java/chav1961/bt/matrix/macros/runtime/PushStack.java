@@ -1,6 +1,7 @@
 package chav1961.bt.matrix.macros.runtime;
 
 import chav1961.bt.matrix.macros.runtime.interfaces.MacrosRuntime;
+import chav1961.purelib.basic.exceptions.CalculationException;
 
 public class PushStack extends AbstractNonResumedCommand {
 	public static final PushStack	SINGLETON = new PushStack(); 
@@ -9,7 +10,7 @@ public class PushStack extends AbstractNonResumedCommand {
 	}
 
 	@Override
-	public long execute(final MacrosRuntime rt) {
+	public long execute(final MacrosRuntime rt) throws CalculationException {
 		rt.getProgramStack().pushStackValue(null);
 		return 1;
 	}

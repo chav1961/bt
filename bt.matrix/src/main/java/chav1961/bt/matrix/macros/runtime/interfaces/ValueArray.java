@@ -2,6 +2,7 @@ package chav1961.bt.matrix.macros.runtime.interfaces;
 
 import java.lang.reflect.Array;
 
+import chav1961.bt.matrix.macros.runtime.interfaces.Value.Factory;
 import chav1961.purelib.basic.CharUtils;
 import chav1961.purelib.basic.exceptions.ContentException;
 
@@ -54,6 +55,19 @@ public interface ValueArray extends Value {
     		}
     		this.array = temp;
     	}
+
+		@Override
+		public Object clone() throws CloneNotSupportedException {
+			switch (getType()) {
+				case BOOLEAN : case INT : case REAL : case STRING : 
+					throw new IllegalArgumentException("Value can't be cloned");
+				case BOOLEAN_ARRAY : case INT_ARRAY : case REAL_ARRAY : case STRING_ARRAY :
+					return super.clone();
+				default :
+					throw new UnsupportedOperationException("Var value type ["+getType()+"] is not supported yet");			
+			}
+		}
+		
     	
 		@Override
 		public ValueType getType() {
@@ -97,5 +111,14 @@ public interface ValueArray extends Value {
 			throw new IllegalStateException("This implementation is read-only");
 		}
     	
+		@Override
+		public int compareTo(final Value o) {
+			if (o == null || o.getType() != getType()) {
+				throw new IllegalArgumentException("Value to compare is null or has incompatible type");
+			}
+			else {
+				return -1;
+			}
+		}
     }
 }

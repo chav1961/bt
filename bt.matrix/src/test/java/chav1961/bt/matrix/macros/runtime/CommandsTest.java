@@ -9,32 +9,6 @@ import org.junit.Assert;
 import org.junit.Test;
 
 public class CommandsTest {
-
-	@Test
-	public void printContentTest() throws CalculationException {
-		final MacrosRuntime	rt = new SingleMacrosRuntime();
-		final PrintContent	pc1 = new PrintContent(false, false);
-		
-		rt.getProgramStack().pushStackValue(Value.Factory.newReadOnlyInstance("test"));		
-		Assert.assertEquals(1, pc1.execute(rt));
-		Assert.assertEquals(ControlType.SEQUENCE, pc1.getControlType());
-		Assert.assertEquals("test"+System.lineSeparator(), rt.getBuffer().toString());
-
-		final PrintContent	pc2 = new PrintContent(true, false);
-		
-		rt.getProgramStack().pushStackValue(Value.Factory.newReadOnlyInstance("test"));		
-		Assert.assertEquals(1, pc2.execute(rt));
-		
-		final PrintContent	pc3 = new PrintContent(true, true);
-		
-		rt.getProgramStack().pushStackValue(Value.Factory.newReadOnlyInstance("test"));		
-		try{pc3.execute(rt);
-			Assert.fail("Mandatory exception was not detected (exception must be)");
-		} catch (CalculationException exc) {
-			Assert.assertEquals("test", exc.getLocalizedMessage());
-		}		
-	}
-
 	@Test
 	public void singletonsTest() throws CalculationException {
 		final MacrosRuntime	rt = new SingleMacrosRuntime();
@@ -65,5 +39,50 @@ public class CommandsTest {
 		Assert.assertEquals(1, rt.getProgramStack().getBlockDepth());
 		
 		final PushStack		pus = PushStack.SINGLETON;
+
+		Assert.assertEquals(0, rt.getProgramStack().getStackDepth());
+		Assert.assertEquals(1, pus.execute(rt));
+		Assert.assertEquals(ControlType.SEQUENCE, pus.getControlType());
+		Assert.assertEquals(1, rt.getProgramStack().getStackDepth());
+
+		final DuplicateStack	dup = DuplicateStack.SINGLETON;
+
+		Assert.assertEquals(1, rt.getProgramStack().getStackDepth());
+		Assert.assertEquals(1, dup.execute(rt));
+		Assert.assertEquals(ControlType.SEQUENCE, dup.getControlType());
+		Assert.assertEquals(2, rt.getProgramStack().getStackDepth());
+		
+		final PopStack		pos = PopStack.SINGLETON;
+
+		Assert.assertEquals(2, rt.getProgramStack().getStackDepth());
+		Assert.assertEquals(1, pos.execute(rt));
+		Assert.assertEquals(ControlType.SEQUENCE, pos.getControlType());
+		Assert.assertEquals(1, rt.getProgramStack().getStackDepth());
 	}
+
+	@Test
+	public void printContentTest() throws CalculationException {
+		final MacrosRuntime	rt = new SingleMacrosRuntime();
+		final PrintContent	pc1 = new PrintContent(false, false);
+		
+		rt.getProgramStack().pushStackValue(Value.Factory.newReadOnlyInstance("test"));		
+		Assert.assertEquals(1, pc1.execute(rt));
+		Assert.assertEquals(ControlType.SEQUENCE, pc1.getControlType());
+		Assert.assertEquals("test"+System.lineSeparator(), rt.getBuffer().toString());
+
+		final PrintContent	pc2 = new PrintContent(true, false);
+		
+		rt.getProgramStack().pushStackValue(Value.Factory.newReadOnlyInstance("test"));		
+		Assert.assertEquals(1, pc2.execute(rt));
+		
+		final PrintContent	pc3 = new PrintContent(true, true);
+		
+		rt.getProgramStack().pushStackValue(Value.Factory.newReadOnlyInstance("test"));		
+		try{pc3.execute(rt);
+			Assert.fail("Mandatory exception was not detected (exception must be)");
+		} catch (CalculationException exc) {
+			Assert.assertEquals("test", exc.getLocalizedMessage());
+		}		
+	}
+
 }

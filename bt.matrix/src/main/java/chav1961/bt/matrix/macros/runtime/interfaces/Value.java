@@ -7,25 +7,49 @@ import chav1961.purelib.basic.exceptions.ContentException;
 import chav1961.purelib.cdb.CompilerUtils;
 import chav1961.purelib.sql.SQLUtils;
 
-public interface Value {
+public interface Value extends Cloneable, Comparable<Value> {
+	
 	public static enum ValueType {
-		INT,
-		REAL,
-		STRING,
-		BOOLEAN,
-		INT_ARRAY,
-		REAL_ARRAY,
-		STRING_ARRAY,
-		BOOLEAN_ARRAY;
+		INT(true, false),
+		REAL(true, false),
+		STRING(false, false),
+		BOOLEAN(false, false),
+		INT_ARRAY(true, true),
+		REAL_ARRAY(true, true),
+		STRING_ARRAY(false, true),
+		BOOLEAN_ARRAY(false, true);
+		
+		private final boolean	isNumber;
+		private final boolean	isArray;
+		
+		private ValueType(final boolean isNumber, final boolean isArray) {
+			this.isNumber = isNumber;
+			this.isArray = isArray;
+		}
+		
+		public boolean isNumber() {
+			return isNumber;
+		}
+		
+		public boolean isArray() {
+			return isArray;
+		}
+
 	}
 	
 	ValueType getType();
 	<T> T getValue(Class<T> awaited) throws ContentException;
 	<T> void setValue(Class<T> awaited, T value) throws ContentException;
+	Object clone() throws CloneNotSupportedException;
+	@Override
+	int compareTo(Value o);
 	
 	public static class Factory {
+		public static final Value	TRUE = new ValueImpl(true);  
+		public static final Value	FALSE = new ValueImpl(false);
+		
 		public static Value newReadOnlyInstance(final boolean value) {
-			return new ValueImpl(value);
+			return value ? TRUE : FALSE;
 		}
 
 		public static Value newReadOnlyInstance(final long value) {
@@ -118,6 +142,18 @@ public interface Value {
 		}
 
 		@Override
+		public Object clone() throws CloneNotSupportedException {
+			switch (getType()) {
+				case BOOLEAN : case INT : case REAL : case STRING : 
+					return super.clone();
+				case BOOLEAN_ARRAY : case INT_ARRAY : case REAL_ARRAY : case STRING_ARRAY :
+					throw new IllegalArgumentException("Value can't be cloned");
+				default :
+					throw new UnsupportedOperationException("Var value type ["+getType()+"] is not supported yet");			
+			}
+		}
+		
+		@Override
 		public int hashCode() {
 			final int prime = 31;
 			int result = 1;
@@ -142,6 +178,16 @@ public interface Value {
 		@Override
 		public String toString() {
 			return "ValueImpl [type=" + type + ", numberContent=" + numberContent + ", charContent=" + Arrays.toString(charContent) + "]";
+		}
+
+		@Override
+		public int compareTo(final Value o) {
+			if (o == null || o.getType() != getType()) {
+				throw new IllegalArgumentException("Value to compare is null or has incompatible type");
+			}
+			else {
+				return -1;
+			}
 		}
 	}
 }

@@ -64,6 +64,18 @@ class ProgramStackImpl implements ProgramStack {
 	}
 
 	@Override
+	public int getStackDepth() {
+		StackDescriptor	temp = stack;
+		int	result = 0;
+		
+		while (temp != null) {
+			temp = temp.parent;
+			result++;
+		}
+		return result;
+	}
+	
+	@Override
 	public Value getStackValue() {
 		if (stack == null) {
 			throw new IllegalStateException("Stack is empty");
@@ -73,6 +85,18 @@ class ProgramStackImpl implements ProgramStack {
 		}
 	}
 
+	@Override
+	public void setStackValue(final Value value) {
+		if (stack == null) {
+			throw new IllegalStateException("Stack is empty");
+		}
+		else {
+			stack.value = value;
+		}
+	}
+
+	
+	
 	@Override
 	public Value popStackValue() {
 		if (stack == null) {

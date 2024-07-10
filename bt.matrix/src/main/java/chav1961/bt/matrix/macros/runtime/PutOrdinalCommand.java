@@ -1,6 +1,7 @@
 package chav1961.bt.matrix.macros.runtime;
 
 import chav1961.bt.matrix.macros.runtime.interfaces.MacrosRuntime;
+import chav1961.purelib.basic.exceptions.CalculationException;
 
 public class PutOrdinalCommand extends AbstractCommand {
 	private final char[]	content;
@@ -10,9 +11,9 @@ public class PutOrdinalCommand extends AbstractCommand {
 	}
 
 	@Override
-	public long execute(final MacrosRuntime rt) {
+	public long execute(final MacrosRuntime rt) throws CalculationException {
 		if (rt.getLockCount() == 0) {
-			rt.resetBuffer().append(content);
+			rt.getBuffer().append(content);
 		}
 		return 1;
 	}

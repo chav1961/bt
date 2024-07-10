@@ -6,9 +6,10 @@ import java.util.List;
 import chav1961.bt.matrix.macros.runtime.interfaces.Command;
 import chav1961.bt.matrix.macros.runtime.interfaces.CommandRepo;
 import chav1961.bt.matrix.macros.runtime.interfaces.MacrosRuntime;
+import chav1961.bt.matrix.macros.runtime.interfaces.ThreadedCommandRepo;
 import chav1961.purelib.basic.exceptions.CalculationException;
 
-public class CommandList {
+public class CommandList implements ThreadedCommandRepo {
 	public static enum CommandType {
 		OR,
 		AND,
@@ -49,7 +50,11 @@ public class CommandList {
 	private final List<Integer>	backwardLabels = new ArrayList<>();
 	private final CommandRepo	repo = new InMemoryCommandRepo();	
 	
+	@Override
+	public void addCommand(final CommandType type) {
+	}	
 
+	@Override
 	public void addCommand(final CommandType type, final Object... parameters) {
 		switch(type) {
 			case ADD		:
@@ -125,10 +130,12 @@ public class CommandList {
 		}
 	}
 	
+	@Override
 	public void registerForwardLabel(final int label) {
 		
 	}
 	
+	@Override
 	public void registerBackwardLabel(final int label) {
 		
 	}
