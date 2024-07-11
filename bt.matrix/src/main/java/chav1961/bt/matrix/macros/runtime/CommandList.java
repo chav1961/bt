@@ -44,7 +44,8 @@ public class CommandList implements ThreadedCommandRepo {
 		JUMP_FALSE,
 		JUMP,
 		DUPLICATE,
-		POP
+		POP,
+		CONVERT
 	}
 	
 	private final List<Integer>	backwardLabels = new ArrayList<>();

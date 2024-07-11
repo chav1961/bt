@@ -11,6 +11,7 @@ import chav1961.bt.matrix.macros.runtime.interfaces.MacrosRuntimeCall;
 import chav1961.bt.matrix.macros.runtime.interfaces.ThreadedCommandRepo;
 import chav1961.bt.matrix.macros.runtime.interfaces.Value;
 import chav1961.bt.matrix.macros.runtime.interfaces.Value.ValueType;
+import chav1961.bt.matrix.macros.runtime.interfaces.ValueArray;
 import chav1961.purelib.basic.Utils;
 import chav1961.purelib.basic.exceptions.CalculationException;
 import chav1961.purelib.basic.exceptions.ContentException;
@@ -20,7 +21,6 @@ public class ThreadedCommandList implements ThreadedCommandRepo {
 	private static final Object[]		EMPTY = new Object[0];
 	
 	private final List<LongThrowableFunction>	commands = new ArrayList<>();
-	private final List<int[]>			labels = new ArrayList<>();
 
 	private static interface InternalRuntime {
 		int decodeJump(int label);
@@ -34,7 +34,6 @@ public class ThreadedCommandList implements ThreadedCommandRepo {
 	@Override
 	public void reset() {
 		commands.clear();
-		labels.clear();
 	}
 	
 	@Override
@@ -50,6 +49,28 @@ public class ThreadedCommandList implements ThreadedCommandRepo {
 		else {
 			switch (type) {
 				case ADD			:
+					commands.add((rt, irt)->{
+						final Value	value1 = rt.getProgramStack().popStackValue(), value2 = rt.getProgramStack().getStackValue();   
+								
+						if (value1.getType().isNumber() && value2.getType().isNumber() && !value1.getType().isArray() && !value2.getType().isArray()) {
+							if (value1.getType() == ValueType.INT && value2.getType() == ValueType.INT) {
+								rt.getProgramStack().setStackValue(Value.Factory.newReadOnlyInstance(value1.getValue(long.class).longValue() + value2.getValue(long.class).longValue()));
+							}
+							else {
+								rt.getProgramStack().setStackValue(Value.Factory.newReadOnlyInstance(value1.getValue(double.class).doubleValue() + value2.getValue(double.class).doubleValue()));
+							}
+						}
+						else if (value1.getType() == ValueType.STRING) {
+							rt.getProgramStack().setStackValue(concat(RuntimeUtils.convert(value2, ValueType.STRING), value1));
+						}
+						else if (value2.getType() == ValueType.STRING) {
+							rt.getProgramStack().setStackValue(concat(value2, RuntimeUtils.convert(value1, ValueType.STRING)));
+						}
+						else {
+							throw new CalculationException("ADD operation for non-number values or CONCAT failed");
+						}
+						return 1;
+					});
 					break;
 				case AND			:
 					commands.add((rt, irt)->{
@@ -59,12 +80,10 @@ public class ThreadedCommandList implements ThreadedCommandRepo {
 							rt.getProgramStack().setStackValue(Value.Factory.newReadOnlyInstance(value1.getValue(boolean.class) && value2.getValue(boolean.class)));
 						}
 						else {
-							throw new CalculationException();
+							throw new CalculationException("AND operation for non-boolean values");
 						}
 						return 1;
 					});
-					break;
-				case BREAK			:
 					break;
 				case CALL			:
 					checkTypes(parameters, MacrosRuntimeCall.class, int.class);
@@ -129,22 +148,20 @@ public class ThreadedCommandList implements ThreadedCommandRepo {
 						return 1;
 					});
 					break;
-				case CONTINUE		:
-					break;
 				case DIV			:
 					commands.add((rt, irt)->{
-						final Value	value1 = rt.getProgramStack().popStackValue(), value2 = rt.getProgramStack().getStackValue();   
+						final Value	value2 = rt.getProgramStack().popStackValue(), value1 = rt.getProgramStack().getStackValue();   
 								
 						if (value1.getType().isNumber() && value2.getType().isNumber() && !value1.getType().isArray() && !value2.getType().isArray()) {
 							if (value1.getType() == ValueType.INT && value2.getType() == ValueType.INT) {
-								rt.getProgramStack().setStackValue(Value.Factory.newReadOnlyInstance(value1.getValue(long.class) / value2.getValue(long.class)));
+								rt.getProgramStack().setStackValue(Value.Factory.newReadOnlyInstance(value1.getValue(long.class).longValue() / value2.getValue(long.class).longValue()));
 							}
 							else {
-								rt.getProgramStack().setStackValue(Value.Factory.newReadOnlyInstance(value1.getValue(double.class) / value2.getValue(double.class)));
+								rt.getProgramStack().setStackValue(Value.Factory.newReadOnlyInstance(value1.getValue(double.class).doubleValue() / value2.getValue(double.class).doubleValue()));
 							}
 						}
 						else {
-							throw new CalculationException();
+							throw new CalculationException("DIV operation for non-number values");
 						}
 						return 1;
 					});
@@ -167,67 +184,79 @@ public class ThreadedCommandList implements ThreadedCommandRepo {
 						return 1;
 					});
 					break;
-				case ERROR			:
-					break;
 				case GE				:
 					commands.add((rt, irt)->{
-						final Value	value1 = rt.getProgramStack().popStackValue(), value2 = rt.getProgramStack().getStackValue();   
-								
-						rt.getProgramStack().setStackValue(Value.Factory.newReadOnlyInstance(compareTo(value1, value2) >= 0));
-						return 1;
+						final Value	value2 = rt.getProgramStack().popStackValue(), value1 = rt.getProgramStack().getStackValue();   
+
+						if (!value1.getType().isArray() && !value2.getType().isArray()) {
+							rt.getProgramStack().setStackValue(Value.Factory.newReadOnlyInstance(compareTo(value1, value2) >= 0));
+							return 1;
+						}
+						else {
+							throw new CalculationException("GE operation for arrays");
+						}
 					});
 					break;
 				case GT				:
 					commands.add((rt, irt)->{
-						final Value	value1 = rt.getProgramStack().popStackValue(), value2 = rt.getProgramStack().getStackValue();   
+						final Value	value2 = rt.getProgramStack().popStackValue(), value1 = rt.getProgramStack().getStackValue();   
 								
-						rt.getProgramStack().setStackValue(Value.Factory.newReadOnlyInstance(compareTo(value1, value2) > 0));
-						return 1;
-					});
-					break;
-				case JUMP			:
-					checkTypes(parameters, Number.class);
-					final int	jumpLabel = ((Number)parameters[0]).intValue();  
-							
-					commands.add((rt, irt)->{
-						return irt.decodeJump(jumpLabel);
-					});
-					break;
-				case JUMP_FALSE		:
-					checkTypes(parameters, Number.class);
-					final int	jumpLabelF = ((Number)parameters[0]).intValue();  
-							
-					commands.add((rt, irt)->{
-						if (!Objects.equals(Value.Factory.TRUE, rt.getProgramStack().popStackValue())) {
-							return irt.decodeJump(jumpLabelF);
-						}
-						else {
+						if (!value1.getType().isArray() && !value2.getType().isArray()) {
+							rt.getProgramStack().setStackValue(Value.Factory.newReadOnlyInstance(compareTo(value1, value2) > 0));
 							return 1;
 						}
-					});
-					break;
-				case JUMP_TRUE		:
-					checkTypes(parameters, Number.class);
-					final int	jumpLabelT = ((Number)parameters[0]).intValue();  
-							
-					commands.add((rt, irt)->{
-						if (Objects.equals(Value.Factory.TRUE, rt.getProgramStack().popStackValue())) {
-							return irt.decodeJump(jumpLabelT);
-						}
 						else {
-							return 1;
+							throw new CalculationException("GT operation for arrays");
 						}
 					});
 					break;
 				case LE				:
 					commands.add((rt, irt)->{
-						final Value	value1 = rt.getProgramStack().popStackValue(), value2 = rt.getProgramStack().getStackValue();   
+						final Value	value2 = rt.getProgramStack().popStackValue(), value1 = rt.getProgramStack().getStackValue();   
 								
-						rt.getProgramStack().setStackValue(Value.Factory.newReadOnlyInstance(compareTo(value1, value2) <= 0));
-						return 1;
+						if (!value1.getType().isArray() && !value2.getType().isArray()) {
+							rt.getProgramStack().setStackValue(Value.Factory.newReadOnlyInstance(compareTo(value1, value2) <= 0));
+							return 1;
+						}
+						else {
+							throw new CalculationException("LE operation for arrays");
+						}
 					});
 					break;
 				case LOAD_INDEX		:
+					checkTypes(parameters, Number.class);
+					final int	indexVarNameId = ((Number)parameters[0]).intValue();
+					
+					commands.add((rt, irt)->{
+						final Value	varVal = rt.getProgramStack().getVarValue(indexVarNameId);
+						final int	index = rt.getProgramStack().popStackValue().getValue(long.class).intValue();
+						
+						if (varVal.getType().isArray()) {
+							final Value	indexValue;
+							
+							switch (varVal.getType().getComponentType()) {
+								case BOOLEAN	:
+									indexValue = Value.Factory.newReadOnlyInstance(((ValueArray)varVal).getValue(index, boolean.class).booleanValue());
+									break;
+								case INT		:
+									indexValue = Value.Factory.newReadOnlyInstance(((ValueArray)varVal).getValue(index, long.class).longValue());
+									break;
+								case REAL		:
+									indexValue = Value.Factory.newReadOnlyInstance(((ValueArray)varVal).getValue(index, double.class).doubleValue());
+									break;
+								case STRING		:
+									indexValue = Value.Factory.newReadOnlyInstance(((ValueArray)varVal).getValue(index, char[].class));
+									break;
+								default :
+									throw new UnsupportedOperationException("Component type ["+varVal.getType().getComponentType()+"] is not supported yet"); 
+							}
+							rt.getProgramStack().pushStackValue(indexValue);
+						}
+						else {
+							throw new CalculationException("LOAD_INDEX for non-arrays");
+						}
+						return 1;
+					});
 					break;
 				case LOAD_VAR		:
 					checkTypes(parameters, Number.class);
@@ -240,26 +269,31 @@ public class ThreadedCommandList implements ThreadedCommandRepo {
 					break;
 				case LT				:
 					commands.add((rt, irt)->{
-						final Value	value1 = rt.getProgramStack().popStackValue(), value2 = rt.getProgramStack().getStackValue();   
+						final Value	value2 = rt.getProgramStack().popStackValue(), value1 = rt.getProgramStack().getStackValue();   
 								
-						rt.getProgramStack().setStackValue(Value.Factory.newReadOnlyInstance(compareTo(value1, value2) < 0));
-						return 1;
+						if (!value1.getType().isArray() && !value2.getType().isArray()) {
+							rt.getProgramStack().setStackValue(Value.Factory.newReadOnlyInstance(compareTo(value1, value2) < 0));
+							return 1;
+						}
+						else {
+							throw new CalculationException("LT operation for arrays");
+						}
 					});
 					break;
 				case MOD			:
 					commands.add((rt, irt)->{
-						final Value	value1 = rt.getProgramStack().popStackValue(), value2 = rt.getProgramStack().getStackValue();   
+						final Value	value2 = rt.getProgramStack().popStackValue(), value1 = rt.getProgramStack().getStackValue();   
 								
 						if (value1.getType().isNumber() && value2.getType().isNumber() && !value1.getType().isArray() && !value2.getType().isArray()) {
 							if (value1.getType() == ValueType.INT && value2.getType() == ValueType.INT) {
-								rt.getProgramStack().setStackValue(Value.Factory.newReadOnlyInstance(value1.getValue(long.class) % value2.getValue(long.class)));
+								rt.getProgramStack().setStackValue(Value.Factory.newReadOnlyInstance(value1.getValue(long.class).longValue() % value2.getValue(long.class).longValue()));
 							}
 							else {
-								rt.getProgramStack().setStackValue(Value.Factory.newReadOnlyInstance(value1.getValue(double.class) % value2.getValue(double.class)));
+								rt.getProgramStack().setStackValue(Value.Factory.newReadOnlyInstance(value1.getValue(double.class).doubleValue() % value2.getValue(double.class).doubleValue()));
 							}
 						}
 						else {
-							throw new CalculationException();
+							throw new CalculationException("MOD operation for non-number values");
 						}
 						return 1;
 					});
@@ -270,14 +304,14 @@ public class ThreadedCommandList implements ThreadedCommandRepo {
 								
 						if (value1.getType().isNumber() && value2.getType().isNumber() && !value1.getType().isArray() && !value2.getType().isArray()) {
 							if (value1.getType() == ValueType.INT && value2.getType() == ValueType.INT) {
-								rt.getProgramStack().setStackValue(Value.Factory.newReadOnlyInstance(value1.getValue(long.class) * value2.getValue(long.class)));
+								rt.getProgramStack().setStackValue(Value.Factory.newReadOnlyInstance(value1.getValue(long.class).longValue() * value2.getValue(long.class).longValue()));
 							}
 							else {
-								rt.getProgramStack().setStackValue(Value.Factory.newReadOnlyInstance(value1.getValue(double.class) * value2.getValue(double.class)));
+								rt.getProgramStack().setStackValue(Value.Factory.newReadOnlyInstance(value1.getValue(double.class).doubleValue() * value2.getValue(double.class).doubleValue()));
 							}
 						}
 						else {
-							throw new CalculationException();
+							throw new CalculationException("MUL operation for non-number values");
 						}
 						return 1;
 					});
@@ -296,21 +330,24 @@ public class ThreadedCommandList implements ThreadedCommandRepo {
 						
 						if (val.getType().isNumber() && !val.getType().isArray()) {
 							if (val.getType() == ValueType.INT) {
-								rt.getProgramStack().setStackValue(Value.Factory.newReadOnlyInstance(val.getValue(long.class)));
+								rt.getProgramStack().setStackValue(Value.Factory.newReadOnlyInstance(-val.getValue(long.class).longValue()));
 							}
 							else {
-								rt.getProgramStack().setStackValue(Value.Factory.newReadOnlyInstance(val.getValue(double.class)));
+								rt.getProgramStack().setStackValue(Value.Factory.newReadOnlyInstance(-val.getValue(double.class).doubleValue()));
 							}
 							return 1;
 						}
 						else {
-							throw new CalculationException();
+							throw new CalculationException("NEGATE operation for non-number values");
 						}
 					});
 					break;
 				case NOT			:
 					commands.add((rt, irt)->{
-						if (Objects.equals(rt.getProgramStack().getStackValue(), Value.Factory.TRUE)) {
+						if (rt.getProgramStack().getStackValue().getType() != ValueType.BOOLEAN) {
+							throw new CalculationException("NOT operation for non-boolean values");
+						}
+						else if (Objects.equals(rt.getProgramStack().getStackValue(), Value.Factory.TRUE)) {
 							rt.getProgramStack().setStackValue(Value.Factory.FALSE);
 						}
 						else  {
@@ -327,7 +364,7 @@ public class ThreadedCommandList implements ThreadedCommandRepo {
 							rt.getProgramStack().setStackValue(Value.Factory.newReadOnlyInstance(value1.getValue(boolean.class) || value2.getValue(boolean.class)));
 						}
 						else {
-							throw new CalculationException();
+							throw new CalculationException("AND operation for non-boolean values");
 						}
 						return 1;
 					});
@@ -338,16 +375,26 @@ public class ThreadedCommandList implements ThreadedCommandRepo {
 						return 1;
 					});
 					break;
-				case PRINT			:
-					break;
-				case STORE_INDEX	:
-					break;
-				case STORE_VAR		:
-					break;
 				case SUB			:
+					commands.add((rt, irt)->{
+						final Value	value2 = rt.getProgramStack().popStackValue(), value1 = rt.getProgramStack().getStackValue();   
+								
+						if (value1.getType().isNumber() && value2.getType().isNumber() && !value1.getType().isArray() && !value2.getType().isArray()) {
+							if (value1.getType() == ValueType.INT && value2.getType() == ValueType.INT) {
+								rt.getProgramStack().setStackValue(Value.Factory.newReadOnlyInstance(value1.getValue(long.class).longValue() - value2.getValue(long.class).longValue()));
+							}
+							else {
+								rt.getProgramStack().setStackValue(Value.Factory.newReadOnlyInstance(value1.getValue(double.class).doubleValue() - value2.getValue(double.class).doubleValue()));
+							}
+						}
+						else {
+							throw new CalculationException("SUB operation for non-number values");
+						}
+						return 1;
+					});
 					break;
-				case WARNING		:
-					break;
+				case BREAK : case CONTINUE : case ERROR : case JUMP : case JUMP_FALSE : case JUMP_TRUE : case PRINT : case STORE_INDEX : case STORE_VAR : case WARNING :
+					throw new IllegalArgumentException("Commadn type ["+type+"] can't be used in this instance");
 				default:
 					throw new UnsupportedOperationException("Command type ["+type+"] is not supported yet"); 
 			}
@@ -356,59 +403,57 @@ public class ThreadedCommandList implements ThreadedCommandRepo {
 	}
 
 	@Override
-	public void registerForwardLabel(final int label) {
-		labels.add(new int[] {label, commands.size() - 1});
-	}
-
-	@Override
-	public void registerBackwardLabel(final int label) {
-		labels.add(new int[] {label, commands.size() - 1});
-	}
-
-	@Override
 	public CommandRepoExecutor build() {
 		final LongThrowableFunction[]	cmds = commands.toArray(new LongThrowableFunction[commands.size()]);
-		final int[][]					lab = labels.toArray(new int[labels.size()][]);
-		final InternalRuntime			irt = new InternalRuntime() {
-											@Override
-											public int decodeJump(final int label) {
-										        int low = 0, high = lab.length - 1;
-
-										        while (low <= high) {
-										            int mid = (low + high) >>> 1;
-										            int midVal = lab[mid][0];
-
-										            if (midVal < label) {
-										                low = mid + 1;
-										            }
-										            else if (midVal > label) {
-										                high = mid - 1;
-										            }
-										            else {
-										                return lab[mid][1];
-										            }
-										        }
-										        throw new IllegalArgumentException("Label ["+label+"] not found");
-											}
-										};
-		Arrays.sort(lab, (i1,i2)->i1[0]-i2[0]);
-
 		reset();
+		
 		return new CommandRepoExecutor() {
 			@Override
 			public void execute(final MacrosRuntime t) throws CalculationException, ContentException {
 				int	address = 0;
 				
 				while (address >= 0 && address < cmds.length) {
-					address = cmds[address].apply(t, irt);
+					address += cmds[address].apply(t, null);
 				}
 			}
 		};
 	}
+
+	private static Value concat(final Value left, final Value right) throws ContentException {
+		final char[]	leftChar = left.getValue(char[].class);
+		final char[]	rightChar = right.getValue(char[].class);
+		final char[]	result = new char[leftChar.length + rightChar.length];
+		
+		System.arraycopy(leftChar, 0, result, 0, leftChar.length);
+		System.arraycopy(rightChar, 0, result, leftChar.length, rightChar.length);
+		return Value.Factory.newReadOnlyInstance(result);
+	}
 	
-	private static int compareTo(Value value1, Value value2) {
-		// TODO Auto-generated method stub
-		return 0;
+	private static int compareTo(final Value value1, final Value value2) throws CalculationException, ContentException {
+		if (value1 == null && value2 == null || value1 == value2) {
+			return 0;
+		}
+		else if (value1 == null || value2 == null) {
+			throw new CalculationException("COMPARE operation for nulls");
+		}
+		else if (value1.getType() == value2.getType()) {
+			return value1.compareTo(value2);
+		}
+		else if (value1.getType() == ValueType.STRING) {
+				return compareTo(value1, RuntimeUtils.convert(value2, ValueType.STRING));
+		}
+		else if (value2.getType() == ValueType.STRING) {
+			return compareTo(RuntimeUtils.convert(value1, ValueType.STRING), value2);
+		}
+		else if (value1.getType() == ValueType.INT && value1.getType() == ValueType.REAL) {
+			return compareTo(RuntimeUtils.convert(value1, ValueType.REAL), value2);
+		}
+		else if (value1.getType() == ValueType.REAL && value1.getType() == ValueType.INT) {
+			return compareTo(value1, RuntimeUtils.convert(value2, ValueType.REAL));
+		}
+		else {
+			return compareTo(RuntimeUtils.convert(value1, ValueType.STRING), RuntimeUtils.convert(value2, ValueType.STRING));
+		}
 	}
 
 	private void checkTypes(final Object[] parameters, final Class<?>... awaited) {

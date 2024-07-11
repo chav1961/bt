@@ -13,7 +13,5 @@ public interface ThreadedCommandRepo {
 	void reset();	
 	ThreadedCommandRepo addCommand(CommandType type);
 	ThreadedCommandRepo addCommand(CommandType type, Object... parameters);
-	void registerForwardLabel(final int label);	
-	void registerBackwardLabel(final int label);
 	CommandRepoExecutor build();
 }

@@ -10,21 +10,23 @@ import chav1961.purelib.sql.SQLUtils;
 public interface Value extends Cloneable, Comparable<Value> {
 	
 	public static enum ValueType {
-		INT(true, false),
-		REAL(true, false),
-		STRING(false, false),
-		BOOLEAN(false, false),
-		INT_ARRAY(true, true),
-		REAL_ARRAY(true, true),
-		STRING_ARRAY(false, true),
-		BOOLEAN_ARRAY(false, true);
+		INT(true, false, null),
+		REAL(true, false, null),
+		STRING(false, false, null),
+		BOOLEAN(false, false, null),
+		INT_ARRAY(true, true, INT),
+		REAL_ARRAY(true, true, REAL),
+		STRING_ARRAY(false, true, STRING),
+		BOOLEAN_ARRAY(false, true, BOOLEAN);
 		
 		private final boolean	isNumber;
 		private final boolean	isArray;
+		private final ValueType	componentType;
 		
-		private ValueType(final boolean isNumber, final boolean isArray) {
+		private ValueType(final boolean isNumber, final boolean isArray, final ValueType componentType) {
 			this.isNumber = isNumber;
 			this.isArray = isArray;
+			this.componentType = componentType;
 		}
 		
 		public boolean isNumber() {
@@ -35,6 +37,9 @@ public interface Value extends Cloneable, Comparable<Value> {
 			return isArray;
 		}
 
+		public ValueType getComponentType() {
+			return componentType;
+		}
 	}
 	
 	ValueType getType();
@@ -97,7 +102,7 @@ public interface Value extends Cloneable, Comparable<Value> {
 		}
 
 		private ValueImpl(final double value) {
-			this.type = ValueType.INT;
+			this.type = ValueType.REAL;
 			this.numberContent = Double.doubleToLongBits(value);
 			this.charContent = null;
 		}
@@ -186,7 +191,40 @@ public interface Value extends Cloneable, Comparable<Value> {
 				throw new IllegalArgumentException("Value to compare is null or has incompatible type");
 			}
 			else {
-				return -1;
+				try {
+					switch (getType()) {
+						case BOOLEAN	:
+							final boolean	bLeft = numberContent != 0 ? true : false; 
+							final boolean	bRight = o.getValue(boolean.class).booleanValue();
+							
+							return (bRight ? 1 : 0) - (bLeft ? 1 : 0); 
+						case INT		:
+							final long		lRight = o.getValue(long.class).longValue();
+							final long		lDelta = lRight - numberContent;
+							
+							return lDelta < 0 ? -1 : (lDelta > 0 ? 1 : 0);
+						case REAL		:
+							final double	lRightD = o.getValue(double.class).doubleValue();
+							final double	lDeltaD = lRightD - Double.longBitsToDouble(numberContent);
+							
+							return lDeltaD < 0 ? -1 : (lDeltaD > 0 ? 1 : 0);
+						case STRING		:
+							final char[]	lRightC = o.getValue(char[].class);
+							
+							if (charContent == null || lRightC == null) {
+								throw new IllegalArgumentException("Value to compare is null or has incompatible type");
+							}
+							else {
+								return CharUtils.compareTo(lRightC, charContent);
+							}
+						case INT_ARRAY : case BOOLEAN_ARRAY : case REAL_ARRAY : case STRING_ARRAY :
+							throw new IllegalArgumentException("Value type ["+getType()+"] is not available in this context");
+						default :
+							throw new UnsupportedOperationException("Value type ["+getType()+"] is not supported yet");
+					}
+				} catch (ContentException e) {
+					throw new IllegalArgumentException(e);
+				}
 			}
 		}
 	}
