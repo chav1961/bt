@@ -2,6 +2,7 @@ package chav1961.bt.matrix.macros.runtime.interfaces;
 
 import java.lang.reflect.Array;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import chav1961.purelib.basic.CharUtils;
@@ -41,6 +42,42 @@ public interface ValueArray extends Value {
     		}
     		else {
     			return new ValueArrayReadOnlyImpl(values);
+    		}
+    	}
+
+    	public static ValueArray newInstance(final char[]... values) {
+    		if (values == null || Utils.checkArrayContent4Nulls(values) >= 0) {
+    			throw new NullPointerException("Values are null array or contains nulls inside");
+    		}
+    		else {
+    			return new ValueArrayImpl(values);
+    		}
+    	}
+
+    	public static ValueArray newInstance(final boolean... values) {
+    		if (values == null) {
+    			throw new NullPointerException("Values can't be null array");
+    		}
+    		else {
+    			return new ValueArrayImpl(values);
+    		}
+    	}
+
+    	public static ValueArray newInstance(final long... values) {
+    		if (values == null) {
+    			throw new NullPointerException("Values can't be null array");
+    		}
+    		else {
+    			return new ValueArrayImpl(values);
+    		}
+    	}
+
+    	public static ValueArray newInstance(final double... values) {
+    		if (values == null) {
+    			throw new NullPointerException("Values can't be null array");
+    		}
+    		else {
+    			return new ValueArrayImpl(values);
     		}
     	}
 
@@ -253,7 +290,6 @@ public interface ValueArray extends Value {
     		}
     	}
     	
-    	
     	@Override
 		public ValueType getType() {
 			return type;
@@ -299,8 +335,27 @@ public interface ValueArray extends Value {
 		
 		@Override
 		public <T> void setValue(int index, Class<T> awaited, T value) {
-			// TODO Auto-generated method stub
-			
+			for(ValueType item : ValueType.values()) {
+				if (item.isArray() && item.getComponentType().getType().equals(awaited)) {
+					switch (item.getComponentType()) {
+						case BOOLEAN	:
+							array.set(index, Value.Factory.newReadOnlyInstance((boolean)value));
+							return;
+						case INT		:
+							array.set(index, Value.Factory.newReadOnlyInstance((long)value));
+							return;
+						case REAL		:
+							array.set(index, Value.Factory.newReadOnlyInstance((double)value));
+							return;
+						case STRING		:
+							array.set(index, Value.Factory.newReadOnlyInstance((char[])value));
+							return;
+						default :
+							throw new UnsupportedOperationException("Value component type ["+item.getComponentType()+"] is not supported yet");
+					}
+				}
+			}
+			throw new IllegalArgumentException("Unsupported class type ["+awaited+"]");
 		}
 		
 		@Override

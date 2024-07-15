@@ -14,7 +14,6 @@ import chav1961.purelib.basic.Utils;
 import chav1961.purelib.basic.exceptions.EnvironmentException;
 
 public class ProgramRepo implements AutoCloseable {
-	public static final String		PROGRAM_ZERO_NAME = "zeroMatrixKernel";
 	public static final String		PROGRAM_IDENTITY_NAME = "identityMatrixKernel";
 	public static final String		PROGRAM_ASSIGN_NAME = "assignMatrixKernel";
 	public static final String		PROGRAM_ADD_NAME = "addMatrixKernel";
@@ -39,7 +38,6 @@ public class ProgramRepo implements AutoCloseable {
 	private static final String		REAL_DOUBLE_FILE = "realdoubles.txt";
 	private static final String		COMPLEX_DOUBLE_FILE = "complexdoubles.txt";
 	private static final String[]	PROGRAMS = {
-										PROGRAM_ZERO_NAME,
 										PROGRAM_IDENTITY_NAME,
 										PROGRAM_ASSIGN_NAME,
 										PROGRAM_ADD_NAME,

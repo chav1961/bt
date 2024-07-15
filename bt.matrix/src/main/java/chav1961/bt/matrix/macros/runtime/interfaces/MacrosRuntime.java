@@ -11,4 +11,5 @@ public interface MacrosRuntime {
 	int decLockCount();
 	
 	ProgramStack getProgramStack();
+	char[] extractLine();
 }

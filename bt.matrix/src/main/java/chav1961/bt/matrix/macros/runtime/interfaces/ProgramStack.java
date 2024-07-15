@@ -6,6 +6,7 @@ public interface ProgramStack {
 	void pushBlock();
 	int getBlockDepth();
 	void declare(final int name, final Value.ValueType type);
+	boolean hasVar(final int name);
 	ValueType getVarType(final int name);
 	Value getVarValue(final int name);
 	void setVarValue(final int name, final Value value);

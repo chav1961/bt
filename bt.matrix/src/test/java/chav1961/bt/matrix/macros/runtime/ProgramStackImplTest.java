@@ -9,7 +9,6 @@ import chav1961.bt.matrix.macros.runtime.interfaces.Value.ValueType;
 import chav1961.purelib.basic.exceptions.ContentException;
 
 public class ProgramStackImplTest {
-
 	@Test
 	public void basicVariableTest() throws ContentException {
 		final ProgramStack	ps = new ProgramStackImpl();

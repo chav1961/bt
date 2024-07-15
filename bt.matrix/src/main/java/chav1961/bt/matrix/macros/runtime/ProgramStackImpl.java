@@ -31,6 +31,21 @@ class ProgramStackImpl implements ProgramStack {
 	}
 
 	@Override
+	public boolean hasVar(int name) {
+		BlockDescriptor	desc = current;
+		
+		while (desc != null) {
+			if (desc.hasVariableHere(name)) {
+				return true;
+			}
+			else {
+				desc = desc.parent;
+			}
+		}
+		return false; 
+	}
+	
+	@Override
 	public ValueType getVarType(int name) {
 		return current.getVariableType(name);
 	}
@@ -95,8 +110,6 @@ class ProgramStackImpl implements ProgramStack {
 		}
 	}
 
-	
-	
 	@Override
 	public Value popStackValue() {
 		if (stack == null) {

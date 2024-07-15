@@ -1,13 +1,4 @@
 -
-    programName: zeroMatrixKernel
-    programBody: |
-        #pragma OPENCL EXTENSION cl_khr_fp64 : enable
-        __kernel void zeroMatrixKernelRD(__global double2 *c) {
-           int gid = get_global_id(0);
-           c[gid] = 0;
-        }
-
--
     programName: identityMatrixKernel
     programBody: |
         __kernel void identityMatrixKernelRD(int dim,

@@ -1,12 +1,4 @@
 -
-    programName: zeroMatrixKernel
-    programBody: |
-        __kernel void zeroMatrixKernelCF(__global float2 *c) {
-           int gid = get_global_id(0);
-           c[gid] = (float2)(0.0, 0.0);
-        }
-
--
     programName: identityMatrixKernel
     programBody: |
         __kernel void identityMatrixKernelCF(int dim,

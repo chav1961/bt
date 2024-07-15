@@ -318,8 +318,8 @@ public class Matrix implements AutoCloseable {
 		}
 		else {
 			ensureIsClosed();
-			final long				totalSize = 1L * numberOfRows() * another.numberOfColumns();
-			final cl_mem			newMemory = CL.clCreateBuffer(lib.getContext(), CL.CL_MEM_READ_WRITE, totalSize * getType().getNumberOfItems() * getType().getItemSize(), null, null);
+			final long		totalSize = 1L * numberOfRows() * another.numberOfColumns();
+			final cl_mem	newMemory = CL.clCreateBuffer(lib.getContext(), CL.CL_MEM_READ_WRITE, totalSize * getType().getNumberOfItems() * getType().getItemSize(), null, null);
 			
 			executeProgram(lib.getProgramDescriptor(getType(), ProgramRepo.PROGRAM_MUL_NAME), new long[]{numberOfRows(), another.numberOfColumns()}, numberOfColumns(), memory, another.memory, newMemory);
 			return new Matrix(lib, getType(), rows, cols, newMemory);
@@ -598,6 +598,7 @@ public class Matrix implements AutoCloseable {
 		}
 		try {
 			CL.clEnqueueNDRangeKernel(lib.getCommandQueue(), desc.kernel, workSize.length, null, workSize, new long[] {1, 1, 1}, 0, null, null);
+			CL.clFinish(lib.getCommandQueue());
 		} catch (CLException exc) {
 			throw new EnvironmentException("Program execution ["+desc.programName+"] for ["+type+"] type failed: "+exc.getLocalizedMessage()); 
 		}

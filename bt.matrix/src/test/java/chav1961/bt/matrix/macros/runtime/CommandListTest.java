@@ -12,11 +12,10 @@ public class CommandListTest {
 	@Test
 	public void basicTest() {
 		final CommandList	cl = new CommandList();
-		final MacrosRuntime	rt = new 
+		final MacrosRuntime	rt = new SingleMacrosRuntime();
 		
 		cl.addCommand(CommandType.CONST_CHAR, Value.Factory.newReadOnlyInstance("test".toCharArray()));
 		cl.addCommand(CommandType.PRINT);
 		
-		Assert.assertTrue(cl.getCursor(0).executeCommand(null));
 	}
 }

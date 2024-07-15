@@ -1,19 +1,25 @@
 package chav1961.bt.matrix.macros.runtime;
 
 import chav1961.bt.matrix.macros.runtime.interfaces.MacrosRuntime;
+import chav1961.bt.matrix.macros.runtime.interfaces.ThreadedCommandRepo.CommandRepoExecutor;
 import chav1961.purelib.basic.exceptions.CalculationException;
+import chav1961.purelib.basic.exceptions.ContentException;
 
 public class Calculate extends AbstractNonResumedCommand {
-	private final Object	tree;
+	private final CommandRepoExecutor	cre;
 
-	public Calculate(final MacrosRuntime rt, final Object tree) {
-		this.tree = tree;
+	public Calculate(final CommandRepoExecutor cre) {
+		this.cre = cre;
 	}
 
 	@Override
 	public long execute(final MacrosRuntime rt) throws CalculationException {
-		rt.getProgramStack().pushStackValue(null);
-		return 1;
+		try {
+			cre.execute(rt);
+			return 1;
+		} catch (ContentException e) {
+			throw new CalculationException(e);
+		}
 	}
 
 	@Override

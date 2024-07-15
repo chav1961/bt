@@ -8,15 +8,14 @@ import chav1961.purelib.basic.exceptions.CalculationException;
 public class PutSubstitution extends AbstractCommand {
 	private final Function<char[], char[]>[]	callbacks;
 
-	public PutSubstitution(final MacrosRuntime rt, final Function<char[], char[]>[] callbacks) {
-		this.callbacks = callbacks;
+	public PutSubstitution(final Function<char[], char[]>... callbacks) {
+		this.callbacks = callbacks.clone();
 	}
 
 	@Override
 	public long execute(final MacrosRuntime rt) throws CalculationException {
-		rt.resetBuffer();
 		for(Function<char[], char[]> item : callbacks) {
-			rt.append(item.apply(null));
+			rt.getBuffer().append(item.apply(null));
 		}
 		return 1;
 	}

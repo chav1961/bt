@@ -10,22 +10,24 @@ import chav1961.purelib.sql.SQLUtils;
 public interface Value extends Cloneable, Comparable<Value> {
 	
 	public static enum ValueType {
-		INT(true, false, null),
-		REAL(true, false, null),
-		STRING(false, false, null),
-		BOOLEAN(false, false, null),
-		INT_ARRAY(true, true, INT),
-		REAL_ARRAY(true, true, REAL),
-		STRING_ARRAY(false, true, STRING),
-		BOOLEAN_ARRAY(false, true, BOOLEAN);
+		INT(true, false, long.class, null),
+		REAL(true, false, double.class, null),
+		STRING(false, false, char[].class, null),
+		BOOLEAN(false, false, boolean.class, null),
+		INT_ARRAY(true, true, int[].class, INT),
+		REAL_ARRAY(true, true, double[].class, REAL),
+		STRING_ARRAY(false, true, char[][].class, STRING),
+		BOOLEAN_ARRAY(false, true, boolean[].class, BOOLEAN);
 		
 		private final boolean	isNumber;
 		private final boolean	isArray;
 		private final ValueType	componentType;
+		private final Class<?>	clazz;
 		
-		private ValueType(final boolean isNumber, final boolean isArray, final ValueType componentType) {
+		private ValueType(final boolean isNumber, final boolean isArray, final Class<?> clazz, final ValueType componentType) {
 			this.isNumber = isNumber;
 			this.isArray = isArray;
+			this.clazz = clazz;
 			this.componentType = componentType;
 		}
 		
@@ -39,6 +41,10 @@ public interface Value extends Cloneable, Comparable<Value> {
 
 		public ValueType getComponentType() {
 			return componentType;
+		}
+		
+		public Class<?> getType() {
+			return clazz;
 		}
 	}
 	

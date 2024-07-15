@@ -6,7 +6,6 @@ import org.junit.Test;
 import chav1961.bt.matrix.Matrix.Type;
 
 public class MatrixTest {
-
 	@Test
 	public void basicFloatTest() {
 		try(final MatrixLib	lib =  MatrixLib.getInstance()) {
@@ -262,6 +261,26 @@ public class MatrixTest {
 		}
 	}
 
+	@Test
+	public void loopBigSpecialFloatArithmeticTest() {
+		try(final MatrixLib	lib =  MatrixLib.getInstance()) {
+			System.err.println("START!");
+			final Matrix	matrix1 = lib.getIdentityMatrix(10000, 10000);
+			final Matrix	matrix2 = lib.getIdentityMatrix(10000, 10000);
+			final int		loopCount = 1;
+
+			final long	startTime = System.currentTimeMillis();
+			for(int index = 0; index < loopCount; index++) {
+				matrix1.add(matrix2).close();				
+				System.err.print('.');
+			}
+			System.err.println("\nAvg time = "+(System.currentTimeMillis() - startTime) / loopCount);
+			matrix1.close();
+			matrix2.close();
+			System.err.println("\nTHE END!");
+		}
+	}
+	
 	@Test
 	public void specialDoubleArithmeticTest() {
 		try(final MatrixLib	lib =  MatrixLib.getInstance(Type.REAL_FLOAT, Type.REAL_DOUBLE)) {

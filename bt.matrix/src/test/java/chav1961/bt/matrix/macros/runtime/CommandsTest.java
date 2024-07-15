@@ -3,7 +3,10 @@ package chav1961.bt.matrix.macros.runtime;
 import chav1961.bt.matrix.macros.runtime.interfaces.Command.ControlType;
 import chav1961.bt.matrix.macros.runtime.interfaces.MacrosRuntime;
 import chav1961.bt.matrix.macros.runtime.interfaces.Value;
+import chav1961.bt.matrix.macros.runtime.interfaces.Value.ValueType;
+import chav1961.bt.matrix.macros.runtime.interfaces.ValueArray;
 import chav1961.purelib.basic.exceptions.CalculationException;
+import chav1961.purelib.basic.exceptions.ContentException;
 
 import org.junit.Assert;
 import org.junit.Test;
@@ -85,4 +88,63 @@ public class CommandsTest {
 		}		
 	}
 
+	@Test
+	public void declareVarTest() throws CalculationException {
+		final MacrosRuntime		rt = new SingleMacrosRuntime();
+		final DeclareVariable	dv = new DeclareVariable(1, ValueType.INT); 
+		
+		Assert.assertFalse(rt.getProgramStack().hasVar(1));
+		Assert.assertEquals(1, dv.execute(rt));
+		Assert.assertEquals(ControlType.SEQUENCE, dv.getControlType());
+		Assert.assertTrue(rt.getProgramStack().hasVar(1));
+		Assert.assertEquals(ValueType.INT, rt.getProgramStack().getVarType(1));
+	}	
+
+	@Test
+	public void putContentTest() throws CalculationException {
+		final MacrosRuntime		rt = new SingleMacrosRuntime();
+		final PutOrdinalCommand	poc = new PutOrdinalCommand("test".toCharArray());
+		
+		Assert.assertEquals(1, poc.execute(rt));
+		Assert.assertEquals(ControlType.SEQUENCE, poc.getControlType());
+		Assert.assertEquals("test", rt.getBuffer().toString());
+		Assert.assertArrayEquals("test".toCharArray(), rt.extractLine());
+		
+		final PutSubstitution	ps = new PutSubstitution((t)->"test".toCharArray());
+		
+		Assert.assertEquals(1, ps.execute(rt));
+		Assert.assertEquals(ControlType.SEQUENCE, ps.getControlType());
+		Assert.assertEquals("test", rt.getBuffer().toString());
+		Assert.assertArrayEquals("test".toCharArray(), rt.extractLine());
+	}
+
+	@Test
+	public void assignmentTest() throws CalculationException, ContentException {
+		final MacrosRuntime		rt = new SingleMacrosRuntime();
+		final DeclareVariable	dv1 = new DeclareVariable(1, ValueType.INT); 
+		final AssignVar			av1 = new AssignVar(1);
+		final Value				val = Value.Factory.newReadOnlyInstance(100);
+		
+		dv1.execute(rt);
+		rt.getProgramStack().pushStackValue(val);
+		Assert.assertNull(rt.getProgramStack().getVarValue(1));
+		Assert.assertEquals(1, av1.execute(rt));
+		Assert.assertEquals(ControlType.SEQUENCE, av1.getControlType());
+		Assert.assertEquals(val, rt.getProgramStack().getVarValue(1));
+		
+		final DeclareVariable	dv2 = new DeclareVariable(2, ValueType.INT_ARRAY); 
+		final AssignVar			av2 = new AssignVar(2);
+		final ValueArray		va = ValueArray.Factory.newInstance(1,2,3);
+		final Value				index = Value.Factory.newReadOnlyInstance(0);
+		final AssignIndex		ai = new AssignIndex(2);
+
+		dv2.execute(rt);
+		rt.getProgramStack().pushStackValue(va);
+		av2.execute(rt);
+		rt.getProgramStack().pushStackValue(index);
+		rt.getProgramStack().pushStackValue(val);
+		Assert.assertEquals(1, ai.execute(rt));
+		Assert.assertEquals(ControlType.SEQUENCE, ai.getControlType());
+		Assert.assertEquals(val.getValue(long.class), ((ValueArray)rt.getProgramStack().getVarValue(2)).getValue(0, long.class));
+	}
 }
