@@ -47,5 +47,6 @@
   	<module>bt.find</module>
   	<module>bt.etc</module>
   	<module>bt.matrix</module>
+  	<module>bt.preproc</module>
   </modules>
 </project>

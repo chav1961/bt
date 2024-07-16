@@ -1,5 +1,7 @@
 package chav1961.bt.matrix;
 
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -61,6 +63,10 @@ public class MatrixLib implements AutoCloseable {
 	private final cl_context 		context;
 	private final cl_command_queue 	commandQueue;
 	private final ProgramRepo		repo;
+	private final int				maxComputeUnits;
+	private final long				maxWorkItemDimensions;
+	private final long 				maxWorkItemSizes[];
+	private final long				maxWorkGroupSize;
 	
 	private MatrixLib(final Type... typesSupported) {
 		final cl_device_id			device[] = new cl_device_id[1]; 
@@ -72,6 +78,11 @@ public class MatrixLib implements AutoCloseable {
 		this.context = tempContext;
 		this.commandQueue = tempQueue;
 		this.repo = new ProgramRepo(this.context , typesSupported);
+		
+        this.maxComputeUnits = getInt(device[0], CL.CL_DEVICE_MAX_COMPUTE_UNITS);
+        this.maxWorkItemDimensions = getLong(device[0], CL.CL_DEVICE_MAX_WORK_ITEM_DIMENSIONS);
+        this.maxWorkItemSizes = getSizes(device[0], CL.CL_DEVICE_MAX_WORK_ITEM_SIZES, 3);
+        this.maxWorkGroupSize = getSize(device[0], CL.CL_DEVICE_MAX_WORK_GROUP_SIZE);
 	}
 	
 	@Override
@@ -229,6 +240,22 @@ public class MatrixLib implements AutoCloseable {
 		return commandQueue;
 	}
 
+    int getMaxComputeUnits() {
+    	return maxComputeUnits;
+    }
+    
+    long getMaxWorkItemDimensions() {
+    	return maxWorkItemDimensions;
+    }
+    
+    long[] getMaxWorkItemSizes() {
+    	return maxWorkItemSizes;
+    }
+    
+    long getMaxWorkGroupSize() {
+    	return maxWorkGroupSize;
+    }
+	
 	static Calculator compile(final char[] expression) throws SyntaxException {
 		final Lexema[]	parsed = parse(expression);
 		final SyntaxNode<Operation, SyntaxNode<?,?>>	root = new SyntaxNode<>(0, 0, Operation.UNKNOWN, 0, null);
@@ -718,6 +745,51 @@ loop:	for (;;) {
 		}
 	}
 
+	private static int getInt(cl_device_id device, int paramName) {
+		return getInts(device, paramName, 1)[0];
+	}
+	
+	private static int[] getInts(cl_device_id device, int paramName, int numValues) {
+		int values[] = new int[numValues];
+		
+		CL.clGetDeviceInfo(device, paramName, Sizeof.cl_int * numValues, Pointer.to(values), null);
+		return values;
+	}	
+	
+	private static long getLong(cl_device_id device, int paramName) {
+		return getLongs(device, paramName, 1)[0];
+	}
+
+	private static long[] getLongs(cl_device_id device, int paramName, int numValues) {
+		long values[] = new long[numValues];
+		
+		CL.clGetDeviceInfo(device, paramName, Sizeof.cl_long * numValues, Pointer.to(values), null);
+	    return values;
+	}	
+	
+	private static long getSize(cl_device_id device, int paramName) {
+		return getSizes(device, paramName, 1)[0];
+	}
+	    
+	private static long[] getSizes(cl_device_id device, int paramName, int numValues) {
+		final ByteBuffer	buffer = ByteBuffer.allocate(numValues * Sizeof.size_t).order(ByteOrder.nativeOrder());
+		
+		CL.clGetDeviceInfo(device, paramName, Sizeof.size_t * numValues, Pointer.to(buffer), null);
+		long values[] = new long[numValues];
+
+		if (Sizeof.size_t == 4) {
+            for (int i=0; i < numValues; i++) {
+                values[i] = buffer.getInt(i * Sizeof.size_t);
+            }
+        }
+        else {
+            for (int i = 0; i < numValues; i++) {
+                values[i] = buffer.getLong(i * Sizeof.size_t);
+            }
+        }
+        return values;
+    }	
+	
 	static enum LexType {
 		EOF,
 		OPEN,

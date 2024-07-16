@@ -351,7 +351,8 @@ public class Matrix implements AutoCloseable {
 			ensureIsClosed();
 			final int				totalRows = numberOfRows() * another.numberOfRows();
 			final int				totalCols = numberOfColumns() * another.numberOfColumns();
-			final cl_mem			newMemory = CL.clCreateBuffer(lib.getContext(), CL.CL_MEM_READ_WRITE, totalRows * totalCols * getType().getNumberOfItems() * getType().getItemSize(), null, null);
+			final long				bufferSize = 1L * totalRows * totalCols * getType().getNumberOfItems() * getType().getItemSize();
+			final cl_mem			newMemory = CL.clCreateBuffer(lib.getContext(), CL.CL_MEM_READ_WRITE, bufferSize, null, null);
 			
 			executeProgram(lib.getProgramDescriptor(getType(), ProgramRepo.PROGRAM_MUL_TENZOR_NAME), new long[]{numberOfRows(), numberOfColumns()}, memory, another.memory, newMemory, numberOfRows(), numberOfColumns(), another.numberOfRows(), another.numberOfColumns());
 			return new Matrix(lib, getType(), totalRows, totalCols, newMemory);
@@ -597,7 +598,7 @@ public class Matrix implements AutoCloseable {
 			throw new EnvironmentException("Program execution ["+desc.programName+"] for ["+type+"] type and arg index ["+argNo+"] failed: "+exc.getLocalizedMessage()); 
 		}
 		try {
-			CL.clEnqueueNDRangeKernel(lib.getCommandQueue(), desc.kernel, workSize.length, null, workSize, new long[] {1, 1, 1}, 0, null, null);
+			CL.clEnqueueNDRangeKernel(lib.getCommandQueue(), desc.kernel, workSize.length, null, workSize, null, 0, null, null);
 			CL.clFinish(lib.getCommandQueue());
 		} catch (CLException exc) {
 			throw new EnvironmentException("Program execution ["+desc.programName+"] for ["+type+"] type failed: "+exc.getLocalizedMessage()); 
