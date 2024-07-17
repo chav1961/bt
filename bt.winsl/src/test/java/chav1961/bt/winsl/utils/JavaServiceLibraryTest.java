@@ -11,7 +11,7 @@ public class JavaServiceLibraryTest {
 	volatile int 	val;
 
 	@Test
-	@Ignore
+//	@Ignore
 	public void serviceLifeCycleTest() throws EnvironmentException, InterruptedException, ContentException {
 		final JavaServiceDescriptor	desc = new JavaServiceDescriptor();
 		
@@ -27,7 +27,8 @@ public class JavaServiceLibraryTest {
 		desc.lpServiceStartName = null;
 		desc.lpPassword = null;
 		
-		try{ Assert.assertEquals(0,JavaServiceLibrary.installService(desc));
+		try{ 
+			Assert.assertEquals(0,JavaServiceLibrary.installService(desc));
 
 		} finally {
 			Assert.assertEquals(0,JavaServiceLibrary.removeService("test"));
