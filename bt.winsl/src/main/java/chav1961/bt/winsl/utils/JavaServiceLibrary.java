@@ -1,7 +1,6 @@
 package chav1961.bt.winsl.utils;
 
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -50,7 +49,7 @@ public class JavaServiceLibrary {
 			} catch (IOException e) {
 				throw new PreparationException(e.getLocalizedMessage(), e);
 			}
-			System.load(toPath.getAbsolutePath());
+			System.load(toPath.toString());
 		} catch (UnsatisfiedLinkError e) {
 			throw new PreparationException(e.getLocalizedMessage(), e);
 		}

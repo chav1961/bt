@@ -1,9 +1,6 @@
 package chav1961.bt.winsl;
 
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.OutputStream;
-import java.io.PrintStream;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
@@ -16,6 +13,8 @@ import chav1961.bt.winsl.echoserver.EchoServer;
 import chav1961.bt.winsl.utils.JavaServiceLibrary;
 import chav1961.purelib.basic.ArgParser;
 import chav1961.purelib.basic.CharUtils;
+import chav1961.purelib.basic.PureLibSettings;
+import chav1961.purelib.basic.PureLibSettings.CurrentOS;
 import chav1961.purelib.basic.SubstitutableProperties;
 import chav1961.purelib.basic.exceptions.CommandLineParametersException;
 import chav1961.purelib.basic.exceptions.EnvironmentException;
@@ -38,10 +37,9 @@ public class Service {
 
 		try{final ArgParser	ap = parser.parse(false, false, args);
 		
-			if (!System.getProperty("os.name","unknown").toUpperCase().contains("WINDOWS")) {
+			if (PureLibSettings.CURRENT_OS != CurrentOS.WINDOWS) {
 				throw new CommandLineParametersException("This application can be used in the Windows-based systems only");
 			}
-		
 			final SubstitutableProperties		sp = Application.getConfiguration(ap.getValue(Application.CONF_KEY, URI.class));
 			final String						serviceName = serviceNameErr = sp.getProperty(Application.SERVICENAME_INI);
 			final ArrayBlockingQueue<Integer>	queue =  new ArrayBlockingQueue<>(10);
@@ -52,37 +50,41 @@ public class Service {
 			}
 			
 			final Thread	t = new Thread(()->{
-				try{prepareService(serviceName, queue);
+				try{
+					prepareService(serviceName, queue);
 				} catch (EnvironmentException e) {
 				} finally {
-					try{queue.put(JavaServiceLibrary.RC_STOP);
-					} catch (InterruptedException e1) {
+					try{
+						queue.put(JavaServiceLibrary.RC_STOP);
+					} catch (InterruptedException e) {
 					}
 				}
 			});
+			t.setName("WinSL service listener daemon");
 			t.setDaemon(true);
 			t.start();
 			
-			try{queue.put(JavaServiceLibrary.RC_START);
+			try{
+				queue.put(JavaServiceLibrary.RC_START);
 			
 loop:			for(;;) {
 					switch (queue.take()) {
 						case JavaServiceLibrary.RC_START :
-							callService(serviceName,START_INI,sp.getProperty(START_INI));
+							callService(serviceName, START_INI, sp.getProperty(START_INI));
 							break;
 						case JavaServiceLibrary.RC_PAUSE :
 							if (sp.containsKey(PAUSE_INI)) {
-								callService(serviceName,PAUSE_INI,sp.getProperty(PAUSE_INI));
+								callService(serviceName, PAUSE_INI, sp.getProperty(PAUSE_INI));
 							}
 							break;
 						case JavaServiceLibrary.RC_RESUME :
 							if (sp.containsKey(RESUME_INI)) {
-								callService(serviceName,RESUME_INI,sp.getProperty(RESUME_INI));
+								callService(serviceName, RESUME_INI, sp.getProperty(RESUME_INI));
 							}
 							break;
 						case JavaServiceLibrary.RC_STOP : 
 							if (sp.containsKey(STOP_INI)) {
-								callService(serviceName,STOP_INI,sp.getProperty(STOP_INI));
+								callService(serviceName, STOP_INI, sp.getProperty(STOP_INI));
 							}
 							break loop;
 						default : 
@@ -105,7 +107,8 @@ loop:			for(;;) {
 	}
 
 	static void printError(final int rc, final String serviceName, final String error) {
-		try{JavaServiceLibrary.print2ServiceLog(serviceName, error);
+		try{
+			JavaServiceLibrary.print2ServiceLog(serviceName, error);
 		} catch (EnvironmentException e) {
 		}
 		System.exit(rc);
@@ -142,13 +145,16 @@ loop:			for(;;) {
 					
 					if (Modifier.isPublic(m.getModifiers()) && Modifier.isStatic(m.getModifiers())) {
 						final Thread	t = new Thread(()->{
-											try{m.invoke(null, (Object)parms);
+											try{
+												m.invoke(null, (Object)parms);
 											} catch (IllegalAccessException | IllegalArgumentException e) {
-												try{JavaServiceLibrary.print2ServiceLog(serviceName, e.getClass().getSimpleName()+": "+e.getLocalizedMessage());
+												try{
+													JavaServiceLibrary.print2ServiceLog(serviceName, e.getClass().getSimpleName()+": "+e.getLocalizedMessage());
 												} catch (EnvironmentException e1) {
 												}
 											} catch (InvocationTargetException e) {
-												try{JavaServiceLibrary.print2ServiceLog(serviceName, e.getTargetException().getClass().getSimpleName()+": "+e.getTargetException().getLocalizedMessage());
+												try{
+													JavaServiceLibrary.print2ServiceLog(serviceName, e.getTargetException().getClass().getSimpleName()+": "+e.getTargetException().getLocalizedMessage());
 												} catch (EnvironmentException e1) {
 												}
 											}

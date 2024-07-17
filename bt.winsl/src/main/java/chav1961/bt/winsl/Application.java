@@ -11,12 +11,25 @@ import chav1961.bt.winsl.interfaces.StartType;
 import chav1961.bt.winsl.utils.JavaServiceDescriptor;
 import chav1961.bt.winsl.utils.JavaServiceLibrary;
 import chav1961.purelib.basic.ArgParser;
+import chav1961.purelib.basic.PureLibSettings;
 import chav1961.purelib.basic.SubstitutableProperties;
+import chav1961.purelib.basic.PureLibSettings.CurrentOS;
 import chav1961.purelib.basic.exceptions.CommandLineParametersException;
 import chav1961.purelib.basic.exceptions.ContentException;
 import chav1961.purelib.basic.exceptions.EnvironmentException;
 
 // java -cp purelib-0.0.6.jar -jar winsl-0.0.1.jar remove -conf file:c:/tmp/service.conf -serviceName testservice
+
+// Service conf parameters:
+//	- serviceName
+//  - displayName
+//  - startType
+//  - errorControl
+//  - path
+//  - orderGroup
+//  - dependencies
+//  - user
+//  - password
 
 public class Application {
 	public static final String	MODE_KEY = "mode";	
@@ -47,10 +60,9 @@ public class Application {
 
 		try{final ArgParser	ap = parser.parse(false, false, args);
 		
-			if (!System.getProperty("os.name","unknown").toUpperCase().contains("WINDOWS")) {
+			if (PureLibSettings.CURRENT_OS != CurrentOS.WINDOWS) {
 				throw new CommandLineParametersException("This application can be used in the Windows-based systems only");
 			}
-		
 			final SubstitutableProperties	sp = getConfiguration(ap.getValue(CONF_KEY, URI.class)); 
 			final String					serviceName = sp.getProperty(SERVICENAME_INI, String.class);
 
