@@ -6,7 +6,7 @@ module chav1961.bt.winsl {
 	requires java.sql;
 	requires java.rmi;
 	requires java.management;
-	requires jdk.httpserver;
+	requires transitive jdk.httpserver;
 	requires java.compiler;
 	requires jdk.javadoc;
 	
