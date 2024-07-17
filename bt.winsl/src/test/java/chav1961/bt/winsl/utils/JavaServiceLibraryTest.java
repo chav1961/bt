@@ -29,12 +29,8 @@ public class JavaServiceLibraryTest {
 		
 		try{ 
 			Assert.assertEquals(0,JavaServiceLibrary.installService(desc));
-<<<<<<< HEAD
-
-=======
 		} catch (EnvironmentException exc) {
 			exc.printStackTrace();
->>>>>>> branch 'master' of https://github.com/chav1961/bt.git
 		} finally {
 			Assert.assertEquals(0,JavaServiceLibrary.removeService("test"));
 		}
