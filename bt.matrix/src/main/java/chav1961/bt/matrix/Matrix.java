@@ -1,6 +1,7 @@
 package chav1961.bt.matrix;
 
 import java.lang.reflect.Array;
+import java.util.Arrays;
 
 import org.jocl.CL;
 import org.jocl.CLException;
@@ -81,6 +82,26 @@ public class Matrix implements AutoCloseable {
 		return cols;
 	}
 
+	public boolean deepEquals(final Matrix another) {
+		if (this == another) {
+			return true;
+		}
+		else if (another == null) {
+			return false;
+		}
+		else if (getType() != another.getType() || numberOfRows() != another.numberOfRows() || numberOfColumns() != another.numberOfColumns()) {
+			return false;
+		}
+		else {
+			if (getType().itemSize == 4) {
+				return Arrays.equals(extractFloats(), another.extractFloats());
+			}
+			else {
+				return Arrays.equals(extractDoubles(), another.extractDoubles());
+			}
+		}
+	}
+	
 	public float[] extractFloats() {
 		ensureIsClosed();
 		switch (type) {
@@ -109,26 +130,27 @@ public class Matrix implements AutoCloseable {
 		}
 	}
 	
-	public void assign(final float[] content) {
+	public Matrix assign(final float[] content) {
 		if (content == null) {
 			throw new NullPointerException("Content to assign can't be null");
 		}
 		else {
 			assign(content, 0, content.length - 1);
+			return this;
 		}
 	}
 
-	public void assign(final double[] content) {
+	public Matrix assign(final double[] content) {
 		if (content == null) {
 			throw new NullPointerException("Content to assign can't be null");
 		}
 		else {
 			assign(content, 0, content.length - 1);
+			return this;
 		}
 	}
 	
-	
-	public void assign(float[] content, final int from, final int to) {
+	public Matrix assign(float[] content, final int from, final int to) {
 		if (content == null) {
 			throw new NullPointerException("Content to assign can't be null");
 		}
@@ -153,10 +175,14 @@ public class Matrix implements AutoCloseable {
 				piece = content;
 			}
 			CL.clEnqueueWriteBuffer(lib.getCommandQueue(), memory, CL.CL_TRUE, 0, (to - from + 1) * getType().getItemSize(), Pointer.to(piece), 0, null, null);
+			return this;
+		}
+		else {
+			return this;
 		}
 	}
 
-	public void assign(double[] content, final int from, final int to) {
+	public Matrix assign(double[] content, final int from, final int to) {
 		if (content == null) {
 			throw new NullPointerException("Content to assign can't be null");
 		}
@@ -181,6 +207,10 @@ public class Matrix implements AutoCloseable {
 				piece = content;
 			}
 			CL.clEnqueueWriteBuffer(lib.getCommandQueue(), memory, CL.CL_TRUE, 0, (to - from + 1) * getType().getItemSize(), Pointer.to(piece), 0, null, null);
+			return this;
+		}
+		else {
+			return this;
 		}
 	}
 	
