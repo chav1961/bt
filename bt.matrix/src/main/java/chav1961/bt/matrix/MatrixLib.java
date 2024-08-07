@@ -145,16 +145,20 @@ public class MatrixLib implements AutoCloseable {
 
 		    switch (type) {
 				case COMPLEX_DOUBLE	:
-				    CL.clEnqueueFillBuffer(commandQueue, mem, Pointer.to(PATTERN_CDOUBLE), Sizeof.cl_double2, 0,  sizeInBytes, 0, null, null);
+					fillMemory(type, mem, sizeInBytes, Pointer.to(PATTERN_CDOUBLE));
+//				    CL.clEnqueueFillBuffer(commandQueue, mem, Pointer.to(PATTERN_CDOUBLE), Sizeof.cl_double2, 0,  sizeInBytes, 0, null, null);
 					break;
 				case COMPLEX_FLOAT	:
-				    CL.clEnqueueFillBuffer(commandQueue, mem, Pointer.to(PATTERN_CFLOAT), Sizeof.cl_float2, 0,  sizeInBytes, 0, null, null);
+					fillMemory(type, mem, sizeInBytes, Pointer.to(PATTERN_CFLOAT));
+//				    CL.clEnqueueFillBuffer(commandQueue, mem, Pointer.to(PATTERN_CFLOAT), Sizeof.cl_float2, 0,  sizeInBytes, 0, null, null);
 					break;
 				case REAL_DOUBLE	:
-				    CL.clEnqueueFillBuffer(commandQueue, mem, Pointer.to(PATTERN_DOUBLE), Sizeof.cl_double, 0,  sizeInBytes, 0, null, null);
+					fillMemory(type, mem, sizeInBytes, Pointer.to(PATTERN_DOUBLE));
+//				    CL.clEnqueueFillBuffer(commandQueue, mem, Pointer.to(PATTERN_DOUBLE), Sizeof.cl_double, 0,  sizeInBytes, 0, null, null);
 					break;
 				case REAL_FLOAT		:
-				    CL.clEnqueueFillBuffer(commandQueue, mem, Pointer.to(PATTERN_FLOAT), Sizeof.cl_float, 0,  sizeInBytes, 0, null, null);
+					fillMemory(type, mem, sizeInBytes, Pointer.to(PATTERN_FLOAT));
+//				    CL.clEnqueueFillBuffer(commandQueue, mem, Pointer.to(PATTERN_FLOAT), Sizeof.cl_float, 0,  sizeInBytes, 0, null, null);
 					break;
 				default:
 					break;
@@ -228,6 +232,25 @@ public class MatrixLib implements AutoCloseable {
 		return new MatrixLib(typesSupported == null || typesSupported.length == 0 ? new Type[] {Type.REAL_FLOAT} :  typesSupported);
 	}
 
+	void fillMemory(final Matrix.Type type, final cl_mem mem, final long size, final Pointer ref) {
+	    switch (type) {
+			case COMPLEX_DOUBLE	:
+			    CL.clEnqueueFillBuffer(commandQueue, mem, ref, Sizeof.cl_double2, 0,  size, 0, null, null);
+				break;
+			case COMPLEX_FLOAT	:
+			    CL.clEnqueueFillBuffer(commandQueue, mem, ref, Sizeof.cl_float2, 0,  size, 0, null, null);
+				break;
+			case REAL_DOUBLE	:
+			    CL.clEnqueueFillBuffer(commandQueue, mem, ref, Sizeof.cl_double, 0,  size, 0, null, null);
+				break;
+			case REAL_FLOAT		:
+			    CL.clEnqueueFillBuffer(commandQueue, mem, ref, Sizeof.cl_float, 0,  size, 0, null, null);
+				break;
+			default:
+				break;
+	    }
+	}
+	
 	ProgramDescriptor getProgramDescriptor(final Type type, final String programName) {
 		return repo.getProgram(type, programName);
 	}

@@ -129,6 +129,29 @@ public class Matrix implements AutoCloseable {
 				throw new UnsupportedOperationException("Matrix type["+type+"] is not supported yet"); 
 		}
 	}
+
+	public Matrix fill(final double value) {
+		final long	size = numberOfRows() * numberOfColumns() * type.getNumberOfItems() * type.getItemSize();
+		
+		ensureIsClosed();
+		switch (type) {
+			case REAL_DOUBLE	:
+				lib.fillMemory(type, memory, size, Pointer.to(new double[] {value}));
+				break;
+			case COMPLEX_DOUBLE	:
+				lib.fillMemory(type, memory, size, Pointer.to(new double[] {value, 0.0f}));
+				break;
+			case REAL_FLOAT		:
+				lib.fillMemory(type, memory, size, Pointer.to(new float[] {(float)value}));
+				break;
+			case COMPLEX_FLOAT	:
+				lib.fillMemory(type, memory, size, Pointer.to(new float[] {(float)value, 0.0f}));
+				break;
+			default :
+				throw new UnsupportedOperationException("Matrix type["+type+"] is not supported yet"); 
+		}
+		return this;
+	}
 	
 	public Matrix assign(final float[] content) {
 		if (content == null) {
@@ -163,6 +186,9 @@ public class Matrix implements AutoCloseable {
 		else if (to < from) {
 			throw new IllegalArgumentException("To position ["+to+"] is less than from position ["+from+"]");
 		}
+		else if (getType().getItemSize() != Sizeof.cl_float) {
+			throw new IllegalArgumentException("Attempt to assign floats to double matrix");
+		}
 		else if (to != from) {
 			ensureIsClosed();
 			final float[]	piece;
@@ -195,6 +221,9 @@ public class Matrix implements AutoCloseable {
 		else if (to < from) {
 			throw new IllegalArgumentException("To position ["+to+"] is less than from position ["+from+"]");
 		}
+		else if (getType().getItemSize() != Sizeof.cl_double) {
+			throw new IllegalArgumentException("Attempt to assign doubles to float matrix");
+		}
 		else if (to != from) {
 			ensureIsClosed();
 			final double[]	piece;
@@ -206,7 +235,9 @@ public class Matrix implements AutoCloseable {
 			else {
 				piece = content;
 			}
-			CL.clEnqueueWriteBuffer(lib.getCommandQueue(), memory, CL.CL_TRUE, 0, (to - from + 1) * getType().getItemSize(), Pointer.to(piece), 0, null, null);
+			final long	contentSize = (to - from + 1) * getType().getItemSize() * getType().getNumberOfItems();
+			
+			CL.clEnqueueWriteBuffer(lib.getCommandQueue(), memory, CL.CL_TRUE, 0, contentSize, Pointer.to(piece), 0, null, null);
 			return this;
 		}
 		else {
@@ -352,7 +383,7 @@ public class Matrix implements AutoCloseable {
 			final cl_mem	newMemory = CL.clCreateBuffer(lib.getContext(), CL.CL_MEM_READ_WRITE, totalSize * getType().getNumberOfItems() * getType().getItemSize(), null, null);
 			
 			executeProgram(lib.getProgramDescriptor(getType(), ProgramRepo.PROGRAM_MUL_NAME), new long[]{numberOfRows(), another.numberOfColumns()}, numberOfColumns(), memory, another.memory, newMemory);
-			return new Matrix(lib, getType(), rows, cols, newMemory);
+			return new Matrix(lib, getType(), numberOfRows(), another.numberOfColumns(), newMemory);
 		}
 	}
 
@@ -418,7 +449,7 @@ public class Matrix implements AutoCloseable {
 		final cl_mem			newMemory = CL.clCreateBuffer(lib.getContext(), CL.CL_MEM_READ_WRITE, totalSize * getType().getNumberOfItems() * getType().getItemSize(), null, null);
 
 		executeProgram(lib.getProgramDescriptor(getType(), ProgramRepo.PROGRAM_TRANSPOSE_NAME), new long[]{numberOfRows(), numberOfColumns()}, memory, numberOfColumns(), newMemory);
-		return new Matrix(lib, getType(), rows, cols, newMemory);
+		return new Matrix(lib, getType(), cols, rows, newMemory);
 	}
 
 	//https://cyclowiki.org/wiki/%D0%92%D0%BE%D0%B7%D0%B2%D0%B5%D0%B4%D0%B5%D0%BD%D0%B8%D0%B5_%D0%B2_%D0%BA%D0%BE%D0%BC%D0%BF%D0%BB%D0%B5%D0%BA%D1%81%D0%BD%D1%83%D1%8E_%D1%81%D1%82%D0%B5%D0%BF%D0%B5%D0%BD%D1%8C_%D0%BA%D0%BE%D0%BC%D0%BF%D0%BB%D0%B5%D0%BA%D1%81%D0%BD%D0%BE%D0%B3%D0%BE_%D1%87%D0%B8%D1%81%D0%BB%D0%B0	
@@ -536,6 +567,25 @@ public class Matrix implements AutoCloseable {
 		}
 	}
 
+	public static float[] toFloat(final double[] value) {
+		final float[]	result = new float[value.length];
+		
+		for(int index = 0; index < result.length; index++) {
+			result[index] = (float)value[index];
+		}
+		return result;
+	}
+
+	public static double[] toDouble(final float[] value) {
+		final double[]	result = new double[value.length];
+		
+		for(int index = 0; index < result.length; index++) {
+			result[index] = value[index];
+		}
+		return result;
+	}
+	
+	
 	private Matrix addFloat(final float[] value) {
 		final long				totalSize = 1L * numberOfRows() * numberOfColumns();
 		final cl_mem			newMemory = CL.clCreateBuffer(lib.getContext(), CL.CL_MEM_READ_WRITE, totalSize * type.getNumberOfItems() * type.getItemSize(), null, null);
@@ -571,15 +621,6 @@ public class Matrix implements AutoCloseable {
 		if (isClosed) {
 			throw new IllegalStateException("Can't perform operation - matrix is already closed");
 		}
-	}
-
-	private float[] toFloat(final double[] value) {
-		final float[]	result = new float[value.length];
-		
-		for(int index = 0; index < result.length; index++) {
-			result[index] = (float)value[index];
-		}
-		return result;
 	}
 
 	private void executeProgram(final ProgramDescriptor desc, final long[] workSize, final Object... parameters) {

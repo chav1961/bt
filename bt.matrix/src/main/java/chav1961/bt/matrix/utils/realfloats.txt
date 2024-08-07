@@ -64,8 +64,8 @@
                                       __global const float *A,
                                       __global const float *B,
                                       __global float *C) {
-            int iCol = get_global_id(0);
-            int iRow = get_global_id(1);
+            int iRow = get_global_id(0);
+            int iCol = get_global_id(1);
             float result = 0.0;
             for(int i = 0; i < dim; i++) {
                 result += A[iRow*dim + i] * B[i*dim + iCol];
