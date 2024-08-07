@@ -265,9 +265,9 @@ public class MatrixTest {
 	public void loopBigSpecialFloatArithmeticTest() {
 		try(final MatrixLib	lib =  MatrixLib.getInstance()) {
 			System.err.println("START!");
-			final Matrix	matrix1 = lib.getIdentityMatrix(2000, 2000);
-			final Matrix	matrix2 = lib.getIdentityMatrix(2000, 2000);
-			final int		loopCount = 100;
+			final Matrix	matrix1 = lib.getIdentityMatrix(10000, 10000);
+			final Matrix	matrix2 = lib.getIdentityMatrix(10000, 10000);
+			final int		loopCount = 1;
 
 			final long	startTime = System.currentTimeMillis();
 			for(int index = 0; index < loopCount; index++) {
