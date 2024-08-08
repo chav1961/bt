@@ -11,6 +11,7 @@ import org.jocl.cl_mem;
 
 import chav1961.bt.matrix.utils.ProgramDescriptor;
 import chav1961.bt.matrix.utils.ProgramRepo;
+import chav1961.purelib.basic.CharUtils;
 import chav1961.purelib.basic.exceptions.EnvironmentException;
 
 // https://blogs.oracle.com/javamagazine/post/programming-the-gpu-in-java
@@ -448,7 +449,7 @@ public class Matrix implements AutoCloseable {
 			final long				totalSize = 1L * numberOfRows() * numberOfColumns();
 			final cl_mem			newMemory = CL.clCreateBuffer(lib.getContext(), CL.CL_MEM_READ_WRITE, totalSize * getType().getNumberOfItems() * getType().getItemSize(), null, null);
 
-			executeProgram(lib.getProgramDescriptor(getType(), ProgramRepo.PROGRAM_MUL_HADAMARD_NAME), new long[]{totalSize}, memory, another.memory, newMemory);
+			executeProgram(lib.getProgramDescriptor(getType(), ProgramRepo.PROGRAM_DIV_HADAMARD_NAME), new long[]{totalSize}, memory, another.memory, newMemory);
 			return new Matrix(lib, getType(), rows, cols, newMemory);
 		}
 	}
@@ -675,6 +676,69 @@ public class Matrix implements AutoCloseable {
 		}
 	}
 
+	public String toHumanReadableString() {
+		final StringBuilder sb = new StringBuilder();
+		
+		sb.append(getType()).append(' ').append(numberOfRows()).append('x').append(numberOfColumns()).append('\n');
+		switch (getType()) {
+			case COMPLEX_DOUBLE	:
+				print(sb, extractDoubles(), numberOfRows(), numberOfColumns(), true);
+				break;
+			case COMPLEX_FLOAT	:
+				print(sb, extractFloats(), numberOfRows(), numberOfColumns(), false);
+				break;
+			case REAL_DOUBLE	:
+				print(sb, extractDoubles(), numberOfRows(), numberOfColumns(), false);
+				break;
+			case REAL_FLOAT		:
+				print(sb, extractFloats(), numberOfRows(), numberOfColumns(), false);
+				break;
+			default:
+				throw new UnsupportedOperationException("Matrix type ["+getType()+"] is not suported yet");
+		}
+		return sb.toString();
+	}
+	
+	private void print(final StringBuilder sb, final double[] content, int rows, int cols, boolean isComplex) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	private void print(final StringBuilder sb, final float[] content, int rows, int cols, boolean isComplex) {
+		final char[]	buffer = new char[128];
+		final int		multiplier = isComplex ? 2 : 1;
+		final int		theLast = isComplex ? 40 : 20;
+		
+		sb.append("-----\n");
+		for (int x = 0; x < rows; x++) {
+			sb.append('[');
+			int from = 0;
+			
+			for (int y = 0; y < cols; y++) {
+				final float	re = content[multiplier * (x * cols + y)];
+				final float	im = isComplex ? content[multiplier * (x * cols + y) + 1] : 0;
+				
+				from = CharUtils.printDouble(buffer, from, re, true);
+				if (isComplex) {
+					if (im < 0) {
+						buffer[from] = '-';
+					}
+					else {
+						buffer[from] = '+';
+					}
+					from = CharUtils.printDouble(buffer, from + 1, im, true);
+					buffer[from++] = 'i';
+				}
+				while (from < theLast) {
+					buffer[from++] = ' ';
+				}
+				sb.append(buffer, 0, theLast);
+			}
+			sb.append("]\n");
+		}
+		sb.append("-----\n");
+	}
+	
 	public static float[] toFloat(final double[] value) {
 		final float[]	result = new float[value.length];
 		
@@ -692,8 +756,7 @@ public class Matrix implements AutoCloseable {
 		}
 		return result;
 	}
-	
-	
+
 	private Matrix addFloat(final float[] value) {
 		final long				totalSize = 1L * numberOfRows() * numberOfColumns();
 		final cl_mem			newMemory = CL.clCreateBuffer(lib.getContext(), CL.CL_MEM_READ_WRITE, totalSize * type.getNumberOfItems() * type.getItemSize(), null, null);
