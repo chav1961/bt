@@ -65,12 +65,14 @@
                                       __global const float *B,
                                       __global float *C) {
             int iRow = get_global_id(0);
+            int rowSize = get_global_size(0);
             int iCol = get_global_id(1);
-            float result = 0.0;
+            int colSize = get_global_size(1);
+            float result = 0.0f;
             for(int i = 0; i < dim; i++) {
                 result += A[iRow*dim + i] * B[i*dim + iCol];
             }
-            C[iRow*dim + iCol] = result;
+            C[iRow*colSize + iCol] = result;
         }
 
 -

@@ -712,11 +712,11 @@ public class Matrix implements AutoCloseable {
 		sb.append("-----\n");
 		for (int x = 0; x < rows; x++) {
 			sb.append('[');
-			int from = 0;
 			
 			for (int y = 0; y < cols; y++) {
 				final float	re = content[multiplier * (x * cols + y)];
 				final float	im = isComplex ? content[multiplier * (x * cols + y) + 1] : 0;
+				int from = 0;
 				
 				from = CharUtils.printDouble(buffer, from, re, true);
 				if (isComplex) {
@@ -732,7 +732,7 @@ public class Matrix implements AutoCloseable {
 				while (from < theLast) {
 					buffer[from++] = ' ';
 				}
-				sb.append(buffer, 0, theLast);
+				sb.append(buffer, 0, theLast).append(' ');
 			}
 			sb.append("]\n");
 		}
