@@ -21,7 +21,9 @@ public class ProgramRepo implements AutoCloseable {
 	public static final String		PROGRAM_ADD_SCALAR_NAME = "addScalarKernel";
 	public static final String		PROGRAM_SUBTRACT_FROM_SCALAR_NAME = "subtractFromScalarKernel";
 	public static final String		PROGRAM_MUL_NAME = "mulMatrixKernel";
+	public static final String		PROGRAM_DIV_NAME = "divMatrixKernel";
 	public static final String		PROGRAM_MUL_HADAMARD_NAME = "mulHadamardMatrixKernel";
+	public static final String		PROGRAM_DIV_HADAMARD_NAME = "divHadamardMatrixKernel";
 	public static final String		PROGRAM_MUL_SCALAR_NAME = "mulScalarKernel";
 	public static final String		PROGRAM_MUL_TENZOR_NAME = "mulKronekerMatrixKernel";
 	public static final String		PROGRAM_TRANSPOSE_NAME = "transposeMatrixKernel";
@@ -32,6 +34,14 @@ public class ProgramRepo implements AutoCloseable {
 	public static final String		PROGRAM_INV_DIVIDE1_NAME = "invDivide1MatrixKernel";
 	public static final String		PROGRAM_INV_DIVIDE2_NAME = "invDivide2MatrixKernel";
 	public static final String		PROGRAM_INV_SUBTRACT_NAME = "invSubtractMatrixKernel";
+	public static final String		PROGRAM_AGG_SUM_ROW_NAME = "aggSumRowMatrixKernel";
+	public static final String		PROGRAM_AGG_AVG_ROW_NAME = "aggAvgRowMatrixKernel";
+	public static final String		PROGRAM_AGG_MIN_ROW_NAME = "aggMinRowMatrixKernel";
+	public static final String		PROGRAM_AGG_MAX_ROW_NAME = "aggMaxRowMatrixKernel";
+	public static final String		PROGRAM_AGG_SUM_COL_NAME = "aggSumColMatrixKernel";
+	public static final String		PROGRAM_AGG_AVG_COL_NAME = "aggAvgColMatrixKernel";
+	public static final String		PROGRAM_AGG_MIN_COL_NAME = "aggMinColMatrixKernel";
+	public static final String		PROGRAM_AGG_MAX_COL_NAME = "aggMaxColMatrixKernel";
 	
 	private static final String		REAL_FLOAT_FILE = "realfloats.txt";
 	private static final String		COMPLEX_FLOAT_FILE = "complexfloats.txt";
@@ -45,7 +55,9 @@ public class ProgramRepo implements AutoCloseable {
 										PROGRAM_ADD_SCALAR_NAME,
 										PROGRAM_SUBTRACT_FROM_SCALAR_NAME,
 										PROGRAM_MUL_NAME,
+										PROGRAM_DIV_NAME,
 										PROGRAM_MUL_HADAMARD_NAME,
+										PROGRAM_DIV_HADAMARD_NAME,
 										PROGRAM_MUL_SCALAR_NAME,
 										PROGRAM_MUL_TENZOR_NAME,
 										PROGRAM_TRANSPOSE_NAME,
@@ -55,7 +67,15 @@ public class ProgramRepo implements AutoCloseable {
 										PROGRAM_DET_REDUCE_NAME,
 										PROGRAM_INV_DIVIDE1_NAME,
 										PROGRAM_INV_DIVIDE2_NAME,
-										PROGRAM_INV_SUBTRACT_NAME
+										PROGRAM_INV_SUBTRACT_NAME,
+										PROGRAM_AGG_SUM_ROW_NAME,
+										PROGRAM_AGG_AVG_ROW_NAME,
+										PROGRAM_AGG_MIN_ROW_NAME,
+										PROGRAM_AGG_MAX_ROW_NAME,
+										PROGRAM_AGG_SUM_COL_NAME,
+										PROGRAM_AGG_AVG_COL_NAME,
+										PROGRAM_AGG_MIN_COL_NAME,
+										PROGRAM_AGG_MAX_COL_NAME,
 									};
 	private static final String		TEST_DOUBLES = "#pragma OPENCL EXTENSION cl_khr_fp64 : enable\n"
 										+ "__kernel void testDoubles(__global double *c) {\n"

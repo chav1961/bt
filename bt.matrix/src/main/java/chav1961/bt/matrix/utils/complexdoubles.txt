@@ -74,9 +74,35 @@
         }
 
 -
+    programName: divMatrixKernel
+    programBody: |
+        __kernel void divMatrixKernelRD(int dim,
+                                      __global const double2 *A,
+                                      __global const double2 *B,
+                                      __global double2 *C) {
+            int iCol = get_global_id(0);
+            int iRow = get_global_id(1);
+            double result = 0.0;
+            for(int i = 0; i < dim; i++) {
+                result += A[iRow*dim + i] * B[i*dim + iCol];
+            }
+            C[iRow*dim + iCol] = result;
+        }
+
+-
     programName: mulHadamardMatrixKernel
     programBody: |
         __kernel void mulHadamardMatrixKernelRD(__global const double2 *a,
+                                              __global const double2 *b,
+                                              __global double2 *c) {
+            int gid = get_global_id(0);
+            c[gid] = a[gid] * b[gid];
+        }
+
+-
+    programName: divHadamardMatrixKernel
+    programBody: |
+        __kernel void divHadamardMatrixKernelRD(__global const double2 *a,
                                               __global const double2 *b,
                                               __global double2 *c) {
             int gid = get_global_id(0);
@@ -120,11 +146,12 @@
     programName: transposeMatrixKernel
     programBody: |
         __kernel void transposeMatrixKernelRD(__global const double2 *a,
-                                            const int dim,
+                                            const int dim1,
+                                            const int dim2,
                                             __global double2 *C) {
             int iCol = get_global_id(0);
             int iRow = get_global_id(1);
-            C[iRow*dim + iCol] = a[iCol*dim + iRow];
+            C[iRow*dim2 + iCol] = a[iCol*dim1 + iRow];
         }
 
 -
@@ -225,3 +252,125 @@
                 identity[row * dim + col] -= k * identity[cell * dim + col];
             }
         }
+
+-
+    programName: aggAvgRowMatrixKernel
+    programBody: |
+        __kernel void aggAvgRowMatrixKernelCD(__global const double *a,
+                                           const int numberOfColumns,
+                                           __global double *b) {
+            int line = get_global_id(0);
+            double sum = 0.0;
+            for(int i = 0; i < numberOfColumns; i++) {
+            	sum += a[line * numberOfColumns + i];
+            }
+            b[line] = sum / numberOfColumns;
+        }
+
+-
+    programName: aggMinRowMatrixKernel
+    programBody: |
+        __kernel void aggMinRowMatrixKernelCD(__global const double *a,
+                                           const int numberOfColumns,
+                                           __global double *b) {
+            int line = get_global_id(0);
+            double min = a[line * numberOfColumns + 0];
+            for(int i = 0; i < numberOfColumns; i++) {
+            	if (min > a[line * numberOfColumns + i]) {
+            		min = a[line * numberOfColumns + i];
+            	}
+            }
+            b[line] = min;
+        }
+
+-
+    programName: aggMaxRowMatrixKernel
+    programBody: |
+        __kernel void aggMaxRowMatrixKernelCD(__global const double *a,
+                                           const int numberOfColumns,
+                                           __global double *b) {
+            int line = get_global_id(0);
+            double max = a[line * numberOfColumns + 0];
+            for(int i = 0; i < numberOfColumns; i++) {
+            	if (max < a[line * numberOfColumns + i]) {
+            		max = a[line * numberOfColumns + i];
+            	}
+            }
+            b[line] = max;
+        }
+
+-
+    programName: aggSumRowMatrixKernel
+    programBody: |
+        __kernel void aggSumRowMatrixKernelCD(__global const double *a,
+                                           const int numberOfColumns,
+                                           __global double *b) {
+            int line = get_global_id(0);
+            double sum = 0.0;
+            for(int i = 0; i < numberOfColumns; i++) {
+            	sum += a[line * numberOfColumns + i];
+            }
+            b[line] = sum;
+        }
+
+-
+    programName: aggAvgColMatrixKernel
+    programBody: |
+        __kernel void aggAvgColMatrixKernelCD(__global const double *a,
+                                           const int numberOfRows,
+                                           __global double *b) {
+            int line = get_global_id(0);
+            double sum = 0.0;
+            for(int i = 0; i < numberOfRows; i++) {
+            	sum += a[i * numberOfRows + line]
+            }
+            b[line] = sum / numberOfRows;
+        }
+
+-
+    programName: aggMinColMatrixKernel
+    programBody: |
+        __kernel void aggMinColMatrixKernelCD(__global const double *a,
+                                           const int numberOfRows,
+                                           __global double *b) {
+            int line = get_global_id(0);
+            double min = a[0 * numberOfRows + line];
+            for(int i = 0; i < numberOfRows; i++) {
+            	if (min > a[i * numberOfRows + line]) {
+            		min = a[i * numberOfRows + line];
+            	}
+            }
+            b[line] = min;
+        }
+
+-
+    programName: aggMaxColMatrixKernel
+    programBody: |
+        __kernel void aggMaxColMatrixKernelCD(__global const double *a,
+                                           const int numberOfRows,
+                                           __global double *b) {
+            int line = get_global_id(0);
+            double max = a[0 * numberOfRows + line];
+            for(int i = 0; i < numberOfRows; i++) {
+            	if (max < a[i * numberOfRows + line]) {
+            		max = a[i * numberOfRows + line];
+            	}
+            }
+            b[line] = max;
+        }
+
+-
+    programName: aggSumColMatrixKernel
+    programBody: |
+        __kernel void aggSumColMatrixKernelCD(__global const double *a,
+                                           const int numberOfRows,
+                                           __global double *b) {
+            int line = get_global_id(0);
+            double sum = 0.0;
+            for(int i = 0; i < numberOfRows; i++) {
+            	sum += a[i * numberOfRows + line];
+            }
+            b[line] = sum;
+        }
+
+        

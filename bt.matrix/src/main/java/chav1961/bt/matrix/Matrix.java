@@ -43,6 +43,18 @@ public class Matrix implements AutoCloseable {
 			return suffix;
 		}
 	}
+
+	public static enum AggregateDirection {
+		ByRows,
+		ByColumns
+	}
+	
+	public static enum AggregateType {
+		Sum,
+		Avg, 
+		Min,
+		Max
+	}
 	
 	private final MatrixLib		lib;
 	private final Matrix.Type	type;
@@ -387,6 +399,26 @@ public class Matrix implements AutoCloseable {
 		}
 	}
 
+	public Matrix div(final Matrix another) {
+		if (another == null) {
+			throw new NullPointerException("Matrix to multiply can't be null");
+		}
+		else if (getType() != another.getType()) {
+			throw new IllegalArgumentException("Incompatible matrix type ["+another.getType()+"] to multiply, must be ["+getType()+"]. Try to call cast(...) method before");
+		}
+		else if (numberOfColumns() != another.numberOfRows()) {
+			throw new IllegalArgumentException("Illegal matrix size: own "+numberOfRows()+'x'+numberOfColumns()+" and another "+another.numberOfRows()+'x'+another.numberOfColumns());
+		}
+		else {
+			ensureIsClosed();
+			final long		totalSize = 1L * numberOfRows() * another.numberOfColumns();
+			final cl_mem	newMemory = CL.clCreateBuffer(lib.getContext(), CL.CL_MEM_READ_WRITE, totalSize * getType().getNumberOfItems() * getType().getItemSize(), null, null);
+			
+			executeProgram(lib.getProgramDescriptor(getType(), ProgramRepo.PROGRAM_MUL_NAME), new long[]{numberOfRows(), another.numberOfColumns()}, numberOfColumns(), memory, another.memory, newMemory);
+			return new Matrix(lib, getType(), numberOfRows(), another.numberOfColumns(), newMemory);
+		}
+	}
+	
 	public Matrix mulH(final Matrix another) {
 		if (another == null) {
 			throw new NullPointerException("Matrix to Hadamard multiply can't be null");
@@ -404,6 +436,23 @@ public class Matrix implements AutoCloseable {
 		}
 	}
 
+	public Matrix divH(final Matrix another) {
+		if (another == null) {
+			throw new NullPointerException("Matrix to Hadamard multiply can't be null");
+		}
+		else if (another.numberOfRows() != numberOfRows() || another.numberOfColumns() != numberOfColumns()) {
+			throw new IllegalArgumentException("Different matrix size: own "+numberOfRows()+'x'+numberOfColumns()+" and another "+another.numberOfRows()+'x'+another.numberOfColumns());
+		}
+		else {
+			ensureIsClosed();
+			final long				totalSize = 1L * numberOfRows() * numberOfColumns();
+			final cl_mem			newMemory = CL.clCreateBuffer(lib.getContext(), CL.CL_MEM_READ_WRITE, totalSize * getType().getNumberOfItems() * getType().getItemSize(), null, null);
+
+			executeProgram(lib.getProgramDescriptor(getType(), ProgramRepo.PROGRAM_MUL_HADAMARD_NAME), new long[]{totalSize}, memory, another.memory, newMemory);
+			return new Matrix(lib, getType(), rows, cols, newMemory);
+		}
+	}
+	
 	public Matrix mulK(final Matrix another) {
 		if (another == null) {
 			throw new NullPointerException("Matrix to Kroneker multiply can't be null");
@@ -448,8 +497,8 @@ public class Matrix implements AutoCloseable {
 		final long				totalSize = 1L * numberOfRows() * numberOfColumns();
 		final cl_mem			newMemory = CL.clCreateBuffer(lib.getContext(), CL.CL_MEM_READ_WRITE, totalSize * getType().getNumberOfItems() * getType().getItemSize(), null, null);
 
-		executeProgram(lib.getProgramDescriptor(getType(), ProgramRepo.PROGRAM_TRANSPOSE_NAME), new long[]{numberOfRows(), numberOfColumns()}, memory, numberOfColumns(), newMemory);
-		return new Matrix(lib, getType(), cols, rows, newMemory);
+		executeProgram(lib.getProgramDescriptor(getType(), ProgramRepo.PROGRAM_TRANSPOSE_NAME), new long[]{numberOfRows(), numberOfColumns()}, memory, numberOfColumns(), numberOfRows(), newMemory);
+		return new Matrix(lib, getType(), numberOfColumns(), numberOfRows(), newMemory);
 	}
 
 	//https://cyclowiki.org/wiki/%D0%92%D0%BE%D0%B7%D0%B2%D0%B5%D0%B4%D0%B5%D0%BD%D0%B8%D0%B5_%D0%B2_%D0%BA%D0%BE%D0%BC%D0%BF%D0%BB%D0%B5%D0%BA%D1%81%D0%BD%D1%83%D1%8E_%D1%81%D1%82%D0%B5%D0%BF%D0%B5%D0%BD%D1%8C_%D0%BA%D0%BE%D0%BC%D0%BF%D0%BB%D0%B5%D0%BA%D1%81%D0%BD%D0%BE%D0%B3%D0%BE_%D1%87%D0%B8%D1%81%D0%BB%D0%B0	
@@ -549,6 +598,65 @@ public class Matrix implements AutoCloseable {
 					CL.clReleaseMemObject(newMemory);
 			    }
 			}
+		}
+	}
+	
+	public Matrix aggregate(final Matrix.AggregateDirection dir, final Matrix.AggregateType aggType) {
+		if (dir == null) {
+			throw new NullPointerException("Aggregate direction can't be null");
+		}
+		else if (aggType == null) {
+			throw new NullPointerException("Aggregate type can't be null");
+		}
+		else {
+			ensureIsClosed();
+			switch (dir) {
+				case ByColumns	:
+					final long		totalColSize = 1L * numberOfColumns();
+					final cl_mem	newColMemory = CL.clCreateBuffer(lib.getContext(), CL.CL_MEM_READ_WRITE, totalColSize * getType().getNumberOfItems() * getType().getItemSize(), null, null);
+
+					switch (aggType) {
+						case Avg	:
+							executeProgram(lib.getProgramDescriptor(getType(), ProgramRepo.PROGRAM_AGG_AVG_COL_NAME), new long[]{numberOfColumns()}, memory, numberOfRows(), newColMemory);
+							break;
+						case Max	:
+							executeProgram(lib.getProgramDescriptor(getType(), ProgramRepo.PROGRAM_AGG_MAX_COL_NAME), new long[]{numberOfColumns()}, memory, numberOfRows(), newColMemory);
+							break;
+						case Min	:
+							executeProgram(lib.getProgramDescriptor(getType(), ProgramRepo.PROGRAM_AGG_MIN_COL_NAME), new long[]{numberOfColumns()}, memory, numberOfRows(), newColMemory);
+							break;
+						case Sum	:
+							executeProgram(lib.getProgramDescriptor(getType(), ProgramRepo.PROGRAM_AGG_SUM_COL_NAME), new long[]{numberOfColumns()}, memory, numberOfRows(), newColMemory);
+							break;
+						default :
+							throw new UnsupportedOperationException("Aggregate type ["+aggType+"] is not supported yet");
+					}
+					return new Matrix(lib, getType(), 1, numberOfColumns(), newColMemory);
+				case ByRows		:
+					final long		totalRowSize = 1L * numberOfRows();
+					final cl_mem	newRowMemory = CL.clCreateBuffer(lib.getContext(), CL.CL_MEM_READ_WRITE, totalRowSize * getType().getNumberOfItems() * getType().getItemSize(), null, null);
+
+					switch (aggType) {
+						case Avg	:
+							executeProgram(lib.getProgramDescriptor(getType(), ProgramRepo.PROGRAM_AGG_AVG_ROW_NAME), new long[]{numberOfRows()}, memory, numberOfColumns(), newRowMemory);
+							break;
+						case Max	:
+							executeProgram(lib.getProgramDescriptor(getType(), ProgramRepo.PROGRAM_AGG_MAX_ROW_NAME), new long[]{numberOfRows()}, memory, numberOfColumns(), newRowMemory);
+							break;
+						case Min	:
+							executeProgram(lib.getProgramDescriptor(getType(), ProgramRepo.PROGRAM_AGG_MIN_ROW_NAME), new long[]{numberOfRows()}, memory, numberOfColumns(), newRowMemory);
+							break;
+						case Sum	:
+							executeProgram(lib.getProgramDescriptor(getType(), ProgramRepo.PROGRAM_AGG_SUM_ROW_NAME), new long[]{numberOfRows()}, memory, numberOfColumns(), newRowMemory);
+							break;
+						default :
+							throw new UnsupportedOperationException("Aggregate type ["+aggType+"] is not supported yet");
+					}
+					return new Matrix(lib, getType(), numberOfRows(), 1, newRowMemory);
+				default :
+					throw new UnsupportedOperationException("Aggregate direction ["+dir+"] is not supported yet");
+			}
+			
 		}
 	}
 	

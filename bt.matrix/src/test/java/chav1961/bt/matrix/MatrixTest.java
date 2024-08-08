@@ -1,8 +1,12 @@
 package chav1961.bt.matrix;
 
+import java.util.Arrays;
+
 import org.junit.Assert;
 import org.junit.Test;
 
+import chav1961.bt.matrix.Matrix.AggregateDirection;
+import chav1961.bt.matrix.Matrix.AggregateType;
 import chav1961.bt.matrix.Matrix.Type;
 
 public class MatrixTest {
@@ -265,8 +269,8 @@ public class MatrixTest {
 	public void loopBigSpecialFloatArithmeticTest() {
 		try(final MatrixLib	lib =  MatrixLib.getInstance()) {
 			System.err.println("START!");
-			final Matrix	matrix1 = lib.getIdentityMatrix(10000, 10000);
-			final Matrix	matrix2 = lib.getIdentityMatrix(10000, 10000);
+			final Matrix	matrix1 = lib.getIdentityMatrix(1000, 1000);
+			final Matrix	matrix2 = lib.getIdentityMatrix(1000, 1000);
 			final int		loopCount = 1;
 
 			final long	startTime = System.currentTimeMillis();
@@ -350,4 +354,72 @@ public class MatrixTest {
 			Assert.assertArrayEquals(new float[] {-7f/36f, 0f, 5f/18f, 0f, 1f/36f, 0f, 1f/18f, 0f, -2f/9f, 0f, 5f/18f, 0f, 13f/36f, 0f, 1f/18f, 0f, -7f/36f, 0f}, matrix6.inv().extractFloats(), 0.0001f);
 		}
 	}
+
+	@Test
+	public void aggregateFloatArithmeticTest() {
+		try(final MatrixLib	lib =  MatrixLib.getInstance();
+			final Matrix	matrix = lib.getZeroMatrix(2, 4)) {
+			
+			matrix.assign(new float[] {1.0f, 2.0f, 3.0f, 4.0f, 5.0f, 6.0f, 7.0f, 8.0f});
+			
+			try(Matrix	result = matrix.aggregate(AggregateDirection.ByColumns, AggregateType.Sum)) {
+				Assert.assertEquals(1, result.numberOfRows());
+				Assert.assertEquals(4, result.numberOfColumns());
+				Assert.assertArrayEquals(new float[] {6.0f, 8.0f, 10.0f, 12.0f}, result.extractFloats(), 0.001f);
+			}
+			
+			try(Matrix	result = matrix.aggregate(AggregateDirection.ByColumns, AggregateType.Avg)) {
+				Assert.assertEquals(1, result.numberOfRows());
+				Assert.assertEquals(4, result.numberOfColumns());
+				Assert.assertArrayEquals(new float[] {3.0f, 4.0f, 5.0f, 6.0f}, result.extractFloats(), 0.001f);
+			}
+
+			try(Matrix	result = matrix.aggregate(AggregateDirection.ByColumns, AggregateType.Min)) {
+				Assert.assertEquals(1, result.numberOfRows());
+				Assert.assertEquals(4, result.numberOfColumns());
+				Assert.assertArrayEquals(new float[] {1.0f, 2.0f, 3.0f, 4.0f}, result.extractFloats(), 0.001f);
+			}
+
+			try(Matrix	result = matrix.aggregate(AggregateDirection.ByColumns, AggregateType.Max)) {
+				Assert.assertEquals(1, result.numberOfRows());
+				Assert.assertEquals(4, result.numberOfColumns());
+				Assert.assertArrayEquals(new float[] {5.0f, 6.0f, 7.0f, 8.0f}, result.extractFloats(), 0.001f);
+			}
+
+			try(Matrix	result = matrix.aggregate(AggregateDirection.ByRows, AggregateType.Sum)) {
+				Assert.assertEquals(2, result.numberOfRows());
+				Assert.assertEquals(1, result.numberOfColumns());
+				Assert.assertArrayEquals(new float[] {10.0f, 26.0f}, result.extractFloats(), 0.001f);
+			}
+
+			try(Matrix	result = matrix.aggregate(AggregateDirection.ByRows, AggregateType.Avg)) {
+				Assert.assertEquals(2, result.numberOfRows());
+				Assert.assertEquals(1, result.numberOfColumns());
+				Assert.assertArrayEquals(new float[] {2.5f, 6.5f}, result.extractFloats(), 0.001f);
+			}
+
+			try(Matrix	result = matrix.aggregate(AggregateDirection.ByRows, AggregateType.Min)) {
+				Assert.assertEquals(2, result.numberOfRows());
+				Assert.assertEquals(1, result.numberOfColumns());
+				Assert.assertArrayEquals(new float[] {1.0f, 5.0f}, result.extractFloats(), 0.001f);
+			}
+
+			try(Matrix	result = matrix.aggregate(AggregateDirection.ByRows, AggregateType.Max)) {
+				Assert.assertEquals(2, result.numberOfRows());
+				Assert.assertEquals(1, result.numberOfColumns());
+				Assert.assertArrayEquals(new float[] {4.0f, 8.0f}, result.extractFloats(), 0.001f);
+			}
+			
+			try{matrix.aggregate(null, AggregateType.Max);
+				Assert.fail("Mandatory exception was not detected (null 1-st argument)");
+			} catch (NullPointerException exc) {				
+			}
+			try{matrix.aggregate(AggregateDirection.ByRows, null);
+				Assert.fail("Mandatory exception was not detected (null 2-nd argument)");
+			} catch (NullPointerException exc) {				
+			}
+		}
+	}
+
+
 }

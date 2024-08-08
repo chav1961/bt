@@ -74,6 +74,22 @@
         }
 
 -
+    programName: divMatrixKernel
+    programBody: |
+        __kernel void divMatrixKernelRF(int dim,
+                                      __global const float *A,
+                                      __global const float *B,
+                                      __global float *C) {
+            int iRow = get_global_id(0);
+            int iCol = get_global_id(1);
+            float result = 0.0;
+            for(int i = 0; i < dim; i++) {
+                result += A[iRow*dim + i] / B[i*dim + iCol];
+            }
+            C[iRow*dim + iCol] = result;
+        }
+
+-
     programName: mulHadamardMatrixKernel
     programBody: |
         __kernel void mulHadamardMatrixKernelRF(__global const float *a,
@@ -81,6 +97,16 @@
                                               __global float *c) {
             int gid = get_global_id(0);
             c[gid] = a[gid] * b[gid];
+        }
+
+-
+    programName: divHadamardMatrixKernel
+    programBody: |
+        __kernel void divHadamardMatrixKernelRF(__global const float *a,
+                                              __global const float *b,
+                                              __global float *c) {
+            int gid = get_global_id(0);
+            c[gid] = a[gid] / b[gid];
         }
 
 -
@@ -120,11 +146,12 @@
     programName: transposeMatrixKernel
     programBody: |
         __kernel void transposeMatrixKernelRF(__global const float *a,
-                                            const int dim,
+                                            const int dim1,
+                                            const int dim2,
                                             __global float *C) {
             int iCol = get_global_id(0);
             int iRow = get_global_id(1);
-            C[iRow*dim + iCol] = a[iCol*dim + iRow];
+            C[iRow*dim2 + iCol] = a[iCol*dim1 + iRow];
         }
 
 -
@@ -225,3 +252,128 @@
                 identity[row * dim + col] -= k * identity[cell * dim + col];
             }
         }
+
+-
+    programName: aggAvgRowMatrixKernel
+    programBody: |
+        __kernel void aggAvgRowMatrixKernelRF(__global const float *a,
+                                           const int numberOfColumns,
+                                           __global float *b) {
+            int line = get_global_id(0);
+            float sum = 0.0f;
+            for(int i = 0; i < numberOfColumns; i++) {
+            	sum += a[line * numberOfColumns + i];
+            }
+            b[line] = sum / numberOfColumns;
+        }
+
+-
+    programName: aggMinRowMatrixKernel
+    programBody: |
+        __kernel void aggMinRowMatrixKernelRF(__global const float *a,
+                                           const int numberOfColumns,
+                                           __global float *b) {
+            int line = get_global_id(0);
+            float min = a[line * numberOfColumns + 0];
+            for(int i = 0; i < numberOfColumns; i++) {
+            	if (min > a[line * numberOfColumns + i]) {
+            		min = a[line * numberOfColumns + i];
+            	}
+            }
+            b[line] = min;
+        }
+
+-
+    programName: aggMaxRowMatrixKernel
+    programBody: |
+        __kernel void aggMaxRowMatrixKernelRF(__global const float *a,
+                                           const int numberOfColumns,
+                                           __global float *b) {
+            int line = get_global_id(0);
+            float max = a[line * numberOfColumns + 0];
+            for(int i = 0; i < numberOfColumns; i++) {
+            	if (max < a[line * numberOfColumns + i]) {
+            		max = a[line * numberOfColumns + i];
+            	}
+            }
+            b[line] = max;
+        }
+
+-
+    programName: aggSumRowMatrixKernel
+    programBody: |
+        __kernel void aggSumRowMatrixKernelRF(__global const float *a,
+                                           const int numberOfColumns,
+                                           __global float *b) {
+            int line = get_global_id(0);
+            float sum = 0.0f;
+            for(int i = 0; i < numberOfColumns; i++) {
+            	sum += a[line * numberOfColumns + i];
+            }
+            b[line] = sum;
+        }
+
+-
+    programName: aggAvgColMatrixKernel
+    programBody: |
+        __kernel void aggAvgColMatrixKernelRF(__global const float *a,
+                                           const int numberOfRows,
+                                           __global float *b) {
+            int line = get_global_id(0);
+            int size = get_global_size(0);
+            float sum = 0.0f;
+            for(int i = 0; i < numberOfRows; i++) {
+            	sum += a[i * size + line];
+            }
+            b[line] = sum / numberOfRows;
+        }
+
+-
+    programName: aggMinColMatrixKernel
+    programBody: |
+        __kernel void aggMinColMatrixKernelRF(__global const float *a,
+                                           const int numberOfRows,
+                                           __global float *b) {
+            int line = get_global_id(0);
+            int size = get_global_size(0);
+            float min = a[0 * numberOfRows + line];
+            for(int i = 0; i < numberOfRows; i++) {
+            	if (min > a[i * size + line]) {
+            		min = a[i * size + line];
+            	}
+            }
+            b[line] = min;
+        }
+
+-
+    programName: aggMaxColMatrixKernel
+    programBody: |
+        __kernel void aggMaxColMatrixKernelRF(__global const float *a,
+                                           const int numberOfRows,
+                                           __global float *b) {
+            int line = get_global_id(0);
+            int size = get_global_size(0);
+            float max = a[0 * size + line];
+            for(int i = 0; i < numberOfRows; i++) {
+            	if (max < a[i * size + line]) {
+            		max = a[i * size + line];
+            	}
+            }
+            b[line] = max;
+        }
+
+-
+    programName: aggSumColMatrixKernel
+    programBody: |
+        __kernel void aggSumColMatrixKernelRF(__global const float *a,
+                                           const int numberOfRows,
+                                           __global float *b) {
+            int line = get_global_id(0);
+            int size = get_global_size(0);
+            float sum = 0.0f;
+            for(int i = 0; i < numberOfRows; i++) {
+            	sum += a[i * size + line];
+            }
+            b[line] = sum;
+        }
+
