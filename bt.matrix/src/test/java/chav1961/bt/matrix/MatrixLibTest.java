@@ -29,7 +29,7 @@ public class MatrixLibTest {
 			
 			// test zero matrix
 			
-			final Matrix	zero = lib.getZeroMatrix(10, 10);
+			final MatrixImpl	zero = lib.getZeroMatrix(10, 10);
 			
 			Assert.assertEquals(10, zero.numberOfRows());
 			Assert.assertEquals(10, zero.numberOfColumns());
@@ -57,7 +57,7 @@ public class MatrixLibTest {
 			
 			// test identity matrix
 			
-			final Matrix	identity = lib.getIdentityMatrix(10, 10);
+			final MatrixImpl	identity = lib.getIdentityMatrix(10, 10);
 			
 			Assert.assertEquals(10, identity.numberOfRows());
 			Assert.assertEquals(10, identity.numberOfColumns());
@@ -89,7 +89,7 @@ public class MatrixLibTest {
 			
 			// test any matrix			
 			
-			final Matrix	any = lib.getIdentityMatrix(10, 10);
+			final MatrixImpl	any = lib.getIdentityMatrix(10, 10);
 			
 			Assert.assertEquals(10, any.numberOfRows());
 			Assert.assertEquals(10, any.numberOfColumns());

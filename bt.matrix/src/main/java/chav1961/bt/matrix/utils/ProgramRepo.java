@@ -9,9 +9,9 @@ import java.util.Set;
 
 import org.jocl.cl_context;
 
-import chav1961.bt.matrix.Matrix.Type;
 import chav1961.purelib.basic.Utils;
 import chav1961.purelib.basic.exceptions.EnvironmentException;
+import chav1961.purelib.matrix.interfaces.Matrix.Type;
 
 public class ProgramRepo implements AutoCloseable {
 	public static final String		PROGRAM_IDENTITY_NAME = "identityMatrixKernel";

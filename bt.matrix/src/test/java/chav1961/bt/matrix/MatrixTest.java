@@ -5,15 +5,15 @@ import java.util.Arrays;
 import org.junit.Assert;
 import org.junit.Test;
 
-import chav1961.bt.matrix.Matrix.AggregateDirection;
-import chav1961.bt.matrix.Matrix.AggregateType;
-import chav1961.bt.matrix.Matrix.Type;
+import chav1961.bt.matrix.MatrixImpl.AggregateDirection;
+import chav1961.bt.matrix.MatrixImpl.AggregateType;
+import chav1961.bt.matrix.MatrixImpl.Type;
 
 public class MatrixTest {
 	@Test
 	public void basicFloatTest() {
 		try(final MatrixLib	lib =  MatrixLib.getInstance()) {
-			final Matrix	matrix = lib.getZeroMatrix(3, 3);
+			final MatrixImpl	matrix = lib.getZeroMatrix(3, 3);
 			
 			Assert.assertEquals(3, matrix.numberOfRows());
 			Assert.assertEquals(3, matrix.numberOfColumns());
@@ -67,7 +67,7 @@ public class MatrixTest {
 	public void basicDoubleTest() {
 		try(final MatrixLib	lib =  MatrixLib.getInstance(Type.REAL_FLOAT, Type.REAL_DOUBLE)) {
 			if (lib.isTypeSupported(Type.REAL_DOUBLE)) {
-				final Matrix	matrix = lib.getZeroMatrix(Type.REAL_DOUBLE, 3, 3);
+				final MatrixImpl	matrix = lib.getZeroMatrix(Type.REAL_DOUBLE, 3, 3);
 				
 				Assert.assertEquals(3, matrix.numberOfRows());
 				Assert.assertEquals(3, matrix.numberOfColumns());
@@ -121,7 +121,7 @@ public class MatrixTest {
 	@Test
 	public void basicComplexFloatTest() {
 		try(final MatrixLib	lib =  MatrixLib.getInstance(Type.COMPLEX_FLOAT)) {
-			final Matrix	matrix = lib.getZeroMatrix(Type.COMPLEX_FLOAT, 3, 3);
+			final MatrixImpl	matrix = lib.getZeroMatrix(Type.COMPLEX_FLOAT, 3, 3);
 			
 			Assert.assertEquals(3, matrix.numberOfRows());
 			Assert.assertEquals(3, matrix.numberOfColumns());
@@ -174,8 +174,8 @@ public class MatrixTest {
 	@Test
 	public void simpleFloatArithmeticTest() {
 		try(final MatrixLib	lib =  MatrixLib.getInstance()) {
-			final Matrix	matrix1 = lib.getZeroMatrix(3, 3);
-			final Matrix	matrix2 = lib.getZeroMatrix(3, 3);
+			final MatrixImpl	matrix1 = lib.getZeroMatrix(3, 3);
+			final MatrixImpl	matrix2 = lib.getZeroMatrix(3, 3);
 			
 			matrix1.assign(new float[] {1f, 2f, 3f, 4f, 5f, 6f, 7f, 8f, 9f});
 			matrix2.assign(new float[] {1f, 2f, 3f, 4f, 5f, 6f, 7f, 8f, 9f});
@@ -195,8 +195,8 @@ public class MatrixTest {
 	public void simpleDoubleArithmeticTest() {
 		try(final MatrixLib	lib =  MatrixLib.getInstance(Type.REAL_FLOAT, Type.REAL_DOUBLE)) {
 			if (lib.isTypeSupported(Type.REAL_DOUBLE)) {
-				final Matrix	matrix1 = lib.getZeroMatrix(3, 3);
-				final Matrix	matrix2 = lib.getZeroMatrix(3, 3);
+				final MatrixImpl	matrix1 = lib.getZeroMatrix(3, 3);
+				final MatrixImpl	matrix2 = lib.getZeroMatrix(3, 3);
 				
 				matrix1.assign(new float[] {1f, 2f, 3f, 4f, 5f, 6f, 7f, 8f, 9f});
 				matrix2.assign(new float[] {1f, 2f, 3f, 4f, 5f, 6f, 7f, 8f, 9f});
@@ -214,8 +214,8 @@ public class MatrixTest {
 	@Test
 	public void simpleComplexFloatArithmeticTest() {
 		try(final MatrixLib	lib =  MatrixLib.getInstance(Type.COMPLEX_FLOAT)) {
-			final Matrix	matrix1 = lib.getZeroMatrix(Type.COMPLEX_FLOAT, 3, 3);
-			final Matrix	matrix2 = lib.getZeroMatrix(Type.COMPLEX_FLOAT, 3, 3);
+			final MatrixImpl	matrix1 = lib.getZeroMatrix(Type.COMPLEX_FLOAT, 3, 3);
+			final MatrixImpl	matrix2 = lib.getZeroMatrix(Type.COMPLEX_FLOAT, 3, 3);
 			
 			matrix1.assign(new float[] {1f, 0f, 2f, 0f, 3f, 0f, 4f, 0f, 5f, 0f, 6f, 0f, 7f, 0f, 8f, 0f, 9f, 0f});
 			matrix2.assign(new float[] {1f, 0f, 2f, 0f, 3f, 0f, 4f, 0f, 5f, 0f, 6f, 0f, 7f, 0f, 8f, 0f, 9f, 0f});
@@ -234,8 +234,8 @@ public class MatrixTest {
 	@Test
 	public void specialFloatArithmeticTest() {
 		try(final MatrixLib	lib =  MatrixLib.getInstance()) {
-			final Matrix	matrix1 = lib.getZeroMatrix(3, 3);
-			final Matrix	matrix2 = lib.getZeroMatrix(3, 3);
+			final MatrixImpl	matrix1 = lib.getZeroMatrix(3, 3);
+			final MatrixImpl	matrix2 = lib.getZeroMatrix(3, 3);
 			
 			matrix1.assign(new float[] {1f, 2f, 3f, 4f, 5f, 6f, 7f, 8f, 9f});
 			matrix2.assign(new float[] {1f, 2f, 3f, 4f, 5f, 6f, 7f, 8f, 9f});
@@ -244,20 +244,20 @@ public class MatrixTest {
 
 			Assert.assertArrayEquals(new float[] {30, 36, 42, 66, 81, 96, 102, 126, 150}, matrix1.mul(matrix2).extractFloats(), 0.0001f);
 			
-			final Matrix	matrix3 = lib.getZeroMatrix(4, 4);
+			final MatrixImpl	matrix3 = lib.getZeroMatrix(4, 4);
 			
 			matrix3.assign(new float[] {1f, 2f, 3f, 4f, 5f, 6f, 7f, 8f, 9f, 10f, 9f, 8f, 7f, 6f, 5f, 2f});
 			Assert.assertArrayEquals(new double[] {-16}, matrix3.det(), 0.0001f);
 			
-			final Matrix	matrix4 = lib.getZeroMatrix(2, 2);
-			final Matrix	matrix5 = lib.getZeroMatrix(2, 2);
+			final MatrixImpl	matrix4 = lib.getZeroMatrix(2, 2);
+			final MatrixImpl	matrix5 = lib.getZeroMatrix(2, 2);
 
 			matrix4.assign(new float[] {1f, 2f, 3f, 4f});
 			matrix5.assign(new float[] {0f, 5f, 6f, 7f});
 			
 			Assert.assertArrayEquals(new float[] {0f, 5f, 0f, 10f, 6f, 7f, 12f, 14f, 0f, 15f, 0f, 20f, 18f, 21f, 24f, 28f}, matrix4.mulK(matrix5).extractFloats(), 0.0001f);
 
-			final Matrix	matrix6 = lib.getZeroMatrix(3, 3);
+			final MatrixImpl	matrix6 = lib.getZeroMatrix(3, 3);
 			
 			matrix6.assign(new float[] {1f, 2f, 3f, 4f, 1f, 2f, 3f, 4f, 1f});
 
@@ -269,8 +269,8 @@ public class MatrixTest {
 	public void loopBigSpecialFloatArithmeticTest() {
 		try(final MatrixLib	lib =  MatrixLib.getInstance()) {
 			System.err.println("START!");
-			final Matrix	matrix1 = lib.getIdentityMatrix(1000, 1000);
-			final Matrix	matrix2 = lib.getIdentityMatrix(1000, 1000);
+			final MatrixImpl	matrix1 = lib.getIdentityMatrix(1000, 1000);
+			final MatrixImpl	matrix2 = lib.getIdentityMatrix(1000, 1000);
 			final int		loopCount = 1;
 
 			final long	startTime = System.currentTimeMillis();
@@ -289,8 +289,8 @@ public class MatrixTest {
 	public void specialDoubleArithmeticTest() {
 		try(final MatrixLib	lib =  MatrixLib.getInstance(Type.REAL_FLOAT, Type.REAL_DOUBLE)) {
 			if (lib.isTypeSupported(Type.REAL_DOUBLE)) {
-				final Matrix	matrix1 = lib.getZeroMatrix(3, 3);
-				final Matrix	matrix2 = lib.getZeroMatrix(3, 3);
+				final MatrixImpl	matrix1 = lib.getZeroMatrix(3, 3);
+				final MatrixImpl	matrix2 = lib.getZeroMatrix(3, 3);
 				
 				matrix1.assign(new float[] {1f, 2f, 3f, 4f, 5f, 6f, 7f, 8f, 9f});
 				matrix2.assign(new float[] {1f, 2f, 3f, 4f, 5f, 6f, 7f, 8f, 9f});
@@ -299,20 +299,20 @@ public class MatrixTest {
 	
 				Assert.assertArrayEquals(new float[] {30, 36, 42, 66, 81, 96, 102, 126, 150}, matrix1.mul(matrix2).extractFloats(), 0.0001f);
 				
-				final Matrix	matrix3 = lib.getZeroMatrix(4, 4);
+				final MatrixImpl	matrix3 = lib.getZeroMatrix(4, 4);
 				
 				matrix3.assign(new float[] {1f, 2f, 3f, 4f, 5f, 6f, 7f, 8f, 9f, 10f, 9f, 8f, 7f, 6f, 5f, 2f});
 				Assert.assertArrayEquals(new double[] {-16, 0}, matrix3.det(), 0.0001f);
 				
-				final Matrix	matrix4 = lib.getZeroMatrix(2, 2);
-				final Matrix	matrix5 = lib.getZeroMatrix(2, 2);
+				final MatrixImpl	matrix4 = lib.getZeroMatrix(2, 2);
+				final MatrixImpl	matrix5 = lib.getZeroMatrix(2, 2);
 	
 				matrix4.assign(new float[] {1f, 2f, 3f, 4f});
 				matrix5.assign(new float[] {0f, 5f, 6f, 7f});
 				
 				Assert.assertArrayEquals(new float[] {0f, 5f, 0f, 10f, 6f, 7f, 12f, 14f, 0f, 15f, 0f, 20f, 18f, 21f, 24f, 28f}, matrix4.mulK(matrix5).extractFloats(), 0.0001f);
 	
-				final Matrix	matrix6 = lib.getZeroMatrix(3, 3);
+				final MatrixImpl	matrix6 = lib.getZeroMatrix(3, 3);
 				
 				matrix6.assign(new float[] {1f, 2f, 3f, 4f, 1f, 2f, 3f, 4f, 1f});
 	
@@ -324,8 +324,8 @@ public class MatrixTest {
 	@Test
 	public void specialComplexFloatArithmeticTest() {
 		try(final MatrixLib	lib =  MatrixLib.getInstance(Type.COMPLEX_FLOAT)) {
-			final Matrix	matrix1 = lib.getZeroMatrix(Type.COMPLEX_FLOAT, 3, 3);
-			final Matrix	matrix2 = lib.getZeroMatrix(Type.COMPLEX_FLOAT, 3, 3);
+			final MatrixImpl	matrix1 = lib.getZeroMatrix(Type.COMPLEX_FLOAT, 3, 3);
+			final MatrixImpl	matrix2 = lib.getZeroMatrix(Type.COMPLEX_FLOAT, 3, 3);
 			
 			matrix1.assign(new float[] {1f, 0f, 2f, 0f, 3f, 0f, 4f, 0f, 5f, 0f, 6f, 0f, 7f, 0f, 8f, 0f, 9f, 0f});
 			matrix2.assign(new float[] {1f, 0f, 2f, 0f, 3f, 0f, 4f, 0f, 5f, 0f, 6f, 0f, 7f, 0f, 8f, 0f, 9f, 0f});
@@ -334,20 +334,20 @@ public class MatrixTest {
 
 			Assert.assertArrayEquals(new float[] {30f, 0f, 36f, 0f, 42f, 0f, 66f, 0f, 81f, 0f, 96f, 0f, 102f, 0f, 126f, 0f, 150f, 0f}, matrix1.mul(matrix2).extractFloats(), 0.0001f);
 			
-			final Matrix	matrix3 = lib.getZeroMatrix(Type.COMPLEX_FLOAT, 4, 4);
+			final MatrixImpl	matrix3 = lib.getZeroMatrix(Type.COMPLEX_FLOAT, 4, 4);
 			
 			matrix3.assign(new float[] {1f, 0f, 2f, 0f, 3f, 0f, 4f, 0f, 5f, 0f, 6f, 0f, 7f, 0f, 8f, 0f, 9f, 0f, 10f, 0f, 9f, 0f, 8f, 0f, 7f, 0f, 6f, 0f, 5f, 0f, 2f, 0f});
 			Assert.assertArrayEquals(new double[] {-16, 0}, matrix3.det(), 0.0001f);
 			
-			final Matrix	matrix4 = lib.getZeroMatrix(Type.COMPLEX_FLOAT, 2, 2);
-			final Matrix	matrix5 = lib.getZeroMatrix(Type.COMPLEX_FLOAT, 2, 2);
+			final MatrixImpl	matrix4 = lib.getZeroMatrix(Type.COMPLEX_FLOAT, 2, 2);
+			final MatrixImpl	matrix5 = lib.getZeroMatrix(Type.COMPLEX_FLOAT, 2, 2);
 
 			matrix4.assign(new float[] {1f, 0f, 2f, 0f, 3f, 0f, 4f, 0f});
 			matrix5.assign(new float[] {0f, 0f, 5f, 0f, 6f, 0f, 7f, 0f});
 			
 			Assert.assertArrayEquals(new float[] {0f, 0f, 5f, 0f, 0f, 0f, 10f, 0f, 6f, 0f, 7f, 0f, 12f, 0f, 14f, 0f, 0f, 0f, 15f, 0f, 0f, 0f, 20f, 0f, 18f, 0f, 21f, 0f, 24f, 0f, 28f, 0f}, matrix4.mulK(matrix5).extractFloats(), 0.0001f);
 
-			final Matrix	matrix6 = lib.getZeroMatrix(Type.COMPLEX_FLOAT, 3, 3);
+			final MatrixImpl	matrix6 = lib.getZeroMatrix(Type.COMPLEX_FLOAT, 3, 3);
 			
 			matrix6.assign(new float[] {1f, 0f, 2f, 0f, 3f, 0f, 4f, 0f, 1f, 0f, 2f, 0f, 3f, 0f, 4f, 0f, 1f, 0f});
 
@@ -358,53 +358,53 @@ public class MatrixTest {
 	@Test
 	public void aggregateFloatArithmeticTest() {
 		try(final MatrixLib	lib =  MatrixLib.getInstance();
-			final Matrix	matrix = lib.getZeroMatrix(2, 4)) {
+			final MatrixImpl	matrix = lib.getZeroMatrix(2, 4)) {
 			
 			matrix.assign(new float[] {1.0f, 2.0f, 3.0f, 4.0f, 5.0f, 6.0f, 7.0f, 8.0f});
 			
-			try(Matrix	result = matrix.aggregate(AggregateDirection.ByColumns, AggregateType.Sum)) {
+			try(MatrixImpl	result = matrix.aggregate(AggregateDirection.ByColumns, AggregateType.Sum)) {
 				Assert.assertEquals(1, result.numberOfRows());
 				Assert.assertEquals(4, result.numberOfColumns());
 				Assert.assertArrayEquals(new float[] {6.0f, 8.0f, 10.0f, 12.0f}, result.extractFloats(), 0.001f);
 			}
 			
-			try(Matrix	result = matrix.aggregate(AggregateDirection.ByColumns, AggregateType.Avg)) {
+			try(MatrixImpl	result = matrix.aggregate(AggregateDirection.ByColumns, AggregateType.Avg)) {
 				Assert.assertEquals(1, result.numberOfRows());
 				Assert.assertEquals(4, result.numberOfColumns());
 				Assert.assertArrayEquals(new float[] {3.0f, 4.0f, 5.0f, 6.0f}, result.extractFloats(), 0.001f);
 			}
 
-			try(Matrix	result = matrix.aggregate(AggregateDirection.ByColumns, AggregateType.Min)) {
+			try(MatrixImpl	result = matrix.aggregate(AggregateDirection.ByColumns, AggregateType.Min)) {
 				Assert.assertEquals(1, result.numberOfRows());
 				Assert.assertEquals(4, result.numberOfColumns());
 				Assert.assertArrayEquals(new float[] {1.0f, 2.0f, 3.0f, 4.0f}, result.extractFloats(), 0.001f);
 			}
 
-			try(Matrix	result = matrix.aggregate(AggregateDirection.ByColumns, AggregateType.Max)) {
+			try(MatrixImpl	result = matrix.aggregate(AggregateDirection.ByColumns, AggregateType.Max)) {
 				Assert.assertEquals(1, result.numberOfRows());
 				Assert.assertEquals(4, result.numberOfColumns());
 				Assert.assertArrayEquals(new float[] {5.0f, 6.0f, 7.0f, 8.0f}, result.extractFloats(), 0.001f);
 			}
 
-			try(Matrix	result = matrix.aggregate(AggregateDirection.ByRows, AggregateType.Sum)) {
+			try(MatrixImpl	result = matrix.aggregate(AggregateDirection.ByRows, AggregateType.Sum)) {
 				Assert.assertEquals(2, result.numberOfRows());
 				Assert.assertEquals(1, result.numberOfColumns());
 				Assert.assertArrayEquals(new float[] {10.0f, 26.0f}, result.extractFloats(), 0.001f);
 			}
 
-			try(Matrix	result = matrix.aggregate(AggregateDirection.ByRows, AggregateType.Avg)) {
+			try(MatrixImpl	result = matrix.aggregate(AggregateDirection.ByRows, AggregateType.Avg)) {
 				Assert.assertEquals(2, result.numberOfRows());
 				Assert.assertEquals(1, result.numberOfColumns());
 				Assert.assertArrayEquals(new float[] {2.5f, 6.5f}, result.extractFloats(), 0.001f);
 			}
 
-			try(Matrix	result = matrix.aggregate(AggregateDirection.ByRows, AggregateType.Min)) {
+			try(MatrixImpl	result = matrix.aggregate(AggregateDirection.ByRows, AggregateType.Min)) {
 				Assert.assertEquals(2, result.numberOfRows());
 				Assert.assertEquals(1, result.numberOfColumns());
 				Assert.assertArrayEquals(new float[] {1.0f, 5.0f}, result.extractFloats(), 0.001f);
 			}
 
-			try(Matrix	result = matrix.aggregate(AggregateDirection.ByRows, AggregateType.Max)) {
+			try(MatrixImpl	result = matrix.aggregate(AggregateDirection.ByRows, AggregateType.Max)) {
 				Assert.assertEquals(2, result.numberOfRows());
 				Assert.assertEquals(1, result.numberOfColumns());
 				Assert.assertArrayEquals(new float[] {4.0f, 8.0f}, result.extractFloats(), 0.001f);

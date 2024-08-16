@@ -20,7 +20,6 @@ import org.jocl.cl_mem;
 import org.jocl.cl_platform_id;
 import org.jocl.cl_queue_properties;
 
-import chav1961.bt.matrix.Matrix.Type;
 import chav1961.bt.matrix.utils.OpenCLUtils;
 import chav1961.bt.matrix.utils.ProgramDescriptor;
 import chav1961.bt.matrix.utils.ProgramRepo;
@@ -31,6 +30,7 @@ import chav1961.purelib.basic.exceptions.EnvironmentException;
 import chav1961.purelib.basic.exceptions.SyntaxException;
 import chav1961.purelib.basic.interfaces.SyntaxTreeInterface;
 import chav1961.purelib.cdb.SyntaxNode;
+import chav1961.purelib.matrix.interfaces.Matrix.Type;
 
 /*
  * <expr>::=<add>[{'+'|'-'}<add>...]
@@ -92,15 +92,15 @@ public class MatrixLib implements AutoCloseable {
 		CL.clReleaseContext(context);
 	}
 	
-	public boolean isTypeSupported(final Matrix.Type type) {
+	public boolean isTypeSupported(final MatrixImpl.Type type) {
 		return type == Type.REAL_FLOAT || type == Type.COMPLEX_FLOAT;
 	}
 
-	public Matrix getMatrix(final int rows, final int cols) {
+	public MatrixImpl getMatrix(final int rows, final int cols) {
 		return getMatrix(Type.REAL_FLOAT, rows, cols);
 	}	
 	
-	public Matrix getMatrix(final Matrix.Type type, final int rows, final int cols) {
+	public MatrixImpl getMatrix(final MatrixImpl.Type type, final int rows, final int cols) {
 		if (type == null) {
 			throw new NullPointerException("Matrix type can't be null");
 		}
@@ -117,15 +117,15 @@ public class MatrixLib implements AutoCloseable {
 			final long				totalSize = 1L * rows * cols;
 			final cl_mem			mem = CL.clCreateBuffer(context, CL.CL_MEM_READ_WRITE, totalSize * type.getItemSize() * type.getNumberOfItems(), null, null);
 
-			return new Matrix(this, type, rows, cols, mem);
+			return new MatrixImpl(this, type, rows, cols, mem);
 		}
 	}
 
-	public Matrix getZeroMatrix(final int rows, final int cols) {
-		return getZeroMatrix(Matrix.Type.REAL_FLOAT, rows, cols);
+	public MatrixImpl getZeroMatrix(final int rows, final int cols) {
+		return getZeroMatrix(MatrixImpl.Type.REAL_FLOAT, rows, cols);
 	}
 	
-	public Matrix getZeroMatrix(final Matrix.Type type, final int rows, final int cols) {
+	public MatrixImpl getZeroMatrix(final MatrixImpl.Type type, final int rows, final int cols) {
 		if (type == null) {
 			throw new NullPointerException("Matrix type can't be null");
 		}
@@ -165,15 +165,15 @@ public class MatrixLib implements AutoCloseable {
 		    }
 			CL.clFinish(commandQueue);
 	
-			return new Matrix(this, type, rows, cols, mem);
+			return new MatrixImpl(this, type, rows, cols, mem);
 		}
 	}
 
-	public Matrix getIdentityMatrix(final int rows, final int cols) {
-		return getIdentityMatrix(Matrix.Type.REAL_FLOAT, rows, cols);
+	public MatrixImpl getIdentityMatrix(final int rows, final int cols) {
+		return getIdentityMatrix(MatrixImpl.Type.REAL_FLOAT, rows, cols);
 	}	
 	
-	public Matrix getIdentityMatrix(final Matrix.Type type, final int rows, final int cols) {
+	public MatrixImpl getIdentityMatrix(final MatrixImpl.Type type, final int rows, final int cols) {
 		if (type == null) {
 			throw new NullPointerException("Matrix type can't be null");
 		}
@@ -200,11 +200,11 @@ public class MatrixLib implements AutoCloseable {
 			CL.clEnqueueNDRangeKernel(commandQueue, desc.kernel, 2, null, global_work_size, local_work_size, 0, null, null);
 			CL.clFinish(commandQueue);
 			
-			return new Matrix(this, type, rows, cols, mem);
+			return new MatrixImpl(this, type, rows, cols, mem);
 		}
 	}
 	
-	public Matrix calculate(final String expression, final Matrix... operands) throws SyntaxException, CalculationException {
+	public MatrixImpl calculate(final String expression, final MatrixImpl... operands) throws SyntaxException, CalculationException {
 		if (Utils.checkEmptyOrNullString(expression)) {
 			throw new IllegalArgumentException("Expression string cam't be null or empty");
 		}
@@ -232,7 +232,7 @@ public class MatrixLib implements AutoCloseable {
 		return new MatrixLib(typesSupported == null || typesSupported.length == 0 ? new Type[] {Type.REAL_FLOAT} :  typesSupported);
 	}
 
-	void fillMemory(final Matrix.Type type, final cl_mem mem, final long size, final Pointer ref) {
+	void fillMemory(final MatrixImpl.Type type, final cl_mem mem, final long size, final Pointer ref) {
 	    switch (type) {
 			case COMPLEX_DOUBLE	:
 			    CL.clEnqueueFillBuffer(commandQueue, mem, ref, Sizeof.cl_double2, 0,  size, 0, null, null);

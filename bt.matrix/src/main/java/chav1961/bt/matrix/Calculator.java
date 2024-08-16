@@ -3,10 +3,11 @@ package chav1961.bt.matrix;
 import java.util.Arrays;
 import java.util.function.BiConsumer;
 
-import chav1961.bt.matrix.Matrix.Type;
 import chav1961.bt.matrix.MatrixLib.Command;
 import chav1961.purelib.basic.Utils;
 import chav1961.purelib.basic.exceptions.CalculationException;
+import chav1961.purelib.matrix.interfaces.Matrix;
+import chav1961.purelib.matrix.interfaces.Matrix.Type;
 
 public class Calculator implements AutoCloseable {
 	private final int		stackDepth;
@@ -17,7 +18,7 @@ public class Calculator implements AutoCloseable {
 		this.commands = commands;
 	}
 	
-	public <T> T calculate(final Matrix... operands) throws CalculationException {
+	public <T> T calculate(final MatrixImpl... operands) throws CalculationException {
 		if (operands == null || Utils.checkArrayContent4Nulls(operands) >= 0) {
 			throw new IllegalArgumentException("Operands are null or contain nulls inside");
 		}
@@ -48,10 +49,10 @@ public class Calculator implements AutoCloseable {
 						stack.pushMatrix(mat.add(castValue(val, mat.getType())), true);
 						break;
 					case DET			:
-						stack.pushValue(stack.popMatrix((f,m)->{if (f) temporary[0] = m;}).det());
+						stack.pushValue(stack.popMatrix((f,m)->{if (f) temporary[0] = m;}).det().doubleValue());
 						break;
 					case INVERT			:
-						stack.pushMatrix(stack.popMatrix((f,m)->{if (f) temporary[0] = m;}).inv(), true);
+						stack.pushMatrix(stack.popMatrix((f,m)->{if (f) temporary[0] = m;}).invert(), true);
 						break;
 					case LOAD_MATRIX	:
 						if (item.operand - 1 >= operands.length) {
@@ -78,12 +79,12 @@ public class Calculator implements AutoCloseable {
 					case MUL_H			:
 						mat = stack.popMatrix((f,m)->{if (f) temporary[0] = m;});
 						
-						stack.pushMatrix(stack.popMatrix((f,m)->{if (f) temporary[0] = m;}).mulH(mat), true);
+						stack.pushMatrix(stack.popMatrix((f,m)->{if (f) temporary[0] = m;}).mulHadamard(mat), true);
 						break;
 					case MUL_K			:
 						mat = stack.popMatrix((f,m)->{if (f) temporary[0] = m;});
 						
-						stack.pushMatrix(stack.popMatrix((f,m)->{if (f) temporary[0] = m;}).mulK(mat), true);
+						stack.pushMatrix(stack.popMatrix((f,m)->{if (f) temporary[0] = m;}).tensorMul(mat), true);
 						break;
 					case MUL_MATRIX_VAL	:
 						val = stack.popValue();
@@ -100,14 +101,14 @@ public class Calculator implements AutoCloseable {
 					case NEGATE			:
 						stack.pushMatrix(stack.popMatrix((f,m)->{if (f) temporary[0] = m;}).mul(-1), true);
 						break;
-					case POWER			:
-						stack.pushMatrix(stack.popMatrix((f,m)->{if (f) temporary[0] = m;}).power(Double.longBitsToDouble(item.operand)), true);
-						break;
+//					case POWER			:
+//						stack.pushMatrix(stack.popMatrix((f,m)->{if (f) temporary[0] = m;}).power(Double.longBitsToDouble(item.operand)), true);
+//						break;
 					case POWER_VAL		:
 						stack.pushValue(Math.pow(stack.popValue()[0], Double.longBitsToDouble(item.operand)));
 						break;
 					case SPOOR			:
-						stack.pushValue(stack.popMatrix((f,m)->{if (f) temporary[0] = m;}).track());
+						stack.pushValue(stack.popMatrix((f,m)->{if (f) temporary[0] = m;}).track().doubleValue());
 						break;
 					case SUB			:
 						mat = stack.popMatrix((f,m)->{if (f) temporary[0] = m;});
@@ -128,7 +129,7 @@ public class Calculator implements AutoCloseable {
 						stack.pushMatrix(mat.subtractFrom(castValue(val, mat.getType())), true);
 						break;
 					case TRANSPOSE		:
-						stack.pushMatrix(stack.popMatrix((f,m)->{if (f) temporary[0] = m;}).trans(), true);
+						stack.pushMatrix(stack.popMatrix((f,m)->{if (f) temporary[0] = m;}).transpose(), true);
 						break;
 					default:
 						throw new UnsupportedOperationException("Operation ["+item.op+"] is not supported yet");

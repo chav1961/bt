@@ -11,9 +11,9 @@ public class CalculatorTest {
 	@Test
 	public void basicTest() throws SyntaxException, CalculationException {
 		try(final MatrixLib		lib = MatrixLib.getInstance();
-			final Matrix		identity1 = lib.getIdentityMatrix(2, 2);
-			final Matrix		identity2 = lib.getIdentityMatrix(2, 2);
-			final Matrix		zero = lib.getZeroMatrix(2, 2);) {
+			final MatrixImpl		identity1 = lib.getIdentityMatrix(2, 2);
+			final MatrixImpl		identity2 = lib.getIdentityMatrix(2, 2);
+			final MatrixImpl		zero = lib.getZeroMatrix(2, 2);) {
 
 			// term test
 			
@@ -52,15 +52,15 @@ public class CalculatorTest {
 		}
 	}
 
-	private void testExec(final MatrixLib lib, final String expr, final float[] result, final Matrix... operands) throws SyntaxException, CalculationException {
+	private void testExec(final MatrixLib lib, final String expr, final float[] result, final MatrixImpl... operands) throws SyntaxException, CalculationException {
 		try(final Calculator	calc = MatrixLib.compile(expr)) {
-			final Matrix		m = calc.calculate(operands);
+			final MatrixImpl		m = calc.calculate(operands);
 		
 			Assert.assertArrayEquals(result, m.extractFloats(), 0.001f);
 		}
 	}
 	
-	private void testExec(final MatrixLib lib, final String expr, final double[] result, final Matrix... operands) throws SyntaxException, CalculationException {
+	private void testExec(final MatrixLib lib, final String expr, final double[] result, final MatrixImpl... operands) throws SyntaxException, CalculationException {
 		try(final Calculator	calc = MatrixLib.compile(expr)) {
 			final double[]		val = calc.calculate(operands);
 		

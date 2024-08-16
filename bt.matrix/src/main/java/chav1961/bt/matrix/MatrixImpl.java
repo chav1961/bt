@@ -13,58 +13,59 @@ import chav1961.bt.matrix.utils.ProgramDescriptor;
 import chav1961.bt.matrix.utils.ProgramRepo;
 import chav1961.purelib.basic.CharUtils;
 import chav1961.purelib.basic.exceptions.EnvironmentException;
+import chav1961.purelib.matrix.interfaces.Matrix;
 
 // https://blogs.oracle.com/javamagazine/post/programming-the-gpu-in-java
-public class Matrix implements AutoCloseable {
-	public static enum Type {
-		REAL_FLOAT(1, Sizeof.cl_float, "RF"),
-		COMPLEX_FLOAT(2, Sizeof.cl_float, "CF"),
-		REAL_DOUBLE(1, Sizeof.cl_double, "RD"),
-		COMPLEX_DOUBLE(2, Sizeof.cl_double, "CD");
-		
-		private final int		numberOfItems;
-		private final int		itemSize;
-		private final String	suffix;
-		
-		private Type(final int numberOfItems, final int itemSize, final String suffix) {
-			this.numberOfItems = numberOfItems;
-			this.itemSize = itemSize;
-			this.suffix = suffix;
-		}
-		
-		public int getNumberOfItems() {
-			return numberOfItems;
-		}
-		
-		public int getItemSize() {
-			return itemSize;
-		}
-		
-		public String getProgramSuffix() {
-			return suffix;
-		}
-	}
-
-	public static enum AggregateDirection {
-		ByRows,
-		ByColumns
-	}
-	
-	public static enum AggregateType {
-		Sum,
-		Avg, 
-		Min,
-		Max
-	}
+public class MatrixImpl implements Matrix {
+//	public static enum Type {
+//		REAL_FLOAT(1, Sizeof.cl_float, "RF"),
+//		COMPLEX_FLOAT(2, Sizeof.cl_float, "CF"),
+//		REAL_DOUBLE(1, Sizeof.cl_double, "RD"),
+//		COMPLEX_DOUBLE(2, Sizeof.cl_double, "CD");
+//		
+//		private final int		numberOfItems;
+//		private final int		itemSize;
+//		private final String	suffix;
+//		
+//		private Type(final int numberOfItems, final int itemSize, final String suffix) {
+//			this.numberOfItems = numberOfItems;
+//			this.itemSize = itemSize;
+//			this.suffix = suffix;
+//		}
+//		
+//		public int getNumberOfItems() {
+//			return numberOfItems;
+//		}
+//		
+//		public int getItemSize() {
+//			return itemSize;
+//		}
+//		
+//		public String getProgramSuffix() {
+//			return suffix;
+//		}
+//	}
+//
+//	public static enum AggregateDirection {
+//		ByRows,
+//		ByColumns
+//	}
+//	
+//	public static enum AggregateType {
+//		Sum,
+//		Avg, 
+//		Min,
+//		Max
+//	}
 	
 	private final MatrixLib		lib;
-	private final Matrix.Type	type;
+	private final MatrixImpl.Type	type;
 	private final int			rows;
 	private final int			cols;
 	private final cl_mem		memory;
 	private volatile boolean	isClosed = false;
 	
-	Matrix(final MatrixLib lib, final Matrix.Type type, final int rows, final int cols, final cl_mem memory) {
+	MatrixImpl(final MatrixLib lib, final MatrixImpl.Type type, final int rows, final int cols, final cl_mem memory) {
 		this.lib = lib;
 		this.type = type;
 		this.rows = rows;
@@ -83,7 +84,7 @@ public class Matrix implements AutoCloseable {
 		}
 	}
 	
-	public Matrix.Type getType() {
+	public MatrixImpl.Type getType() {
 		return type;
 	}
 	
@@ -95,7 +96,7 @@ public class Matrix implements AutoCloseable {
 		return cols;
 	}
 
-	public boolean deepEquals(final Matrix another) {
+	public boolean deepEquals(final MatrixImpl another) {
 		if (this == another) {
 			return true;
 		}
@@ -106,7 +107,10 @@ public class Matrix implements AutoCloseable {
 			return false;
 		}
 		else {
-			if (getType().itemSize == 4) {
+			switch (getType()) {
+			
+			}
+			if (getType().getItemSize() == 4) {
 				return Arrays.equals(extractFloats(), another.extractFloats());
 			}
 			else {
@@ -143,7 +147,7 @@ public class Matrix implements AutoCloseable {
 		}
 	}
 
-	public Matrix fill(final double value) {
+	public MatrixImpl fill(final double value) {
 		final long	size = numberOfRows() * numberOfColumns() * type.getNumberOfItems() * type.getItemSize();
 		
 		ensureIsClosed();
@@ -166,7 +170,7 @@ public class Matrix implements AutoCloseable {
 		return this;
 	}
 	
-	public Matrix assign(final float[] content) {
+	public MatrixImpl assign(final float[] content) {
 		if (content == null) {
 			throw new NullPointerException("Content to assign can't be null");
 		}
@@ -176,7 +180,7 @@ public class Matrix implements AutoCloseable {
 		}
 	}
 
-	public Matrix assign(final double[] content) {
+	public MatrixImpl assign(final double[] content) {
 		if (content == null) {
 			throw new NullPointerException("Content to assign can't be null");
 		}
@@ -186,7 +190,7 @@ public class Matrix implements AutoCloseable {
 		}
 	}
 	
-	public Matrix assign(float[] content, final int from, final int to) {
+	public MatrixImpl assign(float[] content, final int from, final int to) {
 		if (content == null) {
 			throw new NullPointerException("Content to assign can't be null");
 		}
@@ -221,7 +225,7 @@ public class Matrix implements AutoCloseable {
 		}
 	}
 
-	public Matrix assign(double[] content, final int from, final int to) {
+	public MatrixImpl assign(double[] content, final int from, final int to) {
 		if (content == null) {
 			throw new NullPointerException("Content to assign can't be null");
 		}
@@ -258,7 +262,7 @@ public class Matrix implements AutoCloseable {
 		}
 	}
 	
-	public Matrix assign(final Matrix another) {
+	public MatrixImpl assign(final MatrixImpl another) {
 		if (another == null) {
 			throw new NullPointerException("Matrix to assign can't be null");
 		}
@@ -277,7 +281,7 @@ public class Matrix implements AutoCloseable {
 		}
 	}
 	
-	public Matrix add(final double... value) {
+	public MatrixImpl add(final double... value) {
 		if (value == null || value.length == 0) {
 			 throw new IllegalArgumentException("Values to add can't be null or empty");
 		}
@@ -295,7 +299,7 @@ public class Matrix implements AutoCloseable {
 		}
 	}
 	
-	public Matrix subtractFrom(final double... value) {
+	public MatrixImpl subtractFrom(final double... value) {
 		if (value == null || value.length == 0) {
 			 throw new IllegalArgumentException("Values to add can't be null or empty");
 		}
@@ -313,16 +317,16 @@ public class Matrix implements AutoCloseable {
 		}
 	}
 	
-	public Matrix subtractFromFloat(final float[] value) {
+	public MatrixImpl subtractFromFloat(final float[] value) {
 		ensureIsClosed();
 		final long				totalSize = 1L * numberOfRows() * numberOfColumns();
 		final cl_mem			newMemory = CL.clCreateBuffer(lib.getContext(), CL.CL_MEM_READ_WRITE, totalSize * getType().getNumberOfItems() * getType().getItemSize(), null, null);
 
 	    executeProgram(lib.getProgramDescriptor(getType(), ProgramRepo.PROGRAM_SUBTRACT_FROM_SCALAR_NAME), new long[]{totalSize}, memory, value, newMemory);
-		return new Matrix(lib, getType(), rows, cols, newMemory);
+		return new MatrixImpl(lib, getType(), rows, cols, newMemory);
 	}
 	
-	public Matrix add(final Matrix another) {
+	public MatrixImpl add(final MatrixImpl another) {
 		if (another == null) {
 			throw new NullPointerException("Matrix to add can't be null");
 		}
@@ -338,11 +342,11 @@ public class Matrix implements AutoCloseable {
 			final cl_mem			newMemory = CL.clCreateBuffer(lib.getContext(), CL.CL_MEM_READ_WRITE, totalSize * getType().getNumberOfItems() * getType().getItemSize(), null, null);
 
 		    executeProgram(lib.getProgramDescriptor(getType(), ProgramRepo.PROGRAM_ADD_NAME), new long[]{totalSize}, memory, another.memory, newMemory);
-			return new Matrix(lib, getType(), rows, cols, newMemory);
+			return new MatrixImpl(lib, getType(), rows, cols, newMemory);
 		}
 	}
 
-	public Matrix subtract(final Matrix another) {
+	public MatrixImpl subtract(final MatrixImpl another) {
 		if (another == null) {
 			throw new NullPointerException("Matrix to subtract can't be null");
 		}
@@ -358,11 +362,11 @@ public class Matrix implements AutoCloseable {
 			final cl_mem			newMemory = CL.clCreateBuffer(lib.getContext(), CL.CL_MEM_READ_WRITE, totalSize * getType().getNumberOfItems() * getType().getItemSize(), null, null);
 			
 			executeProgram(lib.getProgramDescriptor(getType(), ProgramRepo.PROGRAM_SUBTRACT_NAME), new long[]{totalSize}, memory, another.memory, newMemory);
-			return new Matrix(lib, getType(), rows, cols, newMemory);
+			return new MatrixImpl(lib, getType(), rows, cols, newMemory);
 		}
 	}
 	
-	public Matrix mul(final double... value) {
+	public MatrixImpl mul(final double... value) {
 		if (value == null || value.length == 0) {
 			 throw new IllegalArgumentException("Values to multiply can't be null or empty");
 		}
@@ -380,7 +384,7 @@ public class Matrix implements AutoCloseable {
 		}
 	}
 	
-	public Matrix mul(final Matrix another) {
+	public MatrixImpl mul(final MatrixImpl another) {
 		if (another == null) {
 			throw new NullPointerException("Matrix to multiply can't be null");
 		}
@@ -396,11 +400,11 @@ public class Matrix implements AutoCloseable {
 			final cl_mem	newMemory = CL.clCreateBuffer(lib.getContext(), CL.CL_MEM_READ_WRITE, totalSize * getType().getNumberOfItems() * getType().getItemSize(), null, null);
 			
 			executeProgram(lib.getProgramDescriptor(getType(), ProgramRepo.PROGRAM_MUL_NAME), new long[]{numberOfRows(), another.numberOfColumns()}, numberOfColumns(), memory, another.memory, newMemory);
-			return new Matrix(lib, getType(), numberOfRows(), another.numberOfColumns(), newMemory);
+			return new MatrixImpl(lib, getType(), numberOfRows(), another.numberOfColumns(), newMemory);
 		}
 	}
 
-	public Matrix div(final Matrix another) {
+	public MatrixImpl div(final MatrixImpl another) {
 		if (another == null) {
 			throw new NullPointerException("Matrix to multiply can't be null");
 		}
@@ -416,11 +420,11 @@ public class Matrix implements AutoCloseable {
 			final cl_mem	newMemory = CL.clCreateBuffer(lib.getContext(), CL.CL_MEM_READ_WRITE, totalSize * getType().getNumberOfItems() * getType().getItemSize(), null, null);
 			
 			executeProgram(lib.getProgramDescriptor(getType(), ProgramRepo.PROGRAM_MUL_NAME), new long[]{numberOfRows(), another.numberOfColumns()}, numberOfColumns(), memory, another.memory, newMemory);
-			return new Matrix(lib, getType(), numberOfRows(), another.numberOfColumns(), newMemory);
+			return new MatrixImpl(lib, getType(), numberOfRows(), another.numberOfColumns(), newMemory);
 		}
 	}
 	
-	public Matrix mulH(final Matrix another) {
+	public MatrixImpl mulH(final MatrixImpl another) {
 		if (another == null) {
 			throw new NullPointerException("Matrix to Hadamard multiply can't be null");
 		}
@@ -433,11 +437,11 @@ public class Matrix implements AutoCloseable {
 			final cl_mem			newMemory = CL.clCreateBuffer(lib.getContext(), CL.CL_MEM_READ_WRITE, totalSize * getType().getNumberOfItems() * getType().getItemSize(), null, null);
 
 			executeProgram(lib.getProgramDescriptor(getType(), ProgramRepo.PROGRAM_MUL_HADAMARD_NAME), new long[]{totalSize}, memory, another.memory, newMemory);
-			return new Matrix(lib, getType(), rows, cols, newMemory);
+			return new MatrixImpl(lib, getType(), rows, cols, newMemory);
 		}
 	}
 
-	public Matrix divH(final Matrix another) {
+	public MatrixImpl divH(final MatrixImpl another) {
 		if (another == null) {
 			throw new NullPointerException("Matrix to Hadamard multiply can't be null");
 		}
@@ -450,11 +454,11 @@ public class Matrix implements AutoCloseable {
 			final cl_mem			newMemory = CL.clCreateBuffer(lib.getContext(), CL.CL_MEM_READ_WRITE, totalSize * getType().getNumberOfItems() * getType().getItemSize(), null, null);
 
 			executeProgram(lib.getProgramDescriptor(getType(), ProgramRepo.PROGRAM_DIV_HADAMARD_NAME), new long[]{totalSize}, memory, another.memory, newMemory);
-			return new Matrix(lib, getType(), rows, cols, newMemory);
+			return new MatrixImpl(lib, getType(), rows, cols, newMemory);
 		}
 	}
 	
-	public Matrix mulK(final Matrix another) {
+	public MatrixImpl mulK(final MatrixImpl another) {
 		if (another == null) {
 			throw new NullPointerException("Matrix to Kroneker multiply can't be null");
 		}
@@ -466,18 +470,19 @@ public class Matrix implements AutoCloseable {
 			final cl_mem			newMemory = CL.clCreateBuffer(lib.getContext(), CL.CL_MEM_READ_WRITE, bufferSize, null, null);
 			
 			executeProgram(lib.getProgramDescriptor(getType(), ProgramRepo.PROGRAM_MUL_TENZOR_NAME), new long[]{numberOfRows(), numberOfColumns()}, memory, another.memory, newMemory, numberOfRows(), numberOfColumns(), another.numberOfRows(), another.numberOfColumns());
-			return new Matrix(lib, getType(), totalRows, totalCols, newMemory);
+			return new MatrixImpl(lib, getType(), totalRows, totalCols, newMemory);
 		}
 	}
 
-	public Matrix inv() {
+	@Override
+	public MatrixImpl invert() {
 		if (numberOfRows() != numberOfColumns()) {
 			throw new IllegalStateException("Inverted matrix can be calculated for quadratic matrices only");
 		}
 		else {
 			ensureIsClosed();
-			try(final Matrix	copy = lib.getMatrix(getType(), numberOfRows(), numberOfColumns())) {
-				final Matrix	identity = lib.getIdentityMatrix(getType(), numberOfRows(), numberOfColumns());
+			try(final MatrixImpl	copy = lib.getMatrix(getType(), numberOfRows(), numberOfColumns())) {
+				final MatrixImpl	identity = lib.getIdentityMatrix(getType(), numberOfRows(), numberOfColumns());
 				
 				copy.assign(this);
 				
@@ -493,17 +498,18 @@ public class Matrix implements AutoCloseable {
 		}
 	}
 
-	public Matrix trans() {
+	@Override
+	public MatrixImpl transpose() {
 		ensureIsClosed();
 		final long				totalSize = 1L * numberOfRows() * numberOfColumns();
 		final cl_mem			newMemory = CL.clCreateBuffer(lib.getContext(), CL.CL_MEM_READ_WRITE, totalSize * getType().getNumberOfItems() * getType().getItemSize(), null, null);
 
 		executeProgram(lib.getProgramDescriptor(getType(), ProgramRepo.PROGRAM_TRANSPOSE_NAME), new long[]{numberOfRows(), numberOfColumns()}, memory, numberOfColumns(), numberOfRows(), newMemory);
-		return new Matrix(lib, getType(), numberOfColumns(), numberOfRows(), newMemory);
+		return new MatrixImpl(lib, getType(), numberOfColumns(), numberOfRows(), newMemory);
 	}
 
 	//https://cyclowiki.org/wiki/%D0%92%D0%BE%D0%B7%D0%B2%D0%B5%D0%B4%D0%B5%D0%BD%D0%B8%D0%B5_%D0%B2_%D0%BA%D0%BE%D0%BC%D0%BF%D0%BB%D0%B5%D0%BA%D1%81%D0%BD%D1%83%D1%8E_%D1%81%D1%82%D0%B5%D0%BF%D0%B5%D0%BD%D1%8C_%D0%BA%D0%BE%D0%BC%D0%BF%D0%BB%D0%B5%D0%BA%D1%81%D0%BD%D0%BE%D0%B3%D0%BE_%D1%87%D0%B8%D1%81%D0%BB%D0%B0	
-	public Matrix power(final double power) {
+	public MatrixImpl power(final double power) {
 		throw new UnsupportedOperationException("Not implemented yet");
 //		ensureIsClosed();
 //		final ProgramDescriptor	desc = lib.getProgramDescriptor(getType(), ProgramRepo.PROGRAM_POWER_NAME);
@@ -523,7 +529,7 @@ public class Matrix implements AutoCloseable {
 //		return new Matrix(lib, getType(), rows, cols, newMemory);
 	}
 	
-	public double[] track() {
+	public Number track() {
 		if (numberOfRows() != numberOfColumns()) {
 			throw new IllegalStateException("Track can be calculated for quadratic matrices only");
 		}
@@ -553,13 +559,13 @@ public class Matrix implements AutoCloseable {
 		}
 	}
 
-	public double[] det() {
+	public Number det() {
 		if (numberOfRows() != numberOfColumns()) {
 			throw new IllegalStateException("Determinant can be calculated for quadratic matrices only");
 		}
 		else {
 			ensureIsClosed();
-			try(final Matrix			temp = lib.getMatrix(getType(), numberOfRows(), numberOfColumns())) {
+			try(final MatrixImpl			temp = lib.getMatrix(getType(), numberOfRows(), numberOfColumns())) {
 				final ProgramDescriptor	descIterate = lib.getProgramDescriptor(getType(), ProgramRepo.PROGRAM_DET_REDUCE_NAME);
 				
 				temp.assign(this);	// Make triangle matrix from source;
@@ -601,8 +607,9 @@ public class Matrix implements AutoCloseable {
 			}
 		}
 	}
-	
-	public Matrix aggregate(final Matrix.AggregateDirection dir, final Matrix.AggregateType aggType) {
+
+	@Override
+	public Matrix aggregate(final AggregateDirection dir, final AggregateType aggType) {
 		if (dir == null) {
 			throw new NullPointerException("Aggregate direction can't be null");
 		}
@@ -632,7 +639,7 @@ public class Matrix implements AutoCloseable {
 						default :
 							throw new UnsupportedOperationException("Aggregate type ["+aggType+"] is not supported yet");
 					}
-					return new Matrix(lib, getType(), 1, numberOfColumns(), newColMemory);
+					return new MatrixImpl(lib, getType(), 1, numberOfColumns(), newColMemory);
 				case ByRows		:
 					final long		totalRowSize = 1L * numberOfRows();
 					final cl_mem	newRowMemory = CL.clCreateBuffer(lib.getContext(), CL.CL_MEM_READ_WRITE, totalRowSize * getType().getNumberOfItems() * getType().getItemSize(), null, null);
@@ -653,7 +660,7 @@ public class Matrix implements AutoCloseable {
 						default :
 							throw new UnsupportedOperationException("Aggregate type ["+aggType+"] is not supported yet");
 					}
-					return new Matrix(lib, getType(), numberOfRows(), 1, newRowMemory);
+					return new MatrixImpl(lib, getType(), numberOfRows(), 1, newRowMemory);
 				default :
 					throw new UnsupportedOperationException("Aggregate direction ["+dir+"] is not supported yet");
 			}
@@ -661,7 +668,8 @@ public class Matrix implements AutoCloseable {
 		}
 	}
 	
-	public Matrix cast(final Matrix.Type target) {
+	@Override
+	public Matrix cast(final Type target) {
 		if (target == null) {
 			throw new NullPointerException("Target matrix type can't be null");
 		}
@@ -757,30 +765,30 @@ public class Matrix implements AutoCloseable {
 		return result;
 	}
 
-	private Matrix addFloat(final float[] value) {
+	private MatrixImpl addFloat(final float[] value) {
 		final long				totalSize = 1L * numberOfRows() * numberOfColumns();
 		final cl_mem			newMemory = CL.clCreateBuffer(lib.getContext(), CL.CL_MEM_READ_WRITE, totalSize * type.getNumberOfItems() * type.getItemSize(), null, null);
 
 	    executeProgram(lib.getProgramDescriptor(getType(), ProgramRepo.PROGRAM_ADD_SCALAR_NAME), new long[]{totalSize}, memory, value, newMemory);
-		return new Matrix(lib, getType(), rows, cols, newMemory);
+		return new MatrixImpl(lib, getType(), rows, cols, newMemory);
 	}
 
-	private Matrix mulFloat(final float[] value) {
+	private MatrixImpl mulFloat(final float[] value) {
 		ensureIsClosed();
 		final long				totalSize = 1L * numberOfRows() * numberOfColumns();
 		final cl_mem			newMemory = CL.clCreateBuffer(lib.getContext(), CL.CL_MEM_READ_WRITE, totalSize * getType().getNumberOfItems() * getType().getItemSize(), null, null);
 	
 		executeProgram(lib.getProgramDescriptor(getType(), ProgramRepo.PROGRAM_MUL_SCALAR_NAME), new long[]{totalSize}, memory, value, newMemory);
-		return new Matrix(lib, getType(), rows, cols, newMemory);
+		return new MatrixImpl(lib, getType(), rows, cols, newMemory);
 	}	
 	
-	private void detIterate(final ProgramDescriptor desc, final int index, final Matrix temp) {
+	private void detIterate(final ProgramDescriptor desc, final int index, final MatrixImpl temp) {
 		final int				groupSize = numberOfRows() - index - 1;
 
 		executeProgram(desc, new long[]{groupSize}, temp.memory, numberOfColumns(), index);
 	}
 
-	private void invIterate(final ProgramDescriptor divide1, final ProgramDescriptor divide2, final ProgramDescriptor subtract, final int cell, final Matrix source, final Matrix target) {
+	private void invIterate(final ProgramDescriptor divide1, final ProgramDescriptor divide2, final ProgramDescriptor subtract, final int cell, final MatrixImpl source, final MatrixImpl target) {
 		final int	groupSize = numberOfRows();
 		
 		executeProgram(divide1, new long[]{groupSize}, source.memory, target.memory, groupSize, cell);
@@ -895,5 +903,566 @@ public class Matrix implements AutoCloseable {
 			callback.process(result, current);
 		}
 		return result;
+	}
+
+	@Override
+	public boolean deepEquals(final Matrix another) {
+		if (another == this) {
+			return true;
+		}
+		else if (another == null) {
+			return false;
+		}
+		else  {
+			
+		}
+		// TODO Auto-generated method stub
+		return false;
+	}
+
+	@Override
+	public int[] extractInts() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public int[] extractInts(Piece piece) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public long[] extractLongs() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public long[] extractLongs(Piece piece) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public float[] extractFloats(Piece piece) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public double[] extractDoubles(Piece piece) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public Matrix assign(int... content) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public Matrix assign(Piece piece, int... content) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public Matrix assign(long... content) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public Matrix assign(Piece piece, long... content) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public Matrix assign(Piece piece, float... content) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public Matrix assign(Piece piece, double... content) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public Matrix assign(Matrix content) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public Matrix assign(Piece piece, Matrix content) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public Matrix fill(int value) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public Matrix fill(Piece piece, int value) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public Matrix fill(long value) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public Matrix fill(Piece piece, long value) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public Matrix fill(float value) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public Matrix fill(Piece piece, float value) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public Matrix fill(float real, float image) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public Matrix fill(Piece piece, float real, float image) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public Matrix fill(Piece piece, double value) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public Matrix fill(double real, double image) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public Matrix fill(Piece piece, double real, double image) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public Matrix add(int... content) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public Matrix add(long... content) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public Matrix add(float... content) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public Matrix add(Matrix content) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public Matrix addValue(int value) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public Matrix addValue(long value) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public Matrix addValue(float value) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public Matrix addValue(float real, float image) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public Matrix addValue(double value) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public Matrix addValue(double real, double image) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public Matrix subtract(int... content) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public Matrix subtract(long... content) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public Matrix subtract(float... content) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public Matrix subtract(double... content) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public Matrix subtract(Matrix content) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public Matrix subtractValue(int value) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public Matrix subtractValue(long value) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public Matrix subtractValue(float value) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public Matrix subtractValue(float real, float image) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public Matrix subtractValue(double value) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public Matrix subtractValue(double real, double image) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public Matrix subtractFrom(int... content) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public Matrix subtractFrom(long... content) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public Matrix subtractFrom(float... content) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public Matrix subtractFrom(Matrix content) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public Matrix subtractFromValue(int value) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public Matrix subtractFromValue(long value) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public Matrix subtractFromValue(float value) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public Matrix subtractFromValue(float real, float image) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public Matrix subtractFromValue(double value) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public Matrix subtractFromValue(double real, double image) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public Matrix mul(int... content) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public Matrix mul(long... content) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public Matrix mul(float... content) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public Matrix mul(Matrix content) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public Matrix mulInv(int... content) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public Matrix mulInv(long... content) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public Matrix mulInv(float... content) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public Matrix mulInv(double... content) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public Matrix mulInv(Matrix content) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public Matrix mulInvFrom(int... content) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public Matrix mulInvFrom(long... content) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public Matrix mulInvFrom(float... content) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public Matrix mulInvFrom(double... content) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public Matrix mulInvFrom(Matrix content) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public Matrix mulValue(int value) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public Matrix mulValue(long value) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public Matrix mulValue(float value) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public Matrix mulValue(float real, float image) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public Matrix mulValue(double value) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public Matrix mulValue(double real, double image) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public Matrix mulHadamard(int... content) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public Matrix mulHadamard(long... content) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public Matrix mulHadamard(float... content) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public Matrix mulHadamard(double... content) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public Matrix mulHadamard(Matrix content) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public Matrix mulInvHadamard(int... content) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public Matrix mulInvHadamard(long... content) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public Matrix mulInvHadamard(float... content) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public Matrix mulInvHadamard(double... content) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public Matrix mulInvHadamard(Matrix content) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public Matrix tensorMul(int... content) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public Matrix tensorMul(long... content) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public Matrix tensorMul(float... content) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public Matrix tensorMul(double... content) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public Matrix tensorMul(Matrix content) {
+		// TODO Auto-generated method stub
+		return null;
 	}
 }
