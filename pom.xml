@@ -48,5 +48,6 @@
   	<module>bt.etc</module>
   	<module>bt.matrix</module>
   	<module>bt.preproc</module>
+  	<module>bt.databaseutils</module>
   </modules>
 </project>
