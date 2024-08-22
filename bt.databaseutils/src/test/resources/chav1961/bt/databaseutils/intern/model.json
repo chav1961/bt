@@ -15,7 +15,7 @@
 				 "relUri":"elibrary.contentseq",
 			 	 "format":"m"
 			},
-			 {"name":"bookseries",
+			 {"name":"BookSeries",
 				 "type":"chav1961.purelib.model.TableContainer",
 				 "labelId":"elibrary.bookseries",
 				 "tooltipId":"elibrary.bookseries.tt",

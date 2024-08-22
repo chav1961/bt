@@ -7,7 +7,9 @@ import java.util.Set;
 
 import chav1961.purelib.basic.URIUtils;
 import chav1961.purelib.basic.Utils;
+import chav1961.purelib.basic.exceptions.PrintingException;
 import chav1961.purelib.model.interfaces.ContentMetadataInterface.ContentNodeMetadata;
+import chav1961.purelib.streams.char2char.CodePrintStreamWrapper;
 
 public class EntityPrinter {
 	private static final String		IMPORTS = "";
@@ -33,46 +35,55 @@ public class EntityPrinter {
 		}
 	}
 	
-	public void print(final PrintWriter pw) throws IOException {
+	public void print(final CodePrintStreamWrapper pw) throws IOException, PrintingException {
 		final Set<Class<?>>	classes = new HashSet<>();
 		
-		pw.println("p "+root+";");
+		pw.println("package "+root.replace('/', '.')+";");
 		pw.println();
 		for(ContentNodeMetadata column : table) {
 			classes.add(column.getType());
 		}
 		pw.println(IMPORTS);
 		for (Class<?> item : classes) {
-			pw.println("i "+item.getCanonicalName()+";");
+			if (!item.isPrimitive() && !item.isArray() && !"java.lang".equals(item.getPackage().getName())) {
+				pw.println("import "+item.getCanonicalName()+";");
+			}
 		}
 		pw.println();
 		pw.println("@Entity");
 		pw.println("@Table(name=\""+table.getName().toUpperCase()+"\")");
-		pw.println("pc "+table.getName()+" {");
+		pw.println("public class "+table.getName()+" {");
+		pw.enter();
 		if (keys.length > 1) {
 			pw.println("@EmbeddedId");
-			pw.println("PrimaryKey	pk = new PrimaryKey();");
+			pw.println("private PrimaryKey pk = new PrimaryKey();");
+			pw.println();
 		}
 		else {
 			pw.println("@Id");
 			pw.println("@GeneratedValue(strategy = GenerationType.UUID)");
 			pw.println("@Column(name = \""+keys[0].getName().toUpperCase()+"\")");
-			pw.println("p "+keys[0].getType().getSimpleName()+" "+keys[0].getName()+";");
+			pw.println("private "+keys[0].getType().getSimpleName()+" "+keys[0].getName()+";");
+			pw.println();
 		}
 		for (ContentNodeMetadata column : table) {
 			if (!URIUtils.parseQuery(column.getApplicationPath()).containsKey("pkSeq")) {
 				pw.println("@Column(name = \""+column.getName().toUpperCase()+"\")");
-				pw.println("p "+keys[0].getType().getSimpleName()+" "+keys[0].getName()+";");
+				pw.println("private "+keys[0].getType().getSimpleName()+" "+keys[0].getName()+";");
+				pw.println();
 			}
 		}
 		for (ContentNodeMetadata column : table) {
 			if (!URIUtils.parseQuery(column.getApplicationPath()).containsKey("pkSeq")) {
-				pw.println("p "+column.getType().getSimpleName()+" get"+column.getName()+"() {");
-				pw.println("r "+column.getName()+";");
+				final String	name = column.getName();
+				final String	capsName = Character.toUpperCase(name.charAt(0))+name.substring(1);
+				
+				pw.println("public "+column.getType().getSimpleName()+" get"+capsName+"() {");
+				pw.enter().println("return "+name+";").leave();
 				pw.println("}");
 				pw.println();
-				pw.println("p set"+column.getName()+"(f "+column.getType().getSimpleName()+" value) {");
-				pw.println(column.getName()+" = value;");
+				pw.println("public void set"+capsName+"(final "+column.getType().getSimpleName()+" value) {");
+				pw.enter().println("this."+name+" = value;").leave();
 				pw.println("}");
 				pw.println();
 			}
@@ -88,6 +99,7 @@ public class EntityPrinter {
 			}
 			pw.println("}");
 		}
+		pw.leave();
 		pw.println("}");
 	}
 }
