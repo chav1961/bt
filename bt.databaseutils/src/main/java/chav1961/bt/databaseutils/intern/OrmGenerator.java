@@ -78,5 +78,4 @@ public class OrmGenerator {
 			return ContinueMode.CONTINUE;
 		}, dbModel.getRoot().getUIPath());
 	}
-	
 }

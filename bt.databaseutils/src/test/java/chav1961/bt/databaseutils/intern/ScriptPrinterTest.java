@@ -4,22 +4,27 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.PrintStream;
+import java.io.PrintWriter;
 import java.io.Reader;
-import java.io.UnsupportedEncodingException;
-import java.util.Arrays;
+import java.io.StringWriter;
+import java.io.Writer;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
+
+import javax.print.event.PrintServiceAttributeEvent;
 
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
 import chav1961.purelib.basic.PureLibSettings;
+import chav1961.purelib.basic.exceptions.PrintingException;
 import chav1961.purelib.model.ContentModelFactory;
 import chav1961.purelib.model.interfaces.ContentMetadataInterface;
+import chav1961.purelib.streams.char2char.CodePrintStreamWrapper;
 
-public class OrmGeneratorTest {
+public class ScriptPrinterTest {
 	private static ContentMetadataInterface	mdi = null;
 	
 	@BeforeClass
@@ -32,16 +37,20 @@ public class OrmGeneratorTest {
 	}
 
 	@Test
-	public void basicTest() throws UnsupportedEncodingException {
-		final Map<String, ByteArrayOutputStream>	map = new HashMap<>();
+	public void basicTest() throws IOException, PrintingException {
+		final ScriptPrinter	sp = new ScriptPrinter(mdi, "test");
 		
-		OrmGenerator.printEntity(mdi, (name)->{
-			map.put(name, new ByteArrayOutputStream());
-			return map.get(name);
-		}, "test");
-		Assert.assertEquals(5, map.size());
-		System.err.println("-------------");
-		System.err.println(new String(map.get("test/entities/BookSeries.java").toByteArray(), PureLibSettings.DEFAULT_CONTENT_ENCODING));
+		try(final ByteArrayOutputStream	baos = new ByteArrayOutputStream();
+			final PrintStream			ps = new PrintStream(baos);
+			final CodePrintStreamWrapper	wrapper = new CodePrintStreamWrapper(ps)) {
+			
+			sp.print(wrapper);
+			wrapper.flush();
+			System.err.println(new String(baos.toByteArray()));
+		}
+		
+		
 		
 	}
+
 }
