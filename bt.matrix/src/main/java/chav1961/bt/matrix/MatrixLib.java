@@ -1,5 +1,6 @@
 package chav1961.bt.matrix;
 
+
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.ArrayList;
@@ -28,20 +29,13 @@ import chav1961.purelib.basic.Utils;
 import chav1961.purelib.basic.exceptions.CalculationException;
 import chav1961.purelib.basic.exceptions.EnvironmentException;
 import chav1961.purelib.basic.exceptions.SyntaxException;
-import chav1961.purelib.basic.interfaces.SyntaxTreeInterface;
 import chav1961.purelib.cdb.SyntaxNode;
 import chav1961.purelib.matrix.interfaces.Matrix.Type;
 
+
+
 /*
  * <expr>::=<add>[{'+'|'-'}<add>...]
- * <add>::=<mul>[{'*'|'**'|'***'}<mul>...]
- * <mul>::=['-']<term>['^'<value>]
- * <term>::={<name>['.'{'T'|'inv'|'det'|'sp'}]|<value>|'('<expr>')'}
- * <name>::='%'<number>
- */
-
-
-/*
  * 
  */
 
