@@ -72,6 +72,7 @@ public class FloatRealMatrix implements Matrix {
 			throw new NullPointerException("Piece can't be null");
 		}
 		else {
+			ensureInside(piece);
 			final float[]	source = this.content;
 			final int[]		result = new int[piece.getWidth() * piece.getHeight()];
 			final int		x0 = piece.getLeft(), y0 = piece.getTop();
@@ -99,6 +100,7 @@ public class FloatRealMatrix implements Matrix {
 			throw new NullPointerException("Piece can't be null");
 		}
 		else {
+			ensureInside(piece);
 			final float[]	source = this.content;
 			final long[]	result = new long[piece.getWidth() * piece.getHeight()];
 			final int		x0 = piece.getLeft(), y0 = piece.getTop();
@@ -127,6 +129,7 @@ public class FloatRealMatrix implements Matrix {
 			throw new NullPointerException("Piece can't be null");
 		}
 		else {
+			ensureInside(piece);
 			final float[]	source = this.content;
 			final float[]	result = new float[piece.getWidth() * piece.getHeight()];
 			final int		x0 = piece.getLeft(), y0 = piece.getTop();
@@ -154,6 +157,7 @@ public class FloatRealMatrix implements Matrix {
 			throw new NullPointerException("Piece can't be null");
 		}
 		else {
+			ensureInside(piece);
 			final float[]	source = this.content;
 			final double[]	result = new double[piece.getWidth() * piece.getHeight()];
 			final int		x0 = piece.getLeft(), y0 = piece.getTop();
@@ -184,6 +188,7 @@ public class FloatRealMatrix implements Matrix {
 			throw new NullPointerException("Content can't be null");
 		}
 		else {
+			ensureInside(piece);
 			final float[]	result = this.content;
 			final int		x0 = piece.getLeft(), y0 = piece.getTop();
 			final int		maxX = piece.getWidth(), maxY = piece.getHeight();
@@ -213,6 +218,7 @@ public class FloatRealMatrix implements Matrix {
 			throw new NullPointerException("Content can't be null");
 		}
 		else {
+			ensureInside(piece);
 			final float[]	result = this.content;
 			final int		x0 = piece.getLeft(), y0 = piece.getTop();
 			final int		maxX = piece.getWidth(), maxY = piece.getHeight();
@@ -249,6 +255,7 @@ public class FloatRealMatrix implements Matrix {
 			throw new NullPointerException("Content can't be null");
 		}
 		else {
+			ensureInside(piece);
 			final float[]	result = this.content;
 			final int		x0 = piece.getLeft(), y0 = piece.getTop();
 			final int		maxX = piece.getWidth(), maxY = piece.getHeight();
@@ -278,6 +285,7 @@ public class FloatRealMatrix implements Matrix {
 			throw new NullPointerException("Content can't be null");
 		}
 		else {
+			ensureInside(piece);
 			final float[]	result = this.content;
 			final int		x0 = piece.getLeft(), y0 = piece.getTop();
 			final int		maxX = piece.getWidth(), maxY = piece.getHeight();
@@ -351,6 +359,7 @@ public class FloatRealMatrix implements Matrix {
 			throw new NullPointerException("Piece can't be null");
 		}
 		else {
+			ensureInside(piece);
 			final float[]	result = this.content;
 			final int		x0 = piece.getLeft(), y0 = piece.getTop();
 			final int		maxX = piece.getWidth(), maxY = piece.getHeight();
@@ -434,7 +443,6 @@ public class FloatRealMatrix implements Matrix {
 			final FloatRealMatrix	result = new FloatRealMatrix(numberOfRows(), numberOfColumns());
 			final float[]			target = result.content;
 			
-			ensureCompleted();
 			System.arraycopy(this.content, 0, target, 0, target.length);
 			for(int index = 0, maxIndex = Math.min(content.length, target.length); index < maxIndex; index++) {
 				target[index] += content[index]; 
@@ -453,7 +461,6 @@ public class FloatRealMatrix implements Matrix {
 			final FloatRealMatrix	result = new FloatRealMatrix(numberOfRows(), numberOfColumns());
 			final float[]			target = result.content;
 			
-			ensureCompleted();
 			System.arraycopy(this.content, 0, target, 0, target.length);
 			for(int index = 0, maxIndex = Math.min(content.length, target.length); index < maxIndex; index++) {
 				target[index] += content[index]; 
@@ -472,7 +479,6 @@ public class FloatRealMatrix implements Matrix {
 			final FloatRealMatrix	result = new FloatRealMatrix(numberOfRows(), numberOfColumns());
 			final float[]			target = result.content;
 			
-			ensureCompleted();
 			System.arraycopy(this.content, 0, target, 0, target.length);
 			for(int index = 0, maxIndex = Math.min(content.length, target.length); index < maxIndex; index++) {
 				target[index] += content[index]; 
@@ -491,7 +497,6 @@ public class FloatRealMatrix implements Matrix {
 			final FloatRealMatrix	result = new FloatRealMatrix(numberOfRows(), numberOfColumns());
 			final float[]			target = result.content;
 			
-			ensureCompleted();
 			System.arraycopy(this.content, 0, target, 0, target.length);
 			for(int index = 0, maxIndex = Math.min(content.length, target.length); index < maxIndex; index++) {
 				target[index] += content[index]; 
@@ -543,6 +548,7 @@ public class FloatRealMatrix implements Matrix {
 		for(int index = 0, maxIndex = target.length; index < maxIndex; index++) {
 			target[index] = source[index] + value; 
 		}
+		result.completed = false;
 		return result;
 	}
 
@@ -570,7 +576,6 @@ public class FloatRealMatrix implements Matrix {
 			final FloatRealMatrix	result = new FloatRealMatrix(numberOfRows(), numberOfColumns());
 			final float[]			target = result.content;
 			
-			ensureCompleted();
 			System.arraycopy(this.content, 0, target, 0, target.length);
 			for(int index = 0, maxIndex = Math.min(content.length, target.length); index < maxIndex; index++) {
 				target[index] -= content[index]; 
@@ -589,7 +594,6 @@ public class FloatRealMatrix implements Matrix {
 			final FloatRealMatrix	result = new FloatRealMatrix(numberOfRows(), numberOfColumns());
 			final float[]			target = result.content;
 			
-			ensureCompleted();
 			System.arraycopy(this.content, 0, target, 0, target.length);
 			for(int index = 0, maxIndex = Math.min(content.length, target.length); index < maxIndex; index++) {
 				target[index] -= content[index]; 
@@ -608,7 +612,6 @@ public class FloatRealMatrix implements Matrix {
 			final FloatRealMatrix	result = new FloatRealMatrix(numberOfRows(), numberOfColumns());
 			final float[]			target = result.content;
 			
-			ensureCompleted();
 			System.arraycopy(this.content, 0, target, 0, target.length);
 			for(int index = 0, maxIndex = Math.min(content.length, target.length); index < maxIndex; index++) {
 				target[index] -= content[index]; 
@@ -627,7 +630,6 @@ public class FloatRealMatrix implements Matrix {
 			final FloatRealMatrix	result = new FloatRealMatrix(numberOfRows(), numberOfColumns());
 			final float[]			target = result.content;
 			
-			ensureCompleted();
 			System.arraycopy(this.content, 0, target, 0, target.length);
 			for(int index = 0, maxIndex = Math.min(content.length, target.length); index < maxIndex; index++) {
 				target[index] -= content[index]; 
@@ -679,6 +681,7 @@ public class FloatRealMatrix implements Matrix {
 		for(int index = 0, maxIndex = target.length; index < maxIndex; index++) {
 			target[index] = source[index] - value; 
 		}
+		result.completed = false;
 		return result;
 	}
 
@@ -706,7 +709,6 @@ public class FloatRealMatrix implements Matrix {
 			final FloatRealMatrix	result = new FloatRealMatrix(numberOfRows(), numberOfColumns());
 			final float[]			target = result.content;
 			
-			ensureCompleted();
 			System.arraycopy(this.content, 0, target, 0, target.length);
 			for(int index = 0, maxIndex = Math.min(content.length, target.length); index < maxIndex; index++) {
 				target[index] = content[index] - target[index]; 
@@ -725,7 +727,6 @@ public class FloatRealMatrix implements Matrix {
 			final FloatRealMatrix	result = new FloatRealMatrix(numberOfRows(), numberOfColumns());
 			final float[]			target = result.content;
 			
-			ensureCompleted();
 			System.arraycopy(this.content, 0, target, 0, target.length);
 			for(int index = 0, maxIndex = Math.min(content.length, target.length); index < maxIndex; index++) {
 				target[index] = content[index] - target[index]; 
@@ -744,7 +745,6 @@ public class FloatRealMatrix implements Matrix {
 			final FloatRealMatrix	result = new FloatRealMatrix(numberOfRows(), numberOfColumns());
 			final float[]			target = result.content;
 			
-			ensureCompleted();
 			System.arraycopy(this.content, 0, target, 0, target.length);
 			for(int index = 0, maxIndex = Math.min(content.length, target.length); index < maxIndex; index++) {
 				target[index] = content[index] - target[index]; 
@@ -763,7 +763,6 @@ public class FloatRealMatrix implements Matrix {
 			final FloatRealMatrix	result = new FloatRealMatrix(numberOfRows(), numberOfColumns());
 			final float[]			target = result.content;
 			
-			ensureCompleted();
 			System.arraycopy(this.content, 0, target, 0, target.length);
 			for(int index = 0, maxIndex = Math.min(content.length, target.length); index < maxIndex; index++) {
 				target[index] = (float)(content[index] - target[index]); 
@@ -815,6 +814,7 @@ public class FloatRealMatrix implements Matrix {
 		for(int index = 0, maxIndex = target.length; index < maxIndex; index++) {
 			target[index] = value - source[index]; 
 		}
+		result.completed = false;
 		return result;
 	}
 
@@ -861,7 +861,7 @@ public class FloatRealMatrix implements Matrix {
 							for(int k = 0; k < maxK; k++) {
 								sum += source[y * colSize + k] * tempD[k * maxX + x];
 							}
-							target[y * colSize + x] = sum;
+							target[y * maxX + x] = sum;
 						}
 					}
 					break;
@@ -875,7 +875,7 @@ public class FloatRealMatrix implements Matrix {
 							for(int k = 0; k < maxK; k++) {
 								sum += source[y * colSize + k] * tempF[k * maxX + x];
 							}
-							target[y * colSize + x] = sum;
+							target[y * maxX + x] = sum;
 						}
 					}
 					break;
@@ -889,7 +889,7 @@ public class FloatRealMatrix implements Matrix {
 							for(int k = 0; k < maxK; k++) {
 								sum += source[y * colSize + k] * tempI[k * maxX + x];
 							}
-							target[y * colSize + x] = sum;
+							target[y * maxX + x] = sum;
 						}
 					}
 					break;
@@ -903,13 +903,14 @@ public class FloatRealMatrix implements Matrix {
 							for(int k = 0; k < maxK; k++) {
 								sum += source[y * colSize + k] * tempL[k * maxX + x];
 							}
-							target[y * colSize + x] = sum;
+							target[y * maxX + x] = sum;
 						}
 					}
 					break;
 				default : 
 					throw new UnsupportedOperationException("Matrix type ["+content.getType()+"] is not supported yet");
 			}
+			result.completed = false;
 			return result;
 		}
 	}
@@ -942,7 +943,7 @@ public class FloatRealMatrix implements Matrix {
 							for(int k = 0; k < maxK; k++) {
 								sum += tempD[y * colSize + k] * source[k * maxX + x];
 							}
-							target[y * colSize + x] = sum;
+							target[y * maxX + x] = sum;
 						}
 					}
 					break;
@@ -956,7 +957,7 @@ public class FloatRealMatrix implements Matrix {
 							for(int k = 0; k < maxK; k++) {
 								sum += tempF[y * colSize + k] * source[k * maxX + x];
 							}
-							target[y * colSize + x] = sum;
+							target[y * maxX + x] = sum;
 						}
 					}
 					break;
@@ -970,7 +971,7 @@ public class FloatRealMatrix implements Matrix {
 							for(int k = 0; k < maxK; k++) {
 								sum += tempI[y * colSize + k] * source[k * maxX + x];
 							}
-							target[y * colSize + x] = sum;
+							target[y * maxX + x] = sum;
 						}
 					}
 					break;
@@ -984,13 +985,14 @@ public class FloatRealMatrix implements Matrix {
 							for(int k = 0; k < maxK; k++) {
 								sum += tempL[y * colSize + k] * source[k * maxX + x];
 							}
-							target[y * colSize + x] = sum;
+							target[y * maxX + x] = sum;
 						}
 					}
 					break;
 				default : 
 					throw new UnsupportedOperationException("Matrix type ["+content.getType()+"] is not supported yet");
 			}
+			result.completed = false;
 			return result;
 		}
 	}
@@ -1004,7 +1006,7 @@ public class FloatRealMatrix implements Matrix {
 	public Matrix mulValue(final long value) {
 		return mulValue((float)value);
 	}
-
+ 
 	@Override
 	public Matrix mulValue(final float value) {
 		final FloatRealMatrix	result = new FloatRealMatrix(numberOfRows(), numberOfColumns());
@@ -1014,6 +1016,7 @@ public class FloatRealMatrix implements Matrix {
 		for(int index = 0, maxIndex = target.length; index < maxIndex; index++) {
 			target[index] = source[index] * value; 
 		}
+		result.completed = false;
 		return result;
 	}
 
@@ -1052,6 +1055,7 @@ public class FloatRealMatrix implements Matrix {
 		for(int index = 0, maxIndex = target.length; index < maxIndex; index++) {
 			target[index] = source[index] * inv; 
 		}
+		result.completed = false;
 		return result;
 	}
 
@@ -1089,6 +1093,7 @@ public class FloatRealMatrix implements Matrix {
 		for(int index = 0, maxIndex = target.length; index < maxIndex; index++) {
 			target[index] = value / source[index]; 
 		}
+		result.completed = false;
 		return result;
 	}
 
@@ -1114,12 +1119,11 @@ public class FloatRealMatrix implements Matrix {
 		}
 		else {
 			final FloatRealMatrix	result = new FloatRealMatrix(numberOfRows(), numberOfColumns());
+			final float[]			source = this.content;
 			final float[]			target = result.content;
 			
-			ensureCompleted();
-			System.arraycopy(this.content, 0, target, 0, target.length);
 			for(int index = 0, maxIndex = Math.min(content.length, target.length); index < maxIndex; index++) {
-				target[index] *= content[index]; 
+				target[index] = source[index] * content[index]; 
 			}
 			result.completed = false;
 			return result;
@@ -1133,12 +1137,11 @@ public class FloatRealMatrix implements Matrix {
 		}
 		else {
 			final FloatRealMatrix	result = new FloatRealMatrix(numberOfRows(), numberOfColumns());
+			final float[]			source = this.content;
 			final float[]			target = result.content;
 			
-			ensureCompleted();
-			System.arraycopy(this.content, 0, target, 0, target.length);
 			for(int index = 0, maxIndex = Math.min(content.length, target.length); index < maxIndex; index++) {
-				target[index] *= content[index]; 
+				target[index] = source[index] * content[index]; 
 			}
 			result.completed = false;
 			return result;
@@ -1152,12 +1155,11 @@ public class FloatRealMatrix implements Matrix {
 		}
 		else {
 			final FloatRealMatrix	result = new FloatRealMatrix(numberOfRows(), numberOfColumns());
+			final float[]			source = this.content;
 			final float[]			target = result.content;
 			
-			ensureCompleted();
-			System.arraycopy(this.content, 0, target, 0, target.length);
 			for(int index = 0, maxIndex = Math.min(content.length, target.length); index < maxIndex; index++) {
-				target[index] *= content[index]; 
+				target[index] = source[index] * content[index]; 
 			}
 			result.completed = false;
 			return result;
@@ -1171,12 +1173,11 @@ public class FloatRealMatrix implements Matrix {
 		}
 		else {
 			final FloatRealMatrix	result = new FloatRealMatrix(numberOfRows(), numberOfColumns());
+			final float[]			source = this.content;
 			final float[]			target = result.content;
 			
-			ensureCompleted();
-			System.arraycopy(this.content, 0, target, 0, target.length);
 			for(int index = 0, maxIndex = Math.min(content.length, target.length); index < maxIndex; index++) {
-				target[index] *= content[index]; 
+				target[index] = (float) (source[index] * content[index]); 
 			}
 			result.completed = false;
 			return result;
@@ -1213,12 +1214,11 @@ public class FloatRealMatrix implements Matrix {
 		}
 		else {
 			final FloatRealMatrix	result = new FloatRealMatrix(numberOfRows(), numberOfColumns());
+			final float[]			source = this.content;
 			final float[]			target = result.content;
 			
-			ensureCompleted();
-			System.arraycopy(this.content, 0, target, 0, target.length);
 			for(int index = 0, maxIndex = Math.min(content.length, target.length); index < maxIndex; index++) {
-				target[index] /= content[index]; 
+				target[index] = source[index] / content[index]; 
 			}
 			result.completed = false;
 			return result;
@@ -1232,12 +1232,11 @@ public class FloatRealMatrix implements Matrix {
 		}
 		else {
 			final FloatRealMatrix	result = new FloatRealMatrix(numberOfRows(), numberOfColumns());
+			final float[]			source = this.content;
 			final float[]			target = result.content;
 			
-			ensureCompleted();
-			System.arraycopy(this.content, 0, target, 0, target.length);
 			for(int index = 0, maxIndex = Math.min(content.length, target.length); index < maxIndex; index++) {
-				target[index] /= content[index]; 
+				target[index] = source[index] / content[index]; 
 			}
 			result.completed = false;
 			return result;
@@ -1251,12 +1250,11 @@ public class FloatRealMatrix implements Matrix {
 		}
 		else {
 			final FloatRealMatrix	result = new FloatRealMatrix(numberOfRows(), numberOfColumns());
+			final float[]			source = this.content;
 			final float[]			target = result.content;
 			
-			ensureCompleted();
-			System.arraycopy(this.content, 0, target, 0, target.length);
 			for(int index = 0, maxIndex = Math.min(content.length, target.length); index < maxIndex; index++) {
-				target[index] /= content[index]; 
+				target[index] = source[index] / content[index]; 
 			}
 			result.completed = false;
 			return result;
@@ -1270,12 +1268,11 @@ public class FloatRealMatrix implements Matrix {
 		}
 		else {
 			final FloatRealMatrix	result = new FloatRealMatrix(numberOfRows(), numberOfColumns());
+			final float[]			source = this.content;
 			final float[]			target = result.content;
 			
-			ensureCompleted();
-			System.arraycopy(this.content, 0, target, 0, target.length);
 			for(int index = 0, maxIndex = Math.min(content.length, target.length); index < maxIndex; index++) {
-				target[index] /= content[index]; 
+				target[index] = (float) (source[index] / content[index]); 
 			}
 			result.completed = false;
 			return result;
@@ -1312,11 +1309,11 @@ public class FloatRealMatrix implements Matrix {
 		}
 		else {
 			final FloatRealMatrix	result = new FloatRealMatrix(numberOfRows(), numberOfColumns());
+			final float[]			source = this.content;
 			final float[]			target = result.content;
 			
-			ensureCompleted();
 			for(int index = 0, maxIndex = Math.min(content.length, target.length); index < maxIndex; index++) {
-				target[index] = content[index] / target[index]; 
+				target[index] = content[index] / source[index]; 
 			}
 			result.completed = false;
 			return result;
@@ -1330,11 +1327,11 @@ public class FloatRealMatrix implements Matrix {
 		}
 		else {
 			final FloatRealMatrix	result = new FloatRealMatrix(numberOfRows(), numberOfColumns());
+			final float[]			source = this.content;
 			final float[]			target = result.content;
 			
-			ensureCompleted();
 			for(int index = 0, maxIndex = Math.min(content.length, target.length); index < maxIndex; index++) {
-				target[index] = content[index] / target[index]; 
+				target[index] = content[index] / source[index]; 
 			}
 			result.completed = false;
 			return result;
@@ -1348,17 +1345,17 @@ public class FloatRealMatrix implements Matrix {
 		}
 		else {
 			final FloatRealMatrix	result = new FloatRealMatrix(numberOfRows(), numberOfColumns());
+			final float[]			source = this.content;
 			final float[]			target = result.content;
 			
-			ensureCompleted();
 			for(int index = 0, maxIndex = Math.min(content.length, target.length); index < maxIndex; index++) {
-				target[index] = content[index] / target[index]; 
+				target[index] = content[index] / source[index]; 
 			}
 			result.completed = false;
 			return result;
 		}
 	}
-
+ 
 	@Override
 	public Matrix mulInvFromHadamard(final double... content) {
 		if (content == null) {
@@ -1366,11 +1363,11 @@ public class FloatRealMatrix implements Matrix {
 		}
 		else {
 			final FloatRealMatrix	result = new FloatRealMatrix(numberOfRows(), numberOfColumns());
+			final float[]			source = this.content;
 			final float[]			target = result.content;
 			
-			ensureCompleted();
 			for(int index = 0, maxIndex = Math.min(content.length, target.length); index < maxIndex; index++) {
-				target[index] = (float)(content[index] / target[index]); 
+				target[index] = (float) (content[index] / source[index]); 
 			}
 			result.completed = false;
 			return result;
@@ -1387,13 +1384,13 @@ public class FloatRealMatrix implements Matrix {
 				case COMPLEX_DOUBLE : case COMPLEX_FLOAT :
 					throw new IllegalArgumentException("Attempt to multiply real and complex matrices");
 				case REAL_DOUBLE	:
-					return mulInvHadamard(content.extractDoubles());
+					return mulInvFromHadamard(content.extractDoubles());
 				case REAL_FLOAT		:
-					return mulInvHadamard(content.extractFloats());
+					return mulInvFromHadamard(content.extractFloats());
 				case REAL_INT		:
-					return mulInvHadamard(content.extractInts());
+					return mulInvFromHadamard(content.extractInts());
 				case REAL_LONG		:
-					return mulInvHadamard(content.extractLongs());
+					return mulInvFromHadamard(content.extractLongs());
 				default : 
 					throw new UnsupportedOperationException("Matrix type ["+content.getType()+"] is not supported yet");
 			}
@@ -1409,8 +1406,8 @@ public class FloatRealMatrix implements Matrix {
 			final FloatRealMatrix	result = new FloatRealMatrix(this.numberOfRows() * content.numberOfRows(), this.numberOfColumns() * content.numberOfColumns());
 			final float[]			source = this.content;
 			final float[]			target = result.content;
-			final int				colSize1 = this.numberOfColumns();
-			final int				colSize2 = content.numberOfColumns();
+			final int 				maxY1 = this.numberOfRows(), maxY2 = content.numberOfRows();
+			final int 				maxX1 = this.numberOfColumns(), maxX2 = content.numberOfColumns();
 			
 			switch (content.getType()) {
 				case COMPLEX_DOUBLE : case COMPLEX_FLOAT :
@@ -1418,14 +1415,17 @@ public class FloatRealMatrix implements Matrix {
 				case REAL_DOUBLE	:
 					final double[]	tempD = content.extractDoubles();
 					
-					for (int y1 = 0, maxY1 = this.numberOfRows(); y1 < maxY1; y1++) {
-						for (int x1 = 0, maxX1 = this.numberOfColumns(); x1 < maxX1; x1++) {
-							final float	k = source[y1 * colSize1 + x1]; 
+					for (int y1 = 0; y1 < maxY1; y1++) {
+						for (int x1 = 0; x1 < maxX1; x1++) {
+							final float	k = source[y1 * maxX1 + x1];
 							
 							if (k != 0) {
-								for (int y2 = 0, maxY2 = this.numberOfRows(); y2 < maxY2; y2++) {
-									for (int x2 = 0, maxX2 = this.numberOfColumns(); x2 < maxX2; x2++) {
-										target[((y1 * maxY2) + y2) * colSize1 + x1 * maxX1 + x2] = (float) (k * tempD[y2 * colSize2 + x2]);
+								for (int y2 = 0; y2 < maxY2; y2++) {
+									for (int x2 = 0; x2 < maxX2; x2++) {
+										final int 	sourceIndex = y2 * maxX2 + x2; 
+										final int	targetIndex = y1 * maxX2 * maxX1 * maxY2 + y2 * maxX1 * maxY2 + x1 * maxX2 + x2; 
+										
+										target[targetIndex] = (float) (k * tempD[sourceIndex]);
 									}
 								}
 							}
@@ -1435,14 +1435,17 @@ public class FloatRealMatrix implements Matrix {
 				case REAL_FLOAT		:
 					final float[]	tempF = content.extractFloats();
 					
-					for (int y1 = 0, maxY1 = this.numberOfRows(); y1 < maxY1; y1++) {
-						for (int x1 = 0, maxX1 = this.numberOfColumns(); x1 < maxX1; x1++) {
-							final float	k = source[y1 * colSize1 + x1]; 
+					for (int y1 = 0; y1 < maxY1; y1++) {
+						for (int x1 = 0; x1 < maxX1; x1++) {
+							final float	k = source[y1 * maxX1 + x1];
 							
 							if (k != 0) {
-								for (int y2 = 0, maxY2 = this.numberOfRows(); y2 < maxY2; y2++) {
-									for (int x2 = 0, maxX2 = this.numberOfColumns(); x2 < maxX2; x2++) {
-										target[((y1 * maxY2) + y2) * colSize1 + x1 * maxX1 + x2] = k * tempF[y2 * colSize2 + x2];
+								for (int y2 = 0; y2 < maxY2; y2++) {
+									for (int x2 = 0; x2 < maxX2; x2++) {
+										final int 	sourceIndex = y2 * maxX2 + x2; 
+										final int	targetIndex = y1 * maxX2 * maxX1 * maxY2 + y2 * maxX1 * maxY2 + x1 * maxX2 + x2; 
+										
+										target[targetIndex] = k * tempF[sourceIndex];
 									}
 								}
 							}
@@ -1452,14 +1455,17 @@ public class FloatRealMatrix implements Matrix {
 				case REAL_INT		:
 					final int[]		tempI = content.extractInts();
 					
-					for (int y1 = 0, maxY1 = this.numberOfRows(); y1 < maxY1; y1++) {
-						for (int x1 = 0, maxX1 = this.numberOfColumns(); x1 < maxX1; x1++) {
-							final float	k = source[y1 * colSize1 + x1]; 
+					for (int y1 = 0; y1 < maxY1; y1++) {
+						for (int x1 = 0; x1 < maxX1; x1++) {
+							final float	k = source[y1 * maxX1 + x1];
 							
 							if (k != 0) {
-								for (int y2 = 0, maxY2 = this.numberOfRows(); y2 < maxY2; y2++) {
-									for (int x2 = 0, maxX2 = this.numberOfColumns(); x2 < maxX2; x2++) {
-										target[((y1 * maxY2) + y2) * colSize1 + x1 * maxX1 + x2] = k * tempI[y2 * colSize2 + x2];
+								for (int y2 = 0; y2 < maxY2; y2++) {
+									for (int x2 = 0; x2 < maxX2; x2++) {
+										final int 	sourceIndex = y2 * maxX2 + x2; 
+										final int	targetIndex = y1 * maxX2 * maxX1 * maxY2 + y2 * maxX1 * maxY2 + x1 * maxX2 + x2; 
+										
+										target[targetIndex] = k * tempI[sourceIndex];
 									}
 								}
 							}
@@ -1469,14 +1475,17 @@ public class FloatRealMatrix implements Matrix {
 				case REAL_LONG		:
 					final long[]	tempL = content.extractLongs();
 					
-					for (int y1 = 0, maxY1 = this.numberOfRows(); y1 < maxY1; y1++) {
-						for (int x1 = 0, maxX1 = this.numberOfColumns(); x1 < maxX1; x1++) {
-							final float	k = source[y1 * colSize1 + x1]; 
+					for (int y1 = 0; y1 < maxY1; y1++) {
+						for (int x1 = 0; x1 < maxX1; x1++) {
+							final float	k = source[y1 * maxX1 + x1];
 							
 							if (k != 0) {
-								for (int y2 = 0, maxY2 = this.numberOfRows(); y2 < maxY2; y2++) {
-									for (int x2 = 0, maxX2 = this.numberOfColumns(); x2 < maxX2; x2++) {
-										target[((y1 * maxY2) + y2) * colSize1 + x1 * maxX1 + x2] = k * tempL[y2 * colSize2 + x2];
+								for (int y2 = 0; y2 < maxY2; y2++) {
+									for (int x2 = 0; x2 < maxX2; x2++) {
+										final int 	sourceIndex = y2 * maxX2 + x2; 
+										final int	targetIndex = y1 * maxX2 * maxX1 * maxY2 + y2 * maxX1 * maxY2 + x1 * maxX2 + x2; 
+										
+										target[targetIndex] = k * tempL[sourceIndex];
 									}
 								}
 							}
@@ -1486,6 +1495,7 @@ public class FloatRealMatrix implements Matrix {
 				default:
 					throw new UnsupportedOperationException("Matrix type ["+content.getType()+"] is not supported yet");
 			}
+			result.completed = false;
 			return result;
 		}
 	}
@@ -1499,8 +1509,8 @@ public class FloatRealMatrix implements Matrix {
 			final FloatRealMatrix	result = new FloatRealMatrix(this.numberOfRows() * content.numberOfRows(), this.numberOfColumns() * content.numberOfColumns());
 			final float[]			source = this.content;
 			final float[]			target = result.content;
-			final int				colSize1 = this.numberOfColumns();
-			final int				colSize2 = content.numberOfColumns();
+			final int 				maxY1 = content.numberOfRows(), maxY2 = this.numberOfRows();
+			final int 				maxX1 = content.numberOfColumns(), maxX2 = this.numberOfColumns();
 			
 			switch (content.getType()) {
 				case COMPLEX_DOUBLE : case COMPLEX_FLOAT :
@@ -1508,14 +1518,17 @@ public class FloatRealMatrix implements Matrix {
 				case REAL_DOUBLE	:
 					final double[]	tempD = content.extractDoubles();
 					
-					for (int y1 = 0, maxY1 = this.numberOfRows(); y1 < maxY1; y1++) {
-						for (int x1 = 0, maxX1 = this.numberOfColumns(); x1 < maxX1; x1++) {
-							final double	k = tempD[y1 * colSize1 + x1]; 
+					for (int y1 = 0; y1 < maxY1; y1++) {
+						for (int x1 = 0; x1 < maxX1; x1++) {
+							final double	k = tempD[y1 * maxX1 + x1];
 							
 							if (k != 0) {
-								for (int y2 = 0, maxY2 = this.numberOfRows(); y2 < maxY2; y2++) {
-									for (int x2 = 0, maxX2 = this.numberOfColumns(); x2 < maxX2; x2++) {
-										target[((y1 * maxY2) + y2) * colSize1 + x1 * maxX1 + x2] = (float) (k * source[y2 * colSize2 + x2]);
+								for (int y2 = 0; y2 < maxY2; y2++) {
+									for (int x2 = 0; x2 < maxX2; x2++) {
+										final int 	sourceIndex = y2 * maxX2 + x2; 
+										final int	targetIndex = y1 * maxX2 * maxX1 * maxY2 + y2 * maxX1 * maxY2 + x1 * maxX2 + x2; 
+										
+										target[targetIndex] = (float) (k * source[sourceIndex]);
 									}
 								}
 							}
@@ -1525,14 +1538,17 @@ public class FloatRealMatrix implements Matrix {
 				case REAL_FLOAT		:
 					final float[]	tempF = content.extractFloats();
 					
-					for (int y1 = 0, maxY1 = this.numberOfRows(); y1 < maxY1; y1++) {
-						for (int x1 = 0, maxX1 = this.numberOfColumns(); x1 < maxX1; x1++) {
-							final float	k = tempF[y1 * colSize1 + x1]; 
+					for (int y1 = 0; y1 < maxY1; y1++) {
+						for (int x1 = 0; x1 < maxX1; x1++) {
+							final float	k = tempF[y1 * maxX1 + x1];
 							
 							if (k != 0) {
-								for (int y2 = 0, maxY2 = this.numberOfRows(); y2 < maxY2; y2++) {
-									for (int x2 = 0, maxX2 = this.numberOfColumns(); x2 < maxX2; x2++) {
-										target[((y1 * maxY2) + y2) * colSize1 + x1 * maxX1 + x2] = k * source[y2 * colSize2 + x2];
+								for (int y2 = 0; y2 < maxY2; y2++) {
+									for (int x2 = 0; x2 < maxX2; x2++) {
+										final int 	sourceIndex = y2 * maxX2 + x2; 
+										final int	targetIndex = y1 * maxX2 * maxX1 * maxY2 + y2 * maxX1 * maxY2 + x1 * maxX2 + x2; 
+										
+										target[targetIndex] = k * source[sourceIndex];
 									}
 								}
 							}
@@ -1542,14 +1558,17 @@ public class FloatRealMatrix implements Matrix {
 				case REAL_INT		:
 					final int[]		tempI = content.extractInts();
 					
-					for (int y1 = 0, maxY1 = this.numberOfRows(); y1 < maxY1; y1++) {
-						for (int x1 = 0, maxX1 = this.numberOfColumns(); x1 < maxX1; x1++) {
-							final float	k = tempI[y1 * colSize1 + x1]; 
+					for (int y1 = 0; y1 < maxY1; y1++) {
+						for (int x1 = 0; x1 < maxX1; x1++) {
+							final float	k = tempI[y1 * maxX1 + x1];
 							
 							if (k != 0) {
-								for (int y2 = 0, maxY2 = this.numberOfRows(); y2 < maxY2; y2++) {
-									for (int x2 = 0, maxX2 = this.numberOfColumns(); x2 < maxX2; x2++) {
-										target[((y1 * maxY2) + y2) * colSize1 + x1 * maxX1 + x2] = k * source[y2 * colSize2 + x2];
+								for (int y2 = 0; y2 < maxY2; y2++) {
+									for (int x2 = 0; x2 < maxX2; x2++) {
+										final int 	sourceIndex = y2 * maxX2 + x2; 
+										final int	targetIndex = y1 * maxX2 * maxX1 * maxY2 + y2 * maxX1 * maxY2 + x1 * maxX2 + x2; 
+										
+										target[targetIndex] = k * source[sourceIndex];
 									}
 								}
 							}
@@ -1559,14 +1578,17 @@ public class FloatRealMatrix implements Matrix {
 				case REAL_LONG		:
 					final long[]	tempL = content.extractLongs();
 					
-					for (int y1 = 0, maxY1 = this.numberOfRows(); y1 < maxY1; y1++) {
-						for (int x1 = 0, maxX1 = this.numberOfColumns(); x1 < maxX1; x1++) {
-							final float	k = tempL[y1 * colSize1 + x1]; 
+					for (int y1 = 0; y1 < maxY1; y1++) {
+						for (int x1 = 0; x1 < maxX1; x1++) {
+							final float	k = tempL[y1 * maxX1 + x1];
 							
 							if (k != 0) {
-								for (int y2 = 0, maxY2 = this.numberOfRows(); y2 < maxY2; y2++) {
-									for (int x2 = 0, maxX2 = this.numberOfColumns(); x2 < maxX2; x2++) {
-										target[((y1 * maxY2) + y2) * colSize1 + x1 * maxX1 + x2] = k * source[y2 * colSize2 + x2];
+								for (int y2 = 0; y2 < maxY2; y2++) {
+									for (int x2 = 0; x2 < maxX2; x2++) {
+										final int 	sourceIndex = y2 * maxX2 + x2; 
+										final int	targetIndex = y1 * maxX2 * maxX1 * maxY2 + y2 * maxX1 * maxY2 + x1 * maxX2 + x2; 
+										
+										target[targetIndex] = k * source[sourceIndex];
 									}
 								}
 							}
@@ -1576,6 +1598,7 @@ public class FloatRealMatrix implements Matrix {
 				default:
 					throw new UnsupportedOperationException("Matrix type ["+content.getType()+"] is not supported yet");
 			}
+			result.completed = false;
 			return result;
 		}
 	}
@@ -1589,10 +1612,10 @@ public class FloatRealMatrix implements Matrix {
 			ensureCompleted();
 			final FloatRealMatrix	result = new FloatRealMatrix(this.numberOfRows(), this.numberOfColumns());
 			final float[]	identity = result.content;
-			final float[]	source = this.content;
+			final float[]	source = this.content.clone();
 			final int		colSize = numberOfColumns();
 			
-			for(int index = 0; index < identity.length; index++) {	// Make identity matrix
+			for(int index = 0; index < colSize; index++) {	// Make identity matrix
 				identity[index * (colSize + 1)] = 1;
 			}
 			for(int y = 0; y < colSize; y++) {
@@ -1607,7 +1630,7 @@ public class FloatRealMatrix implements Matrix {
 					identity[y * colSize + x] *= k;
 				}
 				for(int i = y + 1; i < colSize; i++) {	// subtract current line from all lines below to make zeroes at the current column
-					final float	k2 = 1/ source[i * (colSize + 1)];
+					final float	k2 = source[i * colSize + y];
 					
 					for(int x = 0; x < colSize; x++) {
 						source[i * colSize + x] -= k2 * source[y * colSize + x];
@@ -1617,7 +1640,7 @@ public class FloatRealMatrix implements Matrix {
 			}
 			for(int y = colSize-1; y >= 0; y--) {	// subtract current line from all lines above to make zeroes at the current column 
 				for(int i = y - 1; i >= 0; i--) {
-					final float	k2 = 1 / source[i * (colSize + 1)];
+					final float	k2 = source[i * colSize + y];
 					
 					for(int x = 0; x < colSize; x++) {
 						source[i * colSize + x] -= k2 * source[y * colSize + x];
@@ -1625,6 +1648,7 @@ public class FloatRealMatrix implements Matrix {
 					}
 				}
 			}
+			result.completed = false;
 			return result;
 		}
 	}
@@ -1642,6 +1666,7 @@ public class FloatRealMatrix implements Matrix {
 				target[x*rows + y] = source[y*cols + x]; 
 			}
 		}
+		result.completed = false;
 		return result;
 	}
 
@@ -1677,34 +1702,28 @@ public class FloatRealMatrix implements Matrix {
 			throw new IllegalStateException("Only square matrix can be inverted");
 		}
 		else {
-			final float[]	source = this.content;
+			final float[]	source = this.content.clone();
 			final int		colSize = numberOfColumns();
-			
+			float			det = 1;
+
 			ensureCompleted();
 			for(int y = 0; y < colSize; y++) {
-				final float	k = 1/ source[y * (colSize + 1)];	// Take diagonal element.
-				
-				if (k == 0) {
-					return 0;
-				}
-				
+				final float	k = source[y * (colSize + 1)];		// Take diagonal element.
+				final float	invK = 1 / k;
+
+				det *= k;
 				for(int x = 0; x < colSize; x++) {		// divide all line by diagonal element
-					source[y * colSize + x] *= k;
+					source[y * colSize + x] *= invK;
 				}
 				for(int i = y + 1; i < colSize; i++) {	// subtract current line from all lines below to make zeroes at the current column
-					final float	k2 = 1/ source[i * (colSize + 1)];
+					final float	k2 = source[i * colSize + y];
 					
 					for(int x = 0; x < colSize; x++) {
 						source[i * colSize + x] -= k2 * source[y * colSize + x];
 					}
 				}
 			}
-			float	prod = 1;
-			
-			for(int index = 0; index < source.length; index++) {	// Calculate diagonal prod
-				prod *= source[index * (colSize + 1)];
-			}
-			return prod;
+			return det;
 		}
 	}
 
@@ -1715,7 +1734,8 @@ public class FloatRealMatrix implements Matrix {
 		final int		colSize = numberOfColumns();
 		float	sum = 0;
 		
-		for(int index = 0; index < source.length; index++) {	// Calculate diagonal sum
+		ensureCompleted();
+		for(int index = 0; index < colSize; index++) {	// Calculate diagonal sum
 			sum += source[index * (colSize + 1)];
 		}
 		return sum;
@@ -1894,6 +1914,21 @@ public class FloatRealMatrix implements Matrix {
 		}
 	}
 
+	private void ensureInside(final Piece piece) {
+		if (piece.getLeft() >= numberOfColumns()) {
+			throw new IllegalArgumentException("Left piece location ["+piece.getLeft()+"] outside number of columns ["+numberOfColumns()+"]");
+		}
+		else if (piece.getTop() >= numberOfRows()) {
+			throw new IllegalArgumentException("Top piece location ["+piece.getTop()+"] outside number of rows ["+numberOfRows()+"]");
+		}
+		else if (piece.getLeft() + piece.getWidth() > numberOfColumns()) {
+			throw new IllegalArgumentException("Right piece location ["+(piece.getLeft()+piece.getWidth())+"] outside number of columns ["+numberOfColumns()+"]");
+		}
+		else if (piece.getTop() + piece.getHeight() > numberOfRows()) {
+			throw new IllegalArgumentException("Bottom piece location ["+(piece.getTop()+piece.getHeight())+"] outside number of rows ["+numberOfRows()+"]");
+		}
+	}
+	
 	private Matrix aggregateAvg(final AggregateDirection dir) {
 		final FloatRealMatrix	result;
 		final float[]			source = this.content;
@@ -1926,7 +1961,7 @@ public class FloatRealMatrix implements Matrix {
 				}
 				break;
 			case Total		:
-				result = new FloatRealMatrix(1, 2); 
+				result = new FloatRealMatrix(1, 1); 
 				target = result.content;
 				
 				val = 0;
@@ -1940,6 +1975,7 @@ public class FloatRealMatrix implements Matrix {
 			default:
 				throw new UnsupportedOperationException("Aggregate direction ["+dir+"] is not supported yet");
 		}
+		result.completed = false;
 		return result;
 	}
 	
@@ -1979,7 +2015,7 @@ public class FloatRealMatrix implements Matrix {
 				}
 				break;
 			case Total		:
-				result = new FloatRealMatrix(1, 2); 
+				result = new FloatRealMatrix(1, 1); 
 				target = result.content;
 				
 				val = source[0];
@@ -1995,6 +2031,7 @@ public class FloatRealMatrix implements Matrix {
 			default:
 				throw new UnsupportedOperationException("Aggregate direction ["+dir+"] is not supported yet");
 		}
+		result.completed = false;
 		return result;
 	}
 
@@ -2034,7 +2071,7 @@ public class FloatRealMatrix implements Matrix {
 				}
 				break;
 			case Total		:
-				result = new FloatRealMatrix(1, 2); 
+				result = new FloatRealMatrix(1, 1); 
 				target = result.content;
 				
 				val = source[0];
@@ -2050,6 +2087,7 @@ public class FloatRealMatrix implements Matrix {
 			default:
 				throw new UnsupportedOperationException("Aggregate direction ["+dir+"] is not supported yet");
 		}
+		result.completed = false;
 		return result;
 	}
 
@@ -2085,7 +2123,7 @@ public class FloatRealMatrix implements Matrix {
 				}
 				break;
 			case Total		:
-				result = new FloatRealMatrix(1, 2); 
+				result = new FloatRealMatrix(1, 1); 
 				target = result.content;
 				
 				val = 0;
@@ -2099,6 +2137,7 @@ public class FloatRealMatrix implements Matrix {
 			default:
 				throw new UnsupportedOperationException("Aggregate direction ["+dir+"] is not supported yet");
 		}
+		result.completed = false;
 		return result;
 	}
 }
