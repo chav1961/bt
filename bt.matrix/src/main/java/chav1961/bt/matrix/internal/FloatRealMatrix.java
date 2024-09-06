@@ -834,21 +834,165 @@ public class FloatRealMatrix implements Matrix {
 	}
 
 	@Override
-	public Matrix mul(Matrix content) {
-		// TODO Auto-generated method stub
-		return null;
+	public Matrix mul(final Matrix content) {
+		if (content == null) {
+			throw new NullPointerException("Content matrix can't be null");
+		}
+		else if (content.numberOfRows() != this.numberOfColumns()) {
+			throw new IllegalArgumentException("Content number of rows ["+content.numberOfRows()+"] differ from current number of columns ["+this.numberOfColumns()+"]");
+		}
+		else {
+			final FloatRealMatrix	result = new FloatRealMatrix(this.numberOfRows(), content.numberOfColumns());
+			final float[]			source = this.content;
+			final float[]			target = result.content;
+			final int				maxY = this.numberOfRows(), maxX = content.numberOfColumns();
+			final int				colSize = this.numberOfColumns(), maxK = content.numberOfRows(); 
+			
+			switch (content.getType()) {
+				case COMPLEX_DOUBLE : case COMPLEX_FLOAT :
+					throw new IllegalArgumentException("Attempt to multiply real and complex matrices");
+				case REAL_DOUBLE	:
+					final double[]	tempD = content.extractDoubles();
+
+					for(int y = 0; y < maxY; y++) {
+						for(int x = 0; x < maxX; x++) {
+							float	sum = 0;
+							
+							for(int k = 0; k < maxK; k++) {
+								sum += source[y * colSize + k] * tempD[k * maxX + x];
+							}
+							target[y * colSize + x] = sum;
+						}
+					}
+					break;
+				case REAL_FLOAT		:
+					final float[]	tempF = content.extractFloats();
+
+					for(int y = 0; y < maxY; y++) {
+						for(int x = 0; x < maxX; x++) {
+							float	sum = 0;
+							
+							for(int k = 0; k < maxK; k++) {
+								sum += source[y * colSize + k] * tempF[k * maxX + x];
+							}
+							target[y * colSize + x] = sum;
+						}
+					}
+					break;
+				case REAL_INT		:
+					final int[]		tempI = content.extractInts();
+
+					for(int y = 0; y < maxY; y++) {
+						for(int x = 0; x < maxX; x++) {
+							float	sum = 0;
+							
+							for(int k = 0; k < maxK; k++) {
+								sum += source[y * colSize + k] * tempI[k * maxX + x];
+							}
+							target[y * colSize + x] = sum;
+						}
+					}
+					break;
+				case REAL_LONG		:
+					final long[]	tempL = content.extractLongs();
+
+					for(int y = 0; y < maxY; y++) {
+						for(int x = 0; x < maxX; x++) {
+							float	sum = 0;
+							
+							for(int k = 0; k < maxK; k++) {
+								sum += source[y * colSize + k] * tempL[k * maxX + x];
+							}
+							target[y * colSize + x] = sum;
+						}
+					}
+					break;
+				default : 
+					throw new UnsupportedOperationException("Matrix type ["+content.getType()+"] is not supported yet");
+			}
+			return result;
+		}
 	}
 
 	@Override
-	public Matrix mulInv(Matrix content) {
-		// TODO Auto-generated method stub
-		return null;
-	}
+	public Matrix mulFrom(final Matrix content) {
+		if (content == null) {
+			throw new NullPointerException("Content matrix can't be null");
+		}
+		else if (this.numberOfRows() != content.numberOfColumns()) {
+			throw new IllegalArgumentException("Content number of columns ["+content.numberOfColumns()+"] differ from current number of rows ["+this.numberOfRows()+"]");
+		}
+		else {
+			final FloatRealMatrix	result = new FloatRealMatrix(content.numberOfRows(), this.numberOfColumns());
+			final float[]			source = this.content;
+			final float[]			target = result.content;
+			final int				maxY = content.numberOfRows(), maxX = this.numberOfColumns();
+			final int				colSize = content.numberOfColumns(), maxK = this.numberOfRows(); 
+			
+			switch (content.getType()) {
+				case COMPLEX_DOUBLE : case COMPLEX_FLOAT :
+					throw new IllegalArgumentException("Attempt to multiply real and complex matrices");
+				case REAL_DOUBLE	:
+					final double[]	tempD = content.extractDoubles();
 
-	@Override
-	public Matrix mulInvFrom(Matrix content) {
-		// TODO Auto-generated method stub
-		return null;
+					for(int y = 0; y < maxY; y++) {
+						for(int x = 0; x < maxX; x++) {
+							float	sum = 0;
+							
+							for(int k = 0; k < maxK; k++) {
+								sum += tempD[y * colSize + k] * source[k * maxX + x];
+							}
+							target[y * colSize + x] = sum;
+						}
+					}
+					break;
+				case REAL_FLOAT		:
+					final float[]	tempF = content.extractFloats();
+
+					for(int y = 0; y < maxY; y++) {
+						for(int x = 0; x < maxX; x++) {
+							float	sum = 0;
+							
+							for(int k = 0; k < maxK; k++) {
+								sum += tempF[y * colSize + k] * source[k * maxX + x];
+							}
+							target[y * colSize + x] = sum;
+						}
+					}
+					break;
+				case REAL_INT		:
+					final int[]		tempI = content.extractInts();
+
+					for(int y = 0; y < maxY; y++) {
+						for(int x = 0; x < maxX; x++) {
+							float	sum = 0;
+							
+							for(int k = 0; k < maxK; k++) {
+								sum += tempI[y * colSize + k] * source[k * maxX + x];
+							}
+							target[y * colSize + x] = sum;
+						}
+					}
+					break;
+				case REAL_LONG		:
+					final long[]	tempL = content.extractLongs();
+
+					for(int y = 0; y < maxY; y++) {
+						for(int x = 0; x < maxX; x++) {
+							float	sum = 0;
+							
+							for(int k = 0; k < maxK; k++) {
+								sum += tempL[y * colSize + k] * source[k * maxX + x];
+							}
+							target[y * colSize + x] = sum;
+						}
+					}
+					break;
+				default : 
+					throw new UnsupportedOperationException("Matrix type ["+content.getType()+"] is not supported yet");
+			}
+			return result;
+		}
 	}
 
 	@Override
@@ -1257,43 +1401,237 @@ public class FloatRealMatrix implements Matrix {
 	}
 
 	@Override
-	public Matrix tensorMul(Matrix content) {
+	public Matrix tensorMul(final Matrix content) {
 		if (content == null) {
 			throw new NullPointerException("Matrix content can't be null");
 		}
 		else {
+			final FloatRealMatrix	result = new FloatRealMatrix(this.numberOfRows() * content.numberOfRows(), this.numberOfColumns() * content.numberOfColumns());
+			final float[]			source = this.content;
+			final float[]			target = result.content;
+			final int				colSize1 = this.numberOfColumns();
+			final int				colSize2 = content.numberOfColumns();
+			
 			switch (content.getType()) {
 				case COMPLEX_DOUBLE : case COMPLEX_FLOAT :
 					throw new UnsupportedOperationException("Attempt to multiply real and complex matrices");
 				case REAL_DOUBLE	:
+					final double[]	tempD = content.extractDoubles();
+					
+					for (int y1 = 0, maxY1 = this.numberOfRows(); y1 < maxY1; y1++) {
+						for (int x1 = 0, maxX1 = this.numberOfColumns(); x1 < maxX1; x1++) {
+							final float	k = source[y1 * colSize1 + x1]; 
+							
+							if (k != 0) {
+								for (int y2 = 0, maxY2 = this.numberOfRows(); y2 < maxY2; y2++) {
+									for (int x2 = 0, maxX2 = this.numberOfColumns(); x2 < maxX2; x2++) {
+										target[((y1 * maxY2) + y2) * colSize1 + x1 * maxX1 + x2] = (float) (k * tempD[y2 * colSize2 + x2]);
+									}
+								}
+							}
+						}
+					}
 					break;
 				case REAL_FLOAT		:
+					final float[]	tempF = content.extractFloats();
+					
+					for (int y1 = 0, maxY1 = this.numberOfRows(); y1 < maxY1; y1++) {
+						for (int x1 = 0, maxX1 = this.numberOfColumns(); x1 < maxX1; x1++) {
+							final float	k = source[y1 * colSize1 + x1]; 
+							
+							if (k != 0) {
+								for (int y2 = 0, maxY2 = this.numberOfRows(); y2 < maxY2; y2++) {
+									for (int x2 = 0, maxX2 = this.numberOfColumns(); x2 < maxX2; x2++) {
+										target[((y1 * maxY2) + y2) * colSize1 + x1 * maxX1 + x2] = k * tempF[y2 * colSize2 + x2];
+									}
+								}
+							}
+						}
+					}
 					break;
 				case REAL_INT		:
+					final int[]		tempI = content.extractInts();
+					
+					for (int y1 = 0, maxY1 = this.numberOfRows(); y1 < maxY1; y1++) {
+						for (int x1 = 0, maxX1 = this.numberOfColumns(); x1 < maxX1; x1++) {
+							final float	k = source[y1 * colSize1 + x1]; 
+							
+							if (k != 0) {
+								for (int y2 = 0, maxY2 = this.numberOfRows(); y2 < maxY2; y2++) {
+									for (int x2 = 0, maxX2 = this.numberOfColumns(); x2 < maxX2; x2++) {
+										target[((y1 * maxY2) + y2) * colSize1 + x1 * maxX1 + x2] = k * tempI[y2 * colSize2 + x2];
+									}
+								}
+							}
+						}
+					}
 					break;
 				case REAL_LONG		:
+					final long[]	tempL = content.extractLongs();
+					
+					for (int y1 = 0, maxY1 = this.numberOfRows(); y1 < maxY1; y1++) {
+						for (int x1 = 0, maxX1 = this.numberOfColumns(); x1 < maxX1; x1++) {
+							final float	k = source[y1 * colSize1 + x1]; 
+							
+							if (k != 0) {
+								for (int y2 = 0, maxY2 = this.numberOfRows(); y2 < maxY2; y2++) {
+									for (int x2 = 0, maxX2 = this.numberOfColumns(); x2 < maxX2; x2++) {
+										target[((y1 * maxY2) + y2) * colSize1 + x1 * maxX1 + x2] = k * tempL[y2 * colSize2 + x2];
+									}
+								}
+							}
+						}
+					}
 					break;
 				default:
 					throw new UnsupportedOperationException("Matrix type ["+content.getType()+"] is not supported yet");
 			}
+			return result;
 		}
-		// TODO Auto-generated method stub
-		return null;
 	}
 
+	@Override
+	public Matrix tensorMulFrom(final Matrix content) {
+		if (content == null) {
+			throw new NullPointerException("Matrix content can't be null");
+		}
+		else {
+			final FloatRealMatrix	result = new FloatRealMatrix(this.numberOfRows() * content.numberOfRows(), this.numberOfColumns() * content.numberOfColumns());
+			final float[]			source = this.content;
+			final float[]			target = result.content;
+			final int				colSize1 = this.numberOfColumns();
+			final int				colSize2 = content.numberOfColumns();
+			
+			switch (content.getType()) {
+				case COMPLEX_DOUBLE : case COMPLEX_FLOAT :
+					throw new UnsupportedOperationException("Attempt to multiply real and complex matrices");
+				case REAL_DOUBLE	:
+					final double[]	tempD = content.extractDoubles();
+					
+					for (int y1 = 0, maxY1 = this.numberOfRows(); y1 < maxY1; y1++) {
+						for (int x1 = 0, maxX1 = this.numberOfColumns(); x1 < maxX1; x1++) {
+							final double	k = tempD[y1 * colSize1 + x1]; 
+							
+							if (k != 0) {
+								for (int y2 = 0, maxY2 = this.numberOfRows(); y2 < maxY2; y2++) {
+									for (int x2 = 0, maxX2 = this.numberOfColumns(); x2 < maxX2; x2++) {
+										target[((y1 * maxY2) + y2) * colSize1 + x1 * maxX1 + x2] = (float) (k * source[y2 * colSize2 + x2]);
+									}
+								}
+							}
+						}
+					}
+					break;
+				case REAL_FLOAT		:
+					final float[]	tempF = content.extractFloats();
+					
+					for (int y1 = 0, maxY1 = this.numberOfRows(); y1 < maxY1; y1++) {
+						for (int x1 = 0, maxX1 = this.numberOfColumns(); x1 < maxX1; x1++) {
+							final float	k = tempF[y1 * colSize1 + x1]; 
+							
+							if (k != 0) {
+								for (int y2 = 0, maxY2 = this.numberOfRows(); y2 < maxY2; y2++) {
+									for (int x2 = 0, maxX2 = this.numberOfColumns(); x2 < maxX2; x2++) {
+										target[((y1 * maxY2) + y2) * colSize1 + x1 * maxX1 + x2] = k * source[y2 * colSize2 + x2];
+									}
+								}
+							}
+						}
+					}
+					break;
+				case REAL_INT		:
+					final int[]		tempI = content.extractInts();
+					
+					for (int y1 = 0, maxY1 = this.numberOfRows(); y1 < maxY1; y1++) {
+						for (int x1 = 0, maxX1 = this.numberOfColumns(); x1 < maxX1; x1++) {
+							final float	k = tempI[y1 * colSize1 + x1]; 
+							
+							if (k != 0) {
+								for (int y2 = 0, maxY2 = this.numberOfRows(); y2 < maxY2; y2++) {
+									for (int x2 = 0, maxX2 = this.numberOfColumns(); x2 < maxX2; x2++) {
+										target[((y1 * maxY2) + y2) * colSize1 + x1 * maxX1 + x2] = k * source[y2 * colSize2 + x2];
+									}
+								}
+							}
+						}
+					}
+					break;
+				case REAL_LONG		:
+					final long[]	tempL = content.extractLongs();
+					
+					for (int y1 = 0, maxY1 = this.numberOfRows(); y1 < maxY1; y1++) {
+						for (int x1 = 0, maxX1 = this.numberOfColumns(); x1 < maxX1; x1++) {
+							final float	k = tempL[y1 * colSize1 + x1]; 
+							
+							if (k != 0) {
+								for (int y2 = 0, maxY2 = this.numberOfRows(); y2 < maxY2; y2++) {
+									for (int x2 = 0, maxX2 = this.numberOfColumns(); x2 < maxX2; x2++) {
+										target[((y1 * maxY2) + y2) * colSize1 + x1 * maxX1 + x2] = k * source[y2 * colSize2 + x2];
+									}
+								}
+							}
+						}
+					}
+					break;
+				default:
+					throw new UnsupportedOperationException("Matrix type ["+content.getType()+"] is not supported yet");
+			}
+			return result;
+		}
+	}
+	
 	@Override
 	public Matrix invert() {
 		if (numberOfRows() != numberOfColumns()) {
 			throw new IllegalStateException("Only square matrix can be inverted");
 		}
 		else {
-			// TODO Auto-generated method stub
-			return null;
+			ensureCompleted();
+			final FloatRealMatrix	result = new FloatRealMatrix(this.numberOfRows(), this.numberOfColumns());
+			final float[]	identity = result.content;
+			final float[]	source = this.content;
+			final int		colSize = numberOfColumns();
+			
+			for(int index = 0; index < identity.length; index++) {	// Make identity matrix
+				identity[index * (colSize + 1)] = 1;
+			}
+			for(int y = 0; y < colSize; y++) {
+				final float	k = 1/ source[y * (colSize + 1)];	// Take diagonal element.
+				
+				if (k == 0) {
+					throw new IllegalArgumentException("Matrix has zero element on diagonal");
+				}
+				
+				for(int x = 0; x < colSize; x++) {		// divide all line by diagonal element
+					source[y * colSize + x] *= k;
+					identity[y * colSize + x] *= k;
+				}
+				for(int i = y + 1; i < colSize; i++) {	// subtract current line from all lines below to make zeroes at the current column
+					final float	k2 = 1/ source[i * (colSize + 1)];
+					
+					for(int x = 0; x < colSize; x++) {
+						source[i * colSize + x] -= k2 * source[y * colSize + x];
+						identity[i * colSize + x] -= k2 * identity[y * colSize + x];
+					}
+				}
+			}
+			for(int y = colSize-1; y >= 0; y--) {	// subtract current line from all lines above to make zeroes at the current column 
+				for(int i = y - 1; i >= 0; i--) {
+					final float	k2 = 1 / source[i * (colSize + 1)];
+					
+					for(int x = 0; x < colSize; x++) {
+						source[i * colSize + x] -= k2 * source[y * colSize + x];
+						identity[i * colSize + x] -= k2 * identity[y * colSize + x];
+					}
+				}
+			}
+			return result;
 		}
 	}
 
 	@Override
 	public Matrix transpose() {
+		ensureCompleted();
 		final FloatRealMatrix	result = new FloatRealMatrix(numberOfColumns(), numberOfRows());
 		final float[]			source = this.content;
 		final float[]			target = result.content;
@@ -1316,21 +1654,71 @@ public class FloatRealMatrix implements Matrix {
 			throw new NullPointerException("Aggregate type can't be null");
 		}
 		else {
-			// TODO Auto-generated method stub
-			return null;
+			ensureCompleted();
+			switch (aggType) {
+				case Avg	:
+					return aggregateAvg(dir); 
+				case Max	:
+					return aggregateMax(dir); 
+				case Min	:
+					return aggregateMin(dir); 
+				case Sum	:
+					return aggregateSum(dir); 
+				default:
+					throw new UnsupportedOperationException("Aggregation type ["+aggType+"] is not supported yet");
+			}
+		}
+	}
+
+
+	@Override
+	public Number det() {
+		if (numberOfRows() != numberOfColumns()) {
+			throw new IllegalStateException("Only square matrix can be inverted");
+		}
+		else {
+			final float[]	source = this.content;
+			final int		colSize = numberOfColumns();
+			
+			ensureCompleted();
+			for(int y = 0; y < colSize; y++) {
+				final float	k = 1/ source[y * (colSize + 1)];	// Take diagonal element.
+				
+				if (k == 0) {
+					return 0;
+				}
+				
+				for(int x = 0; x < colSize; x++) {		// divide all line by diagonal element
+					source[y * colSize + x] *= k;
+				}
+				for(int i = y + 1; i < colSize; i++) {	// subtract current line from all lines below to make zeroes at the current column
+					final float	k2 = 1/ source[i * (colSize + 1)];
+					
+					for(int x = 0; x < colSize; x++) {
+						source[i * colSize + x] -= k2 * source[y * colSize + x];
+					}
+				}
+			}
+			float	prod = 1;
+			
+			for(int index = 0; index < source.length; index++) {	// Calculate diagonal prod
+				prod *= source[index * (colSize + 1)];
+			}
+			return prod;
 		}
 	}
 
 	@Override
-	public Number det() {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
 	public Number track() {
-		// TODO Auto-generated method stub
-		return null;
+		ensureCompleted();
+		final float[]	source = this.content;
+		final int		colSize = numberOfColumns();
+		float	sum = 0;
+		
+		for(int index = 0; index < source.length; index++) {	// Calculate diagonal sum
+			sum += source[index * (colSize + 1)];
+		}
+		return sum;
 	}
 
 	@Override
@@ -1352,6 +1740,150 @@ public class FloatRealMatrix implements Matrix {
 		return this;
 	}
 
+	@Override
+	public Matrix apply(final ApplyInt callback) {
+		return apply(getTotalPiece(),callback);
+	}
+
+	@Override
+	public Matrix apply(final Piece piece, final ApplyInt callback) {
+		if (piece == null) {
+			throw new NullPointerException("Piece can't be null");
+		}
+		else if (callback == null) {
+			throw new NullPointerException("Ccan't be null");
+		}
+		else {
+			final FloatRealMatrix	result = new FloatRealMatrix(numberOfRows(), numberOfColumns()); 
+			final float[]	source = this.content;
+			final float[]	target = result.content;
+			final int		x0 = piece.getLeft(), y0 = piece.getTop();
+			final int		maxX = piece.getWidth(), maxY = piece.getHeight();
+			
+			ensureCompleted();
+			for(int y = 0; y < maxY; y++) {
+				for(int x = 0; x < maxX; x++) {
+					target[(y0 + y)*numberOfColumns() + (x0 + x)] = callback.apply(y0 + y, x0 + x, (int)source[(y0 + y)*numberOfColumns() + (x0 + x)]);
+				}
+			}
+			result.completed = false;
+			return result;
+		}
+	}
+
+	@Override
+	public Matrix apply(final ApplyLong callback) {
+		return apply(getTotalPiece(),callback);
+	}
+
+	@Override
+	public Matrix apply(final Piece piece, final ApplyLong callback) {
+		if (piece == null) {
+			throw new NullPointerException("Piece can't be null");
+		}
+		else if (callback == null) {
+			throw new NullPointerException("Ccan't be null");
+		}
+		else {
+			final FloatRealMatrix	result = new FloatRealMatrix(numberOfRows(), numberOfColumns()); 
+			final float[]	source = this.content;
+			final float[]	target = result.content;
+			final int		x0 = piece.getLeft(), y0 = piece.getTop();
+			final int		maxX = piece.getWidth(), maxY = piece.getHeight();
+			
+			ensureCompleted();
+			for(int y = 0; y < maxY; y++) {
+				for(int x = 0; x < maxX; x++) {
+					target[(y0 + y)*numberOfColumns() + (x0 + x)] = callback.apply(y0 + y, x0 + x, (long)source[(y0 + y)*numberOfColumns() + (x0 + x)]);
+				}
+			}
+			result.completed = false;
+			return result;
+		}
+	}
+
+	@Override
+	public Matrix apply(final ApplyFloat callback) {
+		return apply(getTotalPiece(),callback);
+	}
+
+	@Override
+	public Matrix apply(final Piece piece, final ApplyFloat callback) {
+		if (piece == null) {
+			throw new NullPointerException("Piece can't be null");
+		}
+		else if (callback == null) {
+			throw new NullPointerException("Ccan't be null");
+		}
+		else {
+			final FloatRealMatrix	result = new FloatRealMatrix(numberOfRows(), numberOfColumns()); 
+			final float[]	source = this.content;
+			final float[]	target = result.content;
+			final int		x0 = piece.getLeft(), y0 = piece.getTop();
+			final int		maxX = piece.getWidth(), maxY = piece.getHeight();
+			
+			ensureCompleted();
+			for(int y = 0; y < maxY; y++) {
+				for(int x = 0; x < maxX; x++) {
+					target[(y0 + y)*numberOfColumns() + (x0 + x)] = callback.apply(y0 + y, x0 + x, source[(y0 + y)*numberOfColumns() + (x0 + x)]);
+				}
+			}
+			result.completed = false;
+			return result;
+		}
+	}
+
+	@Override
+	public Matrix apply(final ApplyDouble callback) {
+		return apply(getTotalPiece(),callback);
+	}
+
+	@Override
+	public Matrix apply(final Piece piece, final ApplyDouble callback) {
+		if (piece == null) {
+			throw new NullPointerException("Piece can't be null");
+		}
+		else if (callback == null) {
+			throw new NullPointerException("Ccan't be null");
+		}
+		else {
+			final FloatRealMatrix	result = new FloatRealMatrix(numberOfRows(), numberOfColumns()); 
+			final float[]	source = this.content;
+			final float[]	target = result.content;
+			final int		x0 = piece.getLeft(), y0 = piece.getTop();
+			final int		maxX = piece.getWidth(), maxY = piece.getHeight();
+			
+			ensureCompleted();
+			for(int y = 0; y < maxY; y++) {
+				for(int x = 0; x < maxX; x++) {
+					target[(y0 + y)*numberOfColumns() + (x0 + x)] = (float)callback.apply(y0 + y, x0 + x, source[(y0 + y)*numberOfColumns() + (x0 + x)]);
+				}
+			}
+			result.completed = false;
+			return result;
+		}
+	}
+
+	@Override
+	public Matrix apply(final ApplyFloat2 callback) {
+		return apply(getTotalPiece(),callback);
+	}
+
+	@Override
+	public Matrix apply(final Piece piece, final ApplyFloat2 callback) {
+		throw new UnsupportedOperationException("Complex apply is not supported for real matrix");
+	}
+
+	@Override
+	public Matrix apply(final ApplyDouble2 callback) {
+		return apply(getTotalPiece(),callback);
+	}
+
+	@Override
+	public Matrix apply(final Piece piece, final ApplyDouble2 callback) {
+		throw new UnsupportedOperationException("Complex apply is not supported for real matrix");
+	}
+	
 	private Piece getTotalPiece() {
 		return Piece.of(0, 0, numberOfRows(), numberOfColumns());
 	}
@@ -1360,5 +1892,213 @@ public class FloatRealMatrix implements Matrix {
 		if (!completed) {
 			throw new IllegalStateException("Matrix is not completed after previous operations. Call done() method before");
 		}
+	}
+
+	private Matrix aggregateAvg(final AggregateDirection dir) {
+		final FloatRealMatrix	result;
+		final float[]			source = this.content;
+		final float[]			target;
+		float	val;
+		
+		switch (dir) {
+			case ByColumns	:
+				result = new FloatRealMatrix(numberOfRows(), 1);
+				target = result.content;
+				
+				for(int y = 0; y < numberOfRows(); y++) {
+					val = 0;
+					for(int x = 0; x < numberOfColumns(); x++) {
+						val += source[y * numberOfColumns() + x];
+					}
+					target[y] = val / numberOfColumns();
+				}
+				break;
+			case ByRows		:
+				result = new FloatRealMatrix(1, numberOfColumns()); 
+				target = result.content;
+				
+				for(int x = 0; x < numberOfColumns(); x++) {
+					val = 0;
+					for(int y = 0; y < numberOfRows(); y++) {
+						val += source[y * numberOfColumns() + x];
+					}
+					target[x] = val / numberOfRows();
+				}
+				break;
+			case Total		:
+				result = new FloatRealMatrix(1, 2); 
+				target = result.content;
+				
+				val = 0;
+				for(int y = 0; y < numberOfRows(); y++) {
+					for(int x = 0; x < numberOfColumns(); x++) {
+						val += source[y * numberOfColumns() + x];
+					}
+				}
+				target[0] = val / (numberOfRows() * numberOfColumns());
+				break;
+			default:
+				throw new UnsupportedOperationException("Aggregate direction ["+dir+"] is not supported yet");
+		}
+		return result;
+	}
+	
+	private Matrix aggregateMax(final AggregateDirection dir) {
+		final FloatRealMatrix	result;
+		final float[]			source = this.content;
+		final float[]			target;
+		float	val;
+		
+		switch (dir) {
+			case ByColumns	:
+				result = new FloatRealMatrix(numberOfRows(), 1);
+				target = result.content;
+				
+				for(int y = 0; y < numberOfRows(); y++) {
+					val = source[y * numberOfColumns() + 0];
+					for(int x = 0; x < numberOfColumns(); x++) {
+						if (source[y * numberOfColumns() + x] > val) {
+							val = source[y * numberOfColumns() + x]; 
+						}
+					}
+					target[y] = val;
+				}
+				break;
+			case ByRows		:
+				result = new FloatRealMatrix(1, numberOfColumns()); 
+				target = result.content;
+				
+				for(int x = 0; x < numberOfColumns(); x++) {
+					val = source[x + 0];
+					for(int y = 0; y < numberOfRows(); y++) {
+						if (source[y * numberOfColumns() + x] > val) {
+							val = source[y * numberOfColumns() + x]; 
+						}
+					}
+					target[x] = val;
+				}
+				break;
+			case Total		:
+				result = new FloatRealMatrix(1, 2); 
+				target = result.content;
+				
+				val = source[0];
+				for(int y = 0; y < numberOfRows(); y++) {
+					for(int x = 0; x < numberOfColumns(); x++) {
+						if (source[y * numberOfColumns() + x] > val) {
+							val = source[y * numberOfColumns() + x]; 
+						}
+					}
+				}
+				target[0] = val;
+				break;
+			default:
+				throw new UnsupportedOperationException("Aggregate direction ["+dir+"] is not supported yet");
+		}
+		return result;
+	}
+
+	private Matrix aggregateMin(final AggregateDirection dir) {
+		final FloatRealMatrix	result;
+		final float[]			source = this.content;
+		final float[]			target;
+		float	val;
+		
+		switch (dir) {
+			case ByColumns	:
+				result = new FloatRealMatrix(numberOfRows(), 1);
+				target = result.content;
+				
+				for(int y = 0; y < numberOfRows(); y++) {
+					val = source[y * numberOfColumns() + 0];
+					for(int x = 0; x < numberOfColumns(); x++) {
+						if (source[y * numberOfColumns() + x] < val) {
+							val = source[y * numberOfColumns() + x]; 
+						}
+					}
+					target[y] = val;
+				}
+				break;
+			case ByRows		:
+				result = new FloatRealMatrix(1, numberOfColumns()); 
+				target = result.content;
+				
+				for(int x = 0; x < numberOfColumns(); x++) {
+					val = source[x + 0];
+					for(int y = 0; y < numberOfRows(); y++) {
+						if (source[y * numberOfColumns() + x] < val) {
+							val = source[y * numberOfColumns() + x]; 
+						}
+					}
+					target[x] = val;
+				}
+				break;
+			case Total		:
+				result = new FloatRealMatrix(1, 2); 
+				target = result.content;
+				
+				val = source[0];
+				for(int y = 0; y < numberOfRows(); y++) {
+					for(int x = 0; x < numberOfColumns(); x++) {
+						if (source[y * numberOfColumns() + x] < val) {
+							val = source[y * numberOfColumns() + x]; 
+						}
+					}
+				}
+				target[0] = val;
+				break;
+			default:
+				throw new UnsupportedOperationException("Aggregate direction ["+dir+"] is not supported yet");
+		}
+		return result;
+	}
+
+	private Matrix aggregateSum(final AggregateDirection dir) {
+		final FloatRealMatrix	result;
+		final float[]			source = this.content;
+		final float[]			target;
+		float	val;
+		
+		switch (dir) {
+			case ByColumns	:
+				result = new FloatRealMatrix(numberOfRows(), 1);
+				target = result.content;
+				
+				for(int y = 0; y < numberOfRows(); y++) {
+					val = 0;
+					for(int x = 0; x < numberOfColumns(); x++) {
+						val += source[y * numberOfColumns() + x];
+					}
+					target[y] = val;
+				}
+				break;
+			case ByRows		:
+				result = new FloatRealMatrix(1, numberOfColumns()); 
+				target = result.content;
+				
+				for(int x = 0; x < numberOfColumns(); x++) {
+					val = 0;
+					for(int y = 0; y < numberOfRows(); y++) {
+						val += source[y * numberOfColumns() + x];
+					}
+					target[x] = val;
+				}
+				break;
+			case Total		:
+				result = new FloatRealMatrix(1, 2); 
+				target = result.content;
+				
+				val = 0;
+				for(int y = 0; y < numberOfRows(); y++) {
+					for(int x = 0; x < numberOfColumns(); x++) {
+						val += source[y * numberOfColumns() + x];
+					}
+				}
+				target[0] = val;
+				break;
+			default:
+				throw new UnsupportedOperationException("Aggregate direction ["+dir+"] is not supported yet");
+		}
+		return result;
 	}
 }
