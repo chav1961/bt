@@ -419,11 +419,25 @@ public class FloatRealMatrix implements Matrix {
 				case COMPLEX_FLOAT	:
 					break;
 				case REAL_DOUBLE	:
-					break;
+					final DoubleRealMatrix	drm = new DoubleRealMatrix(numberOfRows(), numberOfColumns());
+					final float[]			sourceD = this.content;
+					final double[]			targetD = drm.extractDoubles();
+					
+					for(int index = 0, maxIndex = targetD.length; index < maxIndex; index++) {
+						targetD[index] = sourceD[index];
+					}
+					return drm;
 				case REAL_FLOAT		:
 					return this;
 				case REAL_INT		:
-					break;
+					final IntRealMatrix		irm = new IntRealMatrix(numberOfRows(), numberOfColumns());
+					final float[]			sourceI = this.content;
+					final int[]				targetI = irm.extractInts();
+					
+					for(int index = 0, maxIndex = targetI.length; index < maxIndex; index++) {
+						targetI[index] = (int) sourceI[index];
+					}
+					return irm;
 				case REAL_LONG		:
 					break;
 				default:
