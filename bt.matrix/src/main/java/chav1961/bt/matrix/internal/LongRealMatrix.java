@@ -3,6 +3,7 @@ package chav1961.bt.matrix.internal;
 import java.util.Arrays;
 
 import chav1961.purelib.basic.Utils;
+import chav1961.purelib.basic.exceptions.EnvironmentException;
 import chav1961.purelib.matrix.interfaces.Matrix;
 
 public class LongRealMatrix implements Matrix {
@@ -23,6 +24,14 @@ public class LongRealMatrix implements Matrix {
 			this.cols = columns;
 			this.content = new long[rows * columns];
 		}
+	}
+	
+	@Override
+	public Object clone() throws CloneNotSupportedException {
+		final LongRealMatrix	result = new LongRealMatrix(rows, cols);
+		
+		System.arraycopy(this.content, 0, result.content, 0, result.content.length);
+		return result;
 	}
 	
 	@Override
@@ -195,9 +204,14 @@ public class LongRealMatrix implements Matrix {
 			int				where = 0;
 			
 			ensureCompleted();
-			for(int y = 0; y < maxY; y++) {
+loop:		for(int y = 0; y < maxY; y++) {
 				for(int x = 0; x < maxX; x++) {
-					result[(y0 + y)*numberOfColumns() + (x0 + x)] = (int)content[where++];
+					if (where >= content.length) {
+						break loop;
+					}
+					else {
+						result[(y0 + y)*numberOfColumns() + (x0 + x)] = (long)content[where++];
+					}
 				}
 			}
 			return this;
@@ -232,9 +246,14 @@ public class LongRealMatrix implements Matrix {
 			int				where = 0;
 			
 			ensureCompleted();
-			for(int y = 0; y < maxY; y++) {
+loop:		for(int y = 0; y < maxY; y++) {
 				for(int x = 0; x < maxX; x++) {
-					result[(y0 + y)*numberOfColumns() + (x0 + x)] = (int)content[where++];
+					if (where >= content.length) {
+						break loop;
+					}
+					else {
+						result[(y0 + y)*numberOfColumns() + (x0 + x)] = (long)content[where++];
+					}
 				}
 			}
 			return this;
@@ -262,9 +281,14 @@ public class LongRealMatrix implements Matrix {
 			int				where = 0;
 			
 			ensureCompleted();
-			for(int y = 0; y < maxY; y++) {
+loop:		for(int y = 0; y < maxY; y++) {
 				for(int x = 0; x < maxX; x++) {
-					result[(y0 + y)*numberOfColumns() + (x0 + x)] = (int)content[where++];
+					if (where >= content.length) {
+						break loop;
+					}
+					else {
+						result[(y0 + y)*numberOfColumns() + (x0 + x)] = (long)content[where++];
+					}
 				}
 			}
 			return this;
@@ -292,9 +316,14 @@ public class LongRealMatrix implements Matrix {
 			int				where = 0;
 			
 			ensureCompleted();
-			for(int y = 0; y < maxY; y++) {
+loop:		for(int y = 0; y < maxY; y++) {
 				for(int x = 0; x < maxX; x++) {
-					result[(y0 + y)*numberOfColumns() + (x0 + x)] = (int)content[where++];
+					if (where >= content.length) {
+						break loop;
+					}
+					else {
+						result[(y0 + y)*numberOfColumns() + (x0 + x)] = (long)content[where++];
+					}
 				}
 			}
 			return this;
@@ -409,15 +438,20 @@ public class LongRealMatrix implements Matrix {
 		if (type == null) {
 			throw new NullPointerException("Cast type can't be null");
 		}
-		else if (type == this.getType()) {
-			return this;
-		}
 		else {
 			switch (type) {
 				case COMPLEX_DOUBLE	:
 					break;
 				case COMPLEX_FLOAT	:
-					break;
+					final FloatComplexMatrix	fcm = new FloatComplexMatrix(numberOfRows(), numberOfColumns());
+					final long[]				sourceCF = this.content;
+					final float[]				targetCF = fcm.extractFloats();
+					
+					for(int index = 0, maxIndex = targetCF.length; index < maxIndex; index++) {
+						targetCF[2 * index] = (long)sourceCF[index];
+						targetCF[2 * index + 1] = 0;
+					}
+					return fcm;
 				case REAL_DOUBLE	:
 					final DoubleRealMatrix	drm = new DoubleRealMatrix(numberOfRows(), numberOfColumns());
 					final long[]			sourceD = this.content;
@@ -437,11 +471,18 @@ public class LongRealMatrix implements Matrix {
 					}
 					return frm;
 				case REAL_INT		:
-					break;
+					final IntRealMatrix		irm = new IntRealMatrix(numberOfRows(), numberOfColumns());
+					final long[]			sourceI = this.content;
+					final int[]				targetI = irm.extractInts();
+					
+					for(int index = 0, maxIndex = targetI.length; index < maxIndex; index++) {
+						targetI[index] = (int)sourceI[index];
+					}
+					return irm;
 				case REAL_LONG		:
-					break;
+					return this;
 				default:
-					break;
+					throw new UnsupportedOperationException("Matrix type ["+type+"] is not supported yet");
 			}
 			// TODO Auto-generated method stub
 			return null;
@@ -1644,7 +1685,7 @@ public class LongRealMatrix implements Matrix {
 	}
 
 	@Override
-	public Matrix aggregate(AggregateDirection dir, AggregateType aggType) {
+	public Matrix aggregate(final AggregateDirection dir, final AggregateType aggType) {
 		if (dir == null) {
 			throw new NullPointerException("Aggregate direction can't be null");
 		}

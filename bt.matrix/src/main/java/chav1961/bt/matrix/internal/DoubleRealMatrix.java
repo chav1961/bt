@@ -3,6 +3,7 @@ package chav1961.bt.matrix.internal;
 import java.util.Arrays;
 
 import chav1961.purelib.basic.Utils;
+import chav1961.purelib.basic.exceptions.EnvironmentException;
 import chav1961.purelib.matrix.interfaces.Matrix;
 
 public class DoubleRealMatrix implements Matrix {
@@ -23,6 +24,14 @@ public class DoubleRealMatrix implements Matrix {
 			this.cols = columns;
 			this.content = new double[rows * columns];
 		}
+	}
+	
+	@Override
+	public Object clone() throws CloneNotSupportedException {
+		final DoubleRealMatrix	result = new DoubleRealMatrix(rows, cols);
+		
+		System.arraycopy(this.content, 0, result.content, 0, result.content.length);
+		return result;
 	}
 	
 	@Override
@@ -195,9 +204,14 @@ public class DoubleRealMatrix implements Matrix {
 			int				where = 0;
 			
 			ensureCompleted();
-			for(int y = 0; y < maxY; y++) {
+loop:		for(int y = 0; y < maxY; y++) {
 				for(int x = 0; x < maxX; x++) {
-					result[(y0 + y)*numberOfColumns() + (x0 + x)] = (double)content[where++];
+					if (where >= content.length) {
+						break loop;
+					}
+					else {
+						result[(y0 + y)*numberOfColumns() + (x0 + x)] = (double)content[where++];
+					}
 				}
 			}
 			return this;
@@ -225,9 +239,14 @@ public class DoubleRealMatrix implements Matrix {
 			int				where = 0;
 			
 			ensureCompleted();
-			for(int y = 0; y < maxY; y++) {
+loop:		for(int y = 0; y < maxY; y++) {
 				for(int x = 0; x < maxX; x++) {
-					result[(y0 + y)*numberOfColumns() + (x0 + x)] = (double)content[where++];
+					if (where >= content.length) {
+						break loop;
+					}
+					else {
+						result[(y0 + y)*numberOfColumns() + (x0 + x)] = (double)content[where++];
+					}
 				}
 			}
 			return this;
@@ -255,9 +274,14 @@ public class DoubleRealMatrix implements Matrix {
 			int				where = 0;
 			
 			ensureCompleted();
-			for(int y = 0; y < maxY; y++) {
+loop:		for(int y = 0; y < maxY; y++) {
 				for(int x = 0; x < maxX; x++) {
-					result[(y0 + y)*numberOfColumns() + (x0 + x)] = (double)content[where++];
+					if (where >= content.length) {
+						break loop;
+					}
+					else {
+						result[(y0 + y)*numberOfColumns() + (x0 + x)] = (double)content[where++];
+					}
 				}
 			}
 			return this;
@@ -292,9 +316,14 @@ public class DoubleRealMatrix implements Matrix {
 			int				where = 0;
 			
 			ensureCompleted();
-			for(int y = 0; y < maxY; y++) {
+loop:		for(int y = 0; y < maxY; y++) {
 				for(int x = 0; x < maxX; x++) {
-					result[(y0 + y)*numberOfColumns() + (x0 + x)] = (double)content[where++];
+					if (where >= content.length) {
+						break loop;
+					}
+					else {
+						result[(y0 + y)*numberOfColumns() + (x0 + x)] = (double)content[where++];
+					}
 				}
 			}
 			return this;
@@ -409,17 +438,22 @@ public class DoubleRealMatrix implements Matrix {
 		if (type == null) {
 			throw new NullPointerException("Cast type can't be null");
 		}
-		else if (type == this.getType()) {
-			return this;
-		}
 		else {
 			switch (type) {
 				case COMPLEX_DOUBLE	:
 					break;
 				case COMPLEX_FLOAT	:
-					break;
+					final FloatComplexMatrix	fcm = new FloatComplexMatrix(numberOfRows(), numberOfColumns());
+					final double[]				sourceCF = this.content;
+					final float[]				targetCF = fcm.extractFloats();
+					
+					for(int index = 0, maxIndex = targetCF.length; index < maxIndex; index++) {
+						targetCF[2 * index] = (float)sourceCF[index];
+						targetCF[2 * index + 1] = 0;
+					}
+					return fcm;
 				case REAL_DOUBLE	:
-					break;
+					return this;
 				case REAL_FLOAT		:
 					final FloatRealMatrix	frm = new FloatRealMatrix(numberOfRows(), numberOfColumns());
 					final double[]			sourceF = this.content;
@@ -430,18 +464,25 @@ public class DoubleRealMatrix implements Matrix {
 					}
 					return frm;
 				case REAL_INT		:
-					final IntRealMatrix	irm = new IntRealMatrix(numberOfRows(), numberOfColumns());
-					final double[]		sourceI = this.content;
-					final float[]		targetI = irm.extractFloats();
+					final IntRealMatrix		irm = new IntRealMatrix(numberOfRows(), numberOfColumns());
+					final double[]			sourceI = this.content;
+					final float[]			targetI = irm.extractFloats();
 					
 					for(int index = 0, maxIndex = targetI.length; index < maxIndex; index++) {
 						targetI[index] = (int)sourceI[index];
 					}
 					return irm;
 				case REAL_LONG		:
-					break;
+					final LongRealMatrix	lrm = new LongRealMatrix(numberOfRows(), numberOfColumns());
+					final double[]			sourceL = this.content;
+					final long[]			targetL = lrm.extractLongs();
+					
+					for(int index = 0, maxIndex = targetL.length; index < maxIndex; index++) {
+						targetL[index] = (long)sourceL[index];
+					}
+					return lrm;
 				default:
-					break;
+					throw new UnsupportedOperationException("Matrix type ["+type+"] is not supported yet");
 			}
 			// TODO Auto-generated method stub
 			return null;
@@ -1685,7 +1726,7 @@ public class DoubleRealMatrix implements Matrix {
 	}
 
 	@Override
-	public Matrix aggregate(AggregateDirection dir, AggregateType aggType) {
+	public Matrix aggregate(final AggregateDirection dir, final AggregateType aggType) {
 		if (dir == null) {
 			throw new NullPointerException("Aggregate direction can't be null");
 		}

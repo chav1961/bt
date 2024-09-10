@@ -3,6 +3,7 @@ package chav1961.bt.matrix.internal;
 import java.util.Arrays;
 
 import chav1961.purelib.basic.Utils;
+import chav1961.purelib.basic.exceptions.EnvironmentException;
 import chav1961.purelib.matrix.interfaces.Matrix;
 
 public class FloatRealMatrix implements Matrix {
@@ -23,6 +24,14 @@ public class FloatRealMatrix implements Matrix {
 			this.cols = columns;
 			this.content = new float[rows * columns];
 		}
+	}
+	
+	@Override
+	public Object clone() throws CloneNotSupportedException {
+		final FloatRealMatrix	result = new FloatRealMatrix(rows, cols);
+		
+		System.arraycopy(this.content, 0, result.content, 0, result.content.length);
+		return result;
 	}
 	
 	@Override
@@ -195,9 +204,14 @@ public class FloatRealMatrix implements Matrix {
 			int				where = 0;
 			
 			ensureCompleted();
-			for(int y = 0; y < maxY; y++) {
+loop:		for(int y = 0; y < maxY; y++) {
 				for(int x = 0; x < maxX; x++) {
-					result[(y0 + y)*numberOfColumns() + (x0 + x)] = (float)content[where++];
+					if (where >= content.length) {
+						break loop;
+					}
+					else {
+						result[(y0 + y)*numberOfColumns() + (x0 + x)] = (float)content[where++];
+					}
 				}
 			}
 			return this;
@@ -225,9 +239,14 @@ public class FloatRealMatrix implements Matrix {
 			int				where = 0;
 			
 			ensureCompleted();
-			for(int y = 0; y < maxY; y++) {
+loop:		for(int y = 0; y < maxY; y++) {
 				for(int x = 0; x < maxX; x++) {
-					result[(y0 + y)*numberOfColumns() + (x0 + x)] = (float)content[where++];
+					if (where >= content.length) {
+						break loop;
+					}
+					else {
+						result[(y0 + y)*numberOfColumns() + (x0 + x)] = (float)content[where++];
+					}
 				}
 			}
 			return this;
@@ -262,9 +281,14 @@ public class FloatRealMatrix implements Matrix {
 			int				where = 0;
 			
 			ensureCompleted();
-			for(int y = 0; y < maxY; y++) {
+loop:		for(int y = 0; y < maxY; y++) {
 				for(int x = 0; x < maxX; x++) {
-					result[(y0 + y)*numberOfColumns() + (x0 + x)] = content[where++];
+					if (where >= content.length) {
+						break loop;
+					}
+					else {
+						result[(y0 + y)*numberOfColumns() + (x0 + x)] = (float)content[where++];
+					}
 				}
 			}
 			return this;
@@ -292,9 +316,14 @@ public class FloatRealMatrix implements Matrix {
 			int				where = 0;
 			
 			ensureCompleted();
-			for(int y = 0; y < maxY; y++) {
+loop:		for(int y = 0; y < maxY; y++) {
 				for(int x = 0; x < maxX; x++) {
-					result[(y0 + y)*numberOfColumns() + (x0 + x)] = (float)content[where++];
+					if (where >= content.length) {
+						break loop;
+					}
+					else {
+						result[(y0 + y)*numberOfColumns() + (x0 + x)] = (float)content[where++];
+					}
 				}
 			}
 			return this;
@@ -409,15 +438,20 @@ public class FloatRealMatrix implements Matrix {
 		if (type == null) {
 			throw new NullPointerException("Cast type can't be null");
 		}
-		else if (type == this.getType()) {
-			return this;
-		}
 		else {
 			switch (type) {
 				case COMPLEX_DOUBLE	:
 					break;
 				case COMPLEX_FLOAT	:
-					break;
+					final FloatComplexMatrix	fcm = new FloatComplexMatrix(numberOfRows(), numberOfColumns());
+					final float[]				sourceCF = this.content;
+					final float[]				targetCF = fcm.extractFloats();
+					
+					for(int index = 0, maxIndex = targetCF.length; index < maxIndex; index++) {
+						targetCF[2 * index] = (float)sourceCF[index];
+						targetCF[2 * index + 1] = 0;
+					}
+					return fcm;
 				case REAL_DOUBLE	:
 					final DoubleRealMatrix	drm = new DoubleRealMatrix(numberOfRows(), numberOfColumns());
 					final float[]			sourceD = this.content;
@@ -441,7 +475,7 @@ public class FloatRealMatrix implements Matrix {
 				case REAL_LONG		:
 					break;
 				default:
-					break;
+					throw new UnsupportedOperationException("Matrix type ["+type+"] is not supported yet");
 			}
 			// TODO Auto-generated method stub
 			return null;
@@ -1685,7 +1719,7 @@ public class FloatRealMatrix implements Matrix {
 	}
 
 	@Override
-	public Matrix aggregate(AggregateDirection dir, AggregateType aggType) {
+	public Matrix aggregate(final AggregateDirection dir, final AggregateType aggType) {
 		if (dir == null) {
 			throw new NullPointerException("Aggregate direction can't be null");
 		}
