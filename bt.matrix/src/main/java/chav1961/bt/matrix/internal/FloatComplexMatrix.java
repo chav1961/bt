@@ -1133,8 +1133,9 @@ loop:		for(int y = 0; y < maxY; y++) {
 			final float[]				source = this.content;
 			final float[]				target = result.content;
 			
-			for(int index = 0, maxIndex = Math.min(content.length, target.length); index < maxIndex; index++) {
-				target[index] = source[index] * content[index]; 
+			for(int index = 0, maxIndex = Math.min(content.length, target.length) / 2; index < maxIndex; index++) {
+				target[2 * index] = source[2 * index] * content[2 * index] - source[2 * index + 1] * content[2 * index + 1]; 
+				target[2 * index + 1] = source[2 * index + 1] * content[2 * index] + source[2 * index] * content[2 * index + 1]; 
 			}
 			result.completed = false;
 			return result;
@@ -1151,8 +1152,9 @@ loop:		for(int y = 0; y < maxY; y++) {
 			final float[]				source = this.content;
 			final float[]				target = result.content;
 			
-			for(int index = 0, maxIndex = Math.min(content.length, target.length); index < maxIndex; index++) {
-				target[index] = source[index] * content[index]; 
+			for(int index = 0, maxIndex = Math.min(content.length, target.length) / 2; index < maxIndex; index++) {
+				target[2 * index] = source[2 * index] * content[2 * index] - source[2 * index + 1] * content[2 * index + 1]; 
+				target[2 * index + 1] = source[2 * index + 1] * content[2 * index] + source[2 * index] * content[2 * index + 1]; 
 			}
 			result.completed = false;
 			return result;
@@ -1169,8 +1171,9 @@ loop:		for(int y = 0; y < maxY; y++) {
 			final float[]				source = this.content;
 			final float[]				target = result.content;
 			
-			for(int index = 0, maxIndex = Math.min(content.length, target.length); index < maxIndex; index++) {
-				target[index] = source[index] * content[index]; 
+			for(int index = 0, maxIndex = Math.min(content.length, target.length) / 2; index < maxIndex; index++) {
+				target[2 * index] = source[2 * index] * content[2 * index] - source[2 * index + 1] * content[2 * index + 1]; 
+				target[2 * index + 1] = source[2 * index + 1] * content[2 * index] + source[2 * index] * content[2 * index + 1]; 
 			}
 			result.completed = false;
 			return result;
@@ -1187,8 +1190,9 @@ loop:		for(int y = 0; y < maxY; y++) {
 			final float[]				source = this.content;
 			final float[]				target = result.content;
 			
-			for(int index = 0, maxIndex = Math.min(content.length, target.length); index < maxIndex; index++) {
-				target[index] = (float) (source[index] * content[index]); 
+			for(int index = 0, maxIndex = Math.min(content.length, target.length) / 2; index < maxIndex; index++) {
+				target[2 * index] = (float) (source[2 * index] * content[2 * index] - source[2 * index + 1] * content[2 * index + 1]); 
+				target[2 * index + 1] = (float) (source[2 * index + 1] * content[2 * index] + source[2 * index] * content[2 * index + 1]); 
 			}
 			result.completed = false;
 			return result;
@@ -1230,8 +1234,13 @@ loop:		for(int y = 0; y < maxY; y++) {
 			final float[]				source = this.content;
 			final float[]				target = result.content;
 			
-			for(int index = 0, maxIndex = Math.min(content.length, target.length); index < maxIndex; index++) {
-				target[index] = source[index] / content[index]; 
+			for(int index = 0, maxIndex = Math.min(content.length, target.length) / 2; index < maxIndex; index++) {
+				final float	real = content[2 * index];
+				final float	image = content[2 * index + 1];
+				final float	quad = 1 / (real * real + image * image);
+				
+				target[2 * index] = (source[2 * index] * real + source[2 * index + 1] * image) * quad;  
+				target[2 * index + 1] =  (source[2 * index] * image - source[2 * index + 1] * real) * quad; 
 			}
 			result.completed = false;
 			return result;
@@ -1248,8 +1257,13 @@ loop:		for(int y = 0; y < maxY; y++) {
 			final float[]				source = this.content;
 			final float[]				target = result.content;
 			
-			for(int index = 0, maxIndex = Math.min(content.length, target.length); index < maxIndex; index++) {
-				target[index] = source[index] / content[index]; 
+			for(int index = 0, maxIndex = Math.min(content.length, target.length) / 2; index < maxIndex; index++) {
+				final float	real = content[2 * index];
+				final float	image = content[2 * index + 1];
+				final float	quad = 1 / (real * real + image * image);
+				
+				target[2 * index] = (source[2 * index] * real + source[2 * index + 1] * image) * quad;  
+				target[2 * index + 1] =  (source[2 * index] * image - source[2 * index + 1] * real) * quad; 
 			}
 			result.completed = false;
 			return result;
@@ -1266,8 +1280,13 @@ loop:		for(int y = 0; y < maxY; y++) {
 			final float[]				source = this.content;
 			final float[]				target = result.content;
 			
-			for(int index = 0, maxIndex = Math.min(content.length, target.length); index < maxIndex; index++) {
-				target[index] = source[index] / content[index]; 
+			for(int index = 0, maxIndex = Math.min(content.length, target.length) / 2; index < maxIndex; index++) {
+				final float	real = content[2 * index];
+				final float	image = content[2 * index + 1];
+				final float	quad = 1 / (real * real + image * image);
+				
+				target[2 * index] = (source[2 * index] * real + source[2 * index + 1] * image) * quad;  
+				target[2 * index + 1] =  (source[2 * index] * image - source[2 * index + 1] * real) * quad; 
 			}
 			result.completed = false;
 			return result;
@@ -1284,8 +1303,13 @@ loop:		for(int y = 0; y < maxY; y++) {
 			final float[]				source = this.content;
 			final float[]				target = result.content;
 			
-			for(int index = 0, maxIndex = Math.min(content.length, target.length); index < maxIndex; index++) {
-				target[index] = (float) (source[index] / content[index]); 
+			for(int index = 0, maxIndex = Math.min(content.length, target.length) / 2; index < maxIndex; index++) {
+				final double	real = content[2 * index];
+				final double	image = content[2 * index + 1];
+				final double	quad = 1 / (real * real + image * image);
+				
+				target[2 * index] = (float) ((source[2 * index] * real + source[2 * index + 1] * image) * quad);  
+				target[2 * index + 1] =  (float) ((source[2 * index] * image - source[2 * index + 1] * real) * quad); 
 			}
 			result.completed = false;
 			return result;
@@ -1327,8 +1351,13 @@ loop:		for(int y = 0; y < maxY; y++) {
 			final float[]				source = this.content;
 			final float[]				target = result.content;
 			
-			for(int index = 0, maxIndex = Math.min(content.length, target.length); index < maxIndex; index++) {
-				target[index] = content[index] / source[index]; 
+			for(int index = 0, maxIndex = Math.min(content.length, target.length) / 2; index < maxIndex; index++) {
+				final float	real = source[2 * index];
+				final float	image = source[2 * index + 1];
+				final float	quad = 1 / (real * real + image * image);
+				
+				target[2 * index] = (content[2 * index] * real + content[2 * index + 1] * image) * quad;  
+				target[2 * index + 1] =  (content[2 * index] * image - content[2 * index + 1] * real) * quad; 
 			}
 			result.completed = false;
 			return result;
@@ -1345,8 +1374,13 @@ loop:		for(int y = 0; y < maxY; y++) {
 			final float[]				source = this.content;
 			final float[]				target = result.content;
 			
-			for(int index = 0, maxIndex = Math.min(content.length, target.length); index < maxIndex; index++) {
-				target[index] = content[index] / source[index]; 
+			for(int index = 0, maxIndex = Math.min(content.length, target.length) / 2; index < maxIndex; index++) {
+				final float	real = source[2 * index];
+				final float	image = source[2 * index + 1];
+				final float	quad = 1 / (real * real + image * image);
+				
+				target[2 * index] = (content[2 * index] * real + content[2 * index + 1] * image) * quad;  
+				target[2 * index + 1] =  (content[2 * index] * image - content[2 * index + 1] * real) * quad; 
 			}
 			result.completed = false;
 			return result;
@@ -1363,8 +1397,13 @@ loop:		for(int y = 0; y < maxY; y++) {
 			final float[]				source = this.content;
 			final float[]				target = result.content;
 			
-			for(int index = 0, maxIndex = Math.min(content.length, target.length); index < maxIndex; index++) {
-				target[index] = content[index] / source[index]; 
+			for(int index = 0, maxIndex = Math.min(content.length, target.length) / 2; index < maxIndex; index++) {
+				final float	real = source[2 * index];
+				final float	image = source[2 * index + 1];
+				final float	quad = 1 / (real * real + image * image);
+				
+				target[2 * index] = (content[2 * index] * real + content[2 * index + 1] * image) * quad;  
+				target[2 * index + 1] =  (content[2 * index] * image - content[2 * index + 1] * real) * quad; 
 			}
 			result.completed = false;
 			return result;
@@ -1381,8 +1420,13 @@ loop:		for(int y = 0; y < maxY; y++) {
 			final float[]				source = this.content;
 			final float[]				target = result.content;
 			
-			for(int index = 0, maxIndex = Math.min(content.length, target.length); index < maxIndex; index++) {
-				target[index] = (float) (content[index] / source[index]); 
+			for(int index = 0, maxIndex = Math.min(content.length, target.length) / 2; index < maxIndex; index++) {
+				final double	real = source[2 * index];
+				final double	image = source[2 * index + 1];
+				final double	quad = 1 / (real * real + image * image);
+				
+				target[2 * index] = (float) ((content[2 * index] * real + content[2 * index + 1] * image) * quad);  
+				target[2 * index + 1] =  (float) ((content[2 * index] * image - content[2 * index + 1] * real) * quad); 
 			}
 			result.completed = false;
 			return result;
@@ -1560,14 +1604,14 @@ loop:		for(int y = 0; y < maxY; y++) {
 			final float[]				source = this.content.clone();
 			final int					colSize = numberOfColumns();
 			
-			for(int index = 0; index < colSize; index += 2) {	// Make identity matrix
+			for(int index = 0; index < colSize; index++) {	// Make identity matrix
 				identity[2 * index * (colSize + 1)] = 1;
 				identity[2 * index * (colSize + 1) + 1] = 0;
 			}
 			for(int y = 0; y < colSize; y++) {
 				final float	real = source[2 * (y * (colSize + 1))];	// Take diagonal element.
 				final float	image = source[2 * (y * (colSize + 1)) + 1];
-				final float	quad = real * real + image * image;
+				final float	quad = 1 / (real * real + image * image);
 				
 				if (quad == 0) {
 					throw new IllegalArgumentException("Matrix has zero element on diagonal");
@@ -1652,50 +1696,65 @@ loop:		for(int y = 0; y < maxY; y++) {
 		}
 	}
 
-
 	@Override
 	public Number det() {
+		throw new IllegalStateException("Attempt to get real determinant for complex matrix");
+	}
+
+	@Override
+	public Number track() {
+		throw new IllegalStateException("Attempt to get real track for complex matrix");
+	}
+	
+	@Override
+	public Number[] det2() {
 		if (numberOfRows() != numberOfColumns()) {
 			throw new IllegalStateException("Only square matrix can be inverted");
 		}
 		else {
 			final float[]	source = this.content.clone();
 			final int		colSize = numberOfColumns();
-			float			det = 1;
+			float			detReal = 1, detImage = 0;
 
 			ensureCompleted();
 			for(int y = 0; y < colSize; y++) {
-				final float	k = source[y * (colSize + 1)];		// Take diagonal element.
-				final float	invK = 1 / k;
+				final float	real = source[2 * (y * (colSize + 1))];		// Take diagonal element.
+				final float	image = source[2 * (y * (colSize + 1)) + 1];		// Take diagonal element.
+				final float	quad = 1 / (real * real + image * image);
 
-				det *= k;
+				detReal = detReal * real - detImage * image;
+				detImage = detReal * image + detImage * real;
 				for(int x = 0; x < colSize; x++) {		// divide all line by diagonal element
-					source[y * colSize + x] *= invK;
+					source[2 * (y * colSize + x)] = (source[2 * (y * colSize + x)] * real + source[2 * (y * colSize + x) + 1] * image) * quad;
+					source[2 * (y * colSize + x) + 1] =  (source[2 * (y * colSize + x)] * image - source[2 * (y * colSize + x) + 1] * real) * quad;
 				}
 				for(int i = y + 1; i < colSize; i++) {	// subtract current line from all lines below to make zeroes at the current column
-					final float	k2 = source[i * colSize + y];
+					final float	real2 = source[2 * (i * colSize + y)];
+					final float	image2 = source[2 * (i * colSize + y) + 1];
 					
 					for(int x = 0; x < colSize; x++) {
-						source[i * colSize + x] -= k2 * source[y * colSize + x];
+						source[2 * (i * colSize + x)] -= source[2 * (y * colSize + x)] * real2 - source[2 * (y * colSize + x) + 1] * image2;
+						source[2 * (i * colSize + x) + 1] -= source[2 * (y * colSize + x) + 1] * real2 + source[2 * (y * colSize + x)] * image2;
 					}
 				}
 			}
-			return det;
+			return new Number[] {detReal, detImage};
 		}
 	}
 
 	@Override
-	public Number track() {
+	public Number[] track2() {
 		ensureCompleted();
 		final float[]	source = this.content;
 		final int		colSize = numberOfColumns();
-		float	sum = 0;
+		float	real = 0, image = 0;
 		
 		ensureCompleted();
 		for(int index = 0; index < colSize; index++) {	// Calculate diagonal sum
-			sum += source[index * (colSize + 1)];
+			real += source[2 * (index * (colSize + 1))];
+			image += source[2 * (index * (colSize + 1)) + 1];
 		}
-		return sum;
+		return new Number[] {real, image};
 	}
 
 	@Override

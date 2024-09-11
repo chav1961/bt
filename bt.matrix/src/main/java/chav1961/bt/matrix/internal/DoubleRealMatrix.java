@@ -1797,6 +1797,16 @@ loop:		for(int y = 0; y < maxY; y++) {
 	}
 
 	@Override
+	public Number[] det2() {
+		return new Number[] {det(), 0};
+	}
+
+	@Override
+	public Number[] track2() {
+		return new Number[] {track(), 0};
+	}
+	
+	@Override
 	public String toHumanReadableString() {
 		final StringBuilder	sb = new StringBuilder();
 		
