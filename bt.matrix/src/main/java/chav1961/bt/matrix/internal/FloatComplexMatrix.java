@@ -5,6 +5,8 @@ import java.util.Arrays;
 import chav1961.purelib.basic.Utils;
 import chav1961.purelib.basic.exceptions.EnvironmentException;
 import chav1961.purelib.matrix.interfaces.Matrix;
+import chav1961.purelib.matrix.interfaces.Matrix.ApplyBit;
+import chav1961.purelib.matrix.interfaces.Matrix.Piece;
 
 public class FloatComplexMatrix implements Matrix {
 	private final int		rows;
@@ -1776,6 +1778,16 @@ loop:		for(int y = 0; y < maxY; y++) {
 		return this;
 	}
 
+	@Override
+	public Matrix apply(final ApplyBit callback) {
+		return apply(getTotalPiece(),callback);
+	}
+	
+	@Override
+	public Matrix apply(final Piece piece, final ApplyBit callback) {
+		throw new UnsupportedOperationException("Bit apply can't be used for non-bit matrices");
+	}
+	
 	@Override
 	public Matrix apply(final ApplyInt callback) {
 		return apply(getTotalPiece(),callback);

@@ -1764,6 +1764,16 @@ loop:		for(int y = 0; y < maxY; y++) {
 	}
 
 	@Override
+	public Matrix apply(final ApplyBit callback) {
+		return apply(getTotalPiece(),callback);
+	}
+	
+	@Override
+	public Matrix apply(final Piece piece, final ApplyBit callback) {
+		throw new UnsupportedOperationException("Bit apply can't be used for non-bit matrices");
+	}
+	
+	@Override
 	public Matrix apply(final ApplyInt callback) {
 		return apply(getTotalPiece(),callback);
 	}

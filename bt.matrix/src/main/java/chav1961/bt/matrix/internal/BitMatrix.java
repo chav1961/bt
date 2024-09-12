@@ -3,18 +3,17 @@ package chav1961.bt.matrix.internal;
 import java.util.Arrays;
 
 import chav1961.purelib.basic.Utils;
-import chav1961.purelib.basic.exceptions.EnvironmentException;
 import chav1961.purelib.matrix.interfaces.Matrix;
 import chav1961.purelib.matrix.interfaces.Matrix.ApplyBit;
 import chav1961.purelib.matrix.interfaces.Matrix.Piece;
 
-public class LongRealMatrix implements Matrix {
+public class BitMatrix implements Matrix {
 	private final int		rows;
 	private final int		cols;
 	private final long[]	content;
 	private boolean			completed = true;
 
-	public LongRealMatrix(final int rows, final int columns) {
+	public BitMatrix(final int rows, final int columns) {
 		if (rows <= 0) {
 			throw new IllegalArgumentException("Rows ["+rows+"] must be greater than 0");
 		}
@@ -24,13 +23,13 @@ public class LongRealMatrix implements Matrix {
 		else {
 			this.rows = rows;
 			this.cols = columns;
-			this.content = new long[rows * columns];
+			this.content = new long[(rows * columns + 63)/64];
 		}
 	}
 	
 	@Override
 	public Object clone() throws CloneNotSupportedException {
-		final LongRealMatrix	result = new LongRealMatrix(rows, cols);
+		final BitMatrix	result = new BitMatrix(rows, cols);
 		
 		System.arraycopy(this.content, 0, result.content, 0, result.content.length);
 		return result;
@@ -42,7 +41,7 @@ public class LongRealMatrix implements Matrix {
 
 	@Override
 	public Type getType() {
-		return Type.REAL_LONG;
+		return Type.BIT;
 	}
 
 	@Override
@@ -68,7 +67,7 @@ public class LongRealMatrix implements Matrix {
 		}
 		else {
 			ensureCompleted();
-			return Arrays.equals(content, another.extractLongs());
+			return Arrays.equals(content, fromIntArray(another.extractInts()));
 		}
 	}
 
@@ -93,7 +92,10 @@ public class LongRealMatrix implements Matrix {
 			ensureCompleted();
 			for(int y = 0; y < maxY; y++) {
 				for(int x = 0; x < maxX; x++) {
-					result[where++] = (int)source[(y0 + y)*numberOfColumns() + (x0 + x)];
+					final int 	index = (y0 + y)*numberOfColumns() + (x0 + x);
+					final long 	value = source[index >> 6]; 
+					
+					result[where++] = (value & (1 << (index & 0x3F))) != 0 ? 1 : 0;
 				}
 			}
 			return result;
@@ -102,8 +104,7 @@ public class LongRealMatrix implements Matrix {
 
 	@Override
 	public long[] extractLongs() {
-		ensureCompleted();
-		return content;
+		return extractLongs(getTotalPiece());
 	}
 
 	@Override
@@ -122,7 +123,10 @@ public class LongRealMatrix implements Matrix {
 			ensureCompleted();
 			for(int y = 0; y < maxY; y++) {
 				for(int x = 0; x < maxX; x++) {
-					result[where++] = (long)source[(y0 + y)*numberOfColumns() + (x0 + x)];
+					final int 	index = (y0 + y)*numberOfColumns() + (x0 + x);
+					final long 	value = source[index >> 6]; 
+					
+					result[where++] = (value & (1 << (index & 0x3F))) != 0 ? 1L : 0L;
 				}
 			}
 			return result;
@@ -150,7 +154,10 @@ public class LongRealMatrix implements Matrix {
 			ensureCompleted();
 			for(int y = 0; y < maxY; y++) {
 				for(int x = 0; x < maxX; x++) {
-					result[where++] = (float)source[(y0 + y)*numberOfColumns() + (x0 + x)];
+					final int 	index = (y0 + y)*numberOfColumns() + (x0 + x);
+					final long 	value = source[index >> 6]; 
+					
+					result[where++] = (value & (1 << (index & 0x3F))) != 0 ? 1.0f : 0.0f;
 				}
 			}
 			return result;
@@ -178,7 +185,10 @@ public class LongRealMatrix implements Matrix {
 			ensureCompleted();
 			for(int y = 0; y < maxY; y++) {
 				for(int x = 0; x < maxX; x++) {
-					result[where++] = (double)source[(y0 + y)*numberOfColumns() + (x0 + x)];
+					final int 	index = (y0 + y)*numberOfColumns() + (x0 + x);
+					final long 	value = source[index >> 6]; 
+					
+					result[where++] = (value & (1 << (index & 0x3F))) != 0 ? 1.0d : 0.0d;
 				}
 			}
 			return result;
@@ -212,7 +222,14 @@ loop:		for(int y = 0; y < maxY; y++) {
 						break loop;
 					}
 					else {
-						result[(y0 + y)*numberOfColumns() + (x0 + x)] = (long)content[where++];
+						final int	index = (y0 + y)*numberOfColumns() + (x0 + x);
+						
+						if (content[where++] != 0) {
+							result[index >> 6] |= ~(1L << (index & 0x3F));
+						}
+						else {
+							result[index >> 6] &= (1L << (index & 0x3F));
+						}
 					}
 				}
 			}
@@ -222,14 +239,7 @@ loop:		for(int y = 0; y < maxY; y++) {
 
 	@Override
 	public Matrix assign(final long... content) {
-		if (content == null) {
-			throw new NullPointerException("Content can't be null");
-		}
-		else {
-			ensureCompleted();
-			System.arraycopy(content, 0, this.content, 0, Math.min(content.length, this.content.length));
-			return this;
-		}		
+		return assign(getTotalPiece(), content);
 	}
 
 	@Override
@@ -254,7 +264,14 @@ loop:		for(int y = 0; y < maxY; y++) {
 						break loop;
 					}
 					else {
-						result[(y0 + y)*numberOfColumns() + (x0 + x)] = (long)content[where++];
+						final int	index = (y0 + y)*numberOfColumns() + (x0 + x);
+						
+						if (content[where++] != 0) {
+							result[index >> 6] |= ~(1L << (index & 0x3F));
+						}
+						else {
+							result[index >> 6] &= (1L << (index & 0x3F));
+						}
 					}
 				}
 			}
@@ -289,7 +306,14 @@ loop:		for(int y = 0; y < maxY; y++) {
 						break loop;
 					}
 					else {
-						result[(y0 + y)*numberOfColumns() + (x0 + x)] = (long)content[where++];
+						final int	index = (y0 + y)*numberOfColumns() + (x0 + x);
+						
+						if (content[where++] != 0) {
+							result[index >> 6] |= ~(1L << (index & 0x3F));
+						}
+						else {
+							result[index >> 6] &= (1L << (index & 0x3F));
+						}
 					}
 				}
 			}
@@ -324,7 +348,14 @@ loop:		for(int y = 0; y < maxY; y++) {
 						break loop;
 					}
 					else {
-						result[(y0 + y)*numberOfColumns() + (x0 + x)] = (long)content[where++];
+						final int	index = (y0 + y)*numberOfColumns() + (x0 + x);
+						
+						if (content[where++] != 0) {
+							result[index >> 6] |= ~(1L << (index & 0x3F));
+						}
+						else {
+							result[index >> 6] &= (1L << (index & 0x3F));
+						}
 					}
 				}
 			}
@@ -338,7 +369,12 @@ loop:		for(int y = 0; y < maxY; y++) {
 			throw new NullPointerException("Content matrix can't be null");
 		}
 		else if (content.getType() == this.getType()) {
-			return assign(content.extractLongs());
+			if (content instanceof BitMatrix) {
+				return assign(content.extractInts());
+			}
+			else {
+				return assign(content.extractInts());
+			}
 		}
 		else {
 			return assign(getTotalPiece(), content);
@@ -354,7 +390,7 @@ loop:		for(int y = 0; y < maxY; y++) {
 			throw new NullPointerException("Content matrix can't be null");
 		}
 		else {
-			return assign(piece, content.extractLongs());
+			return assign(piece, content.extractInts());
 		}
 	}
 
@@ -370,8 +406,7 @@ loop:		for(int y = 0; y < maxY; y++) {
 
 	@Override
 	public Matrix fill(final long value) {
-		Utils.fillArray(content, value);
-		return this;
+		return fill(getTotalPiece(), value);
 	}
 
 	@Override
@@ -388,7 +423,14 @@ loop:		for(int y = 0; y < maxY; y++) {
 			ensureCompleted();
 			for(int y = 0; y < maxY; y++) {
 				for(int x = 0; x < maxX; x++) {
-					result[(y0 + y)*numberOfColumns() + (x0 + x)] = value;
+					final int	index = (y0 + y)*numberOfColumns() + (x0 + x);
+
+					if (value != 0) {
+						result[index >> 6] |= (1L << (index & 0x3F));
+					}
+					else {
+						result[index >> 6] &= ~(1L << (index & 0x3F));
+					}
 				}
 			}
 			return this;
@@ -422,7 +464,7 @@ loop:		for(int y = 0; y < maxY; y++) {
 
 	@Override
 	public Matrix fill(final Piece piece, final double value) {
-		return fill(piece, (int)value);
+		return fill(piece, (long)value);
 	}
 
 	@Override
@@ -446,17 +488,17 @@ loop:		for(int y = 0; y < maxY; y++) {
 					break;
 				case COMPLEX_FLOAT	:
 					final FloatComplexMatrix	fcm = new FloatComplexMatrix(numberOfRows(), numberOfColumns());
-					final long[]				sourceCF = this.content;
+					final int[]					sourceCF = this.content;
 					final float[]				targetCF = fcm.extractFloats();
 					
 					for(int index = 0, maxIndex = targetCF.length; index < maxIndex; index++) {
-						targetCF[2 * index] = (long)sourceCF[index];
+						targetCF[2 * index] = (int)sourceCF[index];
 						targetCF[2 * index + 1] = 0;
 					}
 					return fcm;
 				case REAL_DOUBLE	:
 					final DoubleRealMatrix	drm = new DoubleRealMatrix(numberOfRows(), numberOfColumns());
-					final long[]			sourceD = this.content;
+					final int[]				sourceD = this.content;
 					final double[]			targetD = drm.extractDoubles();
 					
 					for(int index = 0, maxIndex = targetD.length; index < maxIndex; index++) {
@@ -465,7 +507,7 @@ loop:		for(int y = 0; y < maxY; y++) {
 					return drm;
 				case REAL_FLOAT		:
 					final FloatRealMatrix	frm = new FloatRealMatrix(numberOfRows(), numberOfColumns());
-					final long[]			sourceF = this.content;
+					final int[]				sourceF = this.content;
 					final float[]			targetF = frm.extractFloats();
 					
 					for(int index = 0, maxIndex = targetF.length; index < maxIndex; index++) {
@@ -473,16 +515,16 @@ loop:		for(int y = 0; y < maxY; y++) {
 					}
 					return frm;
 				case REAL_INT		:
-					final IntRealMatrix		irm = new IntRealMatrix(numberOfRows(), numberOfColumns());
-					final long[]			sourceI = this.content;
-					final int[]				targetI = irm.extractInts();
-					
-					for(int index = 0, maxIndex = targetI.length; index < maxIndex; index++) {
-						targetI[index] = (int)sourceI[index];
-					}
-					return irm;
-				case REAL_LONG		:
 					return this;
+				case REAL_LONG		:
+					final LongRealMatrix	lrm = new LongRealMatrix(numberOfRows(), numberOfColumns());
+					final int[]				sourceL = this.content;
+					final long[]			targetL = lrm.extractLongs();
+					
+					for(int index = 0, maxIndex = targetL.length; index < maxIndex; index++) {
+						targetL[index] = (long)sourceL[index];
+					}
+					return lrm;
 				default:
 					throw new UnsupportedOperationException("Matrix type ["+type+"] is not supported yet");
 			}
@@ -497,15 +539,7 @@ loop:		for(int y = 0; y < maxY; y++) {
 			throw new NullPointerException("Content to add can't be null");
 		}
 		else {
-			final LongRealMatrix	result = new LongRealMatrix(numberOfRows(), numberOfColumns());
-			final long[]			target = result.content;
-			
-			System.arraycopy(this.content, 0, target, 0, target.length);
-			for(int index = 0, maxIndex = Math.min(content.length, target.length); index < maxIndex; index++) {
-				target[index] += content[index]; 
-			}
-			result.completed = false;
-			return result;
+			return or(this.content, fromIntArray(content));
 		}
 	}
 
@@ -515,15 +549,7 @@ loop:		for(int y = 0; y < maxY; y++) {
 			throw new NullPointerException("Content to add can't be null");
 		}
 		else {
-			final LongRealMatrix	result = new LongRealMatrix(numberOfRows(), numberOfColumns());
-			final long[]			target = result.content;
-			
-			System.arraycopy(this.content, 0, target, 0, target.length);
-			for(int index = 0, maxIndex = Math.min(content.length, target.length); index < maxIndex; index++) {
-				target[index] += content[index]; 
-			}
-			result.completed = false;
-			return result;
+			return or(this.content, fromLongArray(content));
 		}
 	}
 
@@ -533,15 +559,7 @@ loop:		for(int y = 0; y < maxY; y++) {
 			throw new NullPointerException("Content to add can't be null");
 		}
 		else {
-			final LongRealMatrix	result = new LongRealMatrix(numberOfRows(), numberOfColumns());
-			final long[]			target = result.content;
-			
-			System.arraycopy(this.content, 0, target, 0, target.length);
-			for(int index = 0, maxIndex = Math.min(content.length, target.length); index < maxIndex; index++) {
-				target[index] += content[index]; 
-			}
-			result.completed = false;
-			return result;
+			return or(this.content, fromFloatArray(content));
 		}
 	}
 
@@ -551,15 +569,7 @@ loop:		for(int y = 0; y < maxY; y++) {
 			throw new NullPointerException("Content to add can't be null");
 		}
 		else {
-			final LongRealMatrix	result = new LongRealMatrix(numberOfRows(), numberOfColumns());
-			final long[]			target = result.content;
-			
-			System.arraycopy(this.content, 0, target, 0, target.length);
-			for(int index = 0, maxIndex = Math.min(content.length, target.length); index < maxIndex; index++) {
-				target[index] += content[index]; 
-			}
-			result.completed = false;
-			return result;
+			return or(this.content, fromDoubleArray(content));
 		}
 	}
 
@@ -580,6 +590,13 @@ loop:		for(int y = 0; y < maxY; y++) {
 					return add(content.extractInts());
 				case REAL_LONG		:
 					return add(content.extractLongs());
+				case BIT			:
+					if (content instanceof BitMatrix) {
+						return or(this.content, ((BitMatrix)content).content);
+					}
+					else {
+						return add(content.extractInts());
+					}
 				default : 
 					throw new UnsupportedOperationException("Matrix type ["+content.getType()+"] is not supported yet");
 			}
@@ -588,25 +605,31 @@ loop:		for(int y = 0; y < maxY; y++) {
 
 	@Override
 	public Matrix addValue(final int value) {
-		final LongRealMatrix	result = new LongRealMatrix(numberOfRows(), numberOfColumns());
-		final long[]			source = this.content;
-		final long[]			target = result.content;
-		
-		for(int index = 0, maxIndex = target.length; index < maxIndex; index++) {
-			target[index] = source[index] + value; 
+		return addValue((long)value);
+	}
+
+	@Override
+	public Matrix addValue(final long value) {
+		final BitMatrix	result = new BitMatrix(numberOfRows(), numberOfColumns());
+		final long[]	target = result.content;
+
+		if (value != 0) {
+			for(int index = 0, maxIndex = target.length; index < maxIndex; index++) {
+				target[index >> 6] |= (1L << (index & 0x3F));
+			}
+		}
+		else {
+			for(int index = 0, maxIndex = target.length; index < maxIndex; index++) {
+				target[index >> 6] &= ~(1L << (index & 0x3F));
+			}
 		}
 		result.completed = false;
 		return result;
 	}
 
 	@Override
-	public Matrix addValue(final long value) {
-		return addValue((int)value);
-	}
-
-	@Override
 	public Matrix addValue(final float value) {
-		return addValue((int)value);
+		return addValue((long)value);
 	}
 
 	@Override
@@ -616,7 +639,7 @@ loop:		for(int y = 0; y < maxY; y++) {
 
 	@Override
 	public Matrix addValue(final double value) {
-		return addValue((int)value);
+		return addValue((long)value);
 	}
 
 	@Override
@@ -630,15 +653,7 @@ loop:		for(int y = 0; y < maxY; y++) {
 			throw new NullPointerException("Content to subtract can't be null");
 		}
 		else {
-			final LongRealMatrix	result = new LongRealMatrix(numberOfRows(), numberOfColumns());
-			final long[]			target = result.content;
-			
-			System.arraycopy(this.content, 0, target, 0, target.length);
-			for(int index = 0, maxIndex = Math.min(content.length, target.length); index < maxIndex; index++) {
-				target[index] -= content[index]; 
-			}
-			result.completed = false;
-			return result;
+			return minus(this.content, fromIntArray(content));
 		}
 	}
 
@@ -648,15 +663,7 @@ loop:		for(int y = 0; y < maxY; y++) {
 			throw new NullPointerException("Content to subtract can't be null");
 		}
 		else {
-			final LongRealMatrix	result = new LongRealMatrix(numberOfRows(), numberOfColumns());
-			final long[]			target = result.content;
-			
-			System.arraycopy(this.content, 0, target, 0, target.length);
-			for(int index = 0, maxIndex = Math.min(content.length, target.length); index < maxIndex; index++) {
-				target[index] -= content[index]; 
-			}
-			result.completed = false;
-			return result;
+			return minus(this.content, fromLongArray(content));
 		}
 	}
 
@@ -666,15 +673,7 @@ loop:		for(int y = 0; y < maxY; y++) {
 			throw new NullPointerException("Content to subtract can't be null");
 		}
 		else {
-			final LongRealMatrix	result = new LongRealMatrix(numberOfRows(), numberOfColumns());
-			final long[]			target = result.content;
-			
-			System.arraycopy(this.content, 0, target, 0, target.length);
-			for(int index = 0, maxIndex = Math.min(content.length, target.length); index < maxIndex; index++) {
-				target[index] -= content[index]; 
-			}
-			result.completed = false;
-			return result;
+			return minus(this.content, fromFloatArray(content));
 		}
 	}
 
@@ -684,15 +683,7 @@ loop:		for(int y = 0; y < maxY; y++) {
 			throw new NullPointerException("Content to subtract can't be null");
 		}
 		else {
-			final LongRealMatrix	result = new LongRealMatrix(numberOfRows(), numberOfColumns());
-			final long[]			target = result.content;
-			
-			System.arraycopy(this.content, 0, target, 0, target.length);
-			for(int index = 0, maxIndex = Math.min(content.length, target.length); index < maxIndex; index++) {
-				target[index] -= content[index]; 
-			}
-			result.completed = false;
-			return result;
+			return minus(this.content, fromDoubleArray(content));
 		}
 	}
 
@@ -713,6 +704,13 @@ loop:		for(int y = 0; y < maxY; y++) {
 					return subtract(content.extractInts());
 				case REAL_LONG		:
 					return subtract(content.extractLongs());
+				case BIT			:
+					if (content instanceof BitMatrix) {
+						return minus(this.content, ((BitMatrix)content).content);
+					}
+					else {
+						return subtract(content.extractInts());
+					}
 				default : 
 					throw new UnsupportedOperationException("Matrix type ["+content.getType()+"] is not supported yet");
 			}
@@ -726,12 +724,13 @@ loop:		for(int y = 0; y < maxY; y++) {
 
 	@Override
 	public Matrix subtractValue(final long value) {
-		final LongRealMatrix	result = new LongRealMatrix(numberOfRows(), numberOfColumns());
-		final long[]			source = this.content;
-		final long[]			target = result.content;
+		final BitMatrix	result = new BitMatrix(numberOfRows(), numberOfColumns());
+		final long[]		target = result.content;
 		
-		for(int index = 0, maxIndex = target.length; index < maxIndex; index++) {
-			target[index] = source[index] - value; 
+		if (value != 0) {
+			for(int index = 0, maxIndex = target.length; index < maxIndex; index++) {
+				target[index >> 6] &= ~(1L << (index & 0x3F));
+			}
 		}
 		result.completed = false;
 		return result;
@@ -763,15 +762,7 @@ loop:		for(int y = 0; y < maxY; y++) {
 			throw new NullPointerException("Content to subtract can't be null");
 		}
 		else {
-			final LongRealMatrix	result = new LongRealMatrix(numberOfRows(), numberOfColumns());
-			final long[]			target = result.content;
-			
-			System.arraycopy(this.content, 0, target, 0, target.length);
-			for(int index = 0, maxIndex = Math.min(content.length, target.length); index < maxIndex; index++) {
-				target[index] = content[index] - target[index]; 
-			}
-			result.completed = false;
-			return result;
+			return minus(fromIntArray(content), this.content);
 		}
 	}
 
@@ -781,15 +772,7 @@ loop:		for(int y = 0; y < maxY; y++) {
 			throw new NullPointerException("Content to subtract can't be null");
 		}
 		else {
-			final LongRealMatrix	result = new LongRealMatrix(numberOfRows(), numberOfColumns());
-			final long[]			target = result.content;
-			
-			System.arraycopy(this.content, 0, target, 0, target.length);
-			for(int index = 0, maxIndex = Math.min(content.length, target.length); index < maxIndex; index++) {
-				target[index] = (int) (content[index] - target[index]); 
-			}
-			result.completed = false;
-			return result;
+			return minus(fromLongArray(content), this.content);
 		}
 	}
 
@@ -799,15 +782,7 @@ loop:		for(int y = 0; y < maxY; y++) {
 			throw new NullPointerException("Content to subtract can't be null");
 		}
 		else {
-			final LongRealMatrix	result = new LongRealMatrix(numberOfRows(), numberOfColumns());
-			final long[]			target = result.content;
-			
-			System.arraycopy(this.content, 0, target, 0, target.length);
-			for(int index = 0, maxIndex = Math.min(content.length, target.length); index < maxIndex; index++) {
-				target[index] = (int) (content[index] - target[index]); 
-			}
-			result.completed = false;
-			return result;
+			return minus(fromFloatArray(content), this.content);
 		}
 	}
 
@@ -817,15 +792,7 @@ loop:		for(int y = 0; y < maxY; y++) {
 			throw new NullPointerException("Content to subtract can't be null");
 		}
 		else {
-			final LongRealMatrix	result = new LongRealMatrix(numberOfRows(), numberOfColumns());
-			final long[]			target = result.content;
-			
-			System.arraycopy(this.content, 0, target, 0, target.length);
-			for(int index = 0, maxIndex = Math.min(content.length, target.length); index < maxIndex; index++) {
-				target[index] = (int)(content[index] - target[index]); 
-			}
-			result.completed = false;
-			return result;
+			return minus(fromDoubleArray(content), this.content);
 		}
 	}
 
@@ -846,6 +813,13 @@ loop:		for(int y = 0; y < maxY; y++) {
 					return subtractFrom(content.extractInts());
 				case REAL_LONG		:
 					return subtractFrom(content.extractLongs());
+				case BIT			:
+					if (content instanceof BitMatrix) {
+						return minus(((BitMatrix)content).content, this.content);
+					}
+					else {
+						return subtractFrom(content.extractInts());
+					}
 				default : 
 					throw new UnsupportedOperationException("Matrix type ["+content.getType()+"] is not supported yet");
 			}
@@ -854,14 +828,9 @@ loop:		for(int y = 0; y < maxY; y++) {
 
 	@Override
 	public Matrix subtractFromValue(final int value) {
-		return subtractFromValue((long)value);
-	}
-
-	@Override
-	public Matrix subtractFromValue(final long value) {
-		final LongRealMatrix	result = new LongRealMatrix(numberOfRows(), numberOfColumns());
-		final long[]			source = this.content;
-		final long[]			target = result.content;
+		final BitMatrix	result = new BitMatrix(numberOfRows(), numberOfColumns());
+		final int[]			source = this.content;
+		final int[]			target = result.content;
 		
 		for(int index = 0, maxIndex = target.length; index < maxIndex; index++) {
 			target[index] = value - source[index]; 
@@ -871,8 +840,13 @@ loop:		for(int y = 0; y < maxY; y++) {
 	}
 
 	@Override
+	public Matrix subtractFromValue(final long value) {
+		return subtractFromValue((int)value);
+	}
+
+	@Override
 	public Matrix subtractFromValue(final float value) {
-		return subtractFromValue((long)value);
+		return subtractFromValue((int)value);
 	}
 
 	@Override
@@ -882,7 +856,7 @@ loop:		for(int y = 0; y < maxY; y++) {
 
 	@Override
 	public Matrix subtractFromValue(final double value) {
-		return subtractFromValue((long)value);
+		return subtractFromValue((int)value);
 	}
 
 	@Override
@@ -899,11 +873,11 @@ loop:		for(int y = 0; y < maxY; y++) {
 			throw new IllegalArgumentException("Content number of rows ["+content.numberOfRows()+"] differ from current number of columns ["+this.numberOfColumns()+"]");
 		}
 		else {
-			final LongRealMatrix	result = new LongRealMatrix(this.numberOfRows(), content.numberOfColumns());
-			final long[]			source = this.content;
-			final long[]			target = result.content;
-			final int				maxY = this.numberOfRows(), maxX = content.numberOfColumns();
-			final int				colSize = this.numberOfColumns(), maxK = content.numberOfRows(); 
+			final BitMatrix	result = new BitMatrix(this.numberOfRows(), content.numberOfColumns());
+			final int[]			source = this.content;
+			final int[]			target = result.content;
+			final int			maxY = this.numberOfRows(), maxX = content.numberOfColumns();
+			final int			colSize = this.numberOfColumns(), maxK = content.numberOfRows(); 
 			
 			switch (content.getType()) {
 				case COMPLEX_DOUBLE : case COMPLEX_FLOAT :
@@ -913,7 +887,7 @@ loop:		for(int y = 0; y < maxY; y++) {
 
 					for(int y = 0; y < maxY; y++) {
 						for(int x = 0; x < maxX; x++) {
-							long	sum = 0;
+							int	sum = 0;
 							
 							for(int k = 0; k < maxK; k++) {
 								sum += source[y * colSize + k] * tempD[k * maxX + x];
@@ -927,7 +901,7 @@ loop:		for(int y = 0; y < maxY; y++) {
 
 					for(int y = 0; y < maxY; y++) {
 						for(int x = 0; x < maxX; x++) {
-							long	sum = 0;
+							int	sum = 0;
 							
 							for(int k = 0; k < maxK; k++) {
 								sum += source[y * colSize + k] * tempF[k * maxX + x];
@@ -941,7 +915,7 @@ loop:		for(int y = 0; y < maxY; y++) {
 
 					for(int y = 0; y < maxY; y++) {
 						for(int x = 0; x < maxX; x++) {
-							long	sum = 0;
+							int	sum = 0;
 							
 							for(int k = 0; k < maxK; k++) {
 								sum += source[y * colSize + k] * tempI[k * maxX + x];
@@ -955,7 +929,7 @@ loop:		for(int y = 0; y < maxY; y++) {
 
 					for(int y = 0; y < maxY; y++) {
 						for(int x = 0; x < maxX; x++) {
-							long	sum = 0;
+							int	sum = 0;
 							
 							for(int k = 0; k < maxK; k++) {
 								sum += source[y * colSize + k] * tempL[k * maxX + x];
@@ -981,11 +955,11 @@ loop:		for(int y = 0; y < maxY; y++) {
 			throw new IllegalArgumentException("Content number of columns ["+content.numberOfColumns()+"] differ from current number of rows ["+this.numberOfRows()+"]");
 		}
 		else {
-			final LongRealMatrix	result = new LongRealMatrix(content.numberOfRows(), this.numberOfColumns());
-			final long[]			source = this.content;
-			final long[]			target = result.content;
-			final int			 	maxY = content.numberOfRows(), maxX = this.numberOfColumns();
-			final int				colSize = content.numberOfColumns(), maxK = this.numberOfRows(); 
+			final BitMatrix	result = new BitMatrix(content.numberOfRows(), this.numberOfColumns());
+			final int[]			source = this.content;
+			final int[]			target = result.content;
+			final int			maxY = content.numberOfRows(), maxX = this.numberOfColumns();
+			final int			colSize = content.numberOfColumns(), maxK = this.numberOfRows(); 
 			
 			switch (content.getType()) {
 				case COMPLEX_DOUBLE : case COMPLEX_FLOAT :
@@ -995,7 +969,7 @@ loop:		for(int y = 0; y < maxY; y++) {
 
 					for(int y = 0; y < maxY; y++) {
 						for(int x = 0; x < maxX; x++) {
-							long	sum = 0;
+							int	sum = 0;
 							
 							for(int k = 0; k < maxK; k++) {
 								sum += tempD[y * colSize + k] * source[k * maxX + x];
@@ -1009,7 +983,7 @@ loop:		for(int y = 0; y < maxY; y++) {
 
 					for(int y = 0; y < maxY; y++) {
 						for(int x = 0; x < maxX; x++) {
-							long	sum = 0;
+							int	sum = 0;
 							
 							for(int k = 0; k < maxK; k++) {
 								sum += tempF[y * colSize + k] * source[k * maxX + x];
@@ -1023,7 +997,7 @@ loop:		for(int y = 0; y < maxY; y++) {
 
 					for(int y = 0; y < maxY; y++) {
 						for(int x = 0; x < maxX; x++) {
-							long	sum = 0;
+							int	sum = 0;
 							
 							for(int k = 0; k < maxK; k++) {
 								sum += tempI[y * colSize + k] * source[k * maxX + x];
@@ -1037,7 +1011,7 @@ loop:		for(int y = 0; y < maxY; y++) {
 
 					for(int y = 0; y < maxY; y++) {
 						for(int x = 0; x < maxX; x++) {
-							long	sum = 0;
+							int	sum = 0;
 							
 							for(int k = 0; k < maxK; k++) {
 								sum += tempL[y * colSize + k] * source[k * maxX + x];
@@ -1056,14 +1030,9 @@ loop:		for(int y = 0; y < maxY; y++) {
 
 	@Override
 	public Matrix mulValue(final int value) {
-		return mulValue((long)value);
-	}
-
-	@Override
-	public Matrix mulValue(final long value) {
-		final LongRealMatrix	result = new LongRealMatrix(numberOfRows(), numberOfColumns());
-		final long[]			source = this.content;
-		final long[]			target = result.content;
+		final BitMatrix	result = new BitMatrix(numberOfRows(), numberOfColumns());
+		final int[]			source = this.content;
+		final int[]			target = result.content;
 		
 		for(int index = 0, maxIndex = target.length; index < maxIndex; index++) {
 			target[index] = source[index] * value; 
@@ -1071,10 +1040,15 @@ loop:		for(int y = 0; y < maxY; y++) {
 		result.completed = false;
 		return result;
 	}
+
+	@Override
+	public Matrix mulValue(final long value) {
+		return mulValue((int)value);
+	}
  
 	@Override
 	public Matrix mulValue(final float value) {
-		return mulValue((long)value);
+		return mulValue((int)value);
 	}
 
 	@Override
@@ -1084,7 +1058,7 @@ loop:		for(int y = 0; y < maxY; y++) {
 
 	@Override
 	public Matrix mulValue(final double value) {
-		return mulValue((long)value);
+		return mulValue((int)value);
 	}
 
 	@Override
@@ -1094,14 +1068,9 @@ loop:		for(int y = 0; y < maxY; y++) {
 
 	@Override
 	public Matrix divValue(final int value) {
-		return divValue((long)value);
-	}
-
-	@Override
-	public Matrix divValue(final long value) {
-		final LongRealMatrix	result = new LongRealMatrix(numberOfRows(), numberOfColumns());
-		final long[]			source = this.content;
-		final long[]			target = result.content;
+		final BitMatrix	result = new BitMatrix(numberOfRows(), numberOfColumns());
+		final int[]			source = this.content;
+		final int[]			target = result.content;
 		
 		for(int index = 0, maxIndex = target.length; index < maxIndex; index++) {
 			target[index] = source[index] / value; 
@@ -1111,8 +1080,13 @@ loop:		for(int y = 0; y < maxY; y++) {
 	}
 
 	@Override
+	public Matrix divValue(final long value) {
+		return divValue((int)value);
+	}
+
+	@Override
 	public Matrix divValue(final float value) {
-		return divValue((long)value);
+		return divValue((int)value);
 	}
 
 	@Override
@@ -1122,7 +1096,7 @@ loop:		for(int y = 0; y < maxY; y++) {
 
 	@Override
 	public Matrix divValue(final double value) {
-		return divValue((long)value);
+		return divValue((int)value);
 	}
 
 	@Override
@@ -1132,14 +1106,9 @@ loop:		for(int y = 0; y < maxY; y++) {
 
 	@Override
 	public Matrix divFromValue(final int value) {
-		return divFromValue((long)value);
-	}
-
-	@Override
-	public Matrix divFromValue(final long value) {
-		final LongRealMatrix	result = new LongRealMatrix(numberOfRows(), numberOfColumns());
-		final long[]			source = this.content;
-		final long[]			target = result.content;
+		final BitMatrix	result = new BitMatrix(numberOfRows(), numberOfColumns());
+		final int[]			source = this.content;
+		final int[]			target = result.content;
 		
 		for(int index = 0, maxIndex = target.length; index < maxIndex; index++) {
 			target[index] = value / source[index]; 
@@ -1149,8 +1118,13 @@ loop:		for(int y = 0; y < maxY; y++) {
 	}
 
 	@Override
+	public Matrix divFromValue(final long value) {
+		return divFromValue((int)value);
+	}
+
+	@Override
 	public Matrix divFromValue(final float value) {
-		return divFromValue((long)value);
+		return divFromValue((int)value);
 	}
 
 	@Override
@@ -1160,7 +1134,7 @@ loop:		for(int y = 0; y < maxY; y++) {
 
 	@Override
 	public Matrix divFromValue(final double value) {
-		return divFromValue((long)value);
+		return divFromValue((int)value);
 	}
 
 	@Override
@@ -1174,15 +1148,7 @@ loop:		for(int y = 0; y < maxY; y++) {
 			throw new NullPointerException("Content to multiply can't be null");
 		}
 		else {
-			final LongRealMatrix	result = new LongRealMatrix(numberOfRows(), numberOfColumns());
-			final long[]			source = this.content;
-			final long[]			target = result.content;
-			
-			for(int index = 0, maxIndex = Math.min(content.length, target.length); index < maxIndex; index++) {
-				target[index] = source[index] * content[index]; 
-			}
-			result.completed = false;
-			return result;
+			return and(this.content, fromIntArray(content));
 		}
 	}
 
@@ -1192,15 +1158,7 @@ loop:		for(int y = 0; y < maxY; y++) {
 			throw new NullPointerException("Content to multiply can't be null");
 		}
 		else {
-			final LongRealMatrix	result = new LongRealMatrix(numberOfRows(), numberOfColumns());
-			final long[]			source = this.content;
-			final long[]			target = result.content;
-			
-			for(int index = 0, maxIndex = Math.min(content.length, target.length); index < maxIndex; index++) {
-				target[index] = (int) (source[index] * content[index]); 
-			}
-			result.completed = false;
-			return result;
+			return and(this.content, fromLongArray(content));
 		}
 	}
 
@@ -1210,15 +1168,7 @@ loop:		for(int y = 0; y < maxY; y++) {
 			throw new NullPointerException("Content to multiply can't be null");
 		}
 		else {
-			final LongRealMatrix	result = new LongRealMatrix(numberOfRows(), numberOfColumns());
-			final long[]			source = this.content;
-			final long[]			target = result.content;
-			
-			for(int index = 0, maxIndex = Math.min(content.length, target.length); index < maxIndex; index++) {
-				target[index] = (int) (source[index] * content[index]); 
-			}
-			result.completed = false;
-			return result;
+			return and(this.content, fromFloatArray(content));
 		}
 	}
 
@@ -1228,15 +1178,7 @@ loop:		for(int y = 0; y < maxY; y++) {
 			throw new NullPointerException("Content to multiply can't be null");
 		}
 		else {
-			final LongRealMatrix	result = new LongRealMatrix(numberOfRows(), numberOfColumns());
-			final long[]			source = this.content;
-			final long[]			target = result.content;
-			
-			for(int index = 0, maxIndex = Math.min(content.length, target.length); index < maxIndex; index++) {
-				target[index] = (int) (source[index] * content[index]); 
-			}
-			result.completed = false;
-			return result;
+			return and(this.content, fromDoubleArray(content));
 		}
 	}
 
@@ -1257,6 +1199,13 @@ loop:		for(int y = 0; y < maxY; y++) {
 					return mulHadamard(content.extractInts());
 				case REAL_LONG		:
 					return mulHadamard(content.extractLongs());
+				case BIT			:
+					if (content instanceof BitMatrix) {
+						return and(this.content, ((BitMatrix)content).content);
+					}
+					else {
+						return mulHadamard(content.extractInts());
+					}
 				default : 
 					throw new UnsupportedOperationException("Matrix type ["+content.getType()+"] is not supported yet");
 			}
@@ -1269,9 +1218,9 @@ loop:		for(int y = 0; y < maxY; y++) {
 			throw new NullPointerException("Content to multiply can't be null");
 		}
 		else {
-			final LongRealMatrix	result = new LongRealMatrix(numberOfRows(), numberOfColumns());
-			final long[]			source = this.content;
-			final long[]			target = result.content;
+			final BitMatrix	result = new BitMatrix(numberOfRows(), numberOfColumns());
+			final int[]			source = this.content;
+			final int[]			target = result.content;
 			
 			for(int index = 0, maxIndex = Math.min(content.length, target.length); index < maxIndex; index++) {
 				target[index] = source[index] / content[index]; 
@@ -1287,9 +1236,9 @@ loop:		for(int y = 0; y < maxY; y++) {
 			throw new NullPointerException("Content to multiply can't be null");
 		}
 		else {
-			final LongRealMatrix	result = new LongRealMatrix(numberOfRows(), numberOfColumns());
-			final long[]			source = this.content;
-			final long[]			target = result.content;
+			final BitMatrix	result = new BitMatrix(numberOfRows(), numberOfColumns());
+			final int[]			source = this.content;
+			final int[]			target = result.content;
 			
 			for(int index = 0, maxIndex = Math.min(content.length, target.length); index < maxIndex; index++) {
 				target[index] = (int) (source[index] / content[index]); 
@@ -1305,9 +1254,9 @@ loop:		for(int y = 0; y < maxY; y++) {
 			throw new NullPointerException("Content to multiply can't be null");
 		}
 		else {
-			final LongRealMatrix	result = new LongRealMatrix(numberOfRows(), numberOfColumns());
-			final long[]			source = this.content;
-			final long[]			target = result.content;
+			final BitMatrix	result = new BitMatrix(numberOfRows(), numberOfColumns());
+			final int[]			source = this.content;
+			final int[]			target = result.content;
 			
 			for(int index = 0, maxIndex = Math.min(content.length, target.length); index < maxIndex; index++) {
 				target[index] = (int) (source[index] / content[index]); 
@@ -1323,9 +1272,9 @@ loop:		for(int y = 0; y < maxY; y++) {
 			throw new NullPointerException("Content to multiply can't be null");
 		}
 		else {
-			final LongRealMatrix	result = new LongRealMatrix(numberOfRows(), numberOfColumns());
-			final long[]			source = this.content;
-			final long[]			target = result.content;
+			final BitMatrix	result = new BitMatrix(numberOfRows(), numberOfColumns());
+			final int[]			source = this.content;
+			final int[]			target = result.content;
 			
 			for(int index = 0, maxIndex = Math.min(content.length, target.length); index < maxIndex; index++) {
 				target[index] = (int) (source[index] / content[index]); 
@@ -1364,9 +1313,9 @@ loop:		for(int y = 0; y < maxY; y++) {
 			throw new NullPointerException("Content to multiply can't be null");
 		}
 		else {
-			final LongRealMatrix	result = new LongRealMatrix(numberOfRows(), numberOfColumns());
-			final long[]			source = this.content;
-			final long[]			target = result.content;
+			final BitMatrix	result = new BitMatrix(numberOfRows(), numberOfColumns());
+			final int[]			source = this.content;
+			final int[]			target = result.content;
 			
 			for(int index = 0, maxIndex = Math.min(content.length, target.length); index < maxIndex; index++) {
 				target[index] = content[index] / source[index]; 
@@ -1382,9 +1331,9 @@ loop:		for(int y = 0; y < maxY; y++) {
 			throw new NullPointerException("Content to multiply can't be null");
 		}
 		else {
-			final LongRealMatrix	result = new LongRealMatrix(numberOfRows(), numberOfColumns());
-			final long[]			source = this.content;
-			final long[]			target = result.content;
+			final BitMatrix	result = new BitMatrix(numberOfRows(), numberOfColumns());
+			final int[]			source = this.content;
+			final int[]			target = result.content;
 			
 			for(int index = 0, maxIndex = Math.min(content.length, target.length); index < maxIndex; index++) {
 				target[index] = (int) (content[index] / source[index]); 
@@ -1400,9 +1349,9 @@ loop:		for(int y = 0; y < maxY; y++) {
 			throw new NullPointerException("Content to multiply can't be null");
 		}
 		else {
-			final LongRealMatrix	result = new LongRealMatrix(numberOfRows(), numberOfColumns());
-			final long[]			source = this.content;
-			final long[]			target = result.content;
+			final BitMatrix	result = new BitMatrix(numberOfRows(), numberOfColumns());
+			final int[]			source = this.content;
+			final int[]			target = result.content;
 			
 			for(int index = 0, maxIndex = Math.min(content.length, target.length); index < maxIndex; index++) {
 				target[index] = (int) (content[index] / source[index]); 
@@ -1418,9 +1367,9 @@ loop:		for(int y = 0; y < maxY; y++) {
 			throw new NullPointerException("Content to multiply can't be null");
 		}
 		else {
-			final LongRealMatrix	result = new LongRealMatrix(numberOfRows(), numberOfColumns());
-			final long[]			source = this.content;
-			final long[]			target = result.content;
+			final BitMatrix	result = new BitMatrix(numberOfRows(), numberOfColumns());
+			final int[]			source = this.content;
+			final int[]			target = result.content;
 			
 			for(int index = 0, maxIndex = Math.min(content.length, target.length); index < maxIndex; index++) {
 				target[index] = (int) (content[index] / source[index]); 
@@ -1459,11 +1408,11 @@ loop:		for(int y = 0; y < maxY; y++) {
 			throw new NullPointerException("Matrix content can't be null");
 		}
 		else {
-			final LongRealMatrix	result = new LongRealMatrix(this.numberOfRows() * content.numberOfRows(), this.numberOfColumns() * content.numberOfColumns());
-			final long[]			source = this.content;
-			final long[]			target = result.content;
-			final int 				maxY1 = this.numberOfRows(), maxY2 = content.numberOfRows();
-			final int 				maxX1 = this.numberOfColumns(), maxX2 = content.numberOfColumns();
+			final BitMatrix	result = new BitMatrix(this.numberOfRows() * content.numberOfRows(), this.numberOfColumns() * content.numberOfColumns());
+			final int[]			source = this.content;
+			final int[]			target = result.content;
+			final int 			maxY1 = this.numberOfRows(), maxY2 = content.numberOfRows();
+			final int 			maxX1 = this.numberOfColumns(), maxX2 = content.numberOfColumns();
 			
 			switch (content.getType()) {
 				case COMPLEX_DOUBLE : case COMPLEX_FLOAT :
@@ -1473,7 +1422,7 @@ loop:		for(int y = 0; y < maxY; y++) {
 					
 					for (int y1 = 0; y1 < maxY1; y1++) {
 						for (int x1 = 0; x1 < maxX1; x1++) {
-							final long	k = source[y1 * maxX1 + x1];
+							final int	k = source[y1 * maxX1 + x1];
 							
 							if (k != 0) {
 								for (int y2 = 0; y2 < maxY2; y2++) {
@@ -1493,7 +1442,7 @@ loop:		for(int y = 0; y < maxY; y++) {
 					
 					for (int y1 = 0; y1 < maxY1; y1++) {
 						for (int x1 = 0; x1 < maxX1; x1++) {
-							final long	k = source[y1 * maxX1 + x1];
+							final int	k = source[y1 * maxX1 + x1];
 							
 							if (k != 0) {
 								for (int y2 = 0; y2 < maxY2; y2++) {
@@ -1513,7 +1462,7 @@ loop:		for(int y = 0; y < maxY; y++) {
 					
 					for (int y1 = 0; y1 < maxY1; y1++) {
 						for (int x1 = 0; x1 < maxX1; x1++) {
-							final long	k = source[y1 * maxX1 + x1];
+							final int	k = source[y1 * maxX1 + x1];
 							
 							if (k != 0) {
 								for (int y2 = 0; y2 < maxY2; y2++) {
@@ -1533,7 +1482,7 @@ loop:		for(int y = 0; y < maxY; y++) {
 					
 					for (int y1 = 0; y1 < maxY1; y1++) {
 						for (int x1 = 0; x1 < maxX1; x1++) {
-							final long	k = source[y1 * maxX1 + x1];
+							final int	k = source[y1 * maxX1 + x1];
 							
 							if (k != 0) {
 								for (int y2 = 0; y2 < maxY2; y2++) {
@@ -1562,11 +1511,11 @@ loop:		for(int y = 0; y < maxY; y++) {
 			throw new NullPointerException("Matrix content can't be null");
 		}
 		else {
-			final LongRealMatrix	result = new LongRealMatrix(this.numberOfRows() * content.numberOfRows(), this.numberOfColumns() * content.numberOfColumns());
-			final long[]			source = this.content;
-			final long[]			target = result.content;
-			final int 				maxY1 = content.numberOfRows(), maxY2 = this.numberOfRows();
-			final int 				maxX1 = content.numberOfColumns(), maxX2 = this.numberOfColumns();
+			final BitMatrix	result = new BitMatrix(this.numberOfRows() * content.numberOfRows(), this.numberOfColumns() * content.numberOfColumns());
+			final int[]			source = this.content;
+			final int[]			target = result.content;
+			final int 			maxY1 = content.numberOfRows(), maxY2 = this.numberOfRows();
+			final int 			maxX1 = content.numberOfColumns(), maxX2 = this.numberOfColumns();
 			
 			switch (content.getType()) {
 				case COMPLEX_DOUBLE : case COMPLEX_FLOAT :
@@ -1576,7 +1525,7 @@ loop:		for(int y = 0; y < maxY; y++) {
 					
 					for (int y1 = 0; y1 < maxY1; y1++) {
 						for (int x1 = 0; x1 < maxX1; x1++) {
-							final long	k = (int) tempD[y1 * maxX1 + x1];
+							final int	k = (int) tempD[y1 * maxX1 + x1];
 							
 							if (k != 0) {
 								for (int y2 = 0; y2 < maxY2; y2++) {
@@ -1596,7 +1545,7 @@ loop:		for(int y = 0; y < maxY; y++) {
 					
 					for (int y1 = 0; y1 < maxY1; y1++) {
 						for (int x1 = 0; x1 < maxX1; x1++) {
-							final long	k = (int) tempF[y1 * maxX1 + x1];
+							final int	k = (int) tempF[y1 * maxX1 + x1];
 							
 							if (k != 0) {
 								for (int y2 = 0; y2 < maxY2; y2++) {
@@ -1616,7 +1565,7 @@ loop:		for(int y = 0; y < maxY; y++) {
 					
 					for (int y1 = 0; y1 < maxY1; y1++) {
 						for (int x1 = 0; x1 < maxX1; x1++) {
-							final long	k = tempI[y1 * maxX1 + x1];
+							final int	k = tempI[y1 * maxX1 + x1];
 							
 							if (k != 0) {
 								for (int y2 = 0; y2 < maxY2; y2++) {
@@ -1636,7 +1585,7 @@ loop:		for(int y = 0; y < maxY; y++) {
 					
 					for (int y1 = 0; y1 < maxY1; y1++) {
 						for (int x1 = 0; x1 < maxX1; x1++) {
-							final long	k = (int) tempL[y1 * maxX1 + x1];
+							final int	k = (int) tempL[y1 * maxX1 + x1];
 							
 							if (k != 0) {
 								for (int y2 = 0; y2 < maxY2; y2++) {
@@ -1672,10 +1621,10 @@ loop:		for(int y = 0; y < maxY; y++) {
 	@Override
 	public Matrix transpose() {
 		ensureCompleted();
-		final LongRealMatrix	result = new LongRealMatrix(numberOfColumns(), numberOfRows());
-		final long[]			source = this.content;
-		final long[]			target = result.content;
-		final int				rows = numberOfRows(), cols = numberOfColumns();  
+		final BitMatrix	result = new BitMatrix(numberOfColumns(), numberOfRows());
+		final int[]			source = this.content;
+		final int[]			target = result.content;
+		final int			rows = numberOfRows(), cols = numberOfColumns();  
 		
 		for(int y = 0; y < rows; y++) {
 			for(int x = 0; x < cols; x++) {
@@ -1725,9 +1674,9 @@ loop:		for(int y = 0; y < maxY; y++) {
 	@Override
 	public Number track() {
 		ensureCompleted();
-		final long[]	source = this.content;
-		final int		colSize = numberOfColumns();
-		long			sum = 0;
+		final int[]	source = this.content;
+		final int	colSize = numberOfColumns();
+		int		sum = 0;
 		
 		ensureCompleted();
 		for(int index = 0; index < colSize; index++) {	// Calculate diagonal sum
@@ -1745,6 +1694,7 @@ loop:		for(int y = 0; y < maxY; y++) {
 	public Number[] track2() {
 		return new Number[] {track(), 0};
 	}
+	
 	
 	@Override
 	public String toHumanReadableString() {
@@ -1772,8 +1722,30 @@ loop:		for(int y = 0; y < maxY; y++) {
 	
 	@Override
 	public Matrix apply(final Piece piece, final ApplyBit callback) {
-		throw new UnsupportedOperationException("Bit apply can't be used for non-bit matrices");
+		if (piece == null) {
+			throw new NullPointerException("Piece can't be null");
+		}
+		else if (callback == null) {
+			throw new NullPointerException("Ccan't be null");
+		}
+		else {
+			final BitMatrix	result = new BitMatrix(numberOfRows(), numberOfColumns()); 
+			final int[]	source = this.content;
+			final int[]	target = result.content;
+			final int	x0 = piece.getLeft(), y0 = piece.getTop();
+			final int	maxX = piece.getWidth(), maxY = piece.getHeight();
+			
+			ensureCompleted();
+			for(int y = 0; y < maxY; y++) {
+				for(int x = 0; x < maxX; x++) {
+					target[(y0 + y)*numberOfColumns() + (x0 + x)] = callback.apply(y0 + y, x0 + x, (int)source[(y0 + y)*numberOfColumns() + (x0 + x)]);
+				}
+			}
+			result.completed = false;
+			return result;
+		}
 	}
+	
 	
 	@Override
 	public Matrix apply(final ApplyInt callback) {
@@ -1789,11 +1761,11 @@ loop:		for(int y = 0; y < maxY; y++) {
 			throw new NullPointerException("Ccan't be null");
 		}
 		else {
-			final LongRealMatrix	result = new LongRealMatrix(numberOfRows(), numberOfColumns()); 
-			final long[]	source = this.content;
-			final long[]	target = result.content;
-			final int		x0 = piece.getLeft(), y0 = piece.getTop();
-			final int		maxX = piece.getWidth(), maxY = piece.getHeight();
+			final BitMatrix	result = new BitMatrix(numberOfRows(), numberOfColumns()); 
+			final int[]	source = this.content;
+			final int[]	target = result.content;
+			final int	x0 = piece.getLeft(), y0 = piece.getTop();
+			final int	maxX = piece.getWidth(), maxY = piece.getHeight();
 			
 			ensureCompleted();
 			for(int y = 0; y < maxY; y++) {
@@ -1820,11 +1792,11 @@ loop:		for(int y = 0; y < maxY; y++) {
 			throw new NullPointerException("Ccan't be null");
 		}
 		else {
-			final LongRealMatrix	result = new LongRealMatrix(numberOfRows(), numberOfColumns()); 
-			final long[]	source = this.content;
-			final long[]	target = result.content;
-			final int		x0 = piece.getLeft(), y0 = piece.getTop();
-			final int		maxX = piece.getWidth(), maxY = piece.getHeight();
+			final BitMatrix	result = new BitMatrix(numberOfRows(), numberOfColumns()); 
+			final int[]	source = this.content;
+			final int[]	target = result.content;
+			final int	x0 = piece.getLeft(), y0 = piece.getTop();
+			final int	maxX = piece.getWidth(), maxY = piece.getHeight();
 			
 			ensureCompleted();
 			for(int y = 0; y < maxY; y++) {
@@ -1851,11 +1823,11 @@ loop:		for(int y = 0; y < maxY; y++) {
 			throw new NullPointerException("Ccan't be null");
 		}
 		else {
-			final LongRealMatrix	result = new LongRealMatrix(numberOfRows(), numberOfColumns()); 
-			final long[]	source = this.content;
-			final long[]	target = result.content;
-			final int		x0 = piece.getLeft(), y0 = piece.getTop();
-			final int		maxX = piece.getWidth(), maxY = piece.getHeight();
+			final BitMatrix	result = new BitMatrix(numberOfRows(), numberOfColumns()); 
+			final int[]	source = this.content;
+			final int[]	target = result.content;
+			final int	x0 = piece.getLeft(), y0 = piece.getTop();
+			final int	maxX = piece.getWidth(), maxY = piece.getHeight();
 			
 			ensureCompleted();
 			for(int y = 0; y < maxY; y++) {
@@ -1882,11 +1854,11 @@ loop:		for(int y = 0; y < maxY; y++) {
 			throw new NullPointerException("Ccan't be null");
 		}
 		else {
-			final LongRealMatrix	result = new LongRealMatrix(numberOfRows(), numberOfColumns()); 
-			final long[]	source = this.content;
-			final long[]	target = result.content;
-			final int		x0 = piece.getLeft(), y0 = piece.getTop();
-			final int		maxX = piece.getWidth(), maxY = piece.getHeight();
+			final BitMatrix	result = new BitMatrix(numberOfRows(), numberOfColumns()); 
+			final int[]	source = this.content;
+			final int[]	target = result.content;
+			final int	x0 = piece.getLeft(), y0 = piece.getTop();
+			final int	maxX = piece.getWidth(), maxY = piece.getHeight();
 			
 			ensureCompleted();
 			for(int y = 0; y < maxY; y++) {
@@ -1945,14 +1917,14 @@ loop:		for(int y = 0; y < maxY; y++) {
 	}
 	
 	private Matrix aggregateAvg(final AggregateDirection dir) {
-		final LongRealMatrix	result;
-		final long[]			source = this.content;
-		final long[]			target;
-		long	val;
+		final BitMatrix	result;
+		final long[]	source = this.content;
+		final long[]	target;
+		int	val;
 		
 		switch (dir) {
 			case ByColumns	:
-				result = new LongRealMatrix(numberOfRows(), 1);
+				result = new BitMatrix(numberOfRows(), 1);
 				target = result.content;
 				
 				for(int y = 0; y < numberOfRows(); y++) {
@@ -1964,7 +1936,7 @@ loop:		for(int y = 0; y < maxY; y++) {
 				}
 				break;
 			case ByRows		:
-				result = new LongRealMatrix(1, numberOfColumns()); 
+				result = new BitMatrix(1, numberOfColumns()); 
 				target = result.content;
 				
 				for(int x = 0; x < numberOfColumns(); x++) {
@@ -1976,7 +1948,7 @@ loop:		for(int y = 0; y < maxY; y++) {
 				}
 				break;
 			case Total		:
-				result = new LongRealMatrix(1, 1); 
+				result = new BitMatrix(1, 1); 
 				target = result.content;
 				
 				val = 0;
@@ -1995,14 +1967,14 @@ loop:		for(int y = 0; y < maxY; y++) {
 	}
 	
 	private Matrix aggregateMax(final AggregateDirection dir) {
-		final LongRealMatrix	result;
-		final long[]			source = this.content;
-		final long[]			target;
-		long	val;
+		final BitMatrix	result;
+		final long[]	source = this.content;
+		final long[]	target;
+		int	val;
 		
 		switch (dir) {
 			case ByColumns	:
-				result = new LongRealMatrix(numberOfRows(), 1);
+				result = new BitMatrix(numberOfRows(), 1);
 				target = result.content;
 				
 				for(int y = 0; y < numberOfRows(); y++) {
@@ -2016,7 +1988,7 @@ loop:		for(int y = 0; y < maxY; y++) {
 				}
 				break;
 			case ByRows		:
-				result = new LongRealMatrix(1, numberOfColumns()); 
+				result = new BitMatrix(1, numberOfColumns()); 
 				target = result.content;
 				
 				for(int x = 0; x < numberOfColumns(); x++) {
@@ -2030,7 +2002,7 @@ loop:		for(int y = 0; y < maxY; y++) {
 				}
 				break;
 			case Total		:
-				result = new LongRealMatrix(1, 1); 
+				result = new BitMatrix(1, 1); 
 				target = result.content;
 				
 				val = source[0];
@@ -2051,14 +2023,14 @@ loop:		for(int y = 0; y < maxY; y++) {
 	}
 
 	private Matrix aggregateMin(final AggregateDirection dir) {
-		final LongRealMatrix	result;
-		final long[]			source = this.content;
-		final long[]			target;
-		long	val;
+		final BitMatrix	result;
+		final long[]	source = this.content;
+		final long[]	target;
+		int	val;
 		
 		switch (dir) {
 			case ByColumns	:
-				result = new LongRealMatrix(numberOfRows(), 1);
+				result = new BitMatrix(numberOfRows(), 1);
 				target = result.content;
 				
 				for(int y = 0; y < numberOfRows(); y++) {
@@ -2072,7 +2044,7 @@ loop:		for(int y = 0; y < maxY; y++) {
 				}
 				break;
 			case ByRows		:
-				result = new LongRealMatrix(1, numberOfColumns()); 
+				result = new BitMatrix(1, numberOfColumns()); 
 				target = result.content;
 				
 				for(int x = 0; x < numberOfColumns(); x++) {
@@ -2086,7 +2058,7 @@ loop:		for(int y = 0; y < maxY; y++) {
 				}
 				break;
 			case Total		:
-				result = new LongRealMatrix(1, 1); 
+				result = new BitMatrix(1, 1); 
 				target = result.content;
 				
 				val = source[0];
@@ -2107,14 +2079,14 @@ loop:		for(int y = 0; y < maxY; y++) {
 	}
 
 	private Matrix aggregateSum(final AggregateDirection dir) {
-		final LongRealMatrix	result;
-		final long[]			source = this.content;
-		final long[]			target;
-		long	val;
+		final BitMatrix	result;
+		final long[]	source = this.content;
+		final long[]	target;
+		int	val;
 		
 		switch (dir) {
 			case ByColumns	:
-				result = new LongRealMatrix(numberOfRows(), 1);
+				result = new BitMatrix(numberOfRows(), 1);
 				target = result.content;
 				
 				for(int y = 0; y < numberOfRows(); y++) {
@@ -2126,7 +2098,7 @@ loop:		for(int y = 0; y < maxY; y++) {
 				}
 				break;
 			case ByRows		:
-				result = new LongRealMatrix(1, numberOfColumns()); 
+				result = new BitMatrix(1, numberOfColumns()); 
 				target = result.content;
 				
 				for(int x = 0; x < numberOfColumns(); x++) {
@@ -2138,7 +2110,7 @@ loop:		for(int y = 0; y < maxY; y++) {
 				}
 				break;
 			case Total		:
-				result = new LongRealMatrix(1, 1); 
+				result = new BitMatrix(1, 1); 
 				target = result.content;
 				
 				val = 0;
@@ -2155,4 +2127,81 @@ loop:		for(int y = 0; y < maxY; y++) {
 		result.completed = false;
 		return result;
 	}
+	
+	private static long[] fromIntArray(final int... content) {
+		final long[]	result = new long[(content.length + 63)/64];
+		
+		for(int index = 0; index < content.length; index++) {
+			if (content[index] != 0) {
+				result[index >> 6] |= (1L << (index & 0x3F));  
+			}
+		}
+		return result;
+	}
+
+	private static long[] fromLongArray(final long... content) {
+		final long[]	result = new long[(content.length + 63)/64];
+		
+		for(int index = 0; index < content.length; index++) {
+			if (content[index] != 0) {
+				result[index >> 6] |= (1L << (index & 0x3F));  
+			}
+		}
+		return result;
+	}
+
+	private static long[] fromFloatArray(final float... content) {
+		final long[]	result = new long[(content.length + 63)/64];
+		
+		for(int index = 0; index < content.length; index++) {
+			if (content[index] != 0) {
+				result[index >> 6] |= (1L << (index & 0x3F));  
+			}
+		}
+		return result;
+	}
+
+	private static long[] fromDoubleArray(final double... content) {
+		final long[]	result = new long[(content.length + 63)/64];
+		
+		for(int index = 0; index < content.length; index++) {
+			if (content[index] != 0) {
+				result[index >> 6] |= (1L << (index & 0x3F));  
+			}
+		}
+		return result;
+	}
+
+	private Matrix or(final long[] left, final long[] right) {
+		final BitMatrix	result = new BitMatrix(numberOfRows(), numberOfColumns());
+		final long[]	target = result.content;
+		
+		for(int index = 0, maxIndex = Math.min(content.length, target.length); index < maxIndex; index++) {
+			target[index] = left[index] | right[index];
+		}
+		result.completed = false;
+		return result;
+	}	
+
+	private Matrix minus(final long[] left, final long[] right) {
+		final BitMatrix	result = new BitMatrix(numberOfRows(), numberOfColumns());
+		final long[]	target = result.content;
+		
+		for(int index = 0, maxIndex = Math.min(content.length, target.length); index < maxIndex; index++) {
+			target[index] = left[index] ^ (left[index] & right[index]);
+		}
+		result.completed = false;
+		return result;
+	}	
+
+	private Matrix and(final long[] left, final long[] right) {
+		final BitMatrix	result = new BitMatrix(numberOfRows(), numberOfColumns());
+		final long[]	target = result.content;
+		
+		for(int index = 0, maxIndex = Math.min(content.length, target.length); index < maxIndex; index++) {
+			target[index] = left[index] & right[index];
+		}
+		result.completed = false;
+		return result;
+	}	
 }
