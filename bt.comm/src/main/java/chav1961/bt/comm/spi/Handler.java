@@ -6,7 +6,7 @@ import java.net.URLConnection;
 import java.net.URLStreamHandler;
 
 /**
- * <p>This class is  handler to support "capture" schema URL. Format of capture URL is:</p>
+ * <p>This class is  handler to support "comm" schema URL. Format of comm URL is:</p>
  * <code><b>playback://</b>&lt;device&gt;?&lt;parameters&gt;</code>
  * <ul>
  * <li>device - play audio device or one of predefined logical device names</li>
@@ -30,6 +30,7 @@ import java.net.URLStreamHandler;
  * @see CommHandlerProvider   
  * @author Alexander Chernomyrdin aka chav1961
  * @since 0.0.4
+ * @last.update 0.0.7
  */
 class Handler extends URLStreamHandler {
 	public static final String	PROTOCOL = "comm";

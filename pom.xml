@@ -21,7 +21,6 @@
   
   <modules>
   	<module>bt.starter</module>
-  	<module>bt.monitoring</module>
   	<module>bt.xsys</module>
   	<module>bt.nlp</module>
   	<module>bt.winsl</module>
