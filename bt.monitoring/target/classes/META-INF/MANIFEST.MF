@@ -1,0 +1,5 @@
+Manifest-Version: 1.0
+Build-Jdk-Spec: 22
+Class-Path: ./purelib-0.0.7.jar
+Created-By: Maven Integration for Eclipse
+

@@ -33,7 +33,7 @@ import chav1961.purelib.basic.Utils;
 
 //
 //	URL format:
-//		comm://comNNN:?baud=NNN&parity={o|e|n}&stop={1|1.5|2}&data={5|7|8}&flow={on|off}
+//		comm://comNNN:?baud={110|300|600|1200|2400|4800|9600|19200|38400|57600|115200}&parity={odd|even|none|mark|space}&stop={1|1.5|2}&data={5|7|8}&flow={none|cts|rts_cts|dsr|dtr_dsr|XonXoff}
 //		comm://enumerate
 //
 
@@ -60,23 +60,36 @@ class CommURLConnection extends URLConnection implements Closeable {
 
 	@Override
 	public void connect() throws IOException {
-		if (connected) {
-			throw new IllegalStateException("Attempt to call connect twice");
-		}
-		else if ("enumerate".equalsIgnoreCase(toConnect.getHost())) {
+		if ("enumerate".equalsIgnoreCase(toConnect.getHost())) {
 			final StringBuilder	result = new StringBuilder();
 			
 			for(SerialPort item : SerialPort.getCommPorts()) {
-				result.append(Handler.PROTOCOL).append(":/").append(item.getDescriptivePortName());
+				result.append(Handler.PROTOCOL).append("://").append(item.getSystemPortName());
 				result.append('?').append(CommUtils.BAUD_RATE).append('=').append(item.getBaudRate());
 				result.append('&').append(CommUtils.DATA_BITS).append('=').append(item.getNumDataBits());
-				result.append('&').append(CommUtils.STOP_BITS).append('=').append(item.getNumStopBits());
-				result.append('&').append(CommUtils.PARITY).append('=').append(item.getParity());
-				result.append('&').append(CommUtils.FLOW_CONTROL).append('=').append(item.getFlowControlSettings());
-				result.append('\n');
+				result.append('&').append(CommUtils.STOP_BITS).append('=');
+				switch (item.getNumStopBits()) {
+					case SerialPort.ONE_STOP_BIT 	:
+						result.append(CommUtils.StopBits.one);
+						break;
+					case SerialPort.ONE_POINT_FIVE_STOP_BITS :
+						result.append(CommUtils.StopBits.oneAndHalf);
+						break;
+					case SerialPort.TWO_STOP_BITS	:
+						result.append(CommUtils.StopBits.two);
+						break;
+					default :
+						throw new UnsupportedOperationException("Unsupported number of stop bits ["+item.getNumStopBits()+"] detected");
+				}
+				result.append('&').append(CommUtils.PARITY).append('=').append(CommUtils.Parity.of(item.getParity()));
+				result.append('&').append(CommUtils.FLOW_CONTROL).append('=').append(CommUtils.FlowControl.of(item.getFlowControlSettings()));
+				result.append(System.lineSeparator());
 			}
 			this.enumerator = result.toString().getBytes(PureLibSettings.DEFAULT_CONTENT_ENCODING);
 			this.connected = true;
+		}
+		else if (connected) {
+			throw new IllegalStateException("Attempt to call connect twice");
 		}
 		else {
 			this.port = new CommPort(toConnect);

@@ -1,5 +1,6 @@
 package chav1961.bt.comm.utils;
 
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -9,6 +10,8 @@ import java.util.Set;
 
 import com.fazecast.jSerialComm.SerialPort;
 
+import chav1961.purelib.basic.PureLibSettings;
+import chav1961.purelib.basic.PureLibSettings.CurrentOS;
 import chav1961.purelib.basic.SubstitutableProperties;
 import chav1961.purelib.basic.Utils;
 
@@ -24,7 +27,7 @@ public class CommUtils {
 	public static final String	BAUD_RATE = "baudRate";
 	public static final String	DEFAULT_BAUD_RATE = "1200";
 	public static final String	FLOW_CONTROL = "flowControl";
-	public static final String	DEFAULT_FLOW_CONTROL = "false";
+	public static final String	DEFAULT_FLOW_CONTROL = "none";
 
 	public static enum StopBits {
 		one(SerialPort.ONE_STOP_BIT),
@@ -56,7 +59,7 @@ public class CommUtils {
 			}
 		}
 	
-		static StopBits of(final int stopBitsMode) {
+		public static StopBits of(final int stopBitsMode) {
 			for (StopBits item : values()) {
 				if (stopBitsMode == item.getStopBitsMode()) {
 					return item;
@@ -83,13 +86,57 @@ public class CommUtils {
 			return parityMode;
 		}
 		
-		static Parity of(final int parityMode) {
+		public static Parity of(final int parityMode) {
 			for (Parity item : values()) {
 				if (parityMode == item.getParityMode()) {
 					return item;
 				}
 			}
 			throw new IllegalArgumentException("Unsupported parity mode ["+parityMode+"]");
+		}
+	}
+	
+	public static enum FlowControl {
+		none(SerialPort.FLOW_CONTROL_DISABLED, CurrentOS.values()),
+		cts(SerialPort.FLOW_CONTROL_CTS_ENABLED, CurrentOS.WINDOWS),
+		rts_cts(SerialPort.FLOW_CONTROL_RTS_ENABLED | SerialPort.FLOW_CONTROL_CTS_ENABLED, CurrentOS.WINDOWS, CurrentOS.LINUX, CurrentOS.MACOS),
+		dsr(SerialPort.FLOW_CONTROL_DSR_ENABLED, CurrentOS.WINDOWS),
+		dtr_dsr(SerialPort.FLOW_CONTROL_DTR_ENABLED | SerialPort.FLOW_CONTROL_DSR_ENABLED, CurrentOS.WINDOWS),
+		XonXoff(SerialPort.FLOW_CONTROL_XONXOFF_IN_ENABLED | SerialPort.FLOW_CONTROL_XONXOFF_OUT_ENABLED, CurrentOS.WINDOWS, CurrentOS.LINUX, CurrentOS.MACOS);
+		
+		private final int			flowMask;
+		private final CurrentOS[] 	supports;
+		
+		private FlowControl(final int flowMask, final CurrentOS... supports) {
+			this.flowMask = flowMask;
+			this.supports = supports;
+		}
+
+		public int getFlowControlMask() {
+			return flowMask;
+		}
+		
+		public boolean isControlSupportedFor(final CurrentOS os) {
+			if (os == null) {
+				throw new NullPointerException("OS to test can't be null");
+			}
+			else {
+				for(CurrentOS item : supports) {
+					if (item == os) {
+						return true;
+					}
+				}
+				return false;
+			}
+		}
+		
+		public static FlowControl of(final int mode) {
+			for(FlowControl item : values()) {
+				if ((item.getFlowControlMask() & mode) == item.getFlowControlMask() && item.isControlSupportedFor(PureLibSettings.CURRENT_OS)) {
+					return item;
+				}
+			}
+			throw new IllegalArgumentException("Flow control mask is not identified or is not available for current OS"); 
 		}
 	}
 
@@ -119,6 +166,7 @@ public class CommUtils {
 					props.setProperty(PARITY, Parity.of(comPort.getParity()).name());
 					props.setProperty(STOP_BITS, StopBits.of(comPort.getNumStopBits()).name());
 					props.setProperty(BAUD_RATE, String.valueOf(comPort.getBaudRate()));
+					props.setProperty(FLOW_CONTROL, FlowControl.of(comPort.getFlowControlSettings()).name());
 					return props;
 				}
 			}
@@ -134,6 +182,7 @@ public class CommUtils {
 						props.getProperty(STOP_BITS, CommUtils.StopBits.class, DEFAULT_STOP_BITS).getStopBitsMode(), 
 						props.getProperty(PARITY, CommUtils.Parity.class, DEFAULT_PARITY).getParityMode()
 						);
+				comPort.setFlowControl(props.getProperty(FLOW_CONTROL, CommUtils.FlowControl.class, DEFAULT_FLOW_CONTROL).getFlowControlMask());
 				return comPort;
 			}
 		}
@@ -202,7 +251,7 @@ public class CommUtils {
 		}
 
 		if (source.containsKey(FLOW_CONTROL)) {
-			result.setProperty(FLOW_CONTROL, Boolean.valueOf(source.remove(BAUD_RATE)[0]).toString());
+			result.setProperty(FLOW_CONTROL, FlowControl.valueOf(source.remove(FLOW_CONTROL)[0]).name());
 		}
 		else {
 			result.setProperty(FLOW_CONTROL, DEFAULT_FLOW_CONTROL);
