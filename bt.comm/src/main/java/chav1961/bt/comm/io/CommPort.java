@@ -24,7 +24,7 @@ public class CommPort implements InputOutputPairInterface {
 		}
 		else {
 			final SubstitutableProperties	props = CommUtils.parseCommQueryParameters(URIUtils.parseQuery(comm));	
-			final String	name = comm.getScheme();
+			final String	name = comm.getHost();
 			
 			this.nested = CommUtils.prepareCommPort(name, props);
 			if (this.nested == null) {
