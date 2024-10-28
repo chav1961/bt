@@ -67,8 +67,8 @@ public class OpenCLDescriptor implements AutoCloseable {
 	}
 	
 	public static class OpenCLContext implements AutoCloseable {
-		cl_context			context;
-		cl_command_queue	queue;
+		public final cl_context			context;
+		public final cl_command_queue	queue;
 		
 		OpenCLContext(final cl_context context, final cl_command_queue queue) {
 			this.context = context;

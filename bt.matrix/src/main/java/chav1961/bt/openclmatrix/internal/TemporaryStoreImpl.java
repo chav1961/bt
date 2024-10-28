@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.channels.FileChannel;
+import java.nio.channels.FileChannel.MapMode;
 import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.List;
@@ -34,11 +35,26 @@ class TemporaryStoreImpl implements TemporaryStore {
 		onCloseCallback.accept(this);
 		fc.close();
 	}
+	
+	@Override
+	public long getSize() throws IOException {
+		return fc.size();
+	}
 
 	@Override
-	public TemporaryBuffer getBuffer(long address, int size) throws IOException {
-		// TODO Auto-generated method stub
-		return null;
+	public TemporaryBuffer getBuffer(final long address, final int size) throws IOException {
+		if (address < 0 || address >= getSize()) {
+			throw new IllegalArgumentException("Address ["+address+"] out of range 0.."+(fc.size() - 1));
+		}
+		else if (size <= 0) {
+			throw new IllegalArgumentException("Size ["+size+"] must be greater than 0");
+		}
+		if (address + size > getSize()) {
+			throw new IllegalArgumentException("Address + size ["+(address+size)+"] out of range 0.."+(fc.size() - 1));
+		}
+		else {
+			return new TemporaryBufferImpl(fc.map(MapMode.READ_WRITE, address, size), address, size, (t)->buffers.remove(t));
+		}
 	}
 
 }

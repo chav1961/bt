@@ -13,6 +13,7 @@ import java.nio.file.StandardOpenOption;
 
 import chav1961.bt.openclmatrix.internal.InternalUtils;
 import chav1961.purelib.matrix.interfaces.Matrix;
+import chav1961.purelib.streams.DataInputAdapter;
 
 public class ComplexDoubleMatrix implements Matrix {
 	private static final int	PARALLEL_FACTOR = 16;
