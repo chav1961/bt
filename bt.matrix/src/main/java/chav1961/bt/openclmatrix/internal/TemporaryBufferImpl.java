@@ -5,6 +5,8 @@ import java.lang.reflect.Method;
 import java.nio.MappedByteBuffer;
 import java.util.function.Consumer;
 
+import org.jocl.Sizeof;
+
 import chav1961.bt.openclmatrix.internal.GPUExecutor.TemporaryBuffer;
 
 class TemporaryBufferImpl implements TemporaryBuffer {
@@ -12,6 +14,7 @@ class TemporaryBufferImpl implements TemporaryBuffer {
 	private final Consumer<TemporaryBufferImpl>	onCloseCallback;
 	private final long		address;
 	private final int		size;
+	private final byte[]	smallBuffer = new byte[8];
 	private boolean 		closed = false;
 	private int				location = 0;
 	
@@ -68,7 +71,7 @@ class TemporaryBufferImpl implements TemporaryBuffer {
 	}
 	
 	@Override
-	public void read(final byte[] content, final int to, final int len) throws IOException {
+	public int read(final byte[] content, final int to, final int len) throws IOException {
 		if (content == null) {
 			throw new NullPointerException("Content can't be null");
 		}
@@ -80,12 +83,107 @@ class TemporaryBufferImpl implements TemporaryBuffer {
 		}
 		else {
 			buffer.position(position());
-			buffer.get(content, to, len);
+			final int	currentLen = Math.min(len, buffer.limit()-buffer.position());
+			
+			buffer.get(content, to, currentLen);
+			return currentLen;
 		}
 	}
 
 	@Override
-	public void write(byte[] content, int from, int len) throws IOException {
+	public int read(final int[] content, final int to, final int len) throws IOException {
+		if (content == null) {
+			throw new NullPointerException("Content can't be null");
+		}
+		else if (to < 0 || to + len > content.length) {
+			throw new IllegalArgumentException("To position ["+to+"] less than 0 or to+len position ["+(to+len)+"] out of range 0.."+(content.length - 1));
+		}
+		else if (closed) {
+			throw new IllegalStateException("Attempt to read content on closed map");
+		}
+		else {
+			buffer.position(position());
+			final int	currentLen = Math.min(len, buffer.limit()-buffer.position());
+			
+			for(int index = 0; index < currentLen; index+= Sizeof.cl_int) {
+				buffer.get(smallBuffer, 0, Sizeof.cl_int);
+				content[index] = InternalUtils.toInt(smallBuffer, 0);
+			}
+			return currentLen;
+		}
+	}
+
+	@Override
+	public int read(final long[] content, final int to, final int len) throws IOException {
+		if (content == null) {
+			throw new NullPointerException("Content can't be null");
+		}
+		else if (to < 0 || to + len > content.length) {
+			throw new IllegalArgumentException("To position ["+to+"] less than 0 or to+len position ["+(to+len)+"] out of range 0.."+(content.length - 1));
+		}
+		else if (closed) {
+			throw new IllegalStateException("Attempt to read content on closed map");
+		}
+		else {
+			buffer.position(position());
+			final int	currentLen = Math.min(len, buffer.limit()-buffer.position());
+			
+			for(int index = 0; index < currentLen; index+= Sizeof.cl_long) {
+				buffer.get(smallBuffer, 0, Sizeof.cl_long);
+				content[index] = InternalUtils.toLong(smallBuffer, 0);
+			}
+			return currentLen;
+		}
+	}
+
+	@Override
+	public int read(final float[] content, final int to, final int len) throws IOException {
+		if (content == null) {
+			throw new NullPointerException("Content can't be null");
+		}
+		else if (to < 0 || to + len > content.length) {
+			throw new IllegalArgumentException("To position ["+to+"] less than 0 or to+len position ["+(to+len)+"] out of range 0.."+(content.length - 1));
+		}
+		else if (closed) {
+			throw new IllegalStateException("Attempt to read content on closed map");
+		}
+		else {
+			buffer.position(position());
+			final int	currentLen = Math.min(len, buffer.limit()-buffer.position());
+			
+			for(int index = 0; index < currentLen; index+= Sizeof.cl_int) {
+				buffer.get(smallBuffer, 0, Sizeof.cl_int);
+				content[index] = Float.intBitsToFloat(InternalUtils.toInt(smallBuffer, 0));
+			}
+			return currentLen;
+		}
+	}
+
+	@Override
+	public int read(final double[] content, final int to, final int len) throws IOException {
+		if (content == null) {
+			throw new NullPointerException("Content can't be null");
+		}
+		else if (to < 0 || to + len > content.length) {
+			throw new IllegalArgumentException("To position ["+to+"] less than 0 or to+len position ["+(to+len)+"] out of range 0.."+(content.length - 1));
+		}
+		else if (closed) {
+			throw new IllegalStateException("Attempt to read content on closed map");
+		}
+		else {
+			buffer.position(position());
+			final int	currentLen = Math.min(len, buffer.limit()-buffer.position());
+			
+			for(int index = 0; index < currentLen; index+= Sizeof.cl_long) {
+				buffer.get(smallBuffer, 0, Sizeof.cl_long);
+				content[index] = Double.longBitsToDouble(InternalUtils.toLong(smallBuffer, 0));
+			}
+			return currentLen;
+		}
+	}
+	
+	@Override
+	public int write(final byte[] content, final int from, final int len) throws IOException {
 		if (content == null) {
 			throw new NullPointerException("Content can't be null");
 		}
@@ -97,10 +195,105 @@ class TemporaryBufferImpl implements TemporaryBuffer {
 		}
 		else {
 			buffer.position(position());
-			buffer.put(content, from, len);
+			final int	currentLen = Math.min(len, buffer.capacity()-buffer.position());
+			
+			buffer.put(content, from, currentLen);
+			return currentLen;
 		}
 	}
 
+	@Override
+	public int write(final int[] content, final int from, final int len) throws IOException {
+		if (content == null) {
+			throw new NullPointerException("Content can't be null");
+		}
+		else if (from < 0 || from + len > content.length) {
+			throw new IllegalArgumentException("From position ["+from+"] less than 0 or from+len position ["+(from+len)+"] out of range 0.."+(content.length - 1));
+		}
+		else if (closed) {
+			throw new IllegalStateException("Attempt to write content on closed map");
+		}
+		else {
+			buffer.position(position());
+			final int	currentLen = Math.min(len, buffer.capacity()-buffer.position()) / Sizeof.cl_int;
+
+			for(int index = 0; index < currentLen; index++) {
+				InternalUtils.fromInt(smallBuffer, 0, content[index]);
+				buffer.put(smallBuffer, 0, Sizeof.cl_int);
+			}
+			return currentLen;
+		}
+	}
+
+	@Override
+	public int write(final long[] content, final int from, final int len) throws IOException {
+		if (content == null) {
+			throw new NullPointerException("Content can't be null");
+		}
+		else if (from < 0 || from + len > content.length) {
+			throw new IllegalArgumentException("From position ["+from+"] less than 0 or from+len position ["+(from+len)+"] out of range 0.."+(content.length - 1));
+		}
+		else if (closed) {
+			throw new IllegalStateException("Attempt to write content on closed map");
+		}
+		else {
+			buffer.position(position());
+			final int	currentLen = Math.min(len, buffer.capacity()-buffer.position()) / Sizeof.cl_long;
+
+			for(int index = 0; index < currentLen; index++) {
+				InternalUtils.fromLong(smallBuffer, 0, content[index]);
+				buffer.put(smallBuffer, 0, Sizeof.cl_long);
+			}
+			return currentLen;
+		}
+	}
+
+	@Override
+	public int write(final float[] content, final int from, final int len) throws IOException {
+		if (content == null) {
+			throw new NullPointerException("Content can't be null");
+		}
+		else if (from < 0 || from + len > content.length) {
+			throw new IllegalArgumentException("From position ["+from+"] less than 0 or from+len position ["+(from+len)+"] out of range 0.."+(content.length - 1));
+		}
+		else if (closed) {
+			throw new IllegalStateException("Attempt to write content on closed map");
+		}
+		else {
+			buffer.position(position());
+			final int	currentLen = Math.min(len, buffer.capacity()-buffer.position()) / Sizeof.cl_int;
+
+			for(int index = 0; index < currentLen; index++) {
+				InternalUtils.fromInt(smallBuffer, 0, Float.floatToIntBits(content[index]));
+				buffer.put(smallBuffer, 0, Sizeof.cl_int);
+			}
+			return currentLen;
+		}
+	}
+
+	@Override
+	public int write(final double[] content, final int from, final int len) throws IOException {
+		if (content == null) {
+			throw new NullPointerException("Content can't be null");
+		}
+		else if (from < 0 || from + len > content.length) {
+			throw new IllegalArgumentException("From position ["+from+"] less than 0 or from+len position ["+(from+len)+"] out of range 0.."+(content.length - 1));
+		}
+		else if (closed) {
+			throw new IllegalStateException("Attempt to write content on closed map");
+		}
+		else {
+			buffer.position(position());
+			final int	currentLen = Math.min(len, buffer.capacity()-buffer.position()) / Sizeof.cl_long;
+
+			for(int index = 0; index < currentLen; index++) {
+				InternalUtils.fromLong(smallBuffer, 0, Double.doubleToLongBits(content[index]));
+				buffer.put(smallBuffer, 0, Sizeof.cl_long);
+			}
+			return currentLen;
+		}
+	}
+	
 	@Override
 	public String toString() {
 		return "TemporaryBufferImpl [address=" + address + ", size=" + size + ", location=" + location + "]";

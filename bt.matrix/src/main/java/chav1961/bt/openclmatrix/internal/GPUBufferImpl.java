@@ -27,9 +27,9 @@ import chav1961.purelib.matrix.interfaces.Matrix.Type;
 class GPUBufferImpl implements GPUBuffer {
 	private static final int			ADDRESS_STEP = 1024 * 1024;
 	
+	final cl_mem 						buffer;
 	private final GPUSchedulerImpl		owner;
 	private final Consumer<GPUBuffer>	onCloseCallback;
-	private final cl_mem 				buffer;
 	private final int					size;
 	
 	GPUBufferImpl(final GPUSchedulerImpl owner, final int size, final Consumer<GPUBuffer> onCloseCallback) {
@@ -46,6 +46,11 @@ class GPUBufferImpl implements GPUBuffer {
 	}
 
 	@Override
+	public int getSize() {
+		return size;
+	}
+	
+	@Override
 	public GPUEvent download(final DataInput in, final Type type) throws IOException {
 		if (in == null) {
 			throw new NullPointerException("Data input can't be null");
@@ -58,12 +63,23 @@ class GPUBufferImpl implements GPUBuffer {
 
 			final Thread	t = new Thread(()->{
 				try {
-					final byte[]	buf = new byte[ADDRESS_STEP];
-					
-					for (int piece = 0; piece < size; piece += ADDRESS_STEP) {
-						final int	bufSize = read(buf, buf.length, in, type);
-						
-						CL.clEnqueueWriteBuffer(owner.owner.queue, buffer, CL.CL_TRUE, piece, bufSize * Sizeof.cl_char, Pointer.to(buf), 0, null, null);
+					switch (type) {
+						case COMPLEX_DOUBLE	:
+						case REAL_DOUBLE	:
+							downloadDouble(in);
+							break;
+						case COMPLEX_FLOAT	:
+						case REAL_FLOAT	:
+							downloadFloat(in);
+							break;
+						case REAL_INT	:
+							downloadInt(in);
+							break;
+						case REAL_LONG	:
+							downloadLong(in);
+							break;
+						default:
+							throw new UnsupportedOperationException("Matrux type ["+type+"] is not supported yet");
 					}
 				} catch (IOException e) {
 					e.printStackTrace();
@@ -151,22 +167,36 @@ class GPUBufferImpl implements GPUBuffer {
 	}
 
 	@Override
-	public GPUEvent download(final TemporaryBuffer in) throws IOException {
+	public GPUEvent download(final TemporaryBuffer in, final Matrix.Type type) throws IOException {
 		if (in == null) {
 			throw new NullPointerException("Buffer can't be null");
+		}
+		else if (type == null) {
+			throw new NullPointerException("Matrix type can't be null");
 		}
 		else {
 			final GPUEvent	event = owner.createEvent();
 
 			final Thread	t = new Thread(()->{
 				try {
-					final byte[]	buf = new byte[ADDRESS_STEP];
+					switch (type) {
+						case COMPLEX_DOUBLE	:
+						case REAL_DOUBLE	:
+							downloadDouble(in);
+							break;
+						case COMPLEX_FLOAT	:
+						case REAL_FLOAT	:
+							downloadFloat(in);
+							break;
+						case REAL_INT	:
+							downloadInt(in);
+							break;
+						case REAL_LONG	:
+							downloadLong(in);
+							break;
+						default:
+							throw new UnsupportedOperationException("Matrix type ["+type+"] is not supported yet");
 					
-					for (int piece = 0; piece < size; piece += ADDRESS_STEP) {
-						final int	bufSize = Math.min(ADDRESS_STEP, in.getSize()-piece);
-						
-						in.read(buf, 0, bufSize);
-						CL.clEnqueueWriteBuffer(owner.owner.queue, buffer, CL.CL_TRUE, piece, bufSize * Sizeof.cl_char, Pointer.to(buf), 0, null, null);
 					}
 				} catch (IOException e) {
 					e.printStackTrace();
@@ -193,13 +223,23 @@ class GPUBufferImpl implements GPUBuffer {
 
 			final Thread	t = new Thread(()->{
 				try {
-					final byte[]	buf = new byte[ADDRESS_STEP];
-					
-					for (int piece = 0; piece < size; piece += ADDRESS_STEP) {
-						final int	bufSize = Math.min(ADDRESS_STEP, size-piece);
-						
-						CL.clEnqueueReadBuffer(owner.owner.queue, buffer, CL.CL_TRUE, piece, buf.length * Sizeof.cl_char, Pointer.to(buf), 0, null, null);
-						write(buf, 0, bufSize, out, type);
+					switch (type) {
+						case COMPLEX_DOUBLE	:
+						case REAL_DOUBLE	:
+							uploadDouble(out);
+							break;
+						case COMPLEX_FLOAT	:
+						case REAL_FLOAT		:
+							uploadFloat(out);
+							break;
+						case REAL_INT	:
+							uploadInt(out);
+							break;
+						case REAL_LONG	:
+							uploadLong(out);
+							break;
+						default:
+							throw new UnsupportedOperationException("Matrix type ["+type+"] is not supported yet");
 					}
 				} catch (IOException e) {
 					e.printStackTrace();
@@ -287,7 +327,7 @@ class GPUBufferImpl implements GPUBuffer {
 	}
 
 	@Override
-	public GPUEvent upload(final TemporaryBuffer out) throws IOException {
+	public GPUEvent upload(final TemporaryBuffer out, final Matrix.Type type) throws IOException {
 		if (buffer == null) {
 			throw new NullPointerException("Buffer can't be null");
 		}
@@ -296,6 +336,24 @@ class GPUBufferImpl implements GPUBuffer {
 	
 			final Thread	t = new Thread(()->{
 				try {
+					switch (type) {
+						case COMPLEX_DOUBLE	:
+						case REAL_DOUBLE	:
+							uploadDouble(out);
+							break;
+						case COMPLEX_FLOAT	:
+						case REAL_FLOAT		:
+							uploadFloat(out);
+							break;
+						case REAL_INT	:
+							uploadInt(out);
+							break;
+						case REAL_LONG	:
+							uploadLong(out);
+							break;
+						default:
+							throw new UnsupportedOperationException("Matrix type ["+type+"] is not supported yet");
+					}
 					final byte[]	buf = new byte[ADDRESS_STEP];
 					
 					for (int piece = 0; piece < size; piece += ADDRESS_STEP) {
@@ -316,101 +374,244 @@ class GPUBufferImpl implements GPUBuffer {
 		}
 	}
 
-	private void write(final byte[] buf, final int bufStart, final int bufSize, final DataOutput out, final Type type) throws IOException {
-		switch (type) {
-			case COMPLEX_DOUBLE	:
-			case REAL_DOUBLE	:
-				for(int index = bufStart; index < bufSize; index += type.getItemSize()) {
-					out.writeDouble(Double.longBitsToDouble(toLong(buf, index)));
-				}
-				break;
-			case COMPLEX_FLOAT	:
-			case REAL_FLOAT		:
-				for(int index = bufStart; index < bufSize; index += type.getItemSize()) {
-					out.writeFloat(Float.intBitsToFloat(toInt(buf, index)));
-				}
-				break;
-			case REAL_INT		:
-				for(int index = bufStart; index < bufSize; index += type.getItemSize()) {
-					out.writeInt((toInt(buf, index)));
-				}
-				break;
-			case REAL_LONG		:
-				for(int index = bufStart; index < bufSize; index += type.getItemSize()) {
-					out.writeLong(toLong(buf, index));
-				}
-				break;
-			default:
-				throw new UnsupportedOperationException("Matrix type ["+type+"] is not supported yet");
-		}
-	}
-	
-	private int toInt(final byte[] buf, final int pos) {
-        return ((buf[pos] << 24) + (buf[pos+1] << 16) + (buf[pos+2] << 8) + (buf[pos+3] << 0));
-	}
-
-	private long toLong(final byte[] buf, final int pos) {
-        return (((long)buf[pos] << 56) +
-                ((long)(buf[pos+1] & 255) << 48) +
-                ((long)(buf[pos+2] & 255) << 40) +
-                ((long)(buf[pos+3] & 255) << 32) +
-                ((long)(buf[pos+4] & 255) << 24) +
-                ((buf[pos+5] & 255) << 16) +
-                ((buf[pos+6] & 255) <<  8) +
-                ((buf[pos+7] & 255) <<  0));
-	}
-
-	private int read(final byte[] buf, int bufSize, DataInput in, Type type) throws IOException {
+	private int read(final double[] buf, final int bufSize, final DataInput in) throws IOException {
 		int index = 0;
 		
 		try {
-			switch (type) {
-				case COMPLEX_DOUBLE	:
-				case REAL_DOUBLE	:
-					for(index = 0; index < bufSize; index += type.getItemSize()) {
-						fromLong(buf, index, Double.doubleToLongBits(in.readDouble()));
-					}
-					break;
-				case COMPLEX_FLOAT	:
-				case REAL_FLOAT		:
-					for(index = 0; index < bufSize; index += type.getItemSize()) {
-						fromInt(buf, index, Float.floatToIntBits(in.readFloat()));
-					}
-					break;
-				case REAL_INT		:
-					for(index = 0; index < bufSize; index += type.getItemSize()) {
-						fromInt(buf, index, in.readInt());
-					}
-					break;
-				case REAL_LONG		:
-					for(index = 0; index < bufSize; index += type.getItemSize()) {
-						fromLong(buf, index, in.readLong());
-					}
-					break;
-				default:
-					throw new UnsupportedOperationException("Matrix type ["+type+"] is not supported yet");
+			for(index = 0; index < bufSize; index++) {
+				buf[index] = in.readDouble();
 			}
 		} catch (EOFException exc) {
 		}
 		return index;
+	}	
+
+	private int read(final float[] buf, final int bufSize, final DataInput in) throws IOException {
+		int index = 0;
+		
+		try {
+			for(index = 0; index < bufSize; index++) {
+				buf[index] = in.readFloat();
+			}
+		} catch (EOFException exc) {
+		}
+		return index;
+	}	
+
+	private int read(final int[] buf, int bufSize, DataInput in) throws IOException {
+		int index = 0;
+		
+		try {
+			for(index = 0; index < bufSize; index++) {
+				buf[index] = in.readInt();
+			}
+		} catch (EOFException exc) {
+		}
+		return index;
+	}	
+
+	private int read(final long[] buf, int bufSize, DataInput in) throws IOException {
+		int index = 0;
+		
+		try {
+			for(index = 0; index < bufSize; index++) {
+				buf[index] = in.readLong();
+			}
+		} catch (EOFException exc) {
+		}
+		return index;
+	}	
+
+	private void downloadDouble(final DataInput in) throws IOException {
+		final double[]	buf = new double[ADDRESS_STEP];
+		
+		for (int piece = 0; piece < size; piece += ADDRESS_STEP) {
+			final int	bufSize = read(buf, buf.length, in);
+			
+			CL.clEnqueueWriteBuffer(owner.owner.queue, buffer, CL.CL_TRUE, piece, bufSize * Sizeof.cl_double, Pointer.to(buf), 0, null, null);
+		}
+	}
+
+	private void downloadFloat(final DataInput in) throws IOException {
+		final float[]	buf = new float[ADDRESS_STEP];
+		
+		for (int piece = 0; piece < size; piece += ADDRESS_STEP) {
+			final int	bufSize = read(buf, buf.length, in);
+			
+			CL.clEnqueueWriteBuffer(owner.owner.queue, buffer, CL.CL_TRUE, piece, bufSize * Sizeof.cl_float, Pointer.to(buf), 0, null, null);
+		}
 	}
 	
-	private void fromLong(final byte[] buffer, final int from, final long value) {
-        buffer[from] = (byte)(value >>> 56);
-        buffer[from+1] = (byte)(value >>> 48);
-        buffer[from+2] = (byte)(value >>> 40);
-        buffer[from+3] = (byte)(value >>> 32);
-        buffer[from+4] = (byte)(value >>> 24);
-        buffer[from+5] = (byte)(value >>> 16);
-        buffer[from+6] = (byte)(value >>>  8);
-        buffer[from+7] = (byte)(value >>>  0);
+	private void downloadInt(final DataInput in) throws IOException {
+		final int[]	buf = new int[ADDRESS_STEP];
+		
+		for (int piece = 0; piece < size; piece += ADDRESS_STEP) {
+			final int	bufSize = read(buf, buf.length, in);
+			
+			CL.clEnqueueWriteBuffer(owner.owner.queue, buffer, CL.CL_TRUE, piece, bufSize * Sizeof.cl_int, Pointer.to(buf), 0, null, null);
+		}
+	}
+	
+	private void downloadLong(DataInput in) throws IOException {
+		final long[]	buf = new long[ADDRESS_STEP];
+		
+		for (int piece = 0; piece < size; piece += ADDRESS_STEP) {
+			final int	bufSize = read(buf, buf.length, in);
+			
+			CL.clEnqueueWriteBuffer(owner.owner.queue, buffer, CL.CL_TRUE, piece, bufSize * Sizeof.cl_long, Pointer.to(buf), 0, null, null);
+		}
+	}
+	
+
+	private void downloadDouble(final TemporaryBuffer in) throws IOException {
+		final double[]	buf = new double[ADDRESS_STEP];
+		final int		currentSize = size / Sizeof.cl_double;
+		
+		for (int piece = 0; piece < currentSize; piece += ADDRESS_STEP) {
+			final int	bufSize = Math.min(buf.length * Sizeof.cl_double, in.getSize() - piece * Sizeof.cl_double);
+			final int 	len = in.read(buf, 0, bufSize / Sizeof.cl_double);
+
+			CL.clEnqueueWriteBuffer(owner.owner.queue, buffer, CL.CL_TRUE, piece, len * Sizeof.cl_double, Pointer.to(buf), 0, null, null);
+		}
 	}
 
-	private void fromInt(final byte[] buffer, final int from, final int value) {
-        buffer[from] = (byte)(value >>> 24);
-        buffer[from+1] = (byte)(value >>> 16);
-        buffer[from+2] = (byte)(value >>>  8);
-        buffer[from+3] = (byte)(value >>>  0);
+	private void downloadFloat(final TemporaryBuffer in) throws IOException {
+		final float[]	buf = new float[ADDRESS_STEP];
+		final int		currentSize = size / Sizeof.cl_float;
+		
+		for (int piece = 0; piece < currentSize; piece += ADDRESS_STEP) {
+			final int	bufSize = Math.min(buf.length * Sizeof.cl_float, in.getSize() - piece * Sizeof.cl_float);
+			final int 	len = in.read(buf, 0, bufSize / Sizeof.cl_float);
+
+			CL.clEnqueueWriteBuffer(owner.owner.queue, buffer, CL.CL_TRUE, piece, len * Sizeof.cl_float, Pointer.to(buf), 0, null, null);
+		}
+	}
+	
+	private void downloadInt(final TemporaryBuffer in) throws IOException {
+		final int[]		buf = new int[ADDRESS_STEP];
+		final int		currentSize = size / Sizeof.cl_int;
+		
+		for (int piece = 0; piece < currentSize; piece += ADDRESS_STEP) {
+			final int	bufSize = Math.min(buf.length * Sizeof.cl_int, in.getSize() - piece * Sizeof.cl_int);
+			final int 	len = in.read(buf, 0, bufSize / Sizeof.cl_int);
+
+			CL.clEnqueueWriteBuffer(owner.owner.queue, buffer, CL.CL_TRUE, piece, len * Sizeof.cl_int, Pointer.to(buf), 0, null, null);
+		}
+	}
+	
+	private void downloadLong(final TemporaryBuffer in) throws IOException {
+		final long[]	buf = new long[ADDRESS_STEP];
+		final int		currentSize = size / Sizeof.cl_int;
+		
+		for (int piece = 0; piece < currentSize; piece += ADDRESS_STEP) {
+			final int	bufSize = Math.min(buf.length * Sizeof.cl_long, in.getSize() - piece * Sizeof.cl_long);
+			final int 	len = in.read(buf, 0, bufSize / Sizeof.cl_long);
+
+			CL.clEnqueueWriteBuffer(owner.owner.queue, buffer, CL.CL_TRUE, piece, len * Sizeof.cl_long, Pointer.to(buf), 0, null, null);
+		}
+	}
+	
+	private void uploadDouble(final DataOutput out) throws IOException {
+		final double[]	buf = new double[ADDRESS_STEP];
+		final int		currentSize = size / Sizeof.cl_double;
+		
+		for (int piece = 0; piece < currentSize; piece += ADDRESS_STEP) {
+			final int	bufSize = Math.min(ADDRESS_STEP, currentSize-piece);
+			
+			CL.clEnqueueReadBuffer(owner.owner.queue, buffer, CL.CL_TRUE, piece, bufSize * Sizeof.cl_double, Pointer.to(buf), 0, null, null);
+			for(int index = 0; index < bufSize; index++) {
+				out.writeDouble(buf[index]);
+			}
+		}
 	}
 
+	private void uploadFloat(final DataOutput out) throws IOException {
+		final float[]	buf = new float[ADDRESS_STEP];
+		final int		currentSize = size / Sizeof.cl_float;
+		
+		for (int piece = 0; piece < currentSize; piece += ADDRESS_STEP) {
+			final int	bufSize = Math.min(ADDRESS_STEP, currentSize-piece);
+			
+			CL.clEnqueueReadBuffer(owner.owner.queue, buffer, CL.CL_TRUE, piece, bufSize * Sizeof.cl_float, Pointer.to(buf), 0, null, null);
+			for(int index = 0; index < bufSize; index++) {
+				out.writeFloat(buf[index]);
+			}
+		}
+	}
+	
+	private void uploadInt(final DataOutput out) throws IOException {
+		final int[]		buf = new int[ADDRESS_STEP];
+		final int		currentSize = size / Sizeof.cl_int;
+		
+		for (int piece = 0; piece < currentSize; piece += ADDRESS_STEP) {
+			final int	bufSize = Math.min(ADDRESS_STEP, currentSize-piece);
+			
+			CL.clEnqueueReadBuffer(owner.owner.queue, buffer, CL.CL_TRUE, piece, bufSize * Sizeof.cl_int, Pointer.to(buf), 0, null, null);
+			for(int index = 0; index < bufSize; index++) {
+				out.writeInt(buf[index]);
+			}
+		}
+	}
+	
+	private void uploadLong(final DataOutput out) throws IOException {
+		final long[]	buf = new long[ADDRESS_STEP];
+		final int		currentSize = size / Sizeof.cl_long;
+		
+		for (int piece = 0; piece < currentSize; piece += ADDRESS_STEP) {
+			final int	bufSize = Math.min(ADDRESS_STEP, currentSize-piece);
+			
+			CL.clEnqueueReadBuffer(owner.owner.queue, buffer, CL.CL_TRUE, piece, bufSize * Sizeof.cl_long, Pointer.to(buf), 0, null, null);
+			for(int index = 0; index < bufSize; index++) {
+				out.writeLong(buf[index]);
+			}
+		}
+	}
+
+	private void uploadDouble(final TemporaryBuffer out) throws IOException {
+		final double[]	buf = new double[ADDRESS_STEP];
+		final int		currentSize = size / Sizeof.cl_double;
+		
+		for (int piece = 0; piece < currentSize; piece += ADDRESS_STEP) {
+			final int	bufSize = Math.min(ADDRESS_STEP, currentSize-piece);
+			
+			CL.clEnqueueReadBuffer(owner.owner.queue, buffer, CL.CL_TRUE, piece, bufSize * Sizeof.cl_double, Pointer.to(buf), 0, null, null);
+			out.write(buf, 0, bufSize);
+		}
+	}
+
+	private void uploadFloat(final TemporaryBuffer out) throws IOException {
+		final float[]	buf = new float[ADDRESS_STEP];
+		final int		currentSize = size / Sizeof.cl_float;
+		
+		for (int piece = 0; piece < currentSize; piece += ADDRESS_STEP) {
+			final int	bufSize = Math.min(ADDRESS_STEP, currentSize-piece);
+			
+			CL.clEnqueueReadBuffer(owner.owner.queue, buffer, CL.CL_TRUE, piece, bufSize * Sizeof.cl_float, Pointer.to(buf), 0, null, null);
+			out.write(buf, 0, bufSize);
+		}
+	}
+
+	private void uploadInt(final TemporaryBuffer out) throws IOException {
+		final int[]		buf = new int[ADDRESS_STEP];
+		final int		currentSize = size / Sizeof.cl_int;
+		
+		for (int piece = 0; piece < currentSize; piece += ADDRESS_STEP) {
+			final int	bufSize = Math.min(ADDRESS_STEP, currentSize-piece);
+			
+			CL.clEnqueueReadBuffer(owner.owner.queue, buffer, CL.CL_TRUE, piece, bufSize * Sizeof.cl_int, Pointer.to(buf), 0, null, null);
+			out.write(buf, 0, bufSize);
+		}
+	}
+
+	private void uploadLong(final TemporaryBuffer out) throws IOException {
+		final long[]	buf = new long[ADDRESS_STEP];
+		final int		currentSize = size / Sizeof.cl_long;
+		
+		for (int piece = 0; piece < currentSize; piece += ADDRESS_STEP) {
+			final int	bufSize = Math.min(ADDRESS_STEP, currentSize-piece);
+			
+			CL.clEnqueueReadBuffer(owner.owner.queue, buffer, CL.CL_TRUE, piece, bufSize * Sizeof.cl_long, Pointer.to(buf), 0, null, null);
+			out.write(buf, 0, bufSize);
+		}
+	}
 }

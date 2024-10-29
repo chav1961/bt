@@ -3,7 +3,10 @@ package chav1961.bt.openclmatrix.internal;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 
 import org.jocl.CL;
 import org.jocl.EventCallbackFunction;
@@ -14,6 +17,7 @@ import chav1961.bt.openclmatrix.internal.GPUExecutor.GPUExecutable;
 import chav1961.bt.openclmatrix.internal.GPUExecutor.GPUScheduler;
 import chav1961.bt.openclmatrix.internal.GPUExecutor.TemporaryStore;
 import chav1961.bt.openclmatrix.spi.OpenCLDescriptor.OpenCLContext;
+import chav1961.purelib.basic.Utils;
 import chav1961.purelib.basic.exceptions.ContentException;
 import chav1961.purelib.basic.exceptions.SyntaxException;
 
@@ -25,7 +29,6 @@ class GPUSchedulerImpl implements GPUScheduler {
 	private final File					contentDir;
 	private final List<TemporaryStore>	stores = new ArrayList<>();
 	private final List<GPUBuffer>		buffers = new ArrayList<>();
-	private final List<GPUExecutable>	programs = new ArrayList<>();
 	private final List<GPUEvent>		events = new ArrayList<>();
 	final OpenCLContext					owner;
 
@@ -43,9 +46,6 @@ class GPUSchedulerImpl implements GPUScheduler {
 			}
 		}
 		for (GPUBuffer item : buffers) {
-			item.close();
-		}
-		for (GPUExecutable item : programs) {
 			item.close();
 		}
 		for (int index = events.size()-1; index >=0; index--) {
@@ -95,14 +95,6 @@ class GPUSchedulerImpl implements GPUScheduler {
 			buffers.add(buf);
 			return buf;
 		}
-	}
-
-	@Override
-	public GPUExecutable compile(final String gpuProgram) throws SyntaxException {
-		final GPUExecutable	ex = new GPUExecutableImpl(owner, gpuProgram, (p)->programs.remove(p)); 
-		
-		programs.add(ex);
-		return ex;
 	}
 
 }

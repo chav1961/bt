@@ -3,10 +3,12 @@ package chav1961.bt.openclmatrix.internal;
 import java.util.function.Consumer;
 
 import org.jocl.CL;
+import org.jocl.CLException;
 import org.jocl.cl_event;
 
 import chav1961.bt.openclmatrix.internal.GPUExecutor.GPUEvent;
 import chav1961.purelib.basic.Utils;
+import chav1961.purelib.basic.exceptions.CalculationException;
 
 class GPUEventImpl implements GPUEvent {
 	final cl_event	event;
@@ -30,7 +32,7 @@ class GPUEventImpl implements GPUEvent {
 	@Override
 	public void post() {
 		if (closed) {
-			throw new IllegalStateException("Attempt to post closed exent");
+			throw new IllegalStateException("Attempt to post closed event");
 		}
 		else {
 			CL.clSetUserEventStatus(event, CL.CL_COMPLETE);
@@ -38,14 +40,13 @@ class GPUEventImpl implements GPUEvent {
 	}
 	
 	@Override
-	public void awaitAll(boolean closeAfterComplete, final GPUEvent... events) throws InterruptedException {
+	public GPUEvent awaitAll(boolean closeAfterComplete, final GPUEvent... events) throws InterruptedException, CalculationException {
 		if (events == null || events.length == 0 || Utils.checkArrayContent4Nulls(events) >= 0) {
 			throw new IllegalArgumentException("Events list is null, empty, or contains nulls inside");
 		}
 		else {
 			for(GPUEvent item : events) {
 				item.awaitCurrent();
-				item.close();
 			}
 			if (closeAfterComplete) {
 				for(GPUEvent item : events) {
@@ -53,16 +54,22 @@ class GPUEventImpl implements GPUEvent {
 				}
 			}
 			post();
+			return this;
 		}
 	}
 
 	@Override
-	public void awaitCurrent() throws InterruptedException {
+	public GPUEvent awaitCurrent() throws InterruptedException, CalculationException { 
 		if (closed) {
-			throw new IllegalStateException("Attempt to wait closed exent");
+			throw new IllegalStateException("Attempt to wait closed event");
 		}
 		else {
-			CL.clWaitForEvents(1, new cl_event[] {event});
+			try {
+				CL.clWaitForEvents(1, new cl_event[] {event});
+				return this;
+			} catch (CLException exc) {
+				throw new CalculationException(exc.getLocalizedMessage());
+			}
 		}
 	}
 }
