@@ -1,20 +1,19 @@
 package chav1961.bt.openclmatrix.internal;
 
 import java.io.File;
-import java.nio.ByteBuffer;
 
 public class InternalUtils {
 	public static final String	OPENCL_PREFIX = "OpenCL_";
 	public static final File	TEMP_DIR_LOCATION = new File(System.getProperty("java.io.tmpdir"));
 	
 
-	static int toInt(final byte[] buf, final int pos) {
-		final int result = ((buf[pos+3] << 24) + (buf[pos+2] << 16) + (buf[pos+1] << 8) + (buf[pos+0] << 0));
+	public static int toInt(final byte[] buf, final int pos) {
+		final int result = ((buf[pos] << 24) + ((buf[pos+1] & 255) << 16) + ((buf[pos+2] & 255) << 8) + ((buf[pos+3] & 255) << 0));
 		
 		return result;
 	}
 
-	static long toLong(final byte[] buf, final int pos) {
+	public static long toLong(final byte[] buf, final int pos) {
         return (((long)buf[pos] << 56) +
                 ((long)(buf[pos+1] & 255) << 48) +
                 ((long)(buf[pos+2] & 255) << 40) +
@@ -25,7 +24,7 @@ public class InternalUtils {
                 ((buf[pos+7] & 255) <<  0));
 	}
 
-	static void fromLong(final byte[] buffer, final int from, final long value) {
+	public static void fromLong(final byte[] buffer, final int from, final long value) {
         buffer[from] = (byte)(value >>> 56);
         buffer[from+1] = (byte)(value >>> 48);
         buffer[from+2] = (byte)(value >>> 40);
@@ -36,7 +35,7 @@ public class InternalUtils {
         buffer[from+7] = (byte)(value >>>  0);
 	}
 
-	static void fromInt(final byte[] buffer, final int from, final int value) {
+	public static void fromInt(final byte[] buffer, final int from, final int value) {
         buffer[from] = (byte)(value >>> 24);
         buffer[from+1] = (byte)(value >>> 16);
         buffer[from+2] = (byte)(value >>>  8);

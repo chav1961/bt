@@ -1,9 +1,32 @@
 package chav1961.bt.openclmatrix.ordinal;
 
+import java.io.DataInput;
+import java.io.IOException;
+
 import chav1961.purelib.matrix.interfaces.Matrix;
 
 public class ComplexDoubleMatrix implements Matrix {
-
+	private final int			rows;
+	private final int			cols;
+	private final double[][]	content;
+	
+	public ComplexDoubleMatrix(final int rows, final int cols) {
+		if (rows <= 0) {
+			throw new IllegalArgumentException("Number of rows ["+rows+"] must be greater than 0");
+		}
+		else if (cols <= 0) {
+			throw new IllegalArgumentException("Number of columns ["+cols+"] must be greater than 0");
+		}
+		else if (2L * rows * cols > Integer.MAX_VALUE) {
+			throw new IllegalArgumentException("Matrix size is greater than ["+Integer.MAX_VALUE+"] items");
+		}
+		else {
+			this.rows = rows;
+			this.cols = cols;
+			this.content = new double[rows][2*cols]; 
+		}
+	}
+	
 	@Override
 	public Object clone() throws CloneNotSupportedException {
 		// TODO Auto-generated method stub
@@ -18,42 +41,41 @@ public class ComplexDoubleMatrix implements Matrix {
 
 	@Override
 	public Type getType() {
-		// TODO Auto-generated method stub
-		return null;
+		return Type.COMPLEX_DOUBLE;
 	}
 
 	@Override
 	public int numberOfRows() {
-		// TODO Auto-generated method stub
-		return 0;
+		return rows;
 	}
 
 	@Override
 	public int numberOfColumns() {
-		// TODO Auto-generated method stub
-		return 0;
+		return cols;
 	}
 
 	@Override
-	public boolean deepEquals(Matrix another) {
-		// TODO Auto-generated method stub
-		return false;
+	public boolean deepEquals(final Matrix another) {
+		if (another == this) {
+			return true;
+		}
+		else if (another == null) {
+			return false;
+		}
+		else if (another.getType() != getType() || another.numberOfRows() != numberOfRows() || another.numberOfColumns() != numberOfColumns()) {
+			return false;
+		}
+		else {
+			// TODO Auto-generated method stub
+			return false;
+		}
 	}
 
 	@Override
-	public int[] extractInts() {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public int[] extractInts(Piece piece) {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public long[] extractLongs() {
+	public int[] extractInts(final Piece piece) {
+		if (piece == null) {
+			throw new NullPointerException("Pi");
+		}
 		// TODO Auto-generated method stub
 		return null;
 	}
@@ -65,19 +87,7 @@ public class ComplexDoubleMatrix implements Matrix {
 	}
 
 	@Override
-	public float[] extractFloats() {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
 	public float[] extractFloats(Piece piece) {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public double[] extractDoubles() {
 		// TODO Auto-generated method stub
 		return null;
 	}
@@ -89,19 +99,7 @@ public class ComplexDoubleMatrix implements Matrix {
 	}
 
 	@Override
-	public Matrix assign(int... content) {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
 	public Matrix assign(Piece piece, int... content) {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public Matrix assign(long... content) {
 		// TODO Auto-generated method stub
 		return null;
 	}
@@ -113,19 +111,7 @@ public class ComplexDoubleMatrix implements Matrix {
 	}
 
 	@Override
-	public Matrix assign(float... content) {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
 	public Matrix assign(Piece piece, float... content) {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public Matrix assign(double... content) {
 		// TODO Auto-generated method stub
 		return null;
 	}
@@ -137,19 +123,13 @@ public class ComplexDoubleMatrix implements Matrix {
 	}
 
 	@Override
-	public Matrix assign(Matrix content) {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
 	public Matrix assign(Piece piece, Matrix content) {
 		// TODO Auto-generated method stub
 		return null;
 	}
 
 	@Override
-	public Matrix fill(int value) {
+	public Matrix assign(Piece piece, DataInput content, Type type) throws IOException {
 		// TODO Auto-generated method stub
 		return null;
 	}
@@ -161,19 +141,7 @@ public class ComplexDoubleMatrix implements Matrix {
 	}
 
 	@Override
-	public Matrix fill(long value) {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
 	public Matrix fill(Piece piece, long value) {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public Matrix fill(float value) {
 		// TODO Auto-generated method stub
 		return null;
 	}
@@ -185,31 +153,13 @@ public class ComplexDoubleMatrix implements Matrix {
 	}
 
 	@Override
-	public Matrix fill(float real, float image) {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
 	public Matrix fill(Piece piece, float real, float image) {
 		// TODO Auto-generated method stub
 		return null;
 	}
 
 	@Override
-	public Matrix fill(double value) {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
 	public Matrix fill(Piece piece, double value) {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public Matrix fill(double real, double image) {
 		// TODO Auto-generated method stub
 		return null;
 	}
@@ -689,19 +639,7 @@ public class ComplexDoubleMatrix implements Matrix {
 	}
 
 	@Override
-	public Matrix apply(ApplyBit callback) {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
 	public Matrix apply(Piece piece, ApplyBit callback) {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public Matrix apply(ApplyInt callback) {
 		// TODO Auto-generated method stub
 		return null;
 	}
@@ -713,19 +651,7 @@ public class ComplexDoubleMatrix implements Matrix {
 	}
 
 	@Override
-	public Matrix apply(ApplyLong callback) {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
 	public Matrix apply(Piece piece, ApplyLong callback) {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public Matrix apply(ApplyFloat callback) {
 		// TODO Auto-generated method stub
 		return null;
 	}
@@ -737,31 +663,13 @@ public class ComplexDoubleMatrix implements Matrix {
 	}
 
 	@Override
-	public Matrix apply(ApplyDouble callback) {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
 	public Matrix apply(Piece piece, ApplyDouble callback) {
 		// TODO Auto-generated method stub
 		return null;
 	}
 
 	@Override
-	public Matrix apply(ApplyFloat2 callback) {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
 	public Matrix apply(Piece piece, ApplyFloat2 callback) {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public Matrix apply(ApplyDouble2 callback) {
 		// TODO Auto-generated method stub
 		return null;
 	}
@@ -783,5 +691,6 @@ public class ComplexDoubleMatrix implements Matrix {
 		// TODO Auto-generated method stub
 		return null;
 	}
+
 
 }

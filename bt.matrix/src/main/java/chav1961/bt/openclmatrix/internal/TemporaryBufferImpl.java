@@ -103,9 +103,9 @@ class TemporaryBufferImpl implements TemporaryBuffer {
 		}
 		else {
 			buffer.position(position());
-			final int	currentLen = Math.min(len, buffer.limit()-buffer.position());
+			final int	currentLen = Math.min(len, (buffer.limit()-buffer.position()) / Sizeof.cl_int);
 			
-			for(int index = 0; index < currentLen; index+= Sizeof.cl_int) {
+			for(int index = 0; index < currentLen; index++) {
 				buffer.get(smallBuffer, 0, Sizeof.cl_int);
 				content[index] = InternalUtils.toInt(smallBuffer, 0);
 			}
@@ -126,9 +126,9 @@ class TemporaryBufferImpl implements TemporaryBuffer {
 		}
 		else {
 			buffer.position(position());
-			final int	currentLen = Math.min(len, buffer.limit()-buffer.position());
+			final int	currentLen = Math.min(len, (buffer.limit()-buffer.position()) / Sizeof.cl_long);
 			
-			for(int index = 0; index < currentLen; index+= Sizeof.cl_long) {
+			for(int index = 0; index < currentLen; index++) {
 				buffer.get(smallBuffer, 0, Sizeof.cl_long);
 				content[index] = InternalUtils.toLong(smallBuffer, 0);
 			}
@@ -149,10 +149,10 @@ class TemporaryBufferImpl implements TemporaryBuffer {
 		}
 		else {
 			buffer.position(position());
-			final int	currentLen = Math.min(len, buffer.limit()-buffer.position());
+			final int	currentLen = Math.min(len, (buffer.limit()-buffer.position()) / Sizeof.cl_float);
 			
-			for(int index = 0; index < currentLen; index+= Sizeof.cl_int) {
-				buffer.get(smallBuffer, 0, Sizeof.cl_int);
+			for(int index = 0; index < currentLen; index++) {
+				buffer.get(smallBuffer, 0, Sizeof.cl_float);
 				content[index] = Float.intBitsToFloat(InternalUtils.toInt(smallBuffer, 0));
 			}
 			return currentLen;
@@ -172,10 +172,10 @@ class TemporaryBufferImpl implements TemporaryBuffer {
 		}
 		else {
 			buffer.position(position());
-			final int	currentLen = Math.min(len, buffer.limit()-buffer.position());
+			final int	currentLen = Math.min(len, (buffer.limit()-buffer.position()) / Sizeof.cl_double);
 			
-			for(int index = 0; index < currentLen; index+= Sizeof.cl_long) {
-				buffer.get(smallBuffer, 0, Sizeof.cl_long);
+			for(int index = 0; index < currentLen; index++) {
+				buffer.get(smallBuffer, 0, Sizeof.cl_double);
 				content[index] = Double.longBitsToDouble(InternalUtils.toLong(smallBuffer, 0));
 			}
 			return currentLen;
@@ -215,7 +215,7 @@ class TemporaryBufferImpl implements TemporaryBuffer {
 		}
 		else {
 			buffer.position(position());
-			final int	currentLen = Math.min(len, buffer.capacity()-buffer.position()) / Sizeof.cl_int;
+			final int	currentLen = Math.min(len, (buffer.capacity()-buffer.position()) / Sizeof.cl_int);
 
 			for(int index = 0; index < currentLen; index++) {
 				InternalUtils.fromInt(smallBuffer, 0, content[index]);
@@ -238,7 +238,7 @@ class TemporaryBufferImpl implements TemporaryBuffer {
 		}
 		else {
 			buffer.position(position());
-			final int	currentLen = Math.min(len, buffer.capacity()-buffer.position()) / Sizeof.cl_long;
+			final int	currentLen = Math.min(len, (buffer.capacity()-buffer.position()) / Sizeof.cl_long);
 
 			for(int index = 0; index < currentLen; index++) {
 				InternalUtils.fromLong(smallBuffer, 0, content[index]);
@@ -261,11 +261,11 @@ class TemporaryBufferImpl implements TemporaryBuffer {
 		}
 		else {
 			buffer.position(position());
-			final int	currentLen = Math.min(len, buffer.capacity()-buffer.position()) / Sizeof.cl_int;
+			final int	currentLen = Math.min(len, (buffer.capacity()-buffer.position()) / Sizeof.cl_float);
 
 			for(int index = 0; index < currentLen; index++) {
 				InternalUtils.fromInt(smallBuffer, 0, Float.floatToIntBits(content[index]));
-				buffer.put(smallBuffer, 0, Sizeof.cl_int);
+				buffer.put(smallBuffer, 0, Sizeof.cl_float);
 			}
 			return currentLen;
 		}
@@ -284,11 +284,11 @@ class TemporaryBufferImpl implements TemporaryBuffer {
 		}
 		else {
 			buffer.position(position());
-			final int	currentLen = Math.min(len, buffer.capacity()-buffer.position()) / Sizeof.cl_long;
+			final int	currentLen = Math.min(len, (buffer.capacity()-buffer.position()) / Sizeof.cl_double);
 
 			for(int index = 0; index < currentLen; index++) {
 				InternalUtils.fromLong(smallBuffer, 0, Double.doubleToLongBits(content[index]));
-				buffer.put(smallBuffer, 0, Sizeof.cl_long);
+				buffer.put(smallBuffer, 0, Sizeof.cl_double);
 			}
 			return currentLen;
 		}

@@ -1,5 +1,6 @@
 package chav1961.bt.openclmatrix.large;
 
+
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.File;
@@ -11,6 +12,8 @@ import org.junit.Test;
 import chav1961.purelib.matrix.interfaces.Matrix;
 import chav1961.purelib.matrix.interfaces.Matrix.ApplyDouble2;
 import chav1961.purelib.matrix.interfaces.Matrix.Piece;
+import chav1961.purelib.streams.DataInputAdapter;
+import chav1961.purelib.streams.DataOutputAdapter;
 
 public class ComplexDoubleMatrixTest {
 	public static final int			LARGE_SIZE = 16384;
@@ -68,7 +71,7 @@ public class ComplexDoubleMatrixTest {
 			} catch (IllegalArgumentException exc) {
 			}
 			try {
-				cdm.extractDoubles(Piece.of(0, 0, 1, 1), null);
+				cdm.extractDoubles(Piece.of(0, 0, 1, 1), (DataOutput)null);
 				Assert.fail("Mandatory exception was not detected (null 2-nd argument)");
 			} catch (NullPointerException exc) {
 			}
@@ -116,7 +119,7 @@ public class ComplexDoubleMatrixTest {
 			} catch (IllegalArgumentException exc) {
 			}
 			try {
-				cdm.extractFloats(Piece.of(0, 0, 1, 1), null);
+				cdm.extractFloats(Piece.of(0, 0, 1, 1), (DataOutput)null);
 				Assert.fail("Mandatory exception was not detected (null 2-nd argument)");
 			} catch (NullPointerException exc) {
 			}
@@ -164,7 +167,7 @@ public class ComplexDoubleMatrixTest {
 			} catch (IllegalArgumentException exc) {
 			}
 			try {
-				cdm.extractLongs(Piece.of(0, 0, 1, 1), null);
+				cdm.extractLongs(Piece.of(0, 0, 1, 1), (DataOutput)null);
 				Assert.fail("Mandatory exception was not detected (null 2-nd argument)");
 			} catch (NullPointerException exc) {
 			}
@@ -212,7 +215,7 @@ public class ComplexDoubleMatrixTest {
 			} catch (IllegalArgumentException exc) {
 			}
 			try {
-				cdm.extractInts(Piece.of(0, 0, 1, 1), null);
+				cdm.extractInts(Piece.of(0, 0, 1, 1), (DataOutput)null);
 				Assert.fail("Mandatory exception was not detected (null 2-nd argument)");
 			} catch (NullPointerException exc) {
 			}
@@ -547,14 +550,5 @@ public class ComplexDoubleMatrixTest {
 				
 			}
 		}
-	}
-	
-	@Test
-	public void staticsTest() throws IOException {
-		final double[]	src = new double[] {-1, 1};
-		final byte[]	temp = new byte[src.length * 8];
-		final double[]	dest = new double[2];
-		
-		Assert.assertArrayEquals(src, ComplexDoubleMatrix.deserialize(ComplexDoubleMatrix.serialize(temp, src), dest), 0.001f);
 	}
 }

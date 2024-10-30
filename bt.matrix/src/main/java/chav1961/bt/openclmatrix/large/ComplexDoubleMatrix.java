@@ -2,143 +2,37 @@ package chav1961.bt.openclmatrix.large;
 
 import java.io.DataInput;
 import java.io.DataOutput;
-import java.io.EOFException;
 import java.io.File;
 import java.io.IOException;
-import java.io.PrintStream;
-import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.file.StandardOpenOption;
 
+import chav1961.bt.openclmatrix.internal.GPUExecutor;
 import chav1961.bt.openclmatrix.internal.InternalUtils;
 import chav1961.purelib.matrix.interfaces.Matrix;
-import chav1961.purelib.streams.DataInputAdapter;
 
-public class ComplexDoubleMatrix implements Matrix {
-	private static final int	PARALLEL_FACTOR = 16;
-	private static final long	INIT_BUFFER_SIZE = PARALLEL_FACTOR * 1024 * 1024; 
-	private static final long	GIGABYTE = 1024 * 1024* 1024; 
-	private static final String	RAF_READ_WRITE_ACCESS_MODE = "rwd";
-	private static final String	RAF_READ_ONLY_ACCESS_MODE = "r";
+public class ComplexDoubleMatrix extends LargeMatrix implements Matrix {
+	private final long[]	longBuffer = new long[2];
 	
-	private final int		rows;
-	private final int		cols;
-	private final long		totalSize;
-	private final File		largeKeeper;
-	private boolean			transactionMode = false;
-
-	public ComplexDoubleMatrix(final int rows, final int cols) {
-		this(InternalUtils.TEMP_DIR_LOCATION, rows, cols);
+	public ComplexDoubleMatrix(final GPUExecutor executor, final int rows, final int cols) {
+		this(executor, InternalUtils.TEMP_DIR_LOCATION, rows, cols);
 	}	
 	
-	public ComplexDoubleMatrix(final File contentDir, final int rows, final int cols) {
-		if (contentDir == null) {
-			throw new NullPointerException("Content directory can't be null");
-		}
-		else if (!contentDir.exists() || !contentDir.isDirectory() || !contentDir.canWrite()) {
-			throw new IllegalArgumentException("Content directory ["+contentDir.getAbsolutePath()+"] not existst, not a directory or can't be written for you");
-		}
-		else if (rows <= 0) {
-			throw new IllegalArgumentException("NUmber of rows ["+rows+"] must be greater than 0");
-		}
-		else if (cols <= 0) {
-			throw new IllegalArgumentException("NUmber of columns ["+cols+"] must be greater than 0");
-		}
-		else {
-			File	tempFile = null; 
-			
-			this.rows = rows;
-			this.cols = cols;
-			this.totalSize = 1L * getType().getItemSize() * getType().getNumberOfItems() * rows * cols;
-			
-			try{
-				tempFile = File.createTempFile(InternalUtils.OPENCL_PREFIX+getType().getProgramSuffix(), ".matrix", contentDir);
-				
-				if (tempFile.getFreeSpace() < totalSize) {
-					throw new IllegalArgumentException("No space available in the directory ["+tempFile.getAbsolutePath()+"], required="+(totalSize/GIGABYTE)+"GByte, available="+(tempFile.getFreeSpace()/GIGABYTE)+"GByte");
-				}
-				else {
-					final int		bufferSize = (int) INIT_BUFFER_SIZE;
-					final byte[]	buffer = new byte[bufferSize];
-					
-					try(final RandomAccessFile raf = new RandomAccessFile(tempFile, RAF_READ_WRITE_ACCESS_MODE)) {
-						for(long address = 0; address < totalSize; address += bufferSize) {
-							raf.write(buffer, 0, address + bufferSize > totalSize ? (int)(totalSize - address) : bufferSize);
-						}
-					}
-					this.largeKeeper = tempFile;
-				}
-			} catch (IOException e) {
-				if (tempFile != null) {
-					tempFile.delete();
-				}
-				throw new IllegalArgumentException(e.getLocalizedMessage(), e);
-			}
-		}
+	public ComplexDoubleMatrix(final GPUExecutor executor, final File contentDir, final int rows, final int cols) {
+		super(executor, contentDir, Type.COMPLEX_DOUBLE, rows, cols);
 	}
 
-	private ComplexDoubleMatrix(final File contentDir, final int rows, final int cols, final File fill) {
-		File	tempFile = null; 
-		
-		this.rows = rows;
-		this.cols = cols;
-		this.totalSize = 1L * getType().getItemSize() * getType().getNumberOfItems() * rows * cols;
-		
-		try{
-			tempFile = File.createTempFile(InternalUtils.OPENCL_PREFIX+getType().getProgramSuffix(), ".matrix", contentDir);
-			
-			if (tempFile.getFreeSpace() < totalSize) {
-				throw new IllegalArgumentException("No space available in the directory ["+tempFile.getAbsolutePath()+"], required="+(totalSize/GIGABYTE)+"GByte, available="+(tempFile.getFreeSpace()/GIGABYTE)+"GByte");
-			}
-			else {
-				final int		bufferSize = (int) INIT_BUFFER_SIZE;
-				final byte[]	buffer = new byte[bufferSize];
-				
-				try(final RandomAccessFile	src = new RandomAccessFile(fill, RAF_READ_ONLY_ACCESS_MODE);
-					final RandomAccessFile  raf = new RandomAccessFile(tempFile, RAF_READ_WRITE_ACCESS_MODE)) {
-					int	len;
-					
-					while ((len = src.read(buffer)) > 0) {
-						raf.write(buffer, 0, len);
-					}
-				}
-				this.largeKeeper = tempFile;
-			}
-		} catch (IOException e) {
-			if (tempFile != null) {
-				tempFile.delete();
-			}
-			throw new IllegalArgumentException(e.getLocalizedMessage(), e);
-		}
+	private ComplexDoubleMatrix(final GPUExecutor executor, final File contentDir, final int rows, final int cols, final File fill) {
+		super(executor, contentDir, Type.COMPLEX_DOUBLE, rows, cols, fill);
 	}	
 	
 	@Override
 	public Object clone() throws CloneNotSupportedException {
 		ensureTransactionCompleted();
-		return new ComplexDoubleMatrix(largeKeeper.getParentFile(), rows, cols, largeKeeper);
+		return new ComplexDoubleMatrix(getExecutor(), getFileKeeper().getParentFile(), numberOfRows(), numberOfColumns(), getFileKeeper());
 	}
 	
-	@Override
-	public void close() throws RuntimeException {
-		largeKeeper.delete();
-	}
-
-	@Override
-	public Type getType() {
-		return Type.COMPLEX_DOUBLE;
-	}
-
-	@Override
-	public int numberOfRows() {
-		return rows;
-	}
-
-	@Override
-	public int numberOfColumns() {
-		return cols;
-	}
-
 	@Override
 	public boolean deepEquals(final Matrix another) {
 		if (another == null) {
@@ -151,15 +45,22 @@ public class ComplexDoubleMatrix implements Matrix {
 			return false;
 		}
 		else if (another.getClass() == this.getClass()) {
+			final long[]	temp = new long[2];
+			
 			ensureTransactionCompleted();
-			try(final FileChannel	left = FileChannel.open(largeKeeper.toPath(), StandardOpenOption.READ);
-				final FileChannel	right = FileChannel.open(((ComplexDoubleMatrix)another).largeKeeper.toPath(), StandardOpenOption.READ)) {
+			try(final FileChannel	left = FileChannel.open(getFileKeeper().toPath(), StandardOpenOption.READ);
+				final FileChannel	right = FileChannel.open(((ComplexDoubleMatrix)another).getFileKeeper().toPath(), StandardOpenOption.READ)) {
 
 				if (left.size() != right.size()) {
 					return false;
 				}
 				else {
-					return scanContentReadOnly(left, right, Piece.of(0, 0, numberOfRows(), numberOfColumns()), (y, x, realLeft, imageLeft, realRight, imageRight)->realLeft == realRight && imageLeft == imageRight);
+					return scanContentReadOnly2(left, right, Piece.of(0, 0, numberOfRows(), numberOfColumns()), (y, x, leftBuffer, rightBuffer)->{
+						deserialize(leftBuffer, longBuffer, 2);
+						deserialize(rightBuffer, temp, 2);
+						
+						return longBuffer[0] == temp[0] && longBuffer[1] == temp[1];
+					});
 				}
 			} catch (IOException e) {
 				return false;
@@ -192,21 +93,22 @@ public class ComplexDoubleMatrix implements Matrix {
 			final long	size = 1L * numberOfRows() * numberOfColumns(), maxSize = Integer.MAX_VALUE;
 			final int[]	result = new int[(int) Math.min(size, maxSize)];
 			
-			extractAny(piece, new ProcessContent() {
-					int index = 0;
-				
-					public boolean process(final int row, final int col, final double real, final double image) throws IOException {
-						if (index >= result.length - 1) {
-							return false;
-						}
-						else {
-							result[index++] = (int)real;
-							result[index++] = (int)image;
-							return true;
-						}
-					};
-				} 
-			);
+			extractAny(piece, new ProcessFCContent() {
+				int index = 0;
+			
+				public boolean process(final int row, final int col, final ByteBuffer source) throws IOException {
+					deserialize(source, longBuffer, 2);
+					
+					if (index >= result.length - 1) {
+						return false;
+					}
+					else {
+						result[index++] = (int)Double.longBitsToDouble(longBuffer[0]);
+						result[index++] = (int)Double.longBitsToDouble(longBuffer[1]);
+						return true;
+					}
+				};
+			});
 			return result;
 		}
 	}
@@ -224,9 +126,10 @@ public class ComplexDoubleMatrix implements Matrix {
 		}
 		else {
 			ensureTransactionCompleted();
-			extractAny(piece, (y, x, real, image) -> {
-				dataOutput.writeInt((int)real);
-				dataOutput.writeInt((int)image);
+			extractAny(piece, (y, x, source) -> {
+				deserialize(source, longBuffer, 2);
+				dataOutput.writeInt((int)Double.longBitsToDouble(longBuffer[0]));
+				dataOutput.writeInt((int)Double.longBitsToDouble(longBuffer[1]));
 				return true;
 			});
 		}
@@ -245,21 +148,22 @@ public class ComplexDoubleMatrix implements Matrix {
 			final long		size = 1L * numberOfRows() * numberOfColumns(), maxSize = Integer.MAX_VALUE;
 			final long[]	result = new long[(int) Math.min(size, maxSize)];
 			
-			extractAny(piece, new ProcessContent() {
-					int index = 0;
-				
-					public boolean process(final int row, final int col, final double real, final double image) throws IOException {
-						if (index >= result.length - 1) {
-							return false;
-						}
-						else {
-							result[index++] = (long)real;
-							result[index++] = (long)image;
-							return true;
-						}
-					};
-				} 
-			);
+			extractAny(piece, new ProcessFCContent() {
+				int index = 0;
+			
+				public boolean process(final int row, final int col, final ByteBuffer source) throws IOException {
+					deserialize(source, longBuffer, 2);
+					
+					if (index >= result.length - 1) {
+						return false;
+					}
+					else {
+						result[index++] = (long)Double.longBitsToDouble(longBuffer[0]);
+						result[index++] = (long)Double.longBitsToDouble(longBuffer[1]);
+						return true;
+					}
+				};
+			});
 			return result;
 		}
 	}
@@ -277,9 +181,10 @@ public class ComplexDoubleMatrix implements Matrix {
 		}
 		else {
 			ensureTransactionCompleted();
-			extractAny(piece, (y, x, real, image) -> {
-				dataOutput.writeLong((long)real);
-				dataOutput.writeLong((long)image);
+			extractAny(piece, (y, x, source) -> {
+				deserialize(source, longBuffer, 2);
+				dataOutput.writeLong((long)Double.longBitsToDouble(longBuffer[0]));
+				dataOutput.writeLong((long)Double.longBitsToDouble(longBuffer[1]));
 				return true;
 			});
 		}
@@ -298,21 +203,22 @@ public class ComplexDoubleMatrix implements Matrix {
 			final long		size = 1L * numberOfRows() * numberOfColumns(), maxSize = Integer.MAX_VALUE;
 			final float[]	result = new float[(int) Math.min(size, maxSize)];
 			
-			extractAny(piece, new ProcessContent() {
-					int index = 0;
-				
-					public boolean process(final int row, final int col, final double real, final double image) throws IOException {
-						if (index >= result.length - 1) {
-							return false;
-						}
-						else {
-							result[index++] = (float)real;
-							result[index++] = (float)image;
-							return true;
-						}
-					};
-				} 
-			);
+			extractAny(piece, new ProcessFCContent() {
+				int index = 0;
+			
+				public boolean process(final int row, final int col, final ByteBuffer source) throws IOException {
+					deserialize(source, longBuffer, 2);
+					
+					if (index >= result.length - 1) {
+						return false;
+					}
+					else {
+						result[index++] = (float)Double.longBitsToDouble(longBuffer[0]);
+						result[index++] = (float)Double.longBitsToDouble(longBuffer[1]);
+						return true;
+					}
+				};
+			});
 			return result;
 		}
 	}
@@ -330,9 +236,10 @@ public class ComplexDoubleMatrix implements Matrix {
 		}
 		else {
 			ensureTransactionCompleted();
-			extractAny(piece, (y, x, real, image) -> {
-				dataOutput.writeFloat((float)real);
-				dataOutput.writeFloat((float)image);
+			extractAny(piece, (y, x, source) -> {
+				deserialize(source, longBuffer, 2);
+				dataOutput.writeFloat((float)Double.longBitsToDouble(longBuffer[0]));
+				dataOutput.writeFloat((float)Double.longBitsToDouble(longBuffer[1]));
 				return true;
 			});
 		}
@@ -351,21 +258,22 @@ public class ComplexDoubleMatrix implements Matrix {
 			final long		size = 1L * numberOfRows() * numberOfColumns(), maxSize = Integer.MAX_VALUE;
 			final double[]	result = new double[(int) Math.min(size, maxSize)];
 			
-			extractAny(piece, new ProcessContent() {
-					int index = 0;
-				
-					public boolean process(final int row, final int col, final double real, final double image) throws IOException {
-						if (index >= result.length - 1) {
-							return false;
-						}
-						else {
-							result[index++] = real;
-							result[index++] = image;
-							return true;
-						}
-					};
-				} 
-			);
+			extractAny(piece, new ProcessFCContent() {
+				int index = 0;
+			
+				public boolean process(final int row, final int col, final ByteBuffer source ) throws IOException {
+					deserialize(source, longBuffer, 2);
+					
+					if (index >= result.length - 1) {
+						return false;
+					}
+					else {
+						result[index++] = Double.longBitsToDouble(longBuffer[0]);
+						result[index++] = Double.longBitsToDouble(longBuffer[1]);
+						return true;
+					}
+				};
+			});
 			return result;
 		}
 	}
@@ -383,9 +291,10 @@ public class ComplexDoubleMatrix implements Matrix {
 		}
 		else {
 			ensureTransactionCompleted();
-			extractAny(piece, (y, x, real, image) -> {
-				dataOutput.writeDouble(real);
-				dataOutput.writeDouble(image);
+			extractAny(piece, (y, x, source) -> {
+				deserialize(source, longBuffer, 2);
+				dataOutput.writeDouble(Double.longBitsToDouble(longBuffer[0]));
+				dataOutput.writeDouble(Double.longBitsToDouble(longBuffer[1]));
 				return true;
 			});
 		}
@@ -403,24 +312,22 @@ public class ComplexDoubleMatrix implements Matrix {
 			throw new NullPointerException("Content can't be null");
 		}
 		else {
+			final int[]	counter = new int[] {0};
+			
 			ensureTransactionCompleted();
-			try {
-				return assign(piece, new DataInputAdapter() {
-					int index = 0;
-					
-					@Override
-					public int readInt() throws IOException {
-						if (index >= content.length) {
-							throw new EOFException();
-						}
-						else {
-							return content[index++]; 
-						}
-					}
-				}, Type.REAL_INT);
-			} catch (IOException e) {
-				throw new IllegalArgumentException("I/O error processing matrix: "+e.getLocalizedMessage(), e);
-			}
+			
+			assignAny(piece, (x, y, target)->{
+				if (counter[0] > content.length - 2) {
+					return false;
+				}
+				else {
+					longBuffer[0] = Double.doubleToLongBits(content[counter[0]++]);
+					longBuffer[1] = Double.doubleToLongBits(content[counter[0]++]);
+					serialize(longBuffer, 2, target);
+					return true;
+				}
+			});
+			return this;
 		}
 	}
 
@@ -436,24 +343,22 @@ public class ComplexDoubleMatrix implements Matrix {
 			throw new NullPointerException("Content can't be null");
 		}
 		else {
+			final int[]	counter = new int[] {0};
+			
 			ensureTransactionCompleted();
-			try {
-				return assign(piece, new DataInputAdapter() {
-					int index = 0;
-					
-					@Override
-					public long readLong() throws IOException {
-						if (index >= content.length) {
-							throw new EOFException();
-						}
-						else {
-							return content[index++];
-						}
-					}
-				}, Type.REAL_LONG);
-			} catch (IOException e) {
-				throw new IllegalArgumentException("I/O error processing matrix: "+e.getLocalizedMessage(), e);
-			}
+			
+			assignAny(piece, (x, y, target)->{
+				if (counter[0] > content.length - 2) {
+					return false;
+				}
+				else {
+					longBuffer[0] = Double.doubleToLongBits(content[counter[0]++]);
+					longBuffer[1] = Double.doubleToLongBits(content[counter[0]++]);
+					serialize(longBuffer, 2, target);
+					return true;
+				}
+			});
+			return this;
 		}
 	}
 
@@ -469,24 +374,22 @@ public class ComplexDoubleMatrix implements Matrix {
 			throw new NullPointerException("Content can't be null");
 		}
 		else {
+			final int[]	counter = new int[] {0};
+			
 			ensureTransactionCompleted();
-			try {
-				return assign(piece, new DataInputAdapter() {
-					int index = 0;
-					
-					@Override
-					public float readFloat() throws IOException {
-						if (index >= content.length) {
-							throw new EOFException();
-						}
-						else {
-							return content[index++];
-						}
-					}
-				}, Type.COMPLEX_FLOAT);
-			} catch (IOException e) {
-				throw new IllegalArgumentException("I/O error processing matrix: "+e.getLocalizedMessage(), e);
-			}
+			
+			assignAny(piece, (x, y, target)->{
+				if (counter[0] > content.length - 2) {
+					return false;
+				}
+				else {
+					longBuffer[0] = Double.doubleToLongBits(content[counter[0]++]);
+					longBuffer[1] = Double.doubleToLongBits(content[counter[0]++]);
+					serialize(longBuffer, 2, target);
+					return true;
+				}
+			});
+			return this;
 		}
 	}
 
@@ -502,24 +405,22 @@ public class ComplexDoubleMatrix implements Matrix {
 			throw new NullPointerException("Content can't be null");
 		}
 		else {
+			final int[]	counter = new int[] {0};
+			
 			ensureTransactionCompleted();
-			try {
-				return assign(piece, new DataInputAdapter() {
-					int index = 0;
-					
-					@Override
-					public double readDouble() throws IOException {
-						if (index >= content.length) {
-							throw new EOFException();
-						}
-						else {
-							return content[index++];
-						}
-					}
-				}, Type.COMPLEX_DOUBLE);
-			} catch (IOException e) {
-				throw new IllegalArgumentException("I/O error processing matrix: "+e.getLocalizedMessage(), e);
-			}
+			
+			assignAny(piece, (x, y, target)->{
+				if (counter[0] > content.length - 2) {
+					return false;
+				}
+				else {
+					longBuffer[0] = Double.doubleToLongBits(content[counter[0]++]);
+					longBuffer[1] = Double.doubleToLongBits(content[counter[0]++]);
+					serialize(longBuffer, 2, target);
+					return true;
+				}
+			});
+			return this;
 		}
 	}
 
@@ -544,33 +445,47 @@ public class ComplexDoubleMatrix implements Matrix {
 			throw new NullPointerException("Type can't be null");
 		}
 		else {
-			final ProcessArrayContent	pac;
+			final ProcessFCContent	pfc;
 			
 			switch (type) {
-				case BIT			:
-					pac = (y, x, value)->{value[0] = content.readBoolean() ? 1 : 0; value[1] = content.readBoolean() ? 1 : 0; return true;};
-					break;
 				case COMPLEX_DOUBLE	:
 				case REAL_DOUBLE	:
-					pac = (y, x, value)->{value[0] = content.readDouble(); value[1] = content.readDouble(); return true;};
+					pfc = (y, x, target)->{
+						longBuffer[0] = Double.doubleToLongBits(content.readDouble());
+						longBuffer[1] = Double.doubleToLongBits(content.readDouble());
+						serialize(longBuffer, 2, target);
+						return true;
+					};
 					break;
 				case COMPLEX_FLOAT	:
 				case REAL_FLOAT		:
-					pac = (y, x, value)->{value[0] = content.readFloat(); value[1] = content.readFloat(); return true;};
+					pfc = (y, x, target)->{
+						longBuffer[0] = Double.doubleToLongBits(content.readFloat());
+						longBuffer[1] = Double.doubleToLongBits(content.readFloat());
+						serialize(longBuffer, 2, target);
+						return true;
+					};
 					break;
 				case REAL_INT		:
-					pac = (y, x, value)->{value[0] = content.readInt(); value[1] = content.readInt(); return true;};
+					pfc = (y, x, target)->{
+						longBuffer[0] = Double.doubleToLongBits(content.readInt());
+						longBuffer[1] = Double.doubleToLongBits(content.readInt());
+						serialize(longBuffer, 2, target);
+						return true;
+					};
 					break;
 				case REAL_LONG		:
-					pac = (y, x, value)->{value[0] = content.readLong(); value[1] = content.readLong(); return true;};
+					pfc = (y, x, target)->{
+						longBuffer[0] = Double.doubleToLongBits(content.readLong());
+						longBuffer[1] = Double.doubleToLongBits(content.readLong());
+						serialize(longBuffer, 2, target);
+						return true;
+					};
 					break;
 				default:
 					throw new UnsupportedOperationException("Matrix type ["+type+"] is not supported yet"); 
 			}
-			
-			try(final FileChannel	out = FileChannel.open(largeKeeper.toPath(), StandardOpenOption.WRITE)) {
-				scanContentWriteOnly(out, piece, pac, PARALLEL_FACTOR);
-			}
+			assignAny(piece, pfc);
 			return this;
 		}
 	}
@@ -611,16 +526,12 @@ public class ComplexDoubleMatrix implements Matrix {
 		else {
 			ensureTransactionCompleted();
 			
-			try(final FileChannel	in = FileChannel.open(largeKeeper.toPath(), StandardOpenOption.WRITE)) {
-				scanContentWriteOnly(in, piece, (y, x, values) -> {
-					values[0] = real;
-					values[1] = image;
-					return true;
-				}, PARALLEL_FACTOR);
-			} catch (IOException e) {
-				e.printStackTrace();
-				throw new IllegalArgumentException("IO error processing request: "+e.getLocalizedMessage(), e);
-			}
+			assignAny(piece, (x, y, target)->{
+				longBuffer[0] = Double.doubleToLongBits(real);
+				longBuffer[1] = Double.doubleToLongBits(image);
+				serialize(longBuffer, 2, target);
+				return true;
+			});
 			return this;
 		}
 	}
@@ -632,7 +543,7 @@ public class ComplexDoubleMatrix implements Matrix {
 	}
 
 	@Override
-	public Matrix add(int... content) {
+	public Matrix add(final int... content) {
 		if (content == null) {
 			throw new NullPointerException("Content to add can't be null");
 		}
@@ -645,7 +556,7 @@ public class ComplexDoubleMatrix implements Matrix {
 	}
 
 	@Override
-	public Matrix add(long... content) {
+	public Matrix add(final long... content) {
 		if (content == null) {
 			throw new NullPointerException("Content to add can't be null");
 		}
@@ -658,7 +569,7 @@ public class ComplexDoubleMatrix implements Matrix {
 	}
 
 	@Override
-	public Matrix add(float... content) {
+	public Matrix add(final float... content) {
 		if (content == null) {
 			throw new NullPointerException("Content to add can't be null");
 		}
@@ -671,7 +582,7 @@ public class ComplexDoubleMatrix implements Matrix {
 	}
 
 	@Override
-	public Matrix add(double... content) {
+	public Matrix add(final double... content) {
 		if (content == null) {
 			throw new NullPointerException("Content to add can't be null");
 		}
@@ -1358,341 +1269,34 @@ public class ComplexDoubleMatrix implements Matrix {
 			throw new NullPointerException("callback can't be null");
 		}
 		else {
+			final double[]	temp = new double[2];
 			ensureTransactionCompleted();
-			
-			try(final FileChannel	out = FileChannel.open(largeKeeper.toPath(), StandardOpenOption.READ, StandardOpenOption.WRITE)) {
+
+			applyAny(piece, (y, x, buffer)->{
+				final int	position = buffer.position();
 				
-				scanContentReadWrite(out, piece, (y, x, values)->{callback.apply(y, x, values); return true;}, PARALLEL_FACTOR);
-			} catch (IOException e) {
-				throw new IllegalArgumentException(e.getLocalizedMessage(), e);
-			}
+				deserialize(buffer, longBuffer, 2);
+				temp[0] = Double.longBitsToDouble(longBuffer[0]);
+				temp[1] = Double.longBitsToDouble(longBuffer[1]);
+				callback.apply(y, x, temp);
+				longBuffer[0] = Double.doubleToLongBits(temp[0]);
+				longBuffer[1] = Double.doubleToLongBits(temp[1]);
+				buffer.position(position);
+				serialize(longBuffer, 2, buffer);
+				return true;
+			});
 			return this;
 		}
 	}
 
 	@Override
 	public String toString() {
-		return "CompleDoubleMatrix["+numberOfRows()+"x"+numberOfColumns()+" based on "+largeKeeper.getAbsolutePath()+", total size="+(totalSize/GIGABYTE)+"Gb, transaction mode is "+transactionMode+"]";
-	}
-	
-	@Override
-	public int hashCode() {
-		final int prime = 31;
-		int result = 1;
-		result = prime * result + cols;
-		result = prime * result + rows;
-		result = prime * result + (int) (totalSize ^ (totalSize >>> 32));
-		return result;
-	}
-
-	@Override
-	public boolean equals(final Object obj) {
-		if (this == obj) return true;
-		if (obj == null) return false;
-		if (getClass() != obj.getClass()) return false;
-		ComplexDoubleMatrix other = (ComplexDoubleMatrix) obj;
-		if (cols != other.cols) return false;
-		if (rows != other.rows) return false;
-		if (totalSize != other.totalSize) return false;
-		return deepEquals(other);
-	}
-
-	@Override
-	public String toHumanReadableString() {
-		return "Matrix content is too long to use this method. Use toHumanReadableString(PrintStream) instead";
-	}
-
-	@Override
-	public void toHumanReadableString(final PrintStream ps) {
-		if (ps == null) {
-			throw new NullPointerException("Print stream can't be null");
-		}
-		else {
-			try(final RandomAccessFile raf = new RandomAccessFile(largeKeeper, "rw")) {
-				
-				ps.println(">>> Matrix: type="+getType()+", size="+numberOfRows()+"x"+numberOfColumns());
-				scanContent(raf, Piece.of(0, 0, numberOfRows(), numberOfColumns()), new ProcessContent() {
-					int oldRow = -1;
-					
-					@Override
-					public boolean process(int row, int col, double real, double image) throws IOException {
-						if (oldRow != row) {
-							oldRow = row;
-							ps.println("");
-						}
-						if (real == 0 && image == 0) {
-							ps.print("0, ");
-						}
-						else if (image == 0) {
-							ps.print(real);
-							ps.print(", ");
-						}
-						else if (real == 0) {
-							ps.print(image);
-							ps.print("i, ");
-						}
-						else if (image < 0) {
-							ps.print(real);
-							ps.print(image);
-							ps.print("i, ");
-						}
-						else {
-							ps.print(real);
-							ps.print('+');
-							ps.print(image);
-							ps.print("i, ");
-						}
-						return true;
-					}
-				});
-				ps.println();
-				ps.println(">>> end matrix");
-			} catch (IOException exc) {
-				ps.println(exc.getLocalizedMessage());
-			}
-		}
+		return "CompleDoubleMatrix["+numberOfRows()+"x"+numberOfColumns()+" based on "+getFileKeeper().getAbsolutePath()+", total size="+(getFileKeeper().length()/GIGABYTE)+"Gb, transaction mode is "+!areAllAsyncCompleted()+"]";
 	}
 	
 	@Override
 	public Matrix done() {
 		// TODO Auto-generated method stub
 		return null;
-	}
-
-	@Override
-	public boolean areAllAsyncCompleted() {
-		return !transactionMode;
-	}
-	
-	private void ensureTransactionCompleted() {
-		if (!areAllAsyncCompleted()) {
-			throw new IllegalStateException("Attempl to call this method until transaction completed");
-		}
-	}
-
-	private void extractAny(final Piece piece, final ProcessContent callback) {
-		try(final FileChannel	in = FileChannel.open(largeKeeper.toPath(), StandardOpenOption.READ)) {
-			scanContentReadOnly(in, piece, callback, PARALLEL_FACTOR);
-		} catch (IOException e) {
-			e.printStackTrace();
-			throw new IllegalArgumentException("IO error processing request: "+e.getLocalizedMessage(), e);
-		}
-	}
-	
-	
-	private void beginTransaction() {
-		transactionMode = true;
-	}
-	
-	private boolean scanContent(final RandomAccessFile raf, final Piece piece, final ProcessContent callback) throws IOException {
-		final long 	cols = numberOfColumns();
-		final int	size = getType().getNumberOfItems() * getType().getItemSize(); 
-		
-		for(int y = piece.getTop(), maxY = piece.getTop() + piece.getHeight(); y < maxY; y++) {
-			final long	address = 1L * y * cols * size;
-			
-			raf.seek(address);			
-			for(int x = piece.getLeft(), maxX = piece.getLeft() + piece.getWidth(); x < maxX; x++) {
-				if (!callback.process(y, x, raf.readDouble(), raf.readDouble())) {
-					return false;
-				}
-			}
-		}
-		return true;
-	}
-
-	private boolean scanContentReadOnly(final FileChannel fc, final Piece piece, final ProcessContent callback, final int parallels) throws IOException {
-		final long 			cols = piece.getWidth();
-		final int			size = getType().getNumberOfItems() * getType().getItemSize();
-		final ByteBuffer	bb = ByteBuffer.allocateDirect((int)(cols * size));
-		final byte[]		data = new byte[size];
-		final double[]		values = new double[2];
-		
-		for(int y = piece.getTop(), maxY = piece.getTop() + piece.getHeight(); y < maxY; y++) {
-			bb.clear();
-			fc.read(bb, 1L * (y * numberOfColumns() + piece.getLeft()) * size);
-			bb.rewind();
-			for(int x = piece.getLeft(), maxX = piece.getLeft() + piece.getWidth(); x < maxX; x++) {
-				bb.get(data);
-				deserialize(data, values);
-				
-				if (!callback.process(y, x, values[0], values[1])) {
-					return false;
-				}
-			}
-		}
-		return true;
-	}
-	
-	private boolean scanContentWriteOnly(final FileChannel fc, final Piece piece, final ProcessArrayContent callback, final int parallels) throws IOException {
-		final long 			cols = piece.getWidth();
-		final int			size = getType().getNumberOfItems() * getType().getItemSize();
-		final ByteBuffer	bb = ByteBuffer.allocateDirect((int)(cols * size));
-		final byte[]		data = new byte[size];
-		final double[]		values = new double[2];
-		
-		for(int y = piece.getTop(), maxY = piece.getTop() + piece.getHeight(); y < maxY; y++) {
-			bb.clear();
-			
-			fc.position(1L * (y * numberOfColumns() + piece.getLeft()) * size);
-			for(int x = piece.getLeft(), maxX = piece.getLeft() + piece.getWidth(); x < maxX; x++) {
-				try{
-					if (!callback.process(y, x, values)) {
-						bb.flip();
-						while(bb.hasRemaining()) {
-							fc.write(bb);
-						}			
-						return false;
-					}
-					else {
-						bb.put(serialize(data, values));
-					}
-				} catch (EOFException exc) {
-					bb.flip();
-					while(bb.hasRemaining()) {
-						fc.write(bb);
-					}			
-					return false;
-				}
-			}
-			bb.flip();
-			while(bb.hasRemaining()) {
-				fc.write(bb);
-			}
-		}
-		return true;
-	}
-
-	private boolean scanContentReadWrite(final FileChannel fc, final Piece piece, final ProcessArrayContent callback, final int parallels) throws IOException {
-		final long 			cols = piece.getWidth();
-		final int			size = getType().getNumberOfItems() * getType().getItemSize();
-		final ByteBuffer	bb = ByteBuffer.allocateDirect((int)(cols * size));
-		final byte[]		data = new byte[size];
-		final double[]		values = new double[2];
-		
-		for(int y = piece.getTop(), maxY = piece.getTop() + piece.getHeight(); y < maxY; y++) {
-			final long	address = 1L * (y * numberOfColumns() + piece.getLeft()) * size;
-			
-			bb.clear();
-			fc.position(address);
-			fc.read(bb);
-			bb.rewind();
-			for(int x = piece.getLeft(), maxX = piece.getLeft() + piece.getWidth(); x < maxX; x++) {
-				final int	position = bb.position();
-				
-				bb.get(data);
-				deserialize(data, values);
-				if (!callback.process(y, x, values)) {
-					bb.flip();
-					fc.position(address);
-					while(bb.hasRemaining()) {
-						fc.write(bb);
-					}			
-					return false;
-				}
-				else {
-					bb.put(position, serialize(data, values));
-				}
-			}
-			bb.flip();
-			fc.position(address);
-			while(bb.hasRemaining()) {
-				fc.write(bb);
-			}
-		}
-		return true;
-	}
-	
-	private boolean scanContentReadOnly(final FileChannel left, final FileChannel right, final Piece piece, final ProcessContentPair callback) throws IOException {
-		final long 			cols = piece.getWidth();
-		final int			size = getType().getNumberOfItems() * getType().getItemSize();
-		final ByteBuffer	bbLeft = ByteBuffer.allocateDirect((int)(cols * size));
-		final ByteBuffer	bbRight = ByteBuffer.allocate((int)(cols * size));
-		final byte[]		data = new byte[size];
-		final double[]		leftValues = new double[2], rightValues = new double[2];
-		
-		for(int y = piece.getTop(), maxY = piece.getTop() + piece.getHeight(); y < maxY; y++) {
-			bbLeft.clear();
-			bbRight.clear();
-			left.read(bbLeft, 1L * (y * numberOfColumns() + piece.getLeft()) * size);
-			right.read(bbRight, 1L * (y * numberOfColumns() + piece.getLeft()) * size);
-			bbLeft.rewind();
-			bbRight.rewind();
-			for(int x = piece.getLeft(), maxX = piece.getLeft() + piece.getWidth(); x < maxX; x++) {
-				bbLeft.get(data);
-				deserialize(data, leftValues);
-				bbRight.get(data);
-				deserialize(data, rightValues);
-				
-				if (!callback.process(y, x, leftValues[0], leftValues[1], rightValues[0], rightValues[1])) {
-					return false;
-				}
-			}
-		}
-		return true;
-	}
-
-	private boolean isOverlaps(final Piece piece) {
-		if (piece.getTop() < 0 || piece.getLeft() < 0 || piece.getTop() >= numberOfRows() || piece.getLeft() >= numberOfColumns()) {
-			return true;
-		}
-		else if (piece.getTop() + piece.getHeight() < 0 || piece.getLeft() + piece.getWidth() < 0 || piece.getTop() + piece.getHeight() > numberOfRows() || piece.getLeft() + piece.getWidth() > numberOfColumns()) {
-			return true;
-		}
-		else if (piece.getWidth() <= 0 || piece.getHeight() <= 0) {
-			return true;
-		}
-		else {
-			return false;
-		}
-	}
-
-	private Piece totalPiece() {
-		return Piece.of(0, 0, numberOfRows(), numberOfColumns());
-	}
-	
-	static byte[] serialize(final byte[] target, final double[] source) {
-		int	count = 0;
-		
-		for(int index = 0; index < source.length; index++) {
-			final long	value = Double.doubleToLongBits(source[index]);
-			
-			for(int shift = 56; shift >= 0; shift -= 8) {
-				target[count++] = (byte)(value >>> shift);
-			}
-		}
-		return target;
-	}
-
-	static double[] deserialize(final byte[] source, final double[] target) {
-		int	count = 0;
-		
-		for(int index = 0; index < target.length; index++) {
-			long	value = (((long)source[count++] << 56) +
-	                		((long)(source[count++] & 0xFF) << 48) +
-	                		((long)(source[count++] & 0xFF) << 40) +
-	                		((long)(source[count++] & 0xFF) << 32) +
-	                		((long)(source[count++] & 0xFF) << 24) +
-	                		((source[count++] & 0xFF) << 16) +
-	                		((source[count++] & 0xFF) << 8) +
-	                		((source[count++] & 0xFF) << 0));
-			target[index] = Double.longBitsToDouble(value);
-		}
-		return target;
-	}
-	
-	@FunctionalInterface
-	private static interface ProcessContent {
-		boolean process(int row, int col, double real, double image) throws IOException;
-	}
-
-	@FunctionalInterface
-	private static interface ProcessContentPair {
-		boolean process(int row, int col, double realLeft, double imageLeft, double realRight, double imageRight) throws IOException;
-	}
-	
-	@FunctionalInterface
-	private static interface ProcessArrayContent {
-		boolean process(int row, int col, double[] content) throws IOException;
 	}
 }

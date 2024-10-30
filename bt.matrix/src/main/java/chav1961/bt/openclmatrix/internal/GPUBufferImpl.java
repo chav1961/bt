@@ -4,22 +4,16 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.EOFException;
 import java.io.IOException;
-import java.io.PipedInputStream;
-import java.io.PipedOutputStream;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.function.Consumer;
 
 import org.jocl.CL;
 import org.jocl.Pointer;
 import org.jocl.Sizeof;
-import org.jocl.cl_event;
 import org.jocl.cl_mem;
 
 import chav1961.bt.openclmatrix.internal.GPUExecutor.GPUBuffer;
 import chav1961.bt.openclmatrix.internal.GPUExecutor.GPUEvent;
 import chav1961.bt.openclmatrix.internal.GPUExecutor.TemporaryBuffer;
-import chav1961.bt.openclmatrix.spi.OpenCLDescriptor.OpenCLContext;
 import chav1961.purelib.matrix.interfaces.Matrix;
 import chav1961.purelib.matrix.interfaces.Matrix.Piece;
 import chav1961.purelib.matrix.interfaces.Matrix.Type;
@@ -328,8 +322,11 @@ class GPUBufferImpl implements GPUBuffer {
 
 	@Override
 	public GPUEvent upload(final TemporaryBuffer out, final Matrix.Type type) throws IOException {
-		if (buffer == null) {
+		if (out == null) {
 			throw new NullPointerException("Buffer can't be null");
+		}
+		else if (type == null) {
+			throw new NullPointerException("Content type can't be null");
 		}
 		else {
 			final GPUEvent	event = owner.createEvent();
