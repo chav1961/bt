@@ -130,17 +130,6 @@ abstract class LargeMatrix extends AbstractMatrix implements Matrix {
 	}
 	
 	@Override
-	public Matrix done() {
-		completeTransaction();
-		return this;
-	}
-
-	@Override
-	public boolean areAllAsyncCompleted() {
-		return !transactionMode;
-	}
-
-	@Override
 	public String toHumanReadableString() {
 		return "Matrix content is too long to use this method. Use toHumanReadableString(PrintStream) instead";
 	}
@@ -226,35 +215,6 @@ abstract class LargeMatrix extends AbstractMatrix implements Matrix {
 
 	File getFileKeeper() {
 		return largeKeeper;
-	}
-
-	void beginTransaction() {
-		transactionMode = true;
-	}
-
-	void completeTransaction() {
-		transactionMode = false;
-	}
-	
-	void ensureTransactionCompleted() {
-		if (!areAllAsyncCompleted()) {
-			throw new IllegalStateException("Attempl to call this method until transaction completed");
-		}
-	}
-	
-	boolean isOverlaps(final Piece piece) {
-		if (piece.getTop() < 0 || piece.getLeft() < 0 || piece.getTop() >= numberOfRows() || piece.getLeft() >= numberOfColumns()) {
-			return true;
-		}
-		else if (piece.getTop() + piece.getHeight() < 0 || piece.getLeft() + piece.getWidth() < 0 || piece.getTop() + piece.getHeight() > numberOfRows() || piece.getLeft() + piece.getWidth() > numberOfColumns()) {
-			return true;
-		}
-		else if (piece.getWidth() <= 0 || piece.getHeight() <= 0) {
-			return true;
-		}
-		else {
-			return false;
-		}
 	}
 
 	@FunctionalInterface

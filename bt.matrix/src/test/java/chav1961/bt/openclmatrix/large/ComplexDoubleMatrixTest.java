@@ -475,7 +475,7 @@ public class ComplexDoubleMatrixTest {
 			
 			final ApplyDouble2 ad2 = (x, y, values)->{values[0] = -values[0]; values[1] = -values[1];}; 
 			
-			cdm.apply(ad2);
+			cdm.apply2(ad2);
 
 			cdm.extractDoubles(new DataOutputAdapter() {
 				@Override
@@ -484,20 +484,20 @@ public class ComplexDoubleMatrixTest {
 				}
 			});
 			
-			try{cdm.apply((ApplyDouble2)null);
+			try{cdm.apply2((ApplyDouble2)null);
 				Assert.fail("Mandatore exception was not detected (null 1-st argument)");
 			} catch (NullPointerException exc) {
 			}
 
-			try{cdm.apply(null, ad2);
+			try{cdm.apply2(null, ad2);
 				Assert.fail("Mandatore exception was not detected (null 1-st argument)");
 			} catch (NullPointerException exc) {
 			}
-			try{cdm.apply(Piece.of(0, 0, 2*LARGE_SIZE, 2*LARGE_SIZE), ad2);
+			try{cdm.apply2(Piece.of(0, 0, 2*LARGE_SIZE, 2*LARGE_SIZE), ad2);
 				Assert.fail("Mandatore exception was not detected (1-st argument overlaps matrix ranges)");
 			} catch (IllegalArgumentException exc) {
 			}
-			try{cdm.apply(Piece.of(0, 0, 1, 1), (ApplyDouble2)null);
+			try{cdm.apply2(Piece.of(0, 0, 1, 1), (ApplyDouble2)null);
 				Assert.fail("Mandatore exception was not detected (null 2-nd argument)");
 			} catch (NullPointerException exc) {
 			}
@@ -543,8 +543,8 @@ public class ComplexDoubleMatrixTest {
 		try(final ComplexDoubleMatrix	cdm1 = new ComplexDoubleMatrix(DIR_LOCATION, LARGE_SIZE, LARGE_SIZE);
 			final ComplexDoubleMatrix	cdm2 = new ComplexDoubleMatrix(DIR_LOCATION, LARGE_SIZE, LARGE_SIZE)) {
 			
-			cdm1.apply((ApplyDouble2)(x,y,value)->{value[0] = x == y ? 1 : 0; value[1] = 0;});	// Identity matrix
-			cdm2.apply((ApplyDouble2)(x,y,value)->{value[0] = x == y ? 1 : 0; value[1] = 0;});	// Identity matrix
+			cdm1.apply2((ApplyDouble2)(x,y,value)->{value[0] = x == y ? 1 : 0; value[1] = 0;});	// Identity matrix
+			cdm2.apply2((ApplyDouble2)(x,y,value)->{value[0] = x == y ? 1 : 0; value[1] = 0;});	// Identity matrix
 			
 			try(final ComplexDoubleMatrix	cdm3 = (ComplexDoubleMatrix) cdm1.add(cdm2)) {
 				

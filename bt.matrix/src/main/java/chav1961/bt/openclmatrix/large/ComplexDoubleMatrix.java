@@ -1253,12 +1253,12 @@ public class ComplexDoubleMatrix extends LargeMatrix implements Matrix {
 	}
 
 	@Override
-	public Matrix apply(final Piece piece, final ApplyFloat2 callback) {
+	public Matrix apply2(final Piece piece, final ApplyFloat2 callback) {
 		throw new UnsupportedOperationException("This method is not applicable for matrix type ["+getType()+"]");
 	}
 
 	@Override
-	public Matrix apply(final Piece piece, final ApplyDouble2 callback) {
+	public Matrix apply2(final Piece piece, final ApplyDouble2 callback) {
 		if (piece == null) {
 			throw new NullPointerException("Piece can't be null");
 		}

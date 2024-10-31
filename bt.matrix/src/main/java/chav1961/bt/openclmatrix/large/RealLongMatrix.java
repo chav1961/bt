@@ -749,25 +749,25 @@ public class RealLongMatrix implements Matrix {
 	}
 
 	@Override
-	public Matrix apply(ApplyFloat2 callback) {
+	public Matrix apply2(ApplyFloat2 callback) {
 		// TODO Auto-generated method stub
 		return null;
 	}
 
 	@Override
-	public Matrix apply(Piece piece, ApplyFloat2 callback) {
+	public Matrix apply2(Piece piece, ApplyFloat2 callback) {
 		// TODO Auto-generated method stub
 		return null;
 	}
 
 	@Override
-	public Matrix apply(ApplyDouble2 callback) {
+	public Matrix apply2(ApplyDouble2 callback) {
 		// TODO Auto-generated method stub
 		return null;
 	}
 
 	@Override
-	public Matrix apply(Piece piece, ApplyDouble2 callback) {
+	public Matrix apply2(Piece piece, ApplyDouble2 callback) {
 		// TODO Auto-generated method stub
 		return null;
 	}
