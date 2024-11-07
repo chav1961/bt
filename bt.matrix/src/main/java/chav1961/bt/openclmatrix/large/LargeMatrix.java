@@ -10,13 +10,15 @@ import java.nio.channels.FileChannel;
 import java.nio.file.StandardOpenOption;
 
 import chav1961.bt.openclmatrix.internal.GPUExecutor;
+import chav1961.bt.openclmatrix.internal.GPUExecutor.GPUScheduler;
 import chav1961.bt.openclmatrix.internal.InternalUtils;
 import chav1961.purelib.matrix.AbstractMatrix;
 import chav1961.purelib.matrix.interfaces.Matrix;
 
-abstract class LargeMatrix extends AbstractMatrix implements Matrix {
+abstract class LargeMatrix extends AbstractMatrix {
 	static final int			PARALLEL_FACTOR = 16;
 	static final long			GIGABYTE = 1024 * 1024* 1024; 
+
 	private static final long	INIT_BUFFER_SIZE = PARALLEL_FACTOR * 1024 * 1024; 
 	private static final String	RAF_READ_WRITE_ACCESS_MODE = "rwd";
 	private static final String	RAF_READ_ONLY_ACCESS_MODE = "r";
@@ -25,10 +27,10 @@ abstract class LargeMatrix extends AbstractMatrix implements Matrix {
 	private final long			totalSize;
 	private final File			largeKeeper;
 	private final byte[]		byteBuffer = new byte[16];
-	private boolean				transactionMode = false;
+	private GPUScheduler		sched = null;
 	
 	LargeMatrix(final GPUExecutor executor, final File contentDir, final Type type, final int rows, final int cols) {
-		super(Type.COMPLEX_DOUBLE, rows, cols);
+		super(type, rows, cols);
 		if (executor == null) {
 			throw new NullPointerException("GPU executor can't be null");
 		}
@@ -213,10 +215,31 @@ abstract class LargeMatrix extends AbstractMatrix implements Matrix {
 		return executor;
 	}
 
+	public GPUScheduler getScheduler() {
+		return sched;
+	}
+	
 	File getFileKeeper() {
 		return largeKeeper;
 	}
 
+	@Override
+	protected void beginTransaction() {
+		if (areAllAsyncCompleted()) {
+			super.beginTransaction();
+			this.sched = getExecutor().startTransaction();
+		}
+	}
+	
+	@Override
+	protected void completeTransaction() {
+		if (!areAllAsyncCompleted()) {
+			super.completeTransaction();
+			this.sched.close();
+			this.sched = null;
+		}
+	}
+	
 	@FunctionalInterface
 	static interface ProcessRAFContent {
 		boolean process(int row, int col, RandomAccessFile raf) throws IOException;

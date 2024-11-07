@@ -48,6 +48,8 @@ public class GPUExecutor implements AutoCloseable {
 	}
 	
 	public static interface GPUBuffer extends AutoCloseable {
+		int	MAX_GPU_BUFFER_SIZE = 64 * 1024 * 1024;	
+		
 		int getSize();
 		GPUEvent download(DataInput content, Matrix.Type type) throws IOException;
 		GPUEvent download(Matrix.Piece piece, Matrix content) throws IOException;

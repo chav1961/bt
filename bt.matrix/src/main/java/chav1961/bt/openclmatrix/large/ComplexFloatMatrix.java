@@ -1,223 +1,594 @@
 package chav1961.bt.openclmatrix.large;
 
+import java.io.DataInput;
+import java.io.DataInputStream;
+import java.io.DataOutput;
+import java.io.DataOutputStream;
+import java.io.File;
+import java.io.IOException;
+import java.io.PipedInputStream;
+import java.io.PipedOutputStream;
+import java.nio.ByteBuffer;
+import java.nio.channels.FileChannel;
+import java.nio.file.StandardOpenOption;
+
+import chav1961.bt.openclmatrix.internal.GPUExecutor;
+import chav1961.bt.openclmatrix.internal.GPUExecutor.GPUBuffer;
+import chav1961.bt.openclmatrix.internal.GPUExecutor.GPUExecutable;
+import chav1961.bt.openclmatrix.internal.GPUExecutor.GPUScheduler;
+import chav1961.bt.openclmatrix.internal.InternalUtils;
+import chav1961.purelib.basic.exceptions.ContentException;
+import chav1961.purelib.basic.exceptions.SyntaxException;
 import chav1961.purelib.matrix.interfaces.Matrix;
+import chav1961.purelib.matrix.interfaces.Matrix.Type;
+import chav1961.purelib.matrix.interfaces.MatrixCalc;
+import chav1961.purelib.streams.DataInputAdapter;
 
-public class ComplexFloatMatrix implements Matrix {
+public class ComplexFloatMatrix extends LargeMatrix {
+	private static final int	MAX_GPU_BUFFER_SIZE_IN_ITEMS = GPUBuffer.MAX_GPU_BUFFER_SIZE / Type.COMPLEX_FLOAT.getItemSize();
+	private static final String	ADD_INT_ARRAY_NAME = "addIntArray"+Type.COMPLEX_FLOAT.getProgramSuffix();
+	private static final String	ADD_INT_ARRAY_KERNEL =    "__kernel void "+ADD_INT_ARRAY_NAME+"(const int currentSize, const int bufferSize, const long totalSize,\n"
+														+ "                      __global float* A,\n"
+														+ "                      const __global int* B) {\n"
+														+ "}";
+	
+	private final int[]		intBuffer = new int[2];
+	private GPUScheduler	sched = null; 
 
+	public ComplexFloatMatrix(final GPUExecutor executor, final int rows, final int cols) {
+		this(executor, InternalUtils.TEMP_DIR_LOCATION, rows, cols);
+	}	
+	
+	public ComplexFloatMatrix(final GPUExecutor executor, final File contentDir, final int rows, final int cols) {
+		super(executor, contentDir, Type.COMPLEX_FLOAT, rows, cols);
+	}
+
+	private ComplexFloatMatrix(final GPUExecutor executor, final File contentDir, final int rows, final int cols, final File fill) {
+		super(executor, contentDir, Type.COMPLEX_FLOAT, rows, cols, fill);
+	}	
+	
 	@Override
 	public Object clone() throws CloneNotSupportedException {
-		// TODO Auto-generated method stub
-		return super.clone();
+		ensureTransactionCompleted();
+		return new ComplexFloatMatrix(getExecutor(), getFileKeeper().getParentFile(), numberOfRows(), numberOfColumns(), getFileKeeper());
 	}
 	
 	@Override
-	public void close() throws RuntimeException {
-		// TODO Auto-generated method stub
-		
-	}
-
-	@Override
-	public Type getType() {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public int numberOfRows() {
-		// TODO Auto-generated method stub
-		return 0;
-	}
-
-	@Override
-	public int numberOfColumns() {
-		// TODO Auto-generated method stub
-		return 0;
-	}
-
-	@Override
 	public boolean deepEquals(Matrix another) {
-		// TODO Auto-generated method stub
-		return false;
+		if (another == null) {
+			return false;
+		}
+		else if (another == this) {
+			return true;
+		}
+		else if (another.getType() != getType() || another.numberOfRows() != numberOfRows() || another.numberOfColumns() != numberOfColumns()) {
+			return false;
+		}
+		else if (another.getClass() == this.getClass()) {
+			final int[]	temp = new int[2];
+			
+			ensureTransactionCompleted();
+			try(final FileChannel	left = FileChannel.open(getFileKeeper().toPath(), StandardOpenOption.READ);
+				final FileChannel	right = FileChannel.open(((ComplexDoubleMatrix)another).getFileKeeper().toPath(), StandardOpenOption.READ)) {
+
+				if (left.size() != right.size()) {
+					return false;
+				}
+				else {
+					return scanContentReadOnly2(left, right, Piece.of(0, 0, numberOfRows(), numberOfColumns()), (y, x, leftBuffer, rightBuffer)->{
+						deserialize(leftBuffer, intBuffer, 2);
+						deserialize(rightBuffer, temp, 2);
+						
+						return intBuffer[0] == temp[0] && intBuffer[1] == temp[1];
+					});
+				}
+			} catch (IOException e) {
+				return false;
+			}
+		}
+		else {
+			ensureTransactionCompleted();
+			
+//			try(final FileChannel	in = FileChannel.open(largeKeeper.toPath(), StandardOpenOption.READ);
+//				final FileChannel	out = FileChannel.open(((ComplexDoubleMatrix)another).largeKeeper.toPath(), StandardOpenOption.READ)) {
+//
+//				return scanContent(in, out, (inBuffer, outBuffer)->Objects.equals(inBuffer, outBuffer), true);
+//			} catch (IOException e) {
+//				return false;
+//			}
+			throw new UnsupportedOperationException();
+		}
 	}
 
 	@Override
-	public int[] extractInts() {
-		// TODO Auto-generated method stub
-		return null;
+	public int[] extractInts(final Piece piece) {
+		if (piece == null) {
+			throw new NullPointerException("Piece can't be null");
+		}
+		else if (isOverlaps(piece)) {
+			throw new IllegalArgumentException("Piece ["+piece+"] overlaps matrix ranges ["+totalPiece()+"] or has non-positive size");
+		}
+		else {
+			ensureTransactionCompleted();
+			final long		size = 1L * numberOfRows() * numberOfColumns() * getType().getNumberOfItems(), maxSize = Integer.MAX_VALUE;
+			final int[]		result = new int[(int) Math.min(size, maxSize)];
+			
+			extractAny(piece, new ProcessFCContent() {
+				int index = 0;
+			
+				public boolean process(final int row, final int col, final ByteBuffer source) throws IOException {
+					deserialize(source, intBuffer, 2);
+					
+					if (index >= result.length - 1) {
+						return false;
+					}
+					else {
+						result[index++] = (int)Float.intBitsToFloat(intBuffer[0]);
+						result[index++] = (int)Float.intBitsToFloat(intBuffer[1]);
+						return true;
+					}
+				};
+			});
+			return result;
+		}
 	}
 
 	@Override
-	public int[] extractInts(Piece piece) {
-		// TODO Auto-generated method stub
-		return null;
+	public void extractInts(final Piece piece, final DataOutput dataOutput) throws IOException {
+		if (piece == null) {
+			throw new NullPointerException("Piece can't be null");
+		}
+		else if (isOverlaps(piece)) {
+			throw new IllegalArgumentException("Piece ["+piece+"] overlaps matrix ranges ["+totalPiece()+"] or has non-positive size");
+		}
+		else if (dataOutput == null) {
+			throw new NullPointerException("Data output can't be null");
+		}
+		else {
+			ensureTransactionCompleted();
+			extractAny(piece, new ProcessFCContent() {
+				public boolean process(final int row, final int col, final ByteBuffer source) throws IOException {
+					deserialize(source, intBuffer, 2);
+					dataOutput.writeInt((int)Float.intBitsToFloat(intBuffer[0]));
+					dataOutput.writeInt((int)Float.intBitsToFloat(intBuffer[1]));
+					return true;
+				};
+			});
+		}
 	}
 
 	@Override
-	public long[] extractLongs() {
-		// TODO Auto-generated method stub
-		return null;
+	public long[] extractLongs(final Piece piece) {
+		if (piece == null) {
+			throw new NullPointerException("Piece can't be null");
+		}
+		else if (isOverlaps(piece)) {
+			throw new IllegalArgumentException("Piece ["+piece+"] overlaps matrix ranges ["+totalPiece()+"] or has non-positive size");
+		}
+		else {
+			ensureTransactionCompleted();
+			final long		size = 1L * numberOfRows() * numberOfColumns() * getType().getNumberOfItems(), maxSize = Integer.MAX_VALUE;
+			final long[]	result = new long[(int) Math.min(size, maxSize)];
+			
+			extractAny(piece, new ProcessFCContent() {
+				int index = 0;
+			
+				public boolean process(final int row, final int col, final ByteBuffer source) throws IOException {
+					deserialize(source, intBuffer, 2);
+					
+					if (index >= result.length - 1) {
+						return false;
+					}
+					else {
+						result[index++] = (long)Float.intBitsToFloat(intBuffer[0]);
+						result[index++] = (long)Float.intBitsToFloat(intBuffer[1]);
+						return true;
+					}
+				};
+			});
+			return result;
+		}
 	}
 
 	@Override
-	public long[] extractLongs(Piece piece) {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public float[] extractFloats() {
-		// TODO Auto-generated method stub
-		return null;
+	public void extractLongs(final Piece piece, final DataOutput dataOutput) throws IOException {
+		if (piece == null) {
+			throw new NullPointerException("Piece can't be null");
+		}
+		else if (isOverlaps(piece)) {
+			throw new IllegalArgumentException("Piece ["+piece+"] overlaps matrix ranges ["+totalPiece()+"] or has non-positive size");
+		}
+		else if (dataOutput == null) {
+			throw new NullPointerException("Data output can't be null");
+		}
+		else {
+			ensureTransactionCompleted();
+			extractAny(piece, new ProcessFCContent() {
+				public boolean process(final int row, final int col, final ByteBuffer source) throws IOException {
+					deserialize(source, intBuffer, 2);
+					dataOutput.writeLong((long)Float.intBitsToFloat(intBuffer[0]));
+					dataOutput.writeLong((long)Float.intBitsToFloat(intBuffer[1]));
+					return true;
+				};
+			});
+		}
 	}
 
 	@Override
 	public float[] extractFloats(Piece piece) {
-		// TODO Auto-generated method stub
-		return null;
+		if (piece == null) {
+			throw new NullPointerException("Piece can't be null");
+		}
+		else if (isOverlaps(piece)) {
+			throw new IllegalArgumentException("Piece ["+piece+"] overlaps matrix ranges ["+totalPiece()+"] or has non-positive size");
+		}
+		else {
+			ensureTransactionCompleted();
+			final long		size = 1L * numberOfRows() * numberOfColumns() * getType().getNumberOfItems(), maxSize = Integer.MAX_VALUE;
+			final float[]	result = new float[(int) Math.min(size, maxSize)];
+			
+			extractAny(piece, new ProcessFCContent() {
+				int index = 0;
+			
+				public boolean process(final int row, final int col, final ByteBuffer source) throws IOException {
+					deserialize(source, intBuffer, 2);
+					
+					if (index >= result.length - 1) {
+						return false;
+					}
+					else {
+						result[index++] = (float)Float.intBitsToFloat(intBuffer[0]);
+						result[index++] = (float)Float.intBitsToFloat(intBuffer[1]);
+						return true;
+					}
+				};
+			});
+			return result;
+		}
 	}
 
 	@Override
-	public double[] extractDoubles() {
-		// TODO Auto-generated method stub
-		return null;
+	public void extractFloats(final Piece piece, final DataOutput dataOutput) throws IOException {
+		if (piece == null) {
+			throw new NullPointerException("Piece can't be null");
+		}
+		else if (isOverlaps(piece)) {
+			throw new IllegalArgumentException("Piece ["+piece+"] overlaps matrix ranges ["+totalPiece()+"] or has non-positive size");
+		}
+		else if (dataOutput == null) {
+			throw new NullPointerException("Data output can't be null");
+		}
+		else {
+			ensureTransactionCompleted();
+			extractAny(piece, new ProcessFCContent() {
+				public boolean process(final int row, final int col, final ByteBuffer source) throws IOException {
+					deserialize(source, intBuffer, 2);
+					dataOutput.writeFloat(Float.intBitsToFloat(intBuffer[0]));
+					dataOutput.writeFloat(Float.intBitsToFloat(intBuffer[1]));
+					return true;
+				};
+			});
+		}
 	}
 
 	@Override
-	public double[] extractDoubles(Piece piece) {
-		// TODO Auto-generated method stub
-		return null;
+	public double[] extractDoubles(final Piece piece) {
+		if (piece == null) {
+			throw new NullPointerException("Piece can't be null");
+		}
+		else if (isOverlaps(piece)) {
+			throw new IllegalArgumentException("Piece ["+piece+"] overlaps matrix ranges ["+totalPiece()+"] or has non-positive size");
+		}
+		else {
+			ensureTransactionCompleted();
+			final long		size = 1L * numberOfRows() * numberOfColumns() * getType().getNumberOfItems(), maxSize = Integer.MAX_VALUE;
+			final double[]	result = new double[(int) Math.min(size, maxSize)];
+			
+			extractAny(piece, new ProcessFCContent() {
+				int index = 0;
+			
+				public boolean process(final int row, final int col, final ByteBuffer source) throws IOException {
+					deserialize(source, intBuffer, 2);
+					
+					if (index >= result.length - 1) {
+						return false;
+					}
+					else {
+						result[index++] = (double)Float.intBitsToFloat(intBuffer[0]);
+						result[index++] = (double)Float.intBitsToFloat(intBuffer[1]);
+						return true;
+					}
+				};
+			});
+			return result;
+		}
 	}
 
 	@Override
-	public Matrix assign(int... content) {
-		// TODO Auto-generated method stub
-		return null;
+	public void extractDoubles(Piece piece, DataOutput dataOutput) throws IOException {
+		if (piece == null) {
+			throw new NullPointerException("Piece can't be null");
+		}
+		else if (isOverlaps(piece)) {
+			throw new IllegalArgumentException("Piece ["+piece+"] overlaps matrix ranges ["+totalPiece()+"] or has non-positive size");
+		}
+		else if (dataOutput == null) {
+			throw new NullPointerException("Data output can't be null");
+		}
+		else {
+			ensureTransactionCompleted();
+			extractAny(piece, new ProcessFCContent() {
+				public boolean process(final int row, final int col, final ByteBuffer source) throws IOException {
+					deserialize(source, intBuffer, 2);
+					dataOutput.writeDouble(Float.intBitsToFloat(intBuffer[0]));
+					dataOutput.writeDouble(Float.intBitsToFloat(intBuffer[1]));
+					return true;
+				};
+			});
+		}
 	}
 
 	@Override
-	public Matrix assign(Piece piece, int... content) {
-		// TODO Auto-generated method stub
-		return null;
+	public Matrix assign(final Piece piece, final int... content) {
+		if (piece == null) {
+			throw new NullPointerException("Piece can't be null");
+		}
+		else if (isOverlaps(piece)) {
+			throw new IllegalArgumentException("Piece ["+piece+"] overlaps matrix ranges ["+totalPiece()+"] or has non-positive size");
+		}
+		else if (content == null) {
+			throw new NullPointerException("Content can't be null");
+		}
+		else {
+			ensureTransactionCompleted();
+			assignAny(piece, new ProcessFCContent() {
+				int index = 0;
+				
+				public boolean process(final int row, final int col, final ByteBuffer target) throws IOException {
+					if (index < content.length - 1) {
+						intBuffer[0] = Float.floatToIntBits(content[index++]);
+						intBuffer[1] = Float.floatToIntBits(content[index++]);
+						serialize(intBuffer, 2, target);
+						return true;
+					}
+					else {
+						return false;
+					}
+				};
+			});
+			return this;
+		}
 	}
 
 	@Override
-	public Matrix assign(long... content) {
-		// TODO Auto-generated method stub
-		return null;
+	public Matrix assign(final Piece piece, final long... content) {
+		if (piece == null) {
+			throw new NullPointerException("Piece can't be null");
+		}
+		else if (isOverlaps(piece)) {
+			throw new IllegalArgumentException("Piece ["+piece+"] overlaps matrix ranges ["+totalPiece()+"] or has non-positive size");
+		}
+		else if (content == null) {
+			throw new NullPointerException("Content can't be null");
+		}
+		else {
+			ensureTransactionCompleted();
+			assignAny(piece, new ProcessFCContent() {
+				int index = 0;
+				
+				public boolean process(final int row, final int col, final ByteBuffer target) throws IOException {
+					if (index < content.length - 1) {
+						intBuffer[0] = Float.floatToIntBits(content[index++]);
+						intBuffer[1] = Float.floatToIntBits(content[index++]);
+						serialize(intBuffer, 2, target);
+						return true;
+					}
+					else {
+						return false;
+					}
+				};
+			});
+			return this;
+		}
 	}
 
 	@Override
-	public Matrix assign(Piece piece, long... content) {
-		// TODO Auto-generated method stub
-		return null;
+	public Matrix assign(final Piece piece, final float... content) {
+		if (piece == null) {
+			throw new NullPointerException("Piece can't be null");
+		}
+		else if (isOverlaps(piece)) {
+			throw new IllegalArgumentException("Piece ["+piece+"] overlaps matrix ranges ["+totalPiece()+"] or has non-positive size");
+		}
+		else if (content == null) {
+			throw new NullPointerException("Content can't be null");
+		}
+		else {
+			ensureTransactionCompleted();
+			assignAny(piece, new ProcessFCContent() {
+				int index = 0;
+				
+				public boolean process(final int row, final int col, final ByteBuffer target) throws IOException {
+					if (index < content.length - 1) {
+						intBuffer[0] = Float.floatToIntBits(content[index++]);
+						intBuffer[1] = Float.floatToIntBits(content[index++]);
+						serialize(intBuffer, 2, target);
+						return true;
+					}
+					else {
+						return false;
+					}
+				};
+			});
+			return this;
+		}
 	}
 
 	@Override
-	public Matrix assign(float... content) {
-		// TODO Auto-generated method stub
-		return null;
+	public Matrix assign(final Piece piece, final double... content) {
+		if (piece == null) {
+			throw new NullPointerException("Piece can't be null");
+		}
+		else if (isOverlaps(piece)) {
+			throw new IllegalArgumentException("Piece ["+piece+"] overlaps matrix ranges ["+totalPiece()+"] or has non-positive size");
+		}
+		else if (content == null) {
+			throw new NullPointerException("Content can't be null");
+		}
+		else {
+			ensureTransactionCompleted();
+			assignAny(piece, new ProcessFCContent() {
+				int index = 0;
+				
+				public boolean process(final int row, final int col, final ByteBuffer target) throws IOException {
+					if (index < content.length - 1) {
+						intBuffer[0] = Float.floatToIntBits((float)content[index++]);
+						intBuffer[1] = Float.floatToIntBits((float)content[index++]);
+						serialize(intBuffer, 2, target);
+						return true;
+					}
+					else {
+						return false;
+					}
+				};
+			});
+			return this;
+		}
 	}
 
 	@Override
-	public Matrix assign(Piece piece, float... content) {
-		// TODO Auto-generated method stub
-		return null;
+	public Matrix assign(final Piece piece, final Matrix matrix) {
+		if (piece == null) {
+			throw new NullPointerException("Piece can't be null");
+		}
+		else if (isOverlaps(piece)) {
+			throw new IllegalArgumentException("Piece ["+piece+"] overlaps matrix ranges ["+totalPiece()+"] or has non-positive size");
+		}
+		else if (matrix == null) {
+			throw new NullPointerException("Content can't be null");
+		}
+		else {
+			ensureTransactionCompleted();
+			try(final PipedInputStream	pis = new PipedInputStream();
+				final PipedOutputStream	pos = new PipedOutputStream(pis);
+				final DataInputStream	dis = new DataInputStream(pis)) {
+				
+				final Thread	t = new Thread(()->{
+									try (final DataOutputStream	dos = new DataOutputStream(pos)) {
+										matrix.extractFloats(piece, dos);
+									} catch (IOException exc) {
+									}
+								});
+				t.setDaemon(true);
+				t.start();
+				assign(piece, dis, matrix.getType());
+			} catch (IOException e) {
+			}
+			return this;
+		}
+	}
+
+	@FunctionalInterface
+	private static interface AssignAcceptor {
+		void process(DataInput in, int[] buf) throws IOException;
+	}
+	
+	@Override
+	public Matrix assign(final Piece piece, final DataInput content, final Type type) throws IOException {
+		if (piece == null) {
+			throw new NullPointerException("Piece can't be null");
+		}
+		else if (isOverlaps(piece)) {
+			throw new IllegalArgumentException("Piece ["+piece+"] overlaps matrix ranges ["+totalPiece()+"] or has non-positive size");
+		}
+		else if (content == null) {
+			throw new NullPointerException("Content can't be null");
+		}
+		else if (type == null) {
+			throw new NullPointerException("Matrix type can't be null");
+		}
+		else {
+			final AssignAcceptor	callback;
+			
+			switch (type) {
+				case COMPLEX_DOUBLE	:
+				case REAL_DOUBLE	:
+					callback = (c,b)->{b[0] = Float.floatToIntBits((float)c.readDouble()); b[1] = Float.floatToIntBits((float)c.readDouble());};
+					break;
+				case COMPLEX_FLOAT	:
+				case REAL_FLOAT		:
+					callback = (c,b)->{b[0] = Float.floatToIntBits(c.readFloat()); b[1] = Float.floatToIntBits(c.readFloat());};
+					break;
+				case REAL_INT		:
+					callback = (c,b)->{b[0] = Float.floatToIntBits(c.readInt()); b[1] = Float.floatToIntBits(c.readInt());};
+					break;
+				case REAL_LONG		:
+					callback = (c,b)->{b[0] = Float.floatToIntBits(c.readLong()); b[1] = Float.floatToIntBits(c.readLong());};
+					break;
+				case BIT			:
+					callback = (c,b)->{b[0] = c.readBoolean() ? 1 : 0; b[1] = 0;};
+					break;
+				default :
+					throw new UnsupportedOperationException("Matrix type [] is not supported yet");
+			}
+			
+			assignAny(piece, new ProcessFCContent() {
+				public boolean process(final int row, final int col, final ByteBuffer target) throws IOException {
+					callback.process(content, intBuffer);
+					serialize(intBuffer, 2, target);
+					return true;
+				};
+			});
+			return this;
+		}
 	}
 
 	@Override
-	public Matrix assign(double... content) {
-		// TODO Auto-generated method stub
-		return null;
+	public Matrix fill(final Piece piece, final int value) {
+		return fill(piece, (float)value, 0f);
 	}
 
 	@Override
-	public Matrix assign(Piece piece, double... content) {
-		// TODO Auto-generated method stub
-		return null;
+	public Matrix fill(final Piece piece, final long value) {
+		return fill(piece, (float)value, 0f);
 	}
 
 	@Override
-	public Matrix assign(Matrix content) {
-		// TODO Auto-generated method stub
-		return null;
+	public Matrix fill(final Piece piece, final float value) {
+		return fill(piece, value, 0f);
 	}
 
 	@Override
-	public Matrix assign(Piece piece, Matrix content) {
-		// TODO Auto-generated method stub
-		return null;
+	public Matrix fill(final Piece piece, final float real, final float image) {
+		if (piece == null) {
+			throw new NullPointerException("Piece can't be null");
+		}
+		else if (isOverlaps(piece)) {
+			throw new IllegalArgumentException("Piece ["+piece+"] overlaps matrix ranges ["+totalPiece()+"] or has non-positive size");
+		}
+		else {
+			ensureTransactionCompleted();
+			intBuffer[0] = Float.floatToIntBits(real);
+			intBuffer[1] = Float.floatToIntBits(image);
+			
+			assignAny(piece, new ProcessFCContent() {
+				public boolean process(final int row, final int col, final ByteBuffer target) throws IOException {
+					serialize(intBuffer, 2, target);
+					return true;
+				};
+			});
+			return this;
+		}
 	}
 
 	@Override
-	public Matrix fill(int value) {
-		// TODO Auto-generated method stub
-		return null;
+	public Matrix fill(final Piece piece, final double value) {
+		return fill(piece, (float)value, 0f);
 	}
 
 	@Override
-	public Matrix fill(Piece piece, int value) {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public Matrix fill(long value) {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public Matrix fill(Piece piece, long value) {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public Matrix fill(float value) {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public Matrix fill(Piece piece, float value) {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public Matrix fill(float real, float image) {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public Matrix fill(Piece piece, float real, float image) {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public Matrix fill(double value) {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public Matrix fill(Piece piece, double value) {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public Matrix fill(double real, double image) {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public Matrix fill(Piece piece, double real, double image) {
-		// TODO Auto-generated method stub
-		return null;
+	public Matrix fill(final Piece piece, final double real, final double image) {
+		return fill(piece, (float)real, (float)image);
 	}
 
 	@Override
@@ -229,7 +600,79 @@ public class ComplexFloatMatrix implements Matrix {
 	@Override
 	public Matrix add(int... content) {
 		// TODO Auto-generated method stub
-		return null;
+		if (content == null) {
+			throw new NullPointerException("Content to add can't be null");
+		}
+		else {
+			try {
+				final GPUExecutable	prog = getOrCreateProgram(ADD_INT_ARRAY_NAME, ADD_INT_ARRAY_KERNEL);
+				final int	leftRows = calcGPUBufferSize(getType(), numberOfRows(), numberOfColumns());
+				final int	leftBufferSize = leftRows * numberOfColumns() * getType().getNumberOfItems();
+				final int	rightRows = calcNumberOfRows(content.length, getType().getNumberOfItems(), numberOfColumns());
+				final int	rightBufferSize = rightRows * numberOfColumns() * getType().getNumberOfItems();
+				final int	totalRightRows = calcTotalNumberOfRows(content.length, getType().getNumberOfItems(), numberOfColumns());
+				
+				beginTransaction();
+				try(final GPUBuffer	left = getScheduler().allocateGPUBuffer(leftBufferSize * getType().getItemSize());
+					final GPUBuffer	right = getScheduler().allocateGPUBuffer(rightBufferSize * Type.REAL_INT.getItemSize())) {
+
+					for (int leftIndex = 0, rightIndex = 0, maxIndex = numberOfRows(); leftIndex < maxIndex && rightIndex < totalRightRows; leftIndex += leftRows, rightIndex += rightRows) {
+						left.download(Piece.of(leftIndex, 0, leftRows, numberOfColumns()), this);
+//						right.download(new DataInputAdapter() {
+//							int	index = 0;
+//							@Override
+//							public int readInt() throws IOException {
+//								return content[index++];
+//							}
+//						}, Type.REAL_INT);
+					}
+				}
+			} catch (SyntaxException exc) {
+				throw new IllegalStateException("Internal error: "+exc.getLocalizedMessage(), exc); 				
+			} catch (ContentException exc) {
+				throw new IllegalStateException("Internal error: "+exc.getLocalizedMessage(), exc); 				
+			} catch (IOException exc) {
+				throw new IllegalStateException("Internal error: "+exc.getLocalizedMessage(), exc); 				
+			}
+			return null;
+		}
+	}
+
+	private int calcNumberOfRows(final int length, final int numberOfItems, final int numberOfColumns) {
+		final int	delta = numberOfItems * numberOfColumns;
+		int		count = 0;
+		int		offset = 0;
+
+		while (offset < length && offset < MAX_GPU_BUFFER_SIZE_IN_ITEMS) {
+			offset += delta;
+			count++;
+		}
+		return count;
+	}
+	
+	private int calcTotalNumberOfRows(final int length, final int numberOfItems, final int numberOfColumns) {
+		final int	delta = numberOfItems * numberOfColumns;
+		int		count = 0;
+		int		offset = 0;
+
+		while (offset < length) {
+			offset += delta;
+			count++;
+		}
+		return count;
+	}
+	
+	private int calcGPUBufferSize(final Type type, int numberOfRows, int numberOfColumns) {
+		final int	delta = type.getNumberOfItems() * numberOfColumns;
+		final long 	totalSize = 1L * delta * numberOfRows;
+		int		count = 0;
+		long	offset = 0;
+
+		while (offset < totalSize && offset < MAX_GPU_BUFFER_SIZE_IN_ITEMS) {
+			offset += delta;
+			count++;
+		}
+		return count;
 	}
 
 	@Override
@@ -251,7 +694,7 @@ public class ComplexFloatMatrix implements Matrix {
 	}
 
 	@Override
-	public Matrix add(Matrix content) {
+	public Matrix add(Matrix matrix) {
 		// TODO Auto-generated method stub
 		return null;
 	}
@@ -317,7 +760,7 @@ public class ComplexFloatMatrix implements Matrix {
 	}
 
 	@Override
-	public Matrix subtract(Matrix content) {
+	public Matrix subtract(Matrix matrix) {
 		// TODO Auto-generated method stub
 		return null;
 	}
@@ -383,7 +826,7 @@ public class ComplexFloatMatrix implements Matrix {
 	}
 
 	@Override
-	public Matrix subtractFrom(Matrix content) {
+	public Matrix subtractFrom(Matrix matrix) {
 		// TODO Auto-generated method stub
 		return null;
 	}
@@ -425,13 +868,13 @@ public class ComplexFloatMatrix implements Matrix {
 	}
 
 	@Override
-	public Matrix mul(Matrix content) {
+	public Matrix mul(Matrix matrix) {
 		// TODO Auto-generated method stub
 		return null;
 	}
 
 	@Override
-	public Matrix mulFrom(Matrix content) {
+	public Matrix mulFrom(Matrix matrix) {
 		// TODO Auto-generated method stub
 		return null;
 	}
@@ -569,7 +1012,7 @@ public class ComplexFloatMatrix implements Matrix {
 	}
 
 	@Override
-	public Matrix mulHadamard(Matrix content) {
+	public Matrix mulHadamard(Matrix matrix) {
 		// TODO Auto-generated method stub
 		return null;
 	}
@@ -599,7 +1042,7 @@ public class ComplexFloatMatrix implements Matrix {
 	}
 
 	@Override
-	public Matrix mulInvHadamard(Matrix content) {
+	public Matrix mulInvHadamard(Matrix matrix) {
 		// TODO Auto-generated method stub
 		return null;
 	}
@@ -629,27 +1072,38 @@ public class ComplexFloatMatrix implements Matrix {
 	}
 
 	@Override
-	public Matrix mulInvFromHadamard(Matrix content) {
+	public Matrix mulInvFromHadamard(Matrix matrix) {
 		// TODO Auto-generated method stub
 		return null;
 	}
 
 	@Override
-	public Matrix tensorMul(Matrix content) {
+	public Matrix tensorMul(Matrix matrix) {
 		// TODO Auto-generated method stub
 		return null;
 	}
 
 	@Override
-	public Matrix tensorMulFrom(Matrix content) {
+	public Matrix tensorMulFrom(Matrix matrix) {
 		// TODO Auto-generated method stub
 		return null;
 	}
 
 	@Override
 	public Matrix invert() {
-		// TODO Auto-generated method stub
-		return null;
+		if (numberOfRows() != numberOfColumns()) {
+			throw new IllegalStateException("Invert can be called for square matrix only");
+		}
+		else {
+			final ComplexFloatMatrix	identity = new ComplexFloatMatrix(getExecutor(), numberOfRows(), numberOfColumns());
+			
+			identity.apply2((int y, int x, float[] values)->{
+				values[0] = x == y ? 1f : 0f;
+				values[1] = 0;
+			});
+			// TODO Auto-generated method stub
+			return identity;
+		}
 	}
 
 	@Override
@@ -666,14 +1120,12 @@ public class ComplexFloatMatrix implements Matrix {
 
 	@Override
 	public Number det() {
-		// TODO Auto-generated method stub
-		return null;
+		throw new UnsupportedOperationException("This method can't be called for complex matrices, use det2() instead");
 	}
 
 	@Override
 	public Number track() {
-		// TODO Auto-generated method stub
-		return null;
+		throw new UnsupportedOperationException("This method can't be called for complex matrices, use track2() instead");
 	}
 
 	@Override
@@ -689,99 +1141,35 @@ public class ComplexFloatMatrix implements Matrix {
 	}
 
 	@Override
-	public Matrix apply(ApplyBit callback) {
+	public Matrix apply2(final Piece piece, final ApplyFloat2 callback) {
 		// TODO Auto-generated method stub
-		return null;
+		return super.apply2(piece, callback);
+	}
+	
+	@Override
+	protected void lastCall() {
+		// TODO Auto-generated method stub
+		
 	}
 
 	@Override
-	public Matrix apply(Piece piece, ApplyBit callback) {
+	protected MatrixCalc buildMatrixCalc(final Command... cmds) throws SyntaxException {
 		// TODO Auto-generated method stub
 		return null;
 	}
-
-	@Override
-	public Matrix apply(ApplyInt callback) {
-		// TODO Auto-generated method stub
-		return null;
+	
+	private int calcArraySize() {
+		return (int) Math.min(Integer.MAX_VALUE, 1L * numberOfRows() * numberOfColumns());
 	}
 
-	@Override
-	public Matrix apply(Piece piece, ApplyInt callback) {
-		// TODO Auto-generated method stub
-		return null;
+	private int calcArraySize(Piece piece) {
+		return (int) Math.min(Integer.MAX_VALUE, 1L * piece.getHeight() * piece.getWidth());
 	}
 
-	@Override
-	public Matrix apply(ApplyLong callback) {
-		// TODO Auto-generated method stub
-		return null;
+	private GPUExecutable getOrCreateProgram(final String progName, final String kernel) throws SyntaxException {
+		if (!getExecutor().hasProgram(progName)) {
+			getExecutor().compile(progName, kernel);
+		}
+		return getExecutor().getProgram(progName);
 	}
-
-	@Override
-	public Matrix apply(Piece piece, ApplyLong callback) {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public Matrix apply(ApplyFloat callback) {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public Matrix apply(Piece piece, ApplyFloat callback) {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public Matrix apply(ApplyDouble callback) {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public Matrix apply(Piece piece, ApplyDouble callback) {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public Matrix apply2(ApplyFloat2 callback) {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public Matrix apply2(Piece piece, ApplyFloat2 callback) {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public Matrix apply2(ApplyDouble2 callback) {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public Matrix apply2(Piece piece, ApplyDouble2 callback) {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public String toHumanReadableString() {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public Matrix done() {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
 }
