@@ -85,6 +85,25 @@ class GPUSchedulerImpl implements GPUScheduler {
 	}
 
 	@Override
+	public TemporaryStore allocateTemporaryStore(final File storeDir, final long storeSize) throws IOException {
+		if (storeDir == null) {
+			throw new NullPointerException("Store dir can't be null");
+		}
+		else if (!storeDir.exists() || !storeDir.isDirectory() || !storeDir.canWrite()) {
+			throw new IllegalArgumentException("Store dir ["+storeDir.getAbsolutePath()+"] not exists, not a directory or can't be accessed for ypu");
+		}
+		else if (storeSize <= 0) {
+			throw new IllegalArgumentException("Store size must be greater than 0");
+		}
+		else {
+			final TemporaryStore	ts = new TemporaryStoreImpl(storeDir, storeSize, (t)->stores.remove(t));
+
+			stores.add(ts);
+			return ts;
+		}
+	}
+	
+	@Override
 	public GPUBuffer allocateGPUBuffer(final int bufferSize) throws ContentException {
 		if (bufferSize <= 0 || bufferSize > MAX_BUFFER_SIZE) {
 			throw new IllegalArgumentException("Buffer size ["+bufferSize+"] out of range 1.."+MAX_BUFFER_SIZE);

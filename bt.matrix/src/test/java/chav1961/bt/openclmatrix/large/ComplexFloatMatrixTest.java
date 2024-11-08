@@ -5,6 +5,7 @@ import static org.junit.Assert.*;
 import java.io.DataOutput;
 import java.io.File;
 import java.io.IOException;
+import java.util.Arrays;
 
 import org.junit.After;
 import org.junit.Assert;
@@ -586,8 +587,14 @@ public class ComplexFloatMatrixTest {
 			m1.fill(1,0);
 
 			// add ints
+			final int[]	toAddInt = new int[10000000];
 			
-			Assert.assertArrayEquals(new float[] {2,1,4,1,6,1,8,1,10,1,12,1}, m1.add(1,1,2,1,3,1,4,1,5,1,6,1).done().extractFloats(), 0.001f);
+			Arrays.fill(toAddInt, 2);
+			
+			
+			
+			Assert.assertArrayEquals(new float[] {2,1,4,1,6,1,8,1,10,1,12,1}, m1.add(toAddInt).done().extractFloats(), 0.001f);
+//			Assert.assertArrayEquals(new float[] {2,1,4,1,6,1,8,1,10,1,12,1}, m1.add(1,1,2,1,3,1,4,1,5,1,6,1).done().extractFloats(), 0.001f);
 			try {
 				m1.add((int[])null);
 				Assert.fail("Mandatory exception was not detected (null 1-st argument)");

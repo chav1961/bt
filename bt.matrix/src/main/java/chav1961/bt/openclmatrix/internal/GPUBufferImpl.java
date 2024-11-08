@@ -4,6 +4,7 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.EOFException;
 import java.io.IOException;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 
 import org.jocl.CL;
@@ -20,6 +21,9 @@ import chav1961.purelib.matrix.interfaces.Matrix.Type;
 
 class GPUBufferImpl implements GPUBuffer {
 	private static final int			ADDRESS_STEP = 1024 * 1024;
+	private static final AtomicInteger	UNIQUE = new AtomicInteger();
+	private static final String			DOWNLOADER = "GPU %1$s buffer download daemon %2$d";
+	private static final String			UPLOADER = "GPU %1$s buffer upload daemon %2$d";
 	
 	final cl_mem 						buffer;
 	private final GPUSchedulerImpl		owner;
@@ -55,7 +59,7 @@ class GPUBufferImpl implements GPUBuffer {
 		else {
 			final GPUEvent	event = owner.createEvent();
 
-			final Thread	t = new Thread(()->{
+			startThread(DOWNLOADER, type, ()->{
 				try {
 					switch (type) {
 						case COMPLEX_DOUBLE	:
@@ -81,8 +85,6 @@ class GPUBufferImpl implements GPUBuffer {
 					event.post();
 				}
 			});
-			t.setDaemon(true);
-			t.start();
 			return event;
 		}
 	}
@@ -103,55 +105,55 @@ class GPUBufferImpl implements GPUBuffer {
 				case REAL_DOUBLE	:
 					final double[]	dContent = new double[piece.getWidth() * matrix.getType().getNumberOfItems()];
 
-					final Thread	tDouble = new Thread(()->{
-													for(int index = piece.getTop(), maxIndex = piece.getTop()+piece.getHeight(); index < maxIndex; index++) {
-														matrix.extractDoubles(Piece.of(index, piece.getLeft(), 1, piece.getWidth()));
-														CL.clEnqueueWriteBuffer(owner.owner.queue, buffer, CL.CL_TRUE, index * piece.getWidth(), dContent.length * Sizeof.cl_double, Pointer.to(dContent), 0, null, null);
+					startThread(DOWNLOADER, matrix.getType(), ()->{
+													try {
+														for(int index = piece.getTop(), maxIndex = piece.getTop()+piece.getHeight(); index < maxIndex; index++) {
+															matrix.extractDoubles(Piece.of(index, piece.getLeft(), 1, piece.getWidth()), dContent);
+															CL.clEnqueueWriteBuffer(owner.owner.queue, buffer, CL.CL_TRUE, index * piece.getWidth(), dContent.length * Sizeof.cl_double, Pointer.to(dContent), 0, null, null);
+														}
+													} finally {
+														event.post();
 													}
-													event.post();
 												});
-					tDouble.setDaemon(true);
-					tDouble.start();
 					break;
 				case COMPLEX_FLOAT	:
 				case REAL_FLOAT		:
 					final float[]	fContent = new float[piece.getWidth() * matrix.getType().getNumberOfItems()];
 
-					final Thread	tFloat = new Thread(()->{
-													for(int index = piece.getTop(), maxIndex = piece.getTop()+piece.getHeight(); index < maxIndex; index++) {
-														matrix.assign(Piece.of(index, piece.getLeft(), 1, piece.getWidth()));
-														CL.clEnqueueReadBuffer(owner.owner.queue, buffer, CL.CL_TRUE, index * piece.getWidth(), fContent.length * Sizeof.cl_float, Pointer.to(fContent), 0, null, null);
+					startThread(DOWNLOADER, matrix.getType(), ()->{
+													try {
+														for(int index = piece.getTop(), maxIndex = piece.getTop()+piece.getHeight(); index < maxIndex; index++) {
+															matrix.extractFloats(Piece.of(index, piece.getLeft(), 1, piece.getWidth()), fContent);
+															CL.clEnqueueWriteBuffer(owner.owner.queue, buffer, CL.CL_TRUE, index * piece.getWidth(), fContent.length * Sizeof.cl_float, Pointer.to(fContent), 0, null, null);
+														}
+													} catch (Throwable t) {
+														t.printStackTrace();
+													} finally {
+														event.post();
 													}
-													event.post();
 												});
-					tFloat.setDaemon(true);
-					tFloat.start();
 					break;
 				case REAL_INT		:
 					final int[]		iContent = new int[piece.getWidth() * matrix.getType().getNumberOfItems()];
 
-					final Thread	tInt = new Thread(()->{
+					startThread(DOWNLOADER, matrix.getType(), ()->{
 													for(int index = piece.getTop(), maxIndex = piece.getTop()+piece.getHeight(); index < maxIndex; index++) {
-														CL.clEnqueueReadBuffer(owner.owner.queue, buffer, CL.CL_TRUE, index * piece.getWidth(), iContent.length * Sizeof.cl_int, Pointer.to(iContent), 0, null, null);
-														matrix.assign(Piece.of(index, piece.getLeft(), 1, piece.getWidth()));
+														matrix.extractInts(Piece.of(index, piece.getLeft(), 1, piece.getWidth()), iContent);
+														CL.clEnqueueWriteBuffer(owner.owner.queue, buffer, CL.CL_TRUE, index * piece.getWidth(), iContent.length * Sizeof.cl_int, Pointer.to(iContent), 0, null, null);
 													}
 													event.post();
 												});
-					tInt.setDaemon(true);
-					tInt.start();
 					break;
 				case REAL_LONG		:
 					final long[]	lContent = new long[piece.getWidth() * matrix.getType().getNumberOfItems()];
 
-					final Thread	tLong = new Thread(()->{
+					startThread(DOWNLOADER, matrix.getType(), ()->{
 													for(int index = piece.getTop(), maxIndex = piece.getTop()+piece.getHeight(); index < maxIndex; index++) {
+														matrix.extractLongs(Piece.of(index, piece.getLeft(), 1, piece.getWidth()), lContent);
 														CL.clEnqueueReadBuffer(owner.owner.queue, buffer, CL.CL_TRUE, index * piece.getWidth(), lContent.length * Sizeof.cl_long, Pointer.to(lContent), 0, null, null);
-														matrix.assign(Piece.of(index, piece.getLeft(), 1, piece.getWidth()));
 													}
 													event.post();
 												});
-					tLong.setDaemon(true);
-					tLong.start();
 					break;
 				default :
 					throw new UnsupportedOperationException("Matrix type ["+matrix.getType()+"] is not supported yet");
@@ -215,7 +217,7 @@ class GPUBufferImpl implements GPUBuffer {
 		else {
 			final GPUEvent	event = owner.createEvent();
 
-			final Thread	t = new Thread(()->{
+			startThread(UPLOADER, type, ()->{
 				try {
 					switch (type) {
 						case COMPLEX_DOUBLE	:
@@ -241,8 +243,6 @@ class GPUBufferImpl implements GPUBuffer {
 					event.post();
 				}
 			});
-			t.setDaemon(true);
-			t.start();
 			return event;
 		}
 	}
@@ -331,42 +331,23 @@ class GPUBufferImpl implements GPUBuffer {
 		else {
 			final GPUEvent	event = owner.createEvent();
 	
-			final Thread	t = new Thread(()->{
+			startThread(UPLOADER, type, ()->{
 				try {
-					switch (type) {
-						case COMPLEX_DOUBLE	:
-						case REAL_DOUBLE	:
-							uploadDouble(out);
-							break;
-						case COMPLEX_FLOAT	:
-						case REAL_FLOAT		:
-							uploadFloat(out);
-							break;
-						case REAL_INT	:
-							uploadInt(out);
-							break;
-						case REAL_LONG	:
-							uploadLong(out);
-							break;
-						default:
-							throw new UnsupportedOperationException("Matrix type ["+type+"] is not supported yet");
-					}
 					final byte[]	buf = new byte[ADDRESS_STEP];
 					
 					for (int piece = 0; piece < size; piece += ADDRESS_STEP) {
 						final int	bufSize = Math.min(ADDRESS_STEP, size-piece);
 						
-						CL.clEnqueueReadBuffer(owner.owner.queue, buffer, CL.CL_TRUE, piece, buf.length * Sizeof.cl_char, Pointer.to(buf), 0, null, null);
+						CL.clEnqueueReadBuffer(owner.owner.queue, buffer, CL.CL_TRUE, piece * Sizeof.cl_char, bufSize * Sizeof.cl_char, Pointer.to(buf), 0, null, null);
 						out.write(buf, 0, bufSize);
 					}
+					out.flush();
 				} catch (IOException e) {
 					e.printStackTrace();
 				} finally {
 					event.post();
 				}
 			});
-			t.setDaemon(true);
-			t.start();
 			return event;
 		}
 	}
@@ -528,8 +509,8 @@ class GPUBufferImpl implements GPUBuffer {
 		
 		for (int piece = 0; piece < currentSize; piece += ADDRESS_STEP) {
 			final int	bufSize = Math.min(ADDRESS_STEP, currentSize-piece);
-			
-			CL.clEnqueueReadBuffer(owner.owner.queue, buffer, CL.CL_TRUE, piece, bufSize * Sizeof.cl_float, Pointer.to(buf), 0, null, null);
+
+			CL.clEnqueueReadBuffer(owner.owner.queue, buffer, CL.CL_TRUE, piece * Sizeof.cl_float, bufSize * Sizeof.cl_float, Pointer.to(buf), 0, null, null);
 			for(int index = 0; index < bufSize; index++) {
 				out.writeFloat(buf[index]);
 			}
@@ -610,5 +591,13 @@ class GPUBufferImpl implements GPUBuffer {
 			CL.clEnqueueReadBuffer(owner.owner.queue, buffer, CL.CL_TRUE, piece, bufSize * Sizeof.cl_long, Pointer.to(buf), 0, null, null);
 			out.write(buf, 0, bufSize);
 		}
+	}
+	
+	private void startThread(final String nameFormat, final Type type, final Runnable runnable) {
+		final Thread	t = new Thread(runnable);
+
+		t.setName(String.format(nameFormat, type, UNIQUE.incrementAndGet()));
+		t.setDaemon(true);
+		t.start();
 	}
 }

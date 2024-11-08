@@ -1,5 +1,6 @@
 package chav1961.bt.openclmatrix.internal;
 
+
 import java.io.IOException;
 import java.lang.reflect.Method;
 import java.nio.MappedByteBuffer;
@@ -27,19 +28,9 @@ class TemporaryBufferImpl implements TemporaryBuffer {
 	
 	@Override
 	public void close() throws IOException {
+		flush();
 		onCloseCallback.accept(this);
 		closed = true;
-		try {
-		    final Method 	cleanerMethod = buffer.getClass().getMethod("cleaner");
-		    
-		    cleanerMethod.setAccessible(true);
-		    final Object 	cleaner = cleanerMethod.invoke(buffer);
-		    final Method 	cleanMethod = cleaner.getClass().getMethod("clean");
-		    
-		    cleanMethod.setAccessible(true);
-		    cleanMethod.invoke(cleaner);
-		} catch(Exception ex) {
-		}		
 	}
 
 	@Override
@@ -86,6 +77,7 @@ class TemporaryBufferImpl implements TemporaryBuffer {
 			final int	currentLen = Math.min(len, buffer.limit()-buffer.position());
 			
 			buffer.get(content, to, currentLen);
+			seek(buffer.position());
 			return currentLen;
 		}
 	}
@@ -109,6 +101,7 @@ class TemporaryBufferImpl implements TemporaryBuffer {
 				buffer.get(smallBuffer, 0, Sizeof.cl_int);
 				content[index] = InternalUtils.toInt(smallBuffer, 0);
 			}
+			seek(buffer.position());
 			return currentLen;
 		}
 	}
@@ -132,6 +125,7 @@ class TemporaryBufferImpl implements TemporaryBuffer {
 				buffer.get(smallBuffer, 0, Sizeof.cl_long);
 				content[index] = InternalUtils.toLong(smallBuffer, 0);
 			}
+			seek(buffer.position());
 			return currentLen;
 		}
 	}
@@ -155,6 +149,7 @@ class TemporaryBufferImpl implements TemporaryBuffer {
 				buffer.get(smallBuffer, 0, Sizeof.cl_float);
 				content[index] = Float.intBitsToFloat(InternalUtils.toInt(smallBuffer, 0));
 			}
+			seek(buffer.position());
 			return currentLen;
 		}
 	}
@@ -178,6 +173,7 @@ class TemporaryBufferImpl implements TemporaryBuffer {
 				buffer.get(smallBuffer, 0, Sizeof.cl_double);
 				content[index] = Double.longBitsToDouble(InternalUtils.toLong(smallBuffer, 0));
 			}
+			seek(buffer.position());
 			return currentLen;
 		}
 	}
@@ -194,10 +190,13 @@ class TemporaryBufferImpl implements TemporaryBuffer {
 			throw new IllegalStateException("Attempt to write content on closed map");
 		}
 		else {
+			System.err.println("Pos="+position()+", cap="+buffer.capacity());
 			buffer.position(position());
 			final int	currentLen = Math.min(len, buffer.capacity()-buffer.position());
 			
 			buffer.put(content, from, currentLen);
+			System.err.println("After="+buffer.position()+", len="+currentLen);
+			seek(buffer.position());
 			return currentLen;
 		}
 	}
@@ -221,6 +220,7 @@ class TemporaryBufferImpl implements TemporaryBuffer {
 				InternalUtils.fromInt(smallBuffer, 0, content[index]);
 				buffer.put(smallBuffer, 0, Sizeof.cl_int);
 			}
+			seek(buffer.position());
 			return currentLen;
 		}
 	}
@@ -244,6 +244,7 @@ class TemporaryBufferImpl implements TemporaryBuffer {
 				InternalUtils.fromLong(smallBuffer, 0, content[index]);
 				buffer.put(smallBuffer, 0, Sizeof.cl_long);
 			}
+			seek(buffer.position());
 			return currentLen;
 		}
 	}
@@ -267,6 +268,7 @@ class TemporaryBufferImpl implements TemporaryBuffer {
 				InternalUtils.fromInt(smallBuffer, 0, Float.floatToIntBits(content[index]));
 				buffer.put(smallBuffer, 0, Sizeof.cl_float);
 			}
+			seek(buffer.position());
 			return currentLen;
 		}
 	}
@@ -290,8 +292,14 @@ class TemporaryBufferImpl implements TemporaryBuffer {
 				InternalUtils.fromLong(smallBuffer, 0, Double.doubleToLongBits(content[index]));
 				buffer.put(smallBuffer, 0, Sizeof.cl_double);
 			}
+			seek(buffer.position());
 			return currentLen;
 		}
+	}
+
+	@Override
+	public void flush() throws IOException {
+		buffer.force();
 	}
 	
 	@Override

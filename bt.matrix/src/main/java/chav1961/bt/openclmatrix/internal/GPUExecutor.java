@@ -4,6 +4,7 @@ import java.io.Closeable;
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.File;
+import java.io.Flushable;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
@@ -18,7 +19,7 @@ import chav1961.purelib.basic.exceptions.SyntaxException;
 import chav1961.purelib.matrix.interfaces.Matrix;
 
 public class GPUExecutor implements AutoCloseable {
-	public static interface TemporaryBuffer extends Closeable {
+	public static interface TemporaryBuffer extends Closeable, Flushable {
 		long getAddress();
 		int getSize();
 		int position();
@@ -44,6 +45,7 @@ public class GPUExecutor implements AutoCloseable {
 		GPUEvent awaitAll(boolean closeAfterComplete, GPUEvent... events) throws InterruptedException, CalculationException;
 		GPUEvent awaitCurrent() throws InterruptedException, CalculationException;
 		void post();
+		void post(CalculationException exc);
 		@Override void close() throws RuntimeException;
 	}
 	
@@ -62,6 +64,7 @@ public class GPUExecutor implements AutoCloseable {
 	
 	public static interface GPUExecutable extends AutoCloseable {
 		String getName();
+		void executeAfter(GPUEvent[] events, GPUEvent event, long[] dimensions, Object... parameters);
 		void execute(GPUEvent event, long[] dimensions, Object... parameters);
 		@Override void close() throws RuntimeException;
 	}
@@ -70,6 +73,7 @@ public class GPUExecutor implements AutoCloseable {
 		GPUEvent createEvent();
 		GPUEvent createEvent(EventCallbackFunction callback);
 		TemporaryStore allocateTemporaryStore(long storeSize) throws IOException;
+		TemporaryStore allocateTemporaryStore(File storeDir, long storeSize) throws IOException;
 		GPUBuffer allocateGPUBuffer(int bufferSize) throws ContentException;
 		@Override void close() throws RuntimeException;
 	}

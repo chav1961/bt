@@ -12,8 +12,9 @@ import chav1961.purelib.basic.exceptions.CalculationException;
 
 class GPUEventImpl implements GPUEvent {
 	final cl_event	event;
-	private final Consumer<GPUEvent>	onCloseCallback;
-	private boolean	closed = false;
+	private final Consumer<GPUEvent>		onCloseCallback;
+	private volatile CalculationException	exc = null;
+	private volatile boolean				closed = false;
 	
 	GPUEventImpl(final cl_event event, final Consumer<GPUEvent> onCloseCallback) {
 		this.event = event;
@@ -40,20 +41,36 @@ class GPUEventImpl implements GPUEvent {
 	}
 	
 	@Override
+	public void post(final CalculationException exc) {
+		if (exc == null) {
+			throw new NullPointerException("Exception can't be null");
+		}
+		else if (closed) {
+			throw new IllegalStateException("Attempt to post closed event");
+		}
+		else {
+			CL.clSetUserEventStatus(event, CL.CL_COMPLETE);
+		}
+	}
+	
+	@Override
 	public GPUEvent awaitAll(boolean closeAfterComplete, final GPUEvent... events) throws InterruptedException, CalculationException {
 		if (events == null || events.length == 0 || Utils.checkArrayContent4Nulls(events) >= 0) {
 			throw new IllegalArgumentException("Events list is null, empty, or contains nulls inside");
 		}
 		else {
-			for(GPUEvent item : events) {
-				item.awaitCurrent();
-			}
-			if (closeAfterComplete) {
+			try {
 				for(GPUEvent item : events) {
-					item.close();
+					item.awaitCurrent();
 				}
+			} finally {
+				if (closeAfterComplete) {
+					for(GPUEvent item : events) {
+						item.close();
+					}
+				}
+				post();
 			}
-			post();
 			return this;
 		}
 	}
@@ -66,6 +83,9 @@ class GPUEventImpl implements GPUEvent {
 		else {
 			try {
 				CL.clWaitForEvents(1, new cl_event[] {event});
+				if (exc != null) {
+					throw exc;
+				}
 				return this;
 			} catch (CLException exc) {
 				throw new CalculationException(exc.getLocalizedMessage());

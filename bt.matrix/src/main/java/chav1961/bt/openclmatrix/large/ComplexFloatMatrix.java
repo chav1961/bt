@@ -4,6 +4,7 @@ import java.io.DataInput;
 import java.io.DataInputStream;
 import java.io.DataOutput;
 import java.io.DataOutputStream;
+import java.io.EOFException;
 import java.io.File;
 import java.io.IOException;
 import java.io.PipedInputStream;
@@ -14,22 +15,30 @@ import java.nio.file.StandardOpenOption;
 
 import chav1961.bt.openclmatrix.internal.GPUExecutor;
 import chav1961.bt.openclmatrix.internal.GPUExecutor.GPUBuffer;
+import chav1961.bt.openclmatrix.internal.GPUExecutor.GPUEvent;
 import chav1961.bt.openclmatrix.internal.GPUExecutor.GPUExecutable;
 import chav1961.bt.openclmatrix.internal.GPUExecutor.GPUScheduler;
+import chav1961.bt.openclmatrix.internal.GPUExecutor.TemporaryBuffer;
+import chav1961.bt.openclmatrix.internal.GPUExecutor.TemporaryStore;
 import chav1961.bt.openclmatrix.internal.InternalUtils;
+import chav1961.purelib.basic.exceptions.CalculationException;
 import chav1961.purelib.basic.exceptions.ContentException;
 import chav1961.purelib.basic.exceptions.SyntaxException;
 import chav1961.purelib.matrix.interfaces.Matrix;
-import chav1961.purelib.matrix.interfaces.Matrix.Type;
 import chav1961.purelib.matrix.interfaces.MatrixCalc;
-import chav1961.purelib.streams.DataInputAdapter;
+import chav1961.purelib.streams.DataOutputAdapter;
 
 public class ComplexFloatMatrix extends LargeMatrix {
 	private static final int	MAX_GPU_BUFFER_SIZE_IN_ITEMS = GPUBuffer.MAX_GPU_BUFFER_SIZE / Type.COMPLEX_FLOAT.getItemSize();
 	private static final String	ADD_INT_ARRAY_NAME = "addIntArray"+Type.COMPLEX_FLOAT.getProgramSuffix();
-	private static final String	ADD_INT_ARRAY_KERNEL =    "__kernel void "+ADD_INT_ARRAY_NAME+"(const int currentSize, const int bufferSize, const long totalSize,\n"
-														+ "                      __global float* A,\n"
-														+ "                      const __global int* B) {\n"
+	private static final String	ADD_INT_ARRAY_KERNEL =    "__kernel void "+ADD_INT_ARRAY_NAME+"(const int columns,\n"
+														+ "                      __global float* source,\n"
+														+ "                      const __global int* add) {\n"
+														+ "	int row = get_global_id(0);\n"
+														+ "	int start = columns * row;\n"
+														+ "	for(int col = 0; col < columns; col++) {\n"
+														+ "	  source[start + col] += add[start + col];\n"
+														+ "	}\n"
 														+ "}";
 	
 	private final int[]		intBuffer = new int[2];
@@ -215,7 +224,7 @@ public class ComplexFloatMatrix extends LargeMatrix {
 	}
 
 	@Override
-	public float[] extractFloats(Piece piece) {
+	public float[] extractFloats(final Piece piece) {
 		if (piece == null) {
 			throw new NullPointerException("Piece can't be null");
 		}
@@ -223,9 +232,26 @@ public class ComplexFloatMatrix extends LargeMatrix {
 			throw new IllegalArgumentException("Piece ["+piece+"] overlaps matrix ranges ["+totalPiece()+"] or has non-positive size");
 		}
 		else {
-			ensureTransactionCompleted();
 			final long		size = 1L * numberOfRows() * numberOfColumns() * getType().getNumberOfItems(), maxSize = Integer.MAX_VALUE;
 			final float[]	result = new float[(int) Math.min(size, maxSize)];
+
+			return extractFloats(piece, result);
+		}
+	}
+
+	@Override
+	public float[] extractFloats(final Piece piece, final float[] target) {
+		if (piece == null) {
+			throw new NullPointerException("Piece can't be null");
+		}
+		else if (isOverlaps(piece)) {
+			throw new IllegalArgumentException("Piece ["+piece+"] overlaps matrix ranges ["+totalPiece()+"] or has non-positive size");
+		}
+		else if (target == null) {
+			throw new NullPointerException("Target array can't be null");
+		}
+		else {
+			ensureTransactionCompleted();
 			
 			extractAny(piece, new ProcessFCContent() {
 				int index = 0;
@@ -233,20 +259,20 @@ public class ComplexFloatMatrix extends LargeMatrix {
 				public boolean process(final int row, final int col, final ByteBuffer source) throws IOException {
 					deserialize(source, intBuffer, 2);
 					
-					if (index >= result.length - 1) {
+					if (index >= target.length - 1) {
 						return false;
 					}
 					else {
-						result[index++] = (float)Float.intBitsToFloat(intBuffer[0]);
-						result[index++] = (float)Float.intBitsToFloat(intBuffer[1]);
+						target[index++] = (float)Float.intBitsToFloat(intBuffer[0]);
+						target[index++] = (float)Float.intBitsToFloat(intBuffer[1]);
 						return true;
 					}
 				};
 			});
-			return result;
+			return target;
 		}
-	}
-
+	}	
+	
 	@Override
 	public void extractFloats(final Piece piece, final DataOutput dataOutput) throws IOException {
 		if (piece == null) {
@@ -611,30 +637,68 @@ public class ComplexFloatMatrix extends LargeMatrix {
 				final int	rightRows = calcNumberOfRows(content.length, getType().getNumberOfItems(), numberOfColumns());
 				final int	rightBufferSize = rightRows * numberOfColumns() * getType().getNumberOfItems();
 				final int	totalRightRows = calcTotalNumberOfRows(content.length, getType().getNumberOfItems(), numberOfColumns());
+				final int	occupiedBytes = getType().getNumberOfItems() * getType().getItemSize();
+				final ComplexFloatMatrix	result = new ComplexFloatMatrix(getExecutor(), getFileKeeper().getParentFile(), numberOfRows(), numberOfColumns());
 				
-				beginTransaction();
-				try(final GPUBuffer	left = getScheduler().allocateGPUBuffer(leftBufferSize * getType().getItemSize());
-					final GPUBuffer	right = getScheduler().allocateGPUBuffer(rightBufferSize * Type.REAL_INT.getItemSize())) {
-
+				result.beginTransaction();
+				try(final GPUBuffer			left = result.getScheduler().allocateGPUBuffer(leftBufferSize * getType().getItemSize());
+					final GPUBuffer			right = result.getScheduler().allocateGPUBuffer(rightBufferSize * Type.REAL_INT.getItemSize());
+					final TemporaryStore	store = result.getScheduler().allocateTemporaryStore(getFileKeeper().getParentFile(), 1L * occupiedBytes * numberOfRows() * numberOfColumns())) {
+					
+					final int 		maxContentLength = ((content.length + numberOfColumns() - 1) / numberOfColumns()) * numberOfColumns();  
+					final long[]	taskSize = new long[1]; 
+					final ControlledDataInput	di = new ControlledDataInput() {
+													int 		index = 0;
+													
+													@Override
+													public int readInt() throws IOException {
+														if (index >= maxContentLength) {
+															throw new EOFException();
+														}
+														else if (index < content.length) {
+															return content[index++];
+														}
+														else {
+															index++;
+															return 0;
+														}
+													}
+	
+													@Override
+													public long getReadAmount() {
+														return index;
+													}
+												};
+												
 					for (int leftIndex = 0, rightIndex = 0, maxIndex = numberOfRows(); leftIndex < maxIndex && rightIndex < totalRightRows; leftIndex += leftRows, rightIndex += rightRows) {
-						left.download(Piece.of(leftIndex, 0, leftRows, numberOfColumns()), this);
-//						right.download(new DataInputAdapter() {
-//							int	index = 0;
-//							@Override
-//							public int readInt() throws IOException {
-//								return content[index++];
-//							}
-//						}, Type.REAL_INT);
+						final int		leftPiece = leftIndex + leftRows > numberOfRows() ? numberOfRows() - leftIndex : leftRows;
+						final Piece		currentPiece = Piece.of(leftIndex, 0, leftPiece, numberOfColumns());
+						final int		blockSize = occupiedBytes * currentPiece.getWidth() * currentPiece.getHeight();
+						
+						try(final TemporaryBuffer	out = store.getBuffer(leftIndex * blockSize, blockSize);
+							final GPUEvent 	downloadEventRight = right.download(di, Type.REAL_INT);
+							final GPUEvent 	downloadEventLeft = left.download(currentPiece, this);
+							final GPUEvent 	calcEvent = result.getScheduler().createEvent()) {
+							
+							downloadEventLeft.awaitCurrent();
+							downloadEventRight.awaitCurrent();
+							final int		rightPiece = di.getReadAmount() / numberOfColumns() > maxContentLength ? maxContentLength/numberOfColumns() - rightIndex : rightRows;  
+	
+							taskSize[0] = Math.min(leftPiece, rightPiece);
+							prog.execute(calcEvent, taskSize, numberOfColumns(), left, right);
+							calcEvent.awaitCurrent();
+							System.err.println("ready");
+							left.upload(out, getType()).awaitCurrent().close();
+							System.err.println("\n--------");
+						}
 					}
 				}
-			} catch (SyntaxException exc) {
+				return result;
+			} catch (ContentException | CalculationException exc) {
 				throw new IllegalStateException("Internal error: "+exc.getLocalizedMessage(), exc); 				
-			} catch (ContentException exc) {
-				throw new IllegalStateException("Internal error: "+exc.getLocalizedMessage(), exc); 				
-			} catch (IOException exc) {
+			} catch (IOException | InterruptedException exc) {
 				throw new IllegalStateException("Internal error: "+exc.getLocalizedMessage(), exc); 				
 			}
-			return null;
 		}
 	}
 
