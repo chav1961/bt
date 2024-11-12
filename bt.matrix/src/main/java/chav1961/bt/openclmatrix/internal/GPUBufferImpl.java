@@ -15,6 +15,7 @@ import org.jocl.cl_mem;
 import chav1961.bt.openclmatrix.internal.GPUExecutor.GPUBuffer;
 import chav1961.bt.openclmatrix.internal.GPUExecutor.GPUEvent;
 import chav1961.bt.openclmatrix.internal.GPUExecutor.TemporaryBuffer;
+import chav1961.purelib.basic.Utils;
 import chav1961.purelib.matrix.interfaces.Matrix;
 import chav1961.purelib.matrix.interfaces.Matrix.Piece;
 import chav1961.purelib.matrix.interfaces.Matrix.Type;
@@ -109,7 +110,7 @@ class GPUBufferImpl implements GPUBuffer {
 													try {
 														for(int index = piece.getTop(), maxIndex = piece.getTop()+piece.getHeight(); index < maxIndex; index++) {
 															matrix.extractDoubles(Piece.of(index, piece.getLeft(), 1, piece.getWidth()), dContent);
-															CL.clEnqueueWriteBuffer(owner.owner.queue, buffer, CL.CL_TRUE, index * piece.getWidth(), dContent.length * Sizeof.cl_double, Pointer.to(dContent), 0, null, null);
+															CL.clEnqueueWriteBuffer(owner.owner.queue, buffer, CL.CL_TRUE, index * piece.getWidth() * Sizeof.cl_double , dContent.length * Sizeof.cl_double, Pointer.to(dContent), 0, null, null);
 														}
 													} finally {
 														event.post();
@@ -265,8 +266,8 @@ class GPUBufferImpl implements GPUBuffer {
 
 					final Thread	tDouble = new Thread(()->{
 													for(int index = piece.getTop(), maxIndex = piece.getTop()+piece.getHeight(); index < maxIndex; index++) {
-														CL.clEnqueueReadBuffer(owner.owner.queue, buffer, CL.CL_TRUE, index * piece.getWidth(), dContent.length * Sizeof.cl_double, Pointer.to(dContent), 0, null, null);
-														matrix.assign(Piece.of(index, piece.getLeft(), 1, piece.getWidth()));
+														CL.clEnqueueReadBuffer(owner.owner.queue, buffer, CL.CL_TRUE, index * piece.getWidth() * Sizeof.cl_double, dContent.length * Sizeof.cl_double, Pointer.to(dContent), 0, null, null);
+														matrix.assign(Piece.of(index, piece.getLeft(), 1, piece.getWidth()), dContent);
 													}
 													event.post();
 												});
@@ -279,8 +280,8 @@ class GPUBufferImpl implements GPUBuffer {
 
 					final Thread	tFloat = new Thread(()->{
 													for(int index = piece.getTop(), maxIndex = piece.getTop()+piece.getHeight(); index < maxIndex; index++) {
-														CL.clEnqueueReadBuffer(owner.owner.queue, buffer, CL.CL_TRUE, index * piece.getWidth(), fContent.length * Sizeof.cl_float, Pointer.to(fContent), 0, null, null);
-														matrix.assign(Piece.of(index, piece.getLeft(), 1, piece.getWidth()));
+														CL.clEnqueueReadBuffer(owner.owner.queue, buffer, CL.CL_TRUE, index * piece.getWidth() * Sizeof.cl_float, fContent.length * Sizeof.cl_float, Pointer.to(fContent), 0, null, null);
+														matrix.assign(Piece.of(index, piece.getLeft(), 1, piece.getWidth()), fContent);
 													}
 													event.post();
 												});
@@ -292,8 +293,8 @@ class GPUBufferImpl implements GPUBuffer {
 
 					final Thread	tInt = new Thread(()->{
 													for(int index = piece.getTop(), maxIndex = piece.getTop()+piece.getHeight(); index < maxIndex; index++) {
-														CL.clEnqueueReadBuffer(owner.owner.queue, buffer, CL.CL_TRUE, index * piece.getWidth(), iContent.length * Sizeof.cl_int, Pointer.to(iContent), 0, null, null);
-														matrix.assign(Piece.of(index, piece.getLeft(), 1, piece.getWidth()));
+														CL.clEnqueueReadBuffer(owner.owner.queue, buffer, CL.CL_TRUE, index * piece.getWidth() * Sizeof.cl_int, iContent.length * Sizeof.cl_int, Pointer.to(iContent), 0, null, null);
+														matrix.assign(Piece.of(index, piece.getLeft(), 1, piece.getWidth()), iContent);
 													}
 													event.post();
 												});
@@ -305,8 +306,8 @@ class GPUBufferImpl implements GPUBuffer {
 
 					final Thread	tLong = new Thread(()->{
 													for(int index = piece.getTop(), maxIndex = piece.getTop()+piece.getHeight(); index < maxIndex; index++) {
-														CL.clEnqueueReadBuffer(owner.owner.queue, buffer, CL.CL_TRUE, index * piece.getWidth(), lContent.length * Sizeof.cl_long, Pointer.to(lContent), 0, null, null);
-														matrix.assign(Piece.of(index, piece.getLeft(), 1, piece.getWidth()));
+														CL.clEnqueueReadBuffer(owner.owner.queue, buffer, CL.CL_TRUE, index * piece.getWidth() * Sizeof.cl_long, lContent.length * Sizeof.cl_long, Pointer.to(lContent), 0, null, null);
+														matrix.assign(Piece.of(index, piece.getLeft(), 1, piece.getWidth()), lContent);
 													}
 													event.post();
 												});
@@ -423,10 +424,12 @@ class GPUBufferImpl implements GPUBuffer {
 	private void downloadInt(final DataInput in) throws IOException {
 		final int[]	buf = new int[ADDRESS_STEP];
 		
-		for (int piece = 0; piece < size; piece += ADDRESS_STEP) {
-			final int	bufSize = read(buf, buf.length, in);
+		for (int piece = 0, intSize = size / Sizeof.cl_int; piece < intSize; piece += ADDRESS_STEP) {
+			Utils.fillArray(buf, 0);			
+//			final int	bufSize = read(buf, buf.length, in);
+			read(buf, buf.length, in);
 			
-			CL.clEnqueueWriteBuffer(owner.owner.queue, buffer, CL.CL_TRUE, piece, bufSize * Sizeof.cl_int, Pointer.to(buf), 0, null, null);
+			CL.clEnqueueWriteBuffer(owner.owner.queue, buffer, CL.CL_TRUE, piece * Sizeof.cl_int, Math.min(ADDRESS_STEP, intSize - piece) * Sizeof.cl_int, Pointer.to(buf), 0, null, null);
 		}
 	}
 	

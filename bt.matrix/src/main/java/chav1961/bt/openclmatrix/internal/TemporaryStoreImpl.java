@@ -7,6 +7,7 @@ import java.nio.channels.FileChannel;
 import java.nio.channels.FileChannel.MapMode;
 import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
+import java.util.FormatFlagsConversionMismatchException;
 import java.util.List;
 import java.util.function.Consumer;
 
@@ -18,8 +19,9 @@ class TemporaryStoreImpl implements TemporaryStore {
 	private final List<TemporaryBuffer>		buffers = new ArrayList<>();
 	private final File						file;
 	private final FileChannel				fc;
+	private final boolean					removeContentAfterClose;
 	
-	TemporaryStoreImpl(final File contentDir, final long size, final Consumer<TemporaryStore> onCloseCallback) throws IOException {
+	TemporaryStoreImpl(final File contentDir, final long size, final Consumer<TemporaryStore> onCloseCallback, final boolean removeContentAfterClose) throws IOException {
 		this.onCloseCallback = onCloseCallback;
 		this.file = File.createTempFile(InternalUtils.OPENCL_PREFIX+"TMP", ".matrix", contentDir);
 		
@@ -28,19 +30,28 @@ class TemporaryStoreImpl implements TemporaryStore {
 			raf.writeByte(0);
 		}
 		this.fc = FileChannel.open(file.toPath(), StandardOpenOption.READ, StandardOpenOption.WRITE);
+		this.removeContentAfterClose = removeContentAfterClose;
 	}
 
 	@Override
 	public void close() throws IOException {
 		onCloseCallback.accept(this);
 		fc.close();
+		if (removeContentAfterClose) {
+			file.delete();
+		}
 	}
 	
 	@Override
 	public long getSize() throws IOException {
 		return fc.size();
 	}
-
+	
+	@Override
+	public File getContentFile() {
+		return file;
+	}
+	
 	@Override
 	public TemporaryBuffer getBuffer(final long address, final int size) throws IOException {
 		if (address < 0 || address >= getSize()) {

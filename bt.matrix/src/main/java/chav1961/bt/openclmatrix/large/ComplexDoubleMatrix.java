@@ -1291,7 +1291,7 @@ public class ComplexDoubleMatrix extends LargeMatrix implements Matrix {
 
 	@Override
 	public String toString() {
-		return "CompleDoubleMatrix["+numberOfRows()+"x"+numberOfColumns()+" based on "+getFileKeeper().getAbsolutePath()+", total size="+(getFileKeeper().length()/GIGABYTE)+"Gb, transaction mode is "+!areAllAsyncCompleted()+"]";
+		return "CompleDoubleMatrix["+numberOfRows()+"x"+numberOfColumns()+" based on "+getFileKeeper().getAbsolutePath()+", total size="+(getFileKeeper().length()/S_1GIGABYTE)+"Gb, transaction mode is "+!areAllAsyncCompleted()+"]";
 	}
 	
 	@Override

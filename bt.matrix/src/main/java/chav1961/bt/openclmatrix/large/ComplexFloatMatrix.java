@@ -12,6 +12,7 @@ import java.io.PipedOutputStream;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.file.StandardOpenOption;
+import java.util.Arrays;
 
 import chav1961.bt.openclmatrix.internal.GPUExecutor;
 import chav1961.bt.openclmatrix.internal.GPUExecutor.GPUBuffer;
@@ -37,7 +38,8 @@ public class ComplexFloatMatrix extends LargeMatrix {
 														+ "	int row = get_global_id(0);\n"
 														+ "	int start = columns * row;\n"
 														+ "	for(int col = 0; col < columns; col++) {\n"
-														+ "	  source[start + col] += add[start + col];\n"
+														+ "	  source[start + col] = 2.0f;\n"
+//														+ "	  source[start + col] += add[start + col];\n"
 														+ "	}\n"
 														+ "}";
 	
@@ -52,14 +54,14 @@ public class ComplexFloatMatrix extends LargeMatrix {
 		super(executor, contentDir, Type.COMPLEX_FLOAT, rows, cols);
 	}
 
-	private ComplexFloatMatrix(final GPUExecutor executor, final File contentDir, final int rows, final int cols, final File fill) {
-		super(executor, contentDir, Type.COMPLEX_FLOAT, rows, cols, fill);
+	private ComplexFloatMatrix(final GPUExecutor executor, final File contentDir, final int rows, final int cols, final File fill, final boolean copyFileContent) {
+		super(executor, contentDir, Type.COMPLEX_FLOAT, rows, cols, fill, copyFileContent);
 	}	
 	
 	@Override
 	public Object clone() throws CloneNotSupportedException {
 		ensureTransactionCompleted();
-		return new ComplexFloatMatrix(getExecutor(), getFileKeeper().getParentFile(), numberOfRows(), numberOfColumns(), getFileKeeper());
+		return new ComplexFloatMatrix(getExecutor(), getFileKeeper().getParentFile(), numberOfRows(), numberOfColumns(), getFileKeeper(), true);
 	}
 	
 	@Override
@@ -253,6 +255,8 @@ public class ComplexFloatMatrix extends LargeMatrix {
 		else {
 			ensureTransactionCompleted();
 			
+			Arrays.fill(intBuffer, 0);
+			
 			extractAny(piece, new ProcessFCContent() {
 				int index = 0;
 			
@@ -263,8 +267,8 @@ public class ComplexFloatMatrix extends LargeMatrix {
 						return false;
 					}
 					else {
-						target[index++] = (float)Float.intBitsToFloat(intBuffer[0]);
-						target[index++] = (float)Float.intBitsToFloat(intBuffer[1]);
+						target[index++] = Float.intBitsToFloat(intBuffer[0]);
+						target[index++] = Float.intBitsToFloat(intBuffer[1]);
 						return true;
 					}
 				};
@@ -638,62 +642,87 @@ public class ComplexFloatMatrix extends LargeMatrix {
 				final int	rightBufferSize = rightRows * numberOfColumns() * getType().getNumberOfItems();
 				final int	totalRightRows = calcTotalNumberOfRows(content.length, getType().getNumberOfItems(), numberOfColumns());
 				final int	occupiedBytes = getType().getNumberOfItems() * getType().getItemSize();
-				final ComplexFloatMatrix	result = new ComplexFloatMatrix(getExecutor(), getFileKeeper().getParentFile(), numberOfRows(), numberOfColumns());
+				long	start = System.currentTimeMillis();
 				
-				result.beginTransaction();
-				try(final GPUBuffer			left = result.getScheduler().allocateGPUBuffer(leftBufferSize * getType().getItemSize());
-					final GPUBuffer			right = result.getScheduler().allocateGPUBuffer(rightBufferSize * Type.REAL_INT.getItemSize());
-					final TemporaryStore	store = result.getScheduler().allocateTemporaryStore(getFileKeeper().getParentFile(), 1L * occupiedBytes * numberOfRows() * numberOfColumns())) {
+				try(final ComplexFloatMatrix	temp = new ComplexFloatMatrix(getExecutor(), getFileKeeper().getParentFile(), 1, 1)) {
+					File						tempStoreFile = null;
 					
-					final int 		maxContentLength = ((content.length + numberOfColumns() - 1) / numberOfColumns()) * numberOfColumns();  
-					final long[]	taskSize = new long[1]; 
-					final ControlledDataInput	di = new ControlledDataInput() {
-													int 		index = 0;
-													
-													@Override
-													public int readInt() throws IOException {
-														if (index >= maxContentLength) {
-															throw new EOFException();
-														}
-														else if (index < content.length) {
-															return content[index++];
-														}
-														else {
-															index++;
-															return 0;
-														}
-													}
-	
-													@Override
-													public long getReadAmount() {
-														return index;
-													}
-												};
-												
-					for (int leftIndex = 0, rightIndex = 0, maxIndex = numberOfRows(); leftIndex < maxIndex && rightIndex < totalRightRows; leftIndex += leftRows, rightIndex += rightRows) {
-						final int		leftPiece = leftIndex + leftRows > numberOfRows() ? numberOfRows() - leftIndex : leftRows;
-						final Piece		currentPiece = Piece.of(leftIndex, 0, leftPiece, numberOfColumns());
-						final int		blockSize = occupiedBytes * currentPiece.getWidth() * currentPiece.getHeight();
+					temp.beginTransaction();
+					try(final GPUBuffer			left = temp.getScheduler().allocateGPUBuffer(leftBufferSize * getType().getItemSize());
+						final GPUBuffer			right = temp.getScheduler().allocateGPUBuffer(rightBufferSize * Type.REAL_INT.getItemSize());
+						final TemporaryStore	store = temp.getScheduler().allocateTemporaryStore(getFileKeeper().getParentFile(), 1L * occupiedBytes * numberOfRows() * numberOfColumns(), false)) {
+				
+						System.err.println("P1="+(System.currentTimeMillis()-start));
+						start = System.currentTimeMillis();
 						
-						try(final TemporaryBuffer	out = store.getBuffer(leftIndex * blockSize, blockSize);
-							final GPUEvent 	downloadEventRight = right.download(di, Type.REAL_INT);
-							final GPUEvent 	downloadEventLeft = left.download(currentPiece, this);
-							final GPUEvent 	calcEvent = result.getScheduler().createEvent()) {
+						final int 		maxContentLength = ((content.length + numberOfColumns() - 1) / numberOfColumns()) * numberOfColumns();  
+						final long[]	taskSize = new long[1]; 
+						final ControlledDataInput	di = new ControlledDataInput() {
+														int 		index = 0;
+														
+														@Override
+														public int readInt() throws IOException {
+															if (index >= maxContentLength) {
+																throw new EOFException();
+															}
+															else if (index < content.length) {
+																return content[index++];
+															}
+															else {
+																index++;
+																return 0;
+															}
+														}
+		
+														@Override
+														public long getReadAmount() {
+															return index;
+														}
+													};
+
+						tempStoreFile = store.getContentFile();
+						for (int leftIndex = 0, rightIndex = 0, maxIndex = numberOfRows(); leftIndex < maxIndex && rightIndex < totalRightRows; leftIndex += leftRows, rightIndex += rightRows) {
+							final int		leftPiece = leftIndex + leftRows > numberOfRows() ? numberOfRows() - leftIndex : leftRows;
+							final Piece		currentPiece = Piece.of(leftIndex, 0, leftPiece, numberOfColumns());
+							final int		blockSize = occupiedBytes * currentPiece.getWidth() * currentPiece.getHeight();
 							
-							downloadEventLeft.awaitCurrent();
-							downloadEventRight.awaitCurrent();
-							final int		rightPiece = di.getReadAmount() / numberOfColumns() > maxContentLength ? maxContentLength/numberOfColumns() - rightIndex : rightRows;  
-	
-							taskSize[0] = Math.min(leftPiece, rightPiece);
-							prog.execute(calcEvent, taskSize, numberOfColumns(), left, right);
-							calcEvent.awaitCurrent();
-							System.err.println("ready");
-							left.upload(out, getType()).awaitCurrent().close();
-							System.err.println("\n--------");
+							System.err.println("P2="+(System.currentTimeMillis()-start));
+							start = System.currentTimeMillis();
+							
+							try(final TemporaryBuffer	out = store.getBuffer(leftIndex * blockSize, blockSize);
+								final GPUEvent 	downloadEventRight = right.download(di, Type.REAL_INT);
+								final GPUEvent 	downloadEventLeft = left.download(currentPiece, this);
+								final GPUEvent 	calcEvent = temp.getScheduler().createEvent()) {
+								
+								System.err.println("P3="+(System.currentTimeMillis()-start));
+								start = System.currentTimeMillis();
+								
+								downloadEventRight.awaitCurrent();
+
+								System.err.println("P3A="+(System.currentTimeMillis()-start));
+								start = System.currentTimeMillis();
+								
+								downloadEventLeft.awaitCurrent();
+								final int		rightPiece = di.getReadAmount() / numberOfColumns() > maxContentLength ? maxContentLength/numberOfColumns() - rightIndex : rightRows;  
+
+								System.err.println("P3B="+(System.currentTimeMillis()-start));
+								start = System.currentTimeMillis();
+								
+								taskSize[0] = Math.min(leftPiece, rightPiece);
+								prog.execute(calcEvent, taskSize, numberOfColumns(), left, right);
+								calcEvent.awaitCurrent();
+								System.err.println("P4="+(System.currentTimeMillis()-start));
+								start = System.currentTimeMillis();
+								left.upload(out, getType()).awaitCurrent().close();
+								System.err.println("P5="+(System.currentTimeMillis()-start));
+								start = System.currentTimeMillis();
+							}
 						}
 					}
-				}
-				return result;
+					System.err.println("P6="+(System.currentTimeMillis()-start));
+					start = System.currentTimeMillis();
+					return new ComplexFloatMatrix(getExecutor(), getFileKeeper().getParentFile(), numberOfRows(), numberOfColumns(), tempStoreFile, false);
+ 				}
 			} catch (ContentException | CalculationException exc) {
 				throw new IllegalStateException("Internal error: "+exc.getLocalizedMessage(), exc); 				
 			} catch (IOException | InterruptedException exc) {

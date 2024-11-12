@@ -5,9 +5,16 @@ import java.io.File;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.io.RandomAccessFile;
+import java.nio.BufferUnderflowException;
 import java.nio.ByteBuffer;
+import java.nio.channels.AsynchronousFileChannel;
+import java.nio.channels.CompletionHandler;
 import java.nio.channels.FileChannel;
+import java.nio.channels.FileChannel.MapMode;
 import java.nio.file.StandardOpenOption;
+import java.util.concurrent.Exchanger;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 import chav1961.bt.openclmatrix.internal.GPUExecutor;
 import chav1961.bt.openclmatrix.internal.GPUExecutor.GPUScheduler;
@@ -17,7 +24,8 @@ import chav1961.purelib.matrix.interfaces.Matrix;
 
 abstract class LargeMatrix extends AbstractMatrix {
 	static final int			PARALLEL_FACTOR = 16;
-	static final long			GIGABYTE = 1024 * 1024* 1024; 
+	static final long			S_1GIGABYTE = 1024 * 1024* 1024; 
+	static final long			S_16MEGABYTE = 16 * 1024* 1024; 
 
 	private static final long	INIT_BUFFER_SIZE = PARALLEL_FACTOR * 1024 * 1024; 
 	private static final String	RAF_READ_WRITE_ACCESS_MODE = "rwd";
@@ -50,7 +58,7 @@ abstract class LargeMatrix extends AbstractMatrix {
 				tempFile = File.createTempFile(InternalUtils.OPENCL_PREFIX+getType().getProgramSuffix(), ".matrix", contentDir);
 				
 				if (tempFile.getFreeSpace() < totalSize) {
-					throw new IllegalArgumentException("No space available in the directory ["+tempFile.getAbsolutePath()+"], required="+(totalSize/GIGABYTE)+"GByte, available="+(tempFile.getFreeSpace()/GIGABYTE)+"GByte");
+					throw new IllegalArgumentException("No space available in the directory ["+tempFile.getAbsolutePath()+"], required="+(totalSize/S_1GIGABYTE)+"GByte, available="+(tempFile.getFreeSpace()/S_1GIGABYTE)+"GByte");
 				}
 				else {
 					final int		bufferSize = (int) INIT_BUFFER_SIZE;
@@ -72,8 +80,8 @@ abstract class LargeMatrix extends AbstractMatrix {
 		}
 	}
 
-	LargeMatrix(final GPUExecutor executor, final File contentDir, final Type type, final int rows, final int cols, final File fill) {
-		super(Type.COMPLEX_DOUBLE, rows, cols);
+	LargeMatrix(final GPUExecutor executor, final File contentDir, final Type type, final int rows, final int cols, final File fill, final boolean copyFileContent) {
+		super(type, rows, cols);
 		if (executor == null) {
 			throw new NullPointerException("GPU executor can't be null");
 		}
@@ -99,9 +107,9 @@ abstract class LargeMatrix extends AbstractMatrix {
 				tempFile = File.createTempFile(InternalUtils.OPENCL_PREFIX+getType().getProgramSuffix(), ".matrix", contentDir);
 				
 				if (tempFile.getFreeSpace() < totalSize) {
-					throw new IllegalArgumentException("No space available in the directory ["+tempFile.getAbsolutePath()+"], required="+(totalSize/GIGABYTE)+"GByte, available="+(tempFile.getFreeSpace()/GIGABYTE)+"GByte");
+					throw new IllegalArgumentException("No space available in the directory ["+tempFile.getAbsolutePath()+"], required="+(totalSize/S_1GIGABYTE)+"GByte, available="+(tempFile.getFreeSpace()/S_1GIGABYTE)+"GByte");
 				}
-				else {
+				else if (copyFileContent) {
 					final int		bufferSize = (int) INIT_BUFFER_SIZE;
 					final byte[]	buffer = new byte[bufferSize];
 					
@@ -113,8 +121,12 @@ abstract class LargeMatrix extends AbstractMatrix {
 							raf.write(buffer, 0, len);
 						}
 					}
-					this.largeKeeper = tempFile;
 				}
+				else {
+					tempFile.delete();
+					fill.renameTo(tempFile);
+				}
+				this.largeKeeper = tempFile;
 			} catch (IOException e) {
 				if (tempFile != null) {
 					tempFile.delete();
@@ -239,6 +251,10 @@ abstract class LargeMatrix extends AbstractMatrix {
 			this.sched = null;
 		}
 	}
+
+	protected void replaceFileKeeper(final File toReplace) {
+		
+	}
 	
 	@FunctionalInterface
 	static interface ProcessRAFContent {
@@ -267,9 +283,13 @@ abstract class LargeMatrix extends AbstractMatrix {
 	void deserialize(final ByteBuffer source, final int[] content, final int length) {
 		final byte[]	buf = byteBuffer;
 		
+		try {
 		source.get(buf, 0, 4 * length);
 		for(int index = 0; index < length; index++) {
 			content[index] = InternalUtils.toInt(buf, 4 * index);
+		}
+		} catch (BufferUnderflowException exc) {
+			int x = 10;
 		}
 	}
 
@@ -336,20 +356,45 @@ abstract class LargeMatrix extends AbstractMatrix {
 	}
 	
 	boolean scanContentReadOnly(final FileChannel fc, final Piece piece, final ProcessFCContent callback, final int parallels) throws IOException {
-		final long 			cols = piece.getWidth();
-		final int			size = getType().getNumberOfItems() * getType().getItemSize();
-		final ByteBuffer	bb = ByteBuffer.allocateDirect((int)(cols * size));
+		if (getType() != Type.COMPLEX_FLOAT) {
+			int x = 10;
+		}
 		
-		for(int y = piece.getTop(), maxY = piece.getTop() + piece.getHeight(); y < maxY; y++) {
-			bb.clear();
-			fc.read(bb, 1L * (y * numberOfColumns() + piece.getLeft()) * size);
-			bb.rewind();
+		final int	size = getType().getNumberOfItems() * getType().getItemSize();
+		final int	bufferSwitches = (int) (S_16MEGABYTE / (numberOfColumns() * size));
+		final int	bufferSize = bufferSwitches * numberOfColumns() * size;
+		long		displ = 0;
+		ByteBuffer	bb = null;
+
+		System.err.println("Type: "+getType()+", noi="+getType().getNumberOfItems()+", is="+getType().getItemSize());
+		System.err.println("Switches: "+bufferSwitches+", size="+bufferSize+", fc.size="+fc.size()+", item.size="+size);
+		
+		for(int y = piece.getTop(), index = 0, maxY = piece.getTop() + piece.getHeight(); y < maxY; y++, index++) {
+			if (index % bufferSwitches == 0) {
+				bb = fc.map(MapMode.READ_ONLY, displ, Math.min(bufferSize, fc.size() - displ));
+				System.err.println("Allocate: "+displ+", size="+Math.min(bufferSize, fc.size() - displ));
+				displ += bufferSize;
+			}
+			bb.position(((index % bufferSwitches) * numberOfColumns() + piece.getLeft()) * size);
+			System.err.println("Pos="+(((index % bufferSwitches) * numberOfColumns() + piece.getLeft()) * size)+", size="+bb.capacity()+", y="+y+", maxY="+maxY);
 			for(int x = piece.getLeft(), maxX = piece.getLeft() + piece.getWidth(); x < maxX; x++) {
 				if (!callback.process(y, x, bb)) {
 					return false;
 				}
 			}
 		}
+//		final ByteBuffer	bb = ByteBuffer.allocateDirect((int)(cols * size));
+//		
+//		for(int y = piece.getTop(), maxY = piece.getTop() + piece.getHeight(); y < maxY; y++) {
+//			bb.clear();
+//			fc.read(bb, 1L * (y * numberOfColumns() + piece.getLeft()) * size);
+//			bb.rewind();
+//			for(int x = piece.getLeft(), maxX = piece.getLeft() + piece.getWidth(); x < maxX; x++) {
+//				if (!callback.process(y, x, bb)) {
+//					return false;
+//				}
+//			}
+//		}
 		return true;
 	}
 	

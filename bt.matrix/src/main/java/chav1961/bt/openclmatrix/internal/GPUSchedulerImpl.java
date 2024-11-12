@@ -72,12 +72,12 @@ class GPUSchedulerImpl implements GPUScheduler {
 	}
 	
 	@Override
-	public TemporaryStore allocateTemporaryStore(final long storeSize) throws IOException {
+	public TemporaryStore allocateTemporaryStore(final long storeSize, final boolean removeContentAfterClose) throws IOException {
 		if (storeSize <= 0) {
 			throw new IllegalArgumentException("Store size must be greater than 0");
 		}
 		else {
-			final TemporaryStore	ts = new TemporaryStoreImpl(contentDir, storeSize, (t)->stores.remove(t));
+			final TemporaryStore	ts = new TemporaryStoreImpl(contentDir, storeSize, (t)->stores.remove(t), removeContentAfterClose);
 
 			stores.add(ts);
 			return ts;
@@ -85,7 +85,7 @@ class GPUSchedulerImpl implements GPUScheduler {
 	}
 
 	@Override
-	public TemporaryStore allocateTemporaryStore(final File storeDir, final long storeSize) throws IOException {
+	public TemporaryStore allocateTemporaryStore(final File storeDir, final long storeSize, final boolean removeContentAfterClose) throws IOException {
 		if (storeDir == null) {
 			throw new NullPointerException("Store dir can't be null");
 		}
@@ -96,7 +96,7 @@ class GPUSchedulerImpl implements GPUScheduler {
 			throw new IllegalArgumentException("Store size must be greater than 0");
 		}
 		else {
-			final TemporaryStore	ts = new TemporaryStoreImpl(storeDir, storeSize, (t)->stores.remove(t));
+			final TemporaryStore	ts = new TemporaryStoreImpl(storeDir, storeSize, (t)->stores.remove(t), removeContentAfterClose);
 
 			stores.add(ts);
 			return ts;

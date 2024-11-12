@@ -190,13 +190,11 @@ class TemporaryBufferImpl implements TemporaryBuffer {
 			throw new IllegalStateException("Attempt to write content on closed map");
 		}
 		else {
-			System.err.println("Pos="+position()+", cap="+buffer.capacity());
 			buffer.position(position());
 			final int	currentLen = Math.min(len, buffer.capacity()-buffer.position());
 			
 			buffer.put(content, from, currentLen);
-			System.err.println("After="+buffer.position()+", len="+currentLen);
-			seek(buffer.position());
+			seek(Math.min(buffer.position(), getSize()-1));
 			return currentLen;
 		}
 	}

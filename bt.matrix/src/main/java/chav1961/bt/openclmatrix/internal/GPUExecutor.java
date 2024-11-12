@@ -39,6 +39,7 @@ public class GPUExecutor implements AutoCloseable {
 	public static interface TemporaryStore extends Closeable {
 		long getSize() throws IOException;
 		TemporaryBuffer getBuffer(final long address, final int size) throws IOException;
+		File getContentFile();
 	}
 	
 	public static interface GPUEvent extends AutoCloseable {
@@ -72,8 +73,8 @@ public class GPUExecutor implements AutoCloseable {
 	public static interface GPUScheduler extends AutoCloseable {
 		GPUEvent createEvent();
 		GPUEvent createEvent(EventCallbackFunction callback);
-		TemporaryStore allocateTemporaryStore(long storeSize) throws IOException;
-		TemporaryStore allocateTemporaryStore(File storeDir, long storeSize) throws IOException;
+		TemporaryStore allocateTemporaryStore(long storeSize, boolean removeContentAfterClose) throws IOException;
+		TemporaryStore allocateTemporaryStore(File storeDir, long storeSize, boolean removeContentAfterClose) throws IOException;
 		GPUBuffer allocateGPUBuffer(int bufferSize) throws ContentException;
 		@Override void close() throws RuntimeException;
 	}
