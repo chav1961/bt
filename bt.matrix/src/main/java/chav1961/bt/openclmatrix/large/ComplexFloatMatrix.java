@@ -27,7 +27,6 @@ import chav1961.purelib.basic.exceptions.ContentException;
 import chav1961.purelib.basic.exceptions.SyntaxException;
 import chav1961.purelib.matrix.interfaces.Matrix;
 import chav1961.purelib.matrix.interfaces.MatrixCalc;
-import chav1961.purelib.streams.DataOutputAdapter;
 
 public class ComplexFloatMatrix extends LargeMatrix {
 	private static final int	MAX_GPU_BUFFER_SIZE_IN_ITEMS = GPUBuffer.MAX_GPU_BUFFER_SIZE / Type.COMPLEX_FLOAT.getItemSize();
@@ -36,10 +35,103 @@ public class ComplexFloatMatrix extends LargeMatrix {
 														+ "                      __global float* source,\n"
 														+ "                      const __global int* add) {\n"
 														+ "	int row = get_global_id(0);\n"
+														+ "	int start = 2 * columns * row;\n"
+														+ "	for(int col = 0; col < 2 * columns; col++) {\n"
+														+ "	  source[start + col] += add[start + col];\n"
+														+ "	}\n"
+														+ "}";
+	private static final String	ADD_LONG_ARRAY_NAME = "addLongArray"+Type.COMPLEX_FLOAT.getProgramSuffix();
+	private static final String	ADD_LONG_ARRAY_KERNEL =    "__kernel void "+ADD_LONG_ARRAY_NAME+"(const int columns,\n"
+														+ "                      __global float* source,\n"
+														+ "                      const __global long* add) {\n"
+														+ "	int row = get_global_id(0);\n"
+														+ "	int start = 2 * columns * row;\n"
+														+ "	for(int col = 0; col < 2 * columns; col++) {\n"
+														+ "	  source[start + col] += add[start + col];\n"
+														+ "	}\n"
+														+ "}";
+	private static final String	ADD_FLOAT_ARRAY_NAME = "addFloatArray"+Type.COMPLEX_FLOAT.getProgramSuffix();
+	private static final String	ADD_FLOAT_ARRAY_KERNEL =    "__kernel void "+ADD_FLOAT_ARRAY_NAME+"(const int columns,\n"
+														+ "                      __global float2* source,\n"
+														+ "                      const __global float2* add) {\n"
+														+ "	int row = get_global_id(0);\n"
 														+ "	int start = columns * row;\n"
 														+ "	for(int col = 0; col < columns; col++) {\n"
-														+ "	  source[start + col] = 2.0f;\n"
-//														+ "	  source[start + col] += add[start + col];\n"
+														+ "	  source[start + col] += add[start + col];\n"
+														+ "	}\n"
+														+ "}";
+	private static final String	ADD_DOUBLE_ARRAY_NAME = "addDoubleArray"+Type.COMPLEX_FLOAT.getProgramSuffix();
+	private static final String	ADD_DOUBLE_ARRAY_KERNEL =    "__kernel void "+ADD_DOUBLE_ARRAY_NAME+"(const int columns,\n"
+														+ "                      __global float* source,\n"
+														+ "                      const __global double* add) {\n"
+														+ "	int row = get_global_id(0);\n"
+														+ "	int start = 2 * columns * row;\n"
+														+ "	for(int col = 0; col < 2 * columns; col++) {\n"
+														+ "	  source[start + col] += add[start + col];\n"
+														+ "	}\n"
+														+ "}";
+	private static final String	ADD_VALUE_NAME = "addValue"+Type.COMPLEX_FLOAT.getProgramSuffix();
+	private static final String	ADD_VALUE_KERNEL =    "__kernel void "+ADD_VALUE_NAME+"(const int columns,\n"
+														+ "                      __global float2* source,\n"
+														+ "                      const float real,\n"
+														+ "                      const float image) {\n"
+														+ "	int row = get_global_id(0);\n"
+														+ "	int start = columns * row;\n"
+														+ "	float2 val = (float2)(real, image);\n"
+														+ "	for(int col = 0; col < columns; col++) {\n"
+														+ "	  source[start + col] += val;\n"
+														+ "	}\n"
+														+ "}";
+	private static final String	SUBTRACT_INT_ARRAY_NAME = "subtractIntArray"+Type.COMPLEX_FLOAT.getProgramSuffix();
+	private static final String	SUBTRACT_INT_ARRAY_KERNEL =    "__kernel void "+SUBTRACT_INT_ARRAY_NAME+"(const int columns,\n"
+														+ "                      __global float* source,\n"
+														+ "                      const __global int* subtract) {\n"
+														+ "	int row = get_global_id(0);\n"
+														+ "	int start = 2 * columns * row;\n"
+														+ "	for(int col = 0; col < 2 * columns; col++) {\n"
+														+ "	  source[start + col] -= subtract[start + col];\n"
+														+ "	}\n"
+														+ "}";
+	private static final String	SUBTRACT_LONG_ARRAY_NAME = "subtractLongArray"+Type.COMPLEX_FLOAT.getProgramSuffix();
+	private static final String	SUBTRACT_LONG_ARRAY_KERNEL =    "__kernel void "+SUBTRACT_LONG_ARRAY_NAME+"(const int columns,\n"
+														+ "                      __global float* source,\n"
+														+ "                      const __global long* subtract) {\n"
+														+ "	int row = get_global_id(0);\n"
+														+ "	int start = 2 * columns * row;\n"
+														+ "	for(int col = 0; col < 2 * columns; col++) {\n"
+														+ "	  source[start + col] -= subtract[start + col];\n"
+														+ "	}\n"
+														+ "}";
+	private static final String	SUBTRACT_FLOAT_ARRAY_NAME = "subtractFloatArray"+Type.COMPLEX_FLOAT.getProgramSuffix();
+	private static final String	SUBTRACT_FLOAT_ARRAY_KERNEL =    "__kernel void "+SUBTRACT_FLOAT_ARRAY_NAME+"(const int columns,\n"
+														+ "                      __global float2* source,\n"
+														+ "                      const __global float2* subtract) {\n"
+														+ "	int row = get_global_id(0);\n"
+														+ "	int start = columns * row;\n"
+														+ "	for(int col = 0; col < columns; col++) {\n"
+														+ "	  source[start + col] -= subtract[start + col];\n"
+														+ "	}\n"
+														+ "}";
+	private static final String	SUBTRACT_DOUBLE_ARRAY_NAME = "subtractDoubleArray"+Type.COMPLEX_FLOAT.getProgramSuffix();
+	private static final String	SUBTRACT_DOUBLE_ARRAY_KERNEL =    "__kernel void "+SUBTRACT_DOUBLE_ARRAY_NAME+"(const int columns,\n"
+														+ "                      __global float* source,\n"
+														+ "                      const __global double* subtract) {\n"
+														+ "	int row = get_global_id(0);\n"
+														+ "	int start = 2 * columns * row;\n"
+														+ "	for(int col = 0; col < 2 * columns; col++) {\n"
+														+ "	  source[start + col] -= subtract[start + col];\n"
+														+ "	}\n"
+														+ "}";
+	private static final String	SUBTRACT_VALUE_NAME = "subtractValue"+Type.COMPLEX_FLOAT.getProgramSuffix();
+	private static final String	SUBTRACT_VALUE_KERNEL =    "__kernel void "+SUBTRACT_VALUE_NAME+"(const int columns,\n"
+														+ "                      __global float2* source,\n"
+														+ "                      const float real,\n"
+														+ "                      const float image) {\n"
+														+ "	int row = get_global_id(0);\n"
+														+ "	int start = columns * row;\n"
+														+ "	float2 val = (float2)(real, image);\n"
+														+ "	for(int col = 0; col < columns; col++) {\n"
+														+ "	  source[start + col] -= val;\n"
 														+ "	}\n"
 														+ "}";
 	
@@ -80,7 +172,7 @@ public class ComplexFloatMatrix extends LargeMatrix {
 			
 			ensureTransactionCompleted();
 			try(final FileChannel	left = FileChannel.open(getFileKeeper().toPath(), StandardOpenOption.READ);
-				final FileChannel	right = FileChannel.open(((ComplexDoubleMatrix)another).getFileKeeper().toPath(), StandardOpenOption.READ)) {
+				final FileChannel	right = FileChannel.open(((ComplexFloatMatrix)another).getFileKeeper().toPath(), StandardOpenOption.READ)) {
 
 				if (left.size() != right.size()) {
 					return false;
@@ -121,7 +213,7 @@ public class ComplexFloatMatrix extends LargeMatrix {
 		}
 		else {
 			ensureTransactionCompleted();
-			final long		size = 1L * numberOfRows() * numberOfColumns() * getType().getNumberOfItems(), maxSize = Integer.MAX_VALUE;
+			final long		size = 1L * piece.getHeight() * piece.getWidth() * getType().getNumberOfItems(), maxSize = Integer.MAX_VALUE;
 			final int[]		result = new int[(int) Math.min(size, maxSize)];
 			
 			extractAny(piece, new ProcessFCContent() {
@@ -178,7 +270,7 @@ public class ComplexFloatMatrix extends LargeMatrix {
 		}
 		else {
 			ensureTransactionCompleted();
-			final long		size = 1L * numberOfRows() * numberOfColumns() * getType().getNumberOfItems(), maxSize = Integer.MAX_VALUE;
+			final long		size = 1L * piece.getHeight() * piece.getWidth() * getType().getNumberOfItems(), maxSize = Integer.MAX_VALUE;
 			final long[]	result = new long[(int) Math.min(size, maxSize)];
 			
 			extractAny(piece, new ProcessFCContent() {
@@ -234,7 +326,7 @@ public class ComplexFloatMatrix extends LargeMatrix {
 			throw new IllegalArgumentException("Piece ["+piece+"] overlaps matrix ranges ["+totalPiece()+"] or has non-positive size");
 		}
 		else {
-			final long		size = 1L * numberOfRows() * numberOfColumns() * getType().getNumberOfItems(), maxSize = Integer.MAX_VALUE;
+			final long		size = 1L * piece.getHeight() * piece.getWidth() * getType().getNumberOfItems(), maxSize = Integer.MAX_VALUE;
 			final float[]	result = new float[(int) Math.min(size, maxSize)];
 
 			return extractFloats(piece, result);
@@ -311,7 +403,7 @@ public class ComplexFloatMatrix extends LargeMatrix {
 		}
 		else {
 			ensureTransactionCompleted();
-			final long		size = 1L * numberOfRows() * numberOfColumns() * getType().getNumberOfItems(), maxSize = Integer.MAX_VALUE;
+			final long		size = 1L * piece.getHeight() * piece.getWidth() * getType().getNumberOfItems(), maxSize = Integer.MAX_VALUE;
 			final double[]	result = new double[(int) Math.min(size, maxSize)];
 			
 			extractAny(piece, new ProcessFCContent() {
@@ -505,7 +597,7 @@ public class ComplexFloatMatrix extends LargeMatrix {
 				
 				final Thread	t = new Thread(()->{
 									try (final DataOutputStream	dos = new DataOutputStream(pos)) {
-										matrix.extractFloats(piece, dos);
+										matrix.extractFloats(dos);
 									} catch (IOException exc) {
 									}
 								});
@@ -538,6 +630,7 @@ public class ComplexFloatMatrix extends LargeMatrix {
 			throw new NullPointerException("Matrix type can't be null");
 		}
 		else {
+			ensureTransactionCompleted();
 			final AssignAcceptor	callback;
 			
 			switch (type) {
@@ -622,276 +715,568 @@ public class ComplexFloatMatrix extends LargeMatrix {
 	}
 
 	@Override
-	public Matrix cast(Type type) {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public Matrix add(int... content) {
-		// TODO Auto-generated method stub
-		if (content == null) {
-			throw new NullPointerException("Content to add can't be null");
+	public Matrix cast(final Type type) {
+		if (type == null) {
+			throw new NullPointerException("Cast type can't be null");
 		}
 		else {
-			try {
-				final GPUExecutable	prog = getOrCreateProgram(ADD_INT_ARRAY_NAME, ADD_INT_ARRAY_KERNEL);
-				final int	leftRows = calcGPUBufferSize(getType(), numberOfRows(), numberOfColumns());
-				final int	leftBufferSize = leftRows * numberOfColumns() * getType().getNumberOfItems();
-				final int	rightRows = calcNumberOfRows(content.length, getType().getNumberOfItems(), numberOfColumns());
-				final int	rightBufferSize = rightRows * numberOfColumns() * getType().getNumberOfItems();
-				final int	totalRightRows = calcTotalNumberOfRows(content.length, getType().getNumberOfItems(), numberOfColumns());
-				final int	occupiedBytes = getType().getNumberOfItems() * getType().getItemSize();
-				long	start = System.currentTimeMillis();
-				
-				try(final ComplexFloatMatrix	temp = new ComplexFloatMatrix(getExecutor(), getFileKeeper().getParentFile(), 1, 1)) {
-					File						tempStoreFile = null;
-					
-					temp.beginTransaction();
-					try(final GPUBuffer			left = temp.getScheduler().allocateGPUBuffer(leftBufferSize * getType().getItemSize());
-						final GPUBuffer			right = temp.getScheduler().allocateGPUBuffer(rightBufferSize * Type.REAL_INT.getItemSize());
-						final TemporaryStore	store = temp.getScheduler().allocateTemporaryStore(getFileKeeper().getParentFile(), 1L * occupiedBytes * numberOfRows() * numberOfColumns(), false)) {
-				
-						System.err.println("P1="+(System.currentTimeMillis()-start));
-						start = System.currentTimeMillis();
-						
-						final int 		maxContentLength = ((content.length + numberOfColumns() - 1) / numberOfColumns()) * numberOfColumns();  
-						final long[]	taskSize = new long[1]; 
-						final ControlledDataInput	di = new ControlledDataInput() {
-														int 		index = 0;
-														
-														@Override
-														public int readInt() throws IOException {
-															if (index >= maxContentLength) {
-																throw new EOFException();
-															}
-															else if (index < content.length) {
-																return content[index++];
-															}
-															else {
-																index++;
-																return 0;
-															}
-														}
-		
-														@Override
-														public long getReadAmount() {
-															return index;
-														}
-													};
-
-						tempStoreFile = store.getContentFile();
-						for (int leftIndex = 0, rightIndex = 0, maxIndex = numberOfRows(); leftIndex < maxIndex && rightIndex < totalRightRows; leftIndex += leftRows, rightIndex += rightRows) {
-							final int		leftPiece = leftIndex + leftRows > numberOfRows() ? numberOfRows() - leftIndex : leftRows;
-							final Piece		currentPiece = Piece.of(leftIndex, 0, leftPiece, numberOfColumns());
-							final int		blockSize = occupiedBytes * currentPiece.getWidth() * currentPiece.getHeight();
-							
-							System.err.println("P2="+(System.currentTimeMillis()-start));
-							start = System.currentTimeMillis();
-							
-							try(final TemporaryBuffer	out = store.getBuffer(leftIndex * blockSize, blockSize);
-								final GPUEvent 	downloadEventRight = right.download(di, Type.REAL_INT);
-								final GPUEvent 	downloadEventLeft = left.download(currentPiece, this);
-								final GPUEvent 	calcEvent = temp.getScheduler().createEvent()) {
-								
-								System.err.println("P3="+(System.currentTimeMillis()-start));
-								start = System.currentTimeMillis();
-								
-								downloadEventRight.awaitCurrent();
-
-								System.err.println("P3A="+(System.currentTimeMillis()-start));
-								start = System.currentTimeMillis();
-								
-								downloadEventLeft.awaitCurrent();
-								final int		rightPiece = di.getReadAmount() / numberOfColumns() > maxContentLength ? maxContentLength/numberOfColumns() - rightIndex : rightRows;  
-
-								System.err.println("P3B="+(System.currentTimeMillis()-start));
-								start = System.currentTimeMillis();
-								
-								taskSize[0] = Math.min(leftPiece, rightPiece);
-								prog.execute(calcEvent, taskSize, numberOfColumns(), left, right);
-								calcEvent.awaitCurrent();
-								System.err.println("P4="+(System.currentTimeMillis()-start));
-								start = System.currentTimeMillis();
-								left.upload(out, getType()).awaitCurrent().close();
-								System.err.println("P5="+(System.currentTimeMillis()-start));
-								start = System.currentTimeMillis();
-							}
-						}
+			switch (type) {
+				case COMPLEX_FLOAT	:
+					try {
+						return (Matrix) this.clone();
+					} catch (CloneNotSupportedException e) {
+						return this;
 					}
-					System.err.println("P6="+(System.currentTimeMillis()-start));
-					start = System.currentTimeMillis();
-					return new ComplexFloatMatrix(getExecutor(), getFileKeeper().getParentFile(), numberOfRows(), numberOfColumns(), tempStoreFile, false);
- 				}
-			} catch (ContentException | CalculationException exc) {
-				throw new IllegalStateException("Internal error: "+exc.getLocalizedMessage(), exc); 				
-			} catch (IOException | InterruptedException exc) {
-				throw new IllegalStateException("Internal error: "+exc.getLocalizedMessage(), exc); 				
+				case COMPLEX_DOUBLE	:
+				case REAL_DOUBLE	:
+				case REAL_FLOAT		:
+				case REAL_INT		:
+				case REAL_LONG		:
+				default:
+					throw new UnsupportedOperationException("Matrix type ["+type+"] is not supported yet");
 			}
 		}
 	}
 
-	private int calcNumberOfRows(final int length, final int numberOfItems, final int numberOfColumns) {
-		final int	delta = numberOfItems * numberOfColumns;
-		int		count = 0;
-		int		offset = 0;
-
-		while (offset < length && offset < MAX_GPU_BUFFER_SIZE_IN_ITEMS) {
-			offset += delta;
-			count++;
+	@Override
+	public Matrix add(final int... content) {
+		if (content == null) {
+			throw new NullPointerException("Content to add can't be null");
 		}
-		return count;
-	}
-	
-	private int calcTotalNumberOfRows(final int length, final int numberOfItems, final int numberOfColumns) {
-		final int	delta = numberOfItems * numberOfColumns;
-		int		count = 0;
-		int		offset = 0;
-
-		while (offset < length) {
-			offset += delta;
-			count++;
+		else {
+			final ComplexFloatMatrix	result;
+			
+			if (content.length == 0) {
+				try {
+					result = (ComplexFloatMatrix) this.clone();
+				} catch (CloneNotSupportedException e) {
+					throw new IllegalStateException(e.getMessage(), e);
+				}
+			}
+			else {
+				result = lineByLineAny(ADD_INT_ARRAY_NAME, ADD_INT_ARRAY_KERNEL, content.length, 
+								new ControlledDataInput() {
+										int 		index = 0;
+										
+										@Override
+										public int readInt() throws IOException {
+											if (index >= content.length) {
+												throw new EOFException();
+											}
+											else if (index < content.length) {
+												return content[index++];
+											}
+											else {
+												index++;
+												return 0;
+											}
+										}
+					
+										@Override
+										public long getReadAmount() {
+											return index;
+										}
+									}, Type.REAL_INT);
+			}
+			result.beginTransaction();
+			return result;
 		}
-		return count;
 	}
-	
-	private int calcGPUBufferSize(final Type type, int numberOfRows, int numberOfColumns) {
-		final int	delta = type.getNumberOfItems() * numberOfColumns;
-		final long 	totalSize = 1L * delta * numberOfRows;
-		int		count = 0;
-		long	offset = 0;
 
-		while (offset < totalSize && offset < MAX_GPU_BUFFER_SIZE_IN_ITEMS) {
-			offset += delta;
-			count++;
+	@Override
+	public Matrix add(final long... content) {
+		if (content == null) {
+			throw new NullPointerException("Content to add can't be null");
 		}
-		return count;
+		else {
+			final ComplexFloatMatrix	result;
+			
+			if (content.length == 0) {
+				try {
+					result = (ComplexFloatMatrix) this.clone();
+				} catch (CloneNotSupportedException e) {
+					throw new IllegalStateException(e.getMessage(), e);
+				}
+			}
+			else {
+				result = lineByLineAny(ADD_LONG_ARRAY_NAME, ADD_LONG_ARRAY_KERNEL, content.length, 
+						new ControlledDataInput() {
+								int 		index = 0;
+								
+								@Override
+								public long readLong() throws IOException {
+									if (index >= content.length) {
+										throw new EOFException();
+									}
+									else if (index < content.length) {
+										return content[index++];
+									}
+									else {
+										index++;
+										return 0;
+									}
+								}
+			
+								@Override
+								public long getReadAmount() {
+									return index;
+								}
+							}, Type.REAL_LONG);
+			}
+			result.beginTransaction();
+			return result;
+		}
 	}
 
 	@Override
-	public Matrix add(long... content) {
-		// TODO Auto-generated method stub
-		return null;
+	public Matrix add(final float... content) {
+		if (content == null) {
+			throw new NullPointerException("Content to add can't be null");
+		}
+		else {
+			final ComplexFloatMatrix	result;
+			
+			if (content.length == 0) {
+				try {
+					result = (ComplexFloatMatrix) this.clone();
+				} catch (CloneNotSupportedException e) {
+					throw new IllegalStateException(e.getMessage(), e);
+				}
+			}
+			else {
+				result = lineByLineAny(ADD_FLOAT_ARRAY_NAME, ADD_FLOAT_ARRAY_KERNEL, content.length, 
+						new ControlledDataInput() {
+								int 		index = 0;
+								
+								@Override
+								public float readFloat() throws IOException {
+									if (index >= content.length) {
+										throw new EOFException();
+									}
+									else if (index < content.length) {
+										return content[index++];
+									}
+									else {
+										index++;
+										return 0;
+									}
+								}
+			
+								@Override
+								public long getReadAmount() {
+									return index;
+								}
+							}, Type.REAL_FLOAT);
+			}
+			result.beginTransaction();
+			return result;
+		}
 	}
 
 	@Override
-	public Matrix add(float... content) {
-		// TODO Auto-generated method stub
-		return null;
+	public Matrix add(final double... content) {
+		if (content == null) {
+			throw new NullPointerException("Content to add can't be null");
+		}
+		else {
+			final ComplexFloatMatrix	result;
+			
+			if (content.length == 0) {
+				try {
+					result = (ComplexFloatMatrix) this.clone();
+				} catch (CloneNotSupportedException e) {
+					throw new IllegalStateException(e.getMessage(), e);
+				}
+			}
+			else {
+				result = lineByLineAny(ADD_DOUBLE_ARRAY_NAME, ADD_DOUBLE_ARRAY_KERNEL, content.length, 
+						new ControlledDataInput() {
+								int 		index = 0;
+								
+								@Override
+								public double readDouble() throws IOException {
+									if (index >= content.length) {
+										throw new EOFException();
+									}
+									else if (index < content.length) {
+										return content[index++];
+									}
+									else {
+										index++;
+										return 0;
+									}
+								}
+			
+								@Override
+								public long getReadAmount() {
+									return index;
+								}
+							}, Type.REAL_DOUBLE);
+			}
+			result.beginTransaction();
+			return result;
+		}
 	}
 
 	@Override
-	public Matrix add(double... content) {
-		// TODO Auto-generated method stub
-		return null;
+	public Matrix add(final Matrix matrix) {
+		if (matrix == null) {
+			throw new NullPointerException("Matrix can't be null");
+		}
+		else if (matrix.numberOfRows() != numberOfRows() || matrix.numberOfColumns() != numberOfColumns()) {
+			throw new IllegalArgumentException("Different matrix size: current="+numberOfRows()+'x'+numberOfColumns()+", another="+matrix.numberOfRows()+'x'+matrix.numberOfColumns()); 
+		}
+		else {
+			final ComplexFloatMatrix	result;
+			
+			switch (matrix.getType()) {
+				case COMPLEX_DOUBLE : 
+					result = lineByLineAny(ADD_DOUBLE_ARRAY_NAME, ADD_DOUBLE_ARRAY_KERNEL, matrix);
+					break;
+				case COMPLEX_FLOAT 	:
+					result = lineByLineAny(ADD_FLOAT_ARRAY_NAME, ADD_FLOAT_ARRAY_KERNEL, matrix);
+					break;
+				case REAL_DOUBLE : case REAL_FLOAT : case REAL_INT : case REAL_LONG : case BIT :
+					throw new IllegalArgumentException("Attempt to add real and complex matrix. Use cast() before");
+				default : 
+					throw new UnsupportedOperationException("Matrix type ["+matrix.getType()+"] is not supported yet");
+			}
+			result.beginTransaction();
+			return result;
+		}
 	}
 
 	@Override
-	public Matrix add(Matrix matrix) {
-		// TODO Auto-generated method stub
-		return null;
+	public Matrix addValue(final int value) {
+		return addValue((float)value, 0f);
 	}
 
 	@Override
-	public Matrix addValue(int value) {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public Matrix addValue(long value) {
-		// TODO Auto-generated method stub
-		return null;
+	public Matrix addValue(final long value) {
+		return addValue((float)value, 0f);
 	}
 
 	@Override
 	public Matrix addValue(float value) {
-		// TODO Auto-generated method stub
-		return null;
+		return addValue((float)value, 0f);
 	}
 
 	@Override
-	public Matrix addValue(float real, float image) {
-		// TODO Auto-generated method stub
-		return null;
+	public Matrix addValue(final float real, final float image) {
+		final ComplexFloatMatrix	result;
+		
+		if (real == 0 && image == 0) {
+			try {
+				result = (ComplexFloatMatrix) this.clone();
+			} catch (CloneNotSupportedException e) {
+				throw new IllegalStateException(e.getMessage(), e);
+			}
+		}
+		else {
+			result = lineByLineValue(ADD_VALUE_NAME, ADD_VALUE_KERNEL, real, image);
+//			try {
+//				final GPUExecutable	prog = getOrCreateProgram(ADD_VALUE_NAME, ADD_VALUE_KERNEL);
+//				final int	leftRows = calcGPUBufferSize(getType(), numberOfRows(), numberOfColumns());
+//				final int	leftBufferSize = leftRows * numberOfColumns() * getType().getNumberOfItems();
+//				final int	occupiedBytes = getType().getNumberOfItems() * getType().getItemSize();
+//				
+//				try(final ComplexFloatMatrix	temp = new ComplexFloatMatrix(getExecutor(), getFileKeeper().getParentFile(), 1, 1)) {
+//					final long[]				taskSize = new long[1]; 
+//					File						tempStoreFile = null;
+//					
+//					temp.beginTransaction();
+//					try(final GPUBuffer			left = temp.getScheduler().allocateGPUBuffer(leftBufferSize * getType().getItemSize());
+//						final TemporaryStore	store = temp.getScheduler().allocateTemporaryStore(getFileKeeper().getParentFile(), 1L * occupiedBytes * numberOfRows() * numberOfColumns(), false)) {
+//
+//						tempStoreFile = store.getContentFile();
+//						for (int leftIndex = 0, maxIndex = numberOfRows(); leftIndex < maxIndex; leftIndex += leftRows) {
+//							final int		leftPiece = leftIndex + leftRows > numberOfRows() ? numberOfRows() - leftIndex : leftRows;
+//							final Piece		currentPiece = Piece.of(leftIndex, 0, leftPiece, numberOfColumns());
+//							final long		blockSize = occupiedBytes * currentPiece.getWidth() * currentPiece.getHeight();
+//							
+//							try(final TemporaryBuffer	out = store.getBuffer(leftIndex * blockSize / leftRows, (int)blockSize);
+//								final GPUEvent 	downloadEventLeft = left.download(currentPiece, this);
+//								final GPUEvent 	calcEvent = temp.getScheduler().createEvent()) {
+//								
+//								downloadEventLeft.awaitCurrent();
+//								taskSize[0] = leftPiece;
+//								prog.execute(calcEvent, taskSize, numberOfColumns(), left, real, image);
+//								calcEvent.awaitCurrent();
+//								left.upload(out, getType()).awaitCurrent().close();
+//							}
+//						}
+//					}
+//					result = new ComplexFloatMatrix(getExecutor(), getFileKeeper().getParentFile(), numberOfRows(), numberOfColumns(), tempStoreFile, false);
+// 				}
+//			} catch (ContentException | CalculationException exc) {
+//				throw new IllegalStateException("Internal error: "+exc.getLocalizedMessage(), exc); 				
+//			} catch (IOException | InterruptedException exc) {
+//				throw new IllegalStateException("Internal error: "+exc.getLocalizedMessage(), exc); 				
+//			}
+		}
+		result.beginTransaction();
+		return result;
 	}
 
 	@Override
 	public Matrix addValue(double value) {
-		// TODO Auto-generated method stub
-		return null;
+		return addValue((float)value, 0f);
 	}
 
 	@Override
 	public Matrix addValue(double real, double image) {
-		// TODO Auto-generated method stub
-		return null;
+		return addValue((float)real, (float)image);
 	}
 
 	@Override
-	public Matrix subtract(int... content) {
-		// TODO Auto-generated method stub
-		return null;
+	public Matrix subtract(final int... content) {
+		if (content == null) {
+			throw new NullPointerException("Content to add can't be null");
+		}
+		else {
+			final ComplexFloatMatrix	result;
+			
+			if (content.length == 0) {
+				try {
+					result = (ComplexFloatMatrix) this.clone();
+				} catch (CloneNotSupportedException e) {
+					throw new IllegalStateException(e.getMessage(), e);
+				}
+			}
+			else {
+				result = lineByLineAny(SUBTRACT_INT_ARRAY_NAME, SUBTRACT_INT_ARRAY_KERNEL, content.length, 
+								new ControlledDataInput() {
+										int 		index = 0;
+										
+										@Override
+										public int readInt() throws IOException {
+											if (index >= content.length) {
+												throw new EOFException();
+											}
+											else if (index < content.length) {
+												return content[index++];
+											}
+											else {
+												index++;
+												return 0;
+											}
+										}
+					
+										@Override
+										public long getReadAmount() {
+											return index;
+										}
+									}, Type.REAL_INT);
+			}
+			result.beginTransaction();
+			return result;
+		}
 	}
 
 	@Override
-	public Matrix subtract(long... content) {
-		// TODO Auto-generated method stub
-		return null;
+	public Matrix subtract(final long... content) {
+		if (content == null) {
+			throw new NullPointerException("Content to add can't be null");
+		}
+		else {
+			final ComplexFloatMatrix	result;
+			
+			if (content.length == 0) {
+				try {
+					result = (ComplexFloatMatrix) this.clone();
+				} catch (CloneNotSupportedException e) {
+					throw new IllegalStateException(e.getMessage(), e);
+				}
+			}
+			else {
+				result = lineByLineAny(SUBTRACT_LONG_ARRAY_NAME, SUBTRACT_LONG_ARRAY_KERNEL, content.length, 
+						new ControlledDataInput() {
+								int 		index = 0;
+								
+								@Override
+								public long readLong() throws IOException {
+									if (index >= content.length) {
+										throw new EOFException();
+									}
+									else if (index < content.length) {
+										return content[index++];
+									}
+									else {
+										index++;
+										return 0;
+									}
+								}
+			
+								@Override
+								public long getReadAmount() {
+									return index;
+								}
+							}, Type.REAL_LONG);
+			}
+			result.beginTransaction();
+			return result;
+		}
 	}
 
 	@Override
-	public Matrix subtract(float... content) {
-		// TODO Auto-generated method stub
-		return null;
+	public Matrix subtract(final float... content) {
+		if (content == null) {
+			throw new NullPointerException("Content to add can't be null");
+		}
+		else {
+			final ComplexFloatMatrix	result;
+			
+			if (content.length == 0) {
+				try {
+					result = (ComplexFloatMatrix) this.clone();
+				} catch (CloneNotSupportedException e) {
+					throw new IllegalStateException(e.getMessage(), e);
+				}
+			}
+			else {
+				result = lineByLineAny(SUBTRACT_FLOAT_ARRAY_NAME, SUBTRACT_FLOAT_ARRAY_KERNEL, content.length, 
+						new ControlledDataInput() {
+								int 		index = 0;
+								
+								@Override
+								public float readFloat() throws IOException {
+									if (index >= content.length) {
+										throw new EOFException();
+									}
+									else if (index < content.length) {
+										return content[index++];
+									}
+									else {
+										index++;
+										return 0;
+									}
+								}
+			
+								@Override
+								public long getReadAmount() {
+									return index;
+								}
+							}, Type.REAL_FLOAT);
+			}
+			result.beginTransaction();
+			return result;
+		}
 	}
 
 	@Override
-	public Matrix subtract(double... content) {
-		// TODO Auto-generated method stub
-		return null;
+	public Matrix subtract(final double... content) {
+		if (content == null) {
+			throw new NullPointerException("Content to add can't be null");
+		}
+		else {
+			final ComplexFloatMatrix	result;
+			
+			if (content.length == 0) {
+				try {
+					result = (ComplexFloatMatrix) this.clone();
+				} catch (CloneNotSupportedException e) {
+					throw new IllegalStateException(e.getMessage(), e);
+				}
+			}
+			else {
+				result = lineByLineAny(SUBTRACT_DOUBLE_ARRAY_NAME, SUBTRACT_DOUBLE_ARRAY_KERNEL, content.length, 
+						new ControlledDataInput() {
+								int 		index = 0;
+								
+								@Override
+								public double readDouble() throws IOException {
+									if (index >= content.length) {
+										throw new EOFException();
+									}
+									else if (index < content.length) {
+										return content[index++];
+									}
+									else {
+										index++;
+										return 0;
+									}
+								}
+			
+								@Override
+								public long getReadAmount() {
+									return index;
+								}
+							}, Type.REAL_DOUBLE);
+			}
+			result.beginTransaction();
+			return result;
+		}
 	}
 
 	@Override
-	public Matrix subtract(Matrix matrix) {
-		// TODO Auto-generated method stub
-		return null;
+	public Matrix subtract(final Matrix matrix) {
+		if (matrix == null) {
+			throw new NullPointerException("Matrix can't be null");
+		}
+		else if (matrix.numberOfRows() != numberOfRows() || matrix.numberOfColumns() != numberOfColumns()) {
+			throw new IllegalArgumentException("Different matrix size: current="+numberOfRows()+'x'+numberOfColumns()+", another="+matrix.numberOfRows()+'x'+matrix.numberOfColumns()); 
+		}
+		else {
+			final ComplexFloatMatrix	result;
+			
+			switch (matrix.getType()) {
+				case COMPLEX_DOUBLE : 
+					result = lineByLineAny(SUBTRACT_DOUBLE_ARRAY_NAME, SUBTRACT_DOUBLE_ARRAY_KERNEL, matrix);
+					break;
+				case COMPLEX_FLOAT 	:
+					result = lineByLineAny(SUBTRACT_FLOAT_ARRAY_NAME, SUBTRACT_FLOAT_ARRAY_KERNEL, matrix);
+					break;
+				case REAL_DOUBLE : case REAL_FLOAT : case REAL_INT : case REAL_LONG : case BIT :
+					throw new IllegalArgumentException("Attempt to subtract real and complex matrix. Use cast() before");
+				default : 
+					throw new UnsupportedOperationException("Matrix type ["+matrix.getType()+"] is not supported yet");
+			}
+			result.beginTransaction();
+			return result;
+		}
 	}
 
 	@Override
-	public Matrix subtractValue(int value) {
-		// TODO Auto-generated method stub
-		return null;
+	public Matrix subtractValue(final int value) {
+		return subtractValue((float)value, 0f);
 	}
 
 	@Override
-	public Matrix subtractValue(long value) {
-		// TODO Auto-generated method stub
-		return null;
+	public Matrix subtractValue(final long value) {
+		return subtractValue((float)value, 0f);
 	}
 
 	@Override
-	public Matrix subtractValue(float value) {
-		// TODO Auto-generated method stub
-		return null;
+	public Matrix subtractValue(final float value) {
+		return subtractValue((float)value, 0f);
 	}
 
 	@Override
-	public Matrix subtractValue(float real, float image) {
-		// TODO Auto-generated method stub
-		return null;
+	public Matrix subtractValue(final float real, final float image) {
+		final ComplexFloatMatrix	result;
+		
+		if (real == 0 && image == 0) {
+			try {
+				result = (ComplexFloatMatrix) this.clone();
+			} catch (CloneNotSupportedException e) {
+				throw new IllegalStateException(e.getMessage(), e);
+			}
+		}
+		else {
+			result = lineByLineValue(SUBTRACT_VALUE_NAME, SUBTRACT_VALUE_KERNEL, real, image);
+		}
+		result.beginTransaction();
+		return result;
 	}
 
 	@Override
-	public Matrix subtractValue(double value) {
-		// TODO Auto-generated method stub
-		return null;
+	public Matrix subtractValue(final double value) {
+		return subtractValue((float)value, 0f);
 	}
 
 	@Override
-	public Matrix subtractValue(double real, double image) {
-		// TODO Auto-generated method stub
-		return null;
+	public Matrix subtractValue(final double real, final double image) {
+		return subtractValue((float)real, (float)image);
 	}
 
 	@Override
@@ -1236,7 +1621,38 @@ public class ComplexFloatMatrix extends LargeMatrix {
 	@Override
 	public Matrix apply2(final Piece piece, final ApplyFloat2 callback) {
 		// TODO Auto-generated method stub
-		return super.apply2(piece, callback);
+		if (piece == null) {
+			throw new NullPointerException("Piece can't be null");
+		}
+		else if (isOverlaps(piece)) {
+			throw new IllegalArgumentException("Piece ["+piece+"] overlaps matrix ranges ["+totalPiece()+"] or has non-positive size");
+		}
+		else if (callback == null) {
+			throw new NullPointerException("Callback can't be null");
+		}
+		else {
+			ensureTransactionCompleted();
+			applyAny(piece, new ProcessFCContent() {
+				final float[]	temp = new float[2];
+
+				@Override
+				public boolean process(int row, int col, ByteBuffer content) throws IOException {
+					final int	oldPos = content.position();
+					
+					deserialize(content, intBuffer, getType().getNumberOfItems());
+					temp[0] = Float.intBitsToFloat(intBuffer[0]);
+					temp[1] = Float.intBitsToFloat(intBuffer[1]);
+					callback.apply(row, col, temp);
+					intBuffer[0] = Float.floatToIntBits(temp[0]);
+					intBuffer[1] = Float.floatToIntBits(temp[1]);
+					content.position(oldPos);
+					serialize(intBuffer, getType().getNumberOfItems(), content);
+					return true;
+				}
+			});
+			return this;
+		}
+		
 	}
 	
 	@Override
@@ -1250,6 +1666,189 @@ public class ComplexFloatMatrix extends LargeMatrix {
 		// TODO Auto-generated method stub
 		return null;
 	}
+
+	private int calcNumberOfRows(final int length, final int numberOfItems, final int numberOfColumns) {
+		final int	delta = numberOfItems * numberOfColumns;
+		int		count = 0;
+		int		offset = 0;
+
+		while (offset < length && offset < MAX_GPU_BUFFER_SIZE_IN_ITEMS) {
+			offset += delta;
+			count++;
+		}
+		return count;
+	}
+	
+	private int calcTotalNumberOfRows(final int length, final int numberOfItems, final int numberOfColumns) {
+		final int	delta = numberOfItems * numberOfColumns;
+		int		count = 0;
+		int		offset = 0;
+
+		while (offset < length) {
+			offset += delta;
+			count++;
+		}
+		return count;
+	}
+	
+	private int calcGPUBufferSize(final Type type, int numberOfRows, int numberOfColumns) {
+		final int	delta = type.getNumberOfItems() * numberOfColumns;
+		final long 	totalSize = 1L * delta * numberOfRows;
+		int		count = 0;
+		long	offset = 0;
+
+		while (offset < totalSize && offset < MAX_GPU_BUFFER_SIZE_IN_ITEMS) {
+			offset += delta;
+			count++;
+		}
+		return count;
+	}
+
+	private ComplexFloatMatrix lineByLineAny(final String programName, final String programCode, final int contentLength, final ControlledDataInput di, final Type inputType) {
+		try {
+			final GPUExecutable	prog = getOrCreateProgram(programName, programCode);
+			final int	leftRows = calcGPUBufferSize(getType(), numberOfRows(), numberOfColumns());
+			final int	leftBufferSize = leftRows * numberOfColumns() * getType().getNumberOfItems();
+			final int	rightRows = calcNumberOfRows(contentLength, getType().getNumberOfItems(), numberOfColumns());
+			final int	rightBufferSize = rightRows * numberOfColumns() * getType().getNumberOfItems();
+			final int	totalRightRows = calcTotalNumberOfRows(contentLength, getType().getNumberOfItems(), numberOfColumns());
+			final int	occupiedBytes = getType().getNumberOfItems() * getType().getItemSize();
+			
+			try(final ComplexFloatMatrix	temp = new ComplexFloatMatrix(getExecutor(), getFileKeeper().getParentFile(), 1, 1)) {
+				final long[]				taskSize = new long[1]; 
+				File						tempStoreFile = null;
+				
+				temp.beginTransaction();
+				try(final GPUBuffer			left = temp.getScheduler().allocateGPUBuffer(leftBufferSize * getType().getItemSize());
+					final GPUBuffer			right = temp.getScheduler().allocateGPUBuffer(rightBufferSize * inputType.getItemSize());
+					final TemporaryStore	store = temp.getScheduler().allocateTemporaryStore(getFileKeeper().getParentFile(), 1L * occupiedBytes * numberOfRows() * numberOfColumns(), false)) {
+					final int 		maxContentLength = ((contentLength + numberOfColumns() - 1) / numberOfColumns()) * numberOfColumns();  
+
+					tempStoreFile = store.getContentFile();
+					for (int leftIndex = 0, rightIndex = 0, maxIndex = numberOfRows(); leftIndex < maxIndex; leftIndex += leftRows, rightIndex += rightRows) {
+						final int		leftPiece = leftIndex + leftRows > numberOfRows() ? numberOfRows() - leftIndex : leftRows;
+						final Piece		currentPiece = Piece.of(leftIndex, 0, leftPiece, numberOfColumns());
+						final long		blockSize = occupiedBytes * currentPiece.getWidth() * currentPiece.getHeight();
+						
+						if (rightIndex < totalRightRows) {
+							try(final TemporaryBuffer	out = store.getBuffer(leftIndex * blockSize / leftRows, (int)blockSize);
+								final GPUEvent 	downloadEventRight = right.download(di, inputType);
+								final GPUEvent 	downloadEventLeft = left.download(currentPiece, this);
+								final GPUEvent 	calcEvent = temp.getScheduler().createEvent()) {
+								
+								downloadEventRight.awaitCurrent();
+								downloadEventLeft.awaitCurrent();
+								final int		rightPiece = di.getReadAmount() / numberOfColumns() > maxContentLength ? maxContentLength/numberOfColumns() - rightIndex : rightRows;  
+
+								taskSize[0] = Math.min(leftPiece, rightPiece);
+								prog.execute(calcEvent, taskSize, numberOfColumns(), left, right);
+								calcEvent.awaitCurrent();
+								left.upload(out, getType()).awaitCurrent().close();
+							}
+						}
+						else {
+							try(final TemporaryBuffer	out = store.getBuffer(leftIndex * blockSize / leftRows, (int)blockSize)) {
+								out.write(currentPiece, this);
+							}
+						}
+					}
+				}
+				return new ComplexFloatMatrix(getExecutor(), getFileKeeper().getParentFile(), numberOfRows(), numberOfColumns(), tempStoreFile, false);
+			}
+		} catch (ContentException | CalculationException exc) {
+			throw new IllegalStateException("Internal error: "+exc.getLocalizedMessage(), exc); 				
+		} catch (IOException | InterruptedException exc) {
+			throw new IllegalStateException("Internal error: "+exc.getLocalizedMessage(), exc); 				
+		}
+	}	
+	
+	private ComplexFloatMatrix lineByLineAny(final String programName, final String programCode, final Matrix matrix) {
+		try {
+			final GPUExecutable	prog = getOrCreateProgram(programName, programCode);
+			final int	leftRows = calcGPUBufferSize(getType(), numberOfRows(), numberOfColumns());
+			final int	leftBufferSize = leftRows * numberOfColumns() * getType().getNumberOfItems();
+			final int	occupiedBytes = getType().getNumberOfItems() * getType().getItemSize();
+			
+			try(final ComplexFloatMatrix	temp = new ComplexFloatMatrix(getExecutor(), getFileKeeper().getParentFile(), 1, 1)) {
+				final long[]				taskSize = new long[1]; 
+				File						tempStoreFile = null;
+				
+				temp.beginTransaction();
+				try(final GPUBuffer			left = temp.getScheduler().allocateGPUBuffer(leftBufferSize * getType().getItemSize());
+					final GPUBuffer			right = temp.getScheduler().allocateGPUBuffer(leftBufferSize * matrix.getType().getItemSize());
+					final TemporaryStore	store = temp.getScheduler().allocateTemporaryStore(getFileKeeper().getParentFile(), 1L * occupiedBytes * numberOfRows() * numberOfColumns(), false)) {
+
+					tempStoreFile = store.getContentFile();
+					for (int leftIndex = 0, maxIndex = numberOfRows(); leftIndex < maxIndex; leftIndex += leftRows) {
+						final int		leftPiece = leftIndex + leftRows > numberOfRows() ? numberOfRows() - leftIndex : leftRows;
+						final Piece		currentPiece = Piece.of(leftIndex, 0, leftPiece, numberOfColumns());
+						final long		blockSize = occupiedBytes * currentPiece.getWidth() * currentPiece.getHeight();
+						
+						try(final TemporaryBuffer	out = store.getBuffer(leftIndex * blockSize / leftRows, (int)blockSize);
+							final GPUEvent 	downloadEventRight = right.download(currentPiece, matrix);
+							final GPUEvent 	downloadEventLeft = left.download(currentPiece, this);
+							final GPUEvent 	calcEvent = temp.getScheduler().createEvent()) {
+							
+							downloadEventRight.awaitCurrent();
+							downloadEventLeft.awaitCurrent();
+
+							taskSize[0] = leftPiece;
+							prog.execute(calcEvent, taskSize, numberOfColumns(), left, right);
+							calcEvent.awaitCurrent();
+							left.upload(out, getType()).awaitCurrent().close();
+						}
+					}
+				}
+				return new ComplexFloatMatrix(getExecutor(), getFileKeeper().getParentFile(), numberOfRows(), numberOfColumns(), tempStoreFile, false);
+			}
+		} catch (ContentException | CalculationException exc) {
+			throw new IllegalStateException("Internal error: "+exc.getLocalizedMessage(), exc); 				
+		} catch (IOException | InterruptedException exc) {
+			throw new IllegalStateException("Internal error: "+exc.getLocalizedMessage(), exc); 				
+		}
+	}
+
+	private ComplexFloatMatrix lineByLineValue(final String programName, final String programCode, final float real, final float image) {
+		try {
+			final GPUExecutable	prog = getOrCreateProgram(programName, programCode);
+			final int	leftRows = calcGPUBufferSize(getType(), numberOfRows(), numberOfColumns());
+			final int	leftBufferSize = leftRows * numberOfColumns() * getType().getNumberOfItems();
+			final int	occupiedBytes = getType().getNumberOfItems() * getType().getItemSize();
+			
+			try(final ComplexFloatMatrix	temp = new ComplexFloatMatrix(getExecutor(), getFileKeeper().getParentFile(), 1, 1)) {
+				final long[]				taskSize = new long[1]; 
+				File						tempStoreFile = null;
+				
+				temp.beginTransaction();
+				try(final GPUBuffer			left = temp.getScheduler().allocateGPUBuffer(leftBufferSize * getType().getItemSize());
+					final TemporaryStore	store = temp.getScheduler().allocateTemporaryStore(getFileKeeper().getParentFile(), 1L * occupiedBytes * numberOfRows() * numberOfColumns(), false)) {
+
+					tempStoreFile = store.getContentFile();
+					for (int leftIndex = 0, maxIndex = numberOfRows(); leftIndex < maxIndex; leftIndex += leftRows) {
+						final int		leftPiece = leftIndex + leftRows > numberOfRows() ? numberOfRows() - leftIndex : leftRows;
+						final Piece		currentPiece = Piece.of(leftIndex, 0, leftPiece, numberOfColumns());
+						final long		blockSize = occupiedBytes * currentPiece.getWidth() * currentPiece.getHeight();
+						
+						try(final TemporaryBuffer	out = store.getBuffer(leftIndex * blockSize / leftRows, (int)blockSize);
+							final GPUEvent 	downloadEventLeft = left.download(currentPiece, this);
+							final GPUEvent 	calcEvent = temp.getScheduler().createEvent()) {
+							
+							downloadEventLeft.awaitCurrent();
+							taskSize[0] = leftPiece;
+							prog.execute(calcEvent, taskSize, numberOfColumns(), left, real, image);
+							calcEvent.awaitCurrent();
+							left.upload(out, getType()).awaitCurrent().close();
+						}
+					}
+				}
+				return new ComplexFloatMatrix(getExecutor(), getFileKeeper().getParentFile(), numberOfRows(), numberOfColumns(), tempStoreFile, false);
+			}
+		} catch (ContentException | CalculationException exc) {
+			throw new IllegalStateException("Internal error: "+exc.getLocalizedMessage(), exc); 				
+		} catch (IOException | InterruptedException exc) {
+			throw new IllegalStateException("Internal error: "+exc.getLocalizedMessage(), exc); 				
+		}
+	}	
 	
 	private int calcArraySize() {
 		return (int) Math.min(Integer.MAX_VALUE, 1L * numberOfRows() * numberOfColumns());

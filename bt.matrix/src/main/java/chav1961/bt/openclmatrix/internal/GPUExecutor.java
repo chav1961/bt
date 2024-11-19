@@ -17,6 +17,7 @@ import chav1961.purelib.basic.exceptions.CalculationException;
 import chav1961.purelib.basic.exceptions.ContentException;
 import chav1961.purelib.basic.exceptions.SyntaxException;
 import chav1961.purelib.matrix.interfaces.Matrix;
+import chav1961.purelib.matrix.interfaces.Matrix.Piece;
 
 public class GPUExecutor implements AutoCloseable {
 	public static interface TemporaryBuffer extends Closeable, Flushable {
@@ -24,16 +25,18 @@ public class GPUExecutor implements AutoCloseable {
 		int getSize();
 		int position();
 		int seek(int newPos);
-		int read(byte[] content, final int to, final int len) throws IOException;
-		int write(byte[] content, final int from, final int len) throws IOException;
-		int read(int[] content, final int to, final int len) throws IOException;
-		int write(int[] content, final int from, final int len) throws IOException;
-		int read(long[] content, final int to, final int len) throws IOException;
-		int write(long[] content, final int from, final int len) throws IOException;
-		int read(float[] content, final int to, final int len) throws IOException;
-		int write(float[] content, final int from, final int len) throws IOException;
-		int read(double[] content, final int to, final int len) throws IOException;
-		int write(double[] content, final int from, final int len) throws IOException;
+		int read(byte[] content, int to, int len) throws IOException;
+		int write(byte[] content, int from, int len) throws IOException;
+		int read(int[] content, int to, int len) throws IOException;
+		int write(int[] content, int from, int len) throws IOException;
+		int read(long[] content, int to, int len) throws IOException;
+		int write(long[] content, int from, int len) throws IOException;
+		int read(float[] content, int to, int len) throws IOException;
+		int write(float[] content, int from, int len) throws IOException;
+		int read(double[] content, int to, int len) throws IOException;
+		int write(double[] content, int from, int len) throws IOException;
+		int write(TemporaryBuffer content, int from, int len) throws IOException;
+		int write(Piece piece, Matrix content) throws IOException;
 	}
 	
 	public static interface TemporaryStore extends Closeable {
@@ -138,8 +141,8 @@ public class GPUExecutor implements AutoCloseable {
 	
 	@Override
 	public void close() throws RuntimeException {
-		for(Map.Entry<String, GPUExecutable> item : programs.entrySet()) {
-			item.getValue().close();
+		for(GPUExecutable item : programs.values().toArray(new GPUExecutable[programs.size()])) {
+			item.close();
 		}
 	}
 }

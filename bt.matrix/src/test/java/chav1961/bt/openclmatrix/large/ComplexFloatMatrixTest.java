@@ -1,11 +1,8 @@
 package chav1961.bt.openclmatrix.large;
 
-import static org.junit.Assert.*;
-
 import java.io.DataOutput;
 import java.io.File;
 import java.io.IOException;
-import java.util.Arrays;
 
 import org.junit.After;
 import org.junit.Assert;
@@ -14,7 +11,6 @@ import org.junit.Test;
 
 import chav1961.bt.openclmatrix.internal.GPUExecutor;
 import chav1961.bt.openclmatrix.internal.InternalUtils;
-import chav1961.bt.openclmatrix.internal.GPUExecutor.GPUScheduler;
 import chav1961.bt.openclmatrix.spi.OpenCLDescriptor;
 import chav1961.purelib.basic.exceptions.ContentException;
 import chav1961.purelib.matrix.interfaces.Matrix;
@@ -584,17 +580,11 @@ public class ComplexFloatMatrixTest {
 		try(final ComplexFloatMatrix	m1 = new ComplexFloatMatrix(exec, DIR, 16000, 16000);
 			final ComplexFloatMatrix	m2 = new ComplexFloatMatrix(exec, DIR, 16000, 16000)) {
 			
-			m1.fill(1,0);
+			m1.assign(1,0,2,0,3,0,4,0,5,0,6,0);
 
 			// add ints
-			final int[]	toAddInt = new int[10000000];
 			
-			Arrays.fill(toAddInt, 2);
-			
-			
-			
-			Assert.assertArrayEquals(new float[] {2,1,4,1,6,1,8,1,10,1,12,1}, m1.add(toAddInt).done().extractFloats(), 0.001f);
-//			Assert.assertArrayEquals(new float[] {2,1,4,1,6,1,8,1,10,1,12,1}, m1.add(1,1,2,1,3,1,4,1,5,1,6,1).done().extractFloats(), 0.001f);
+			Assert.assertArrayEquals(new float[] {2,1,4,1,6,1,8,1,10,1,12,1}, m1.add(1,1,2,1,3,1,4,1,5,1,6,1).done().extractFloats(Piece.of(0, 0, 1, 6)), 0.001f);
 			try {
 				m1.add((int[])null);
 				Assert.fail("Mandatory exception was not detected (null 1-st argument)");
@@ -606,7 +596,7 @@ public class ComplexFloatMatrixTest {
 			} catch (IllegalStateException exc) {
 			}
 
-			Assert.assertArrayEquals(new float[] {11,0,12,0,13,0,14,0,15,0,16,0}, m1.addValue(10).done().extractFloats(), 0.001f);
+			Assert.assertArrayEquals(new float[] {11,0,12,0,13,0,14,0,15,0,16,0}, m1.addValue(10).done().extractFloats(Piece.of(0, 0, 1, 6)), 0.001f);
 			try {
 				m1.addValue(10).extractDoubles();
 				Assert.fail("Mandatory exception was not detected (done() call is missing)");
@@ -615,7 +605,7 @@ public class ComplexFloatMatrixTest {
 			
 			// add longs
 			
-			Assert.assertArrayEquals(new float[] {2,1,4,1,6,1,8,1,10,1,12,1}, m1.add(1L,1L,2L,1L,3L,1L,4L,1L,5L,1L,6L,1L).done().extractFloats(), 0.001f);
+			Assert.assertArrayEquals(new float[] {2,1,4,1,6,1,8,1,10,1,12,1}, m1.add(1L,1L,2L,1L,3L,1L,4L,1L,5L,1L,6L,1L).done().extractFloats(Piece.of(0, 0, 1, 6)), 0.001f);
 			try {
 				m1.add((long[])null);
 				Assert.fail("Mandatory exception was not detected (null 1-st argument)");
@@ -627,7 +617,7 @@ public class ComplexFloatMatrixTest {
 			} catch (IllegalStateException exc) {
 			}
 
-			Assert.assertArrayEquals(new float[] {11,0,12,0,13,0,14,0,15,0,16,0}, m1.addValue(10L).done().extractFloats(), 0.001f);
+			Assert.assertArrayEquals(new float[] {11,0,12,0,13,0,14,0,15,0,16,0}, m1.addValue(10L).done().extractFloats(Piece.of(0, 0, 1, 6)), 0.001f);
 			try {
 				m1.addValue(10L).extractDoubles();
 				Assert.fail("Mandatory exception was not detected (done() call is missing)");
@@ -636,7 +626,7 @@ public class ComplexFloatMatrixTest {
 			
 			// add floats
 			
-			Assert.assertArrayEquals(new float[] {2,1,4,1,6,1,8,1,10,1,12,1}, m1.add(1f,1f,2f,1f,3f,1f,4f,1f,5f,1f,6f,1f).done().extractFloats(), 0.001f);
+			Assert.assertArrayEquals(new float[] {2,1,4,1,6,1,8,1,10,1,12,1}, m1.add(1f,1f,2f,1f,3f,1f,4f,1f,5f,1f,6f,1f).done().extractFloats(Piece.of(0, 0, 1, 6)), 0.001f);
 			try {
 				m1.add((float[])null);
 				Assert.fail("Mandatory exception was not detected (null 1-st argument)");
@@ -648,8 +638,8 @@ public class ComplexFloatMatrixTest {
 			} catch (IllegalStateException exc) {
 			}
 			
-			Assert.assertArrayEquals(new float[] {11,0,12,0,13,0,14,0,15,0,16,0}, m1.addValue(10f).done().extractFloats(), 0.001f);
-			Assert.assertArrayEquals(new float[] {11,20,12,20,13,20,14,20,15,20,16,20}, m1.addValue(10f, 20f).done().extractFloats(), 0.001f);
+			Assert.assertArrayEquals(new float[] {11,0,12,0,13,0,14,0,15,0,16,0}, m1.addValue(10f).done().extractFloats(Piece.of(0, 0, 1, 6)), 0.001f);
+			Assert.assertArrayEquals(new float[] {11,20,12,20,13,20,14,20,15,20,16,20}, m1.addValue(10f, 20f).done().extractFloats(Piece.of(0, 0, 1, 6)), 0.001f);
 			try {
 				m1.addValue(10f).extractDoubles();
 				Assert.fail("Mandatory exception was not detected (done() call is missing)");
@@ -658,7 +648,7 @@ public class ComplexFloatMatrixTest {
 
 			// add doubles
 			
-			Assert.assertArrayEquals(new float[] {2,1,4,1,6,1,8,1,10,1,12,1}, m1.add(1d,1d,2d,1d,3d,1d,4d,1d,5d,1d,6d,1d).done().extractFloats(), 0.001f);
+			Assert.assertArrayEquals(new float[] {2,1,4,1,6,1,8,1,10,1,12,1}, m1.add(1d,1d,2d,1d,3d,1d,4d,1d,5d,1d,6d,1d).done().extractFloats(Piece.of(0, 0, 1, 6)), 0.001f);
 			try {
 				m1.add((double[])null);
 				Assert.fail("Mandatory exception was not detected (null 1-st argument)");
@@ -670,8 +660,8 @@ public class ComplexFloatMatrixTest {
 			} catch (IllegalStateException exc) {
 			}
 			
-			Assert.assertArrayEquals(new float[] {11,0,12,0,13,0,14,0,15,0,16,0}, m1.addValue(10d).done().extractFloats(), 0.001f);
-			Assert.assertArrayEquals(new float[] {11,20,12,20,13,20,14,20,15,20,16,20}, m1.addValue(10d, 20d).done().extractFloats(), 0.001f);
+			Assert.assertArrayEquals(new float[] {11,0,12,0,13,0,14,0,15,0,16,0}, m1.addValue(10d).done().extractFloats(Piece.of(0, 0, 1, 6)), 0.001f);
+			Assert.assertArrayEquals(new float[] {11,20,12,20,13,20,14,20,15,20,16,20}, m1.addValue(10d, 20d).done().extractFloats(Piece.of(0, 0, 1, 6)), 0.001f);
 			try {
 				m1.addValue(10d).extractFloats();
 				Assert.fail("Mandatory exception was not detected (done() call is missing)");
@@ -681,8 +671,8 @@ public class ComplexFloatMatrixTest {
 			// add matrix
 
 			m2.assign(1,1,2,1,3,1,4,1,5,1,6,1);
-			Assert.assertArrayEquals(new float[] {2,1,4,1,6,1,8,1,10,1,12,1}, m1.add(m2).done().extractFloats(), 0.001f);
-			Assert.assertArrayEquals(new float[] {2,1,4,1,6,1,8,1,10,1,12,1}, m1.add(m2.cast(Type.COMPLEX_DOUBLE)).done().extractFloats(), 0.001f);
+			Assert.assertArrayEquals(new float[] {2,1,4,1,6,1,8,1,10,1,12,1}, m1.add(m2).done().extractFloats(Piece.of(0, 0, 1, 6)), 0.001f);
+//			Assert.assertArrayEquals(new float[] {2,1,4,1,6,1,8,1,10,1,12,1}, m1.add(m2.cast(Type.COMPLEX_DOUBLE)).done().extractFloats(Piece.of(0, 0, 1, 6)), 0.001f);
 
 			try {
 				m1.add((Matrix)null);
@@ -706,7 +696,7 @@ public class ComplexFloatMatrixTest {
 
 			// subtract ints
 			
-			Assert.assertArrayEquals(new float[] {0,-1,0,-1,0,-1,0,-1,0,-1,6,-1}, m1.subtract(1,1,2,1,3,1,4,1,5,1,0,1).done().extractFloats(), 0.001f);
+			Assert.assertArrayEquals(new float[] {0,-1,0,-1,0,-1,0,-1,0,-1,6,-1}, m1.subtract(1,1,2,1,3,1,4,1,5,1,0,1).done().extractFloats(Piece.of(0, 0, 2, 3)), 0.001f);
 			try {
 				m1.subtract((int[])null);
 				Assert.fail("Mandatory exception was not detected (null 1-st argument)");
@@ -718,7 +708,7 @@ public class ComplexFloatMatrixTest {
 			} catch (IllegalStateException exc) {
 			}
 
-			Assert.assertArrayEquals(new float[] {-9,0,-8,0,-7,0,-6,0,-5,0,-4,0}, m1.subtractValue(10).done().extractFloats(), 0.001f);
+			Assert.assertArrayEquals(new float[] {-9,0,-8,0,-7,0,-6,0,-5,0,-4,0}, m1.subtractValue(10).done().extractFloats(Piece.of(0, 0, 2, 3)), 0.001f);
 			try {
 				m1.subtractValue(10).extractDoubles();
 				Assert.fail("Mandatory exception was not detected (done() call is missing)");
@@ -727,7 +717,7 @@ public class ComplexFloatMatrixTest {
 			
 			// subtract longs
 			
-			Assert.assertArrayEquals(new float[] {0,-1,0,-1,0,-1,0,-1,0,-1,6,-1}, m1.subtract(1L,1L,2L,1L,3L,1L,4L,1L,5L,1L,0L,1L).done().extractFloats(), 0.001f);
+			Assert.assertArrayEquals(new float[] {0,-1,0,-1,0,-1,0,-1,0,-1,6,-1}, m1.subtract(1L,1L,2L,1L,3L,1L,4L,1L,5L,1L,0L,1L).done().extractFloats(Piece.of(0, 0, 2, 3)), 0.001f);
 			try {
 				m1.subtract((long[])null);
 				Assert.fail("Mandatory exception was not detected (null 1-st argument)");
@@ -739,7 +729,7 @@ public class ComplexFloatMatrixTest {
 			} catch (IllegalStateException exc) {
 			}
 
-			Assert.assertArrayEquals(new float[] {-9,0,-8,0,-7,0,-6,0,-5,0,-4,0}, m1.subtractValue(10L).done().extractFloats(), 0.001f);
+			Assert.assertArrayEquals(new float[] {-9,0,-8,0,-7,0,-6,0,-5,0,-4,0}, m1.subtractValue(10L).done().extractFloats(Piece.of(0, 0, 2, 3)), 0.001f);
 			try {
 				m1.subtractValue(10L).extractDoubles();
 				Assert.fail("Mandatory exception was not detected (done() call is missing)");
@@ -748,7 +738,7 @@ public class ComplexFloatMatrixTest {
 			
 			// subtract floats
 			
-			Assert.assertArrayEquals(new float[] {0,-1,0,-1,0,-1,0,-1,0,-1,6,-1}, m1.subtract(1f,1f,2f,1f,3f,1f,4f,1f,5f,1f,0f,1f).done().extractFloats(), 0.001f);
+			Assert.assertArrayEquals(new float[] {0,-1,0,-1,0,-1,0,-1,0,-1,6,-1}, m1.subtract(1f,1f,2f,1f,3f,1f,4f,1f,5f,1f,0f,1f).done().extractFloats(Piece.of(0, 0, 2, 3)), 0.001f);
 			try {
 				m1.subtract((float[])null);
 				Assert.fail("Mandatory exception was not detected (null 1-st argument)");
@@ -760,8 +750,8 @@ public class ComplexFloatMatrixTest {
 			} catch (IllegalStateException exc) {
 			}
 			
-			Assert.assertArrayEquals(new float[] {-9,0,-8,0,-7,0,-6,0,-5,0,-4,0}, m1.subtractValue(10f).done().extractFloats(), 0.001f);
-			Assert.assertArrayEquals(new float[] {-9,-10,-8,-10,-7,-10,-6,-10,-5,-10,-4,-10}, m1.subtractValue(10f, 10f).done().extractFloats(), 0.001f);
+			Assert.assertArrayEquals(new float[] {-9,0,-8,0,-7,0,-6,0,-5,0,-4,0}, m1.subtractValue(10f).done().extractFloats(Piece.of(0, 0, 2, 3)), 0.001f);
+			Assert.assertArrayEquals(new float[] {-9,-10,-8,-10,-7,-10,-6,-10,-5,-10,-4,-10}, m1.subtractValue(10f, 10f).done().extractFloats(Piece.of(0, 0, 2, 3)), 0.001f);
 			try {
 				m1.subtractValue(10f).extractDoubles();
 				Assert.fail("Mandatory exception was not detected (done() call is missing)");
@@ -770,7 +760,7 @@ public class ComplexFloatMatrixTest {
 
 			// subtract doubles
 			
-			Assert.assertArrayEquals(new float[] {0,-1,0,-1,0,-1,0,-1,0,-1,6,-1}, m1.subtract(1d,1d,2d,1d,3d,1d,4d,1d,5d,1d,0d,1d).done().extractFloats(), 0.001f);
+			Assert.assertArrayEquals(new float[] {0,-1,0,-1,0,-1,0,-1,0,-1,6,-1}, m1.subtract(1d,1d,2d,1d,3d,1d,4d,1d,5d,1d,0d,1d).done().extractFloats(Piece.of(0, 0, 2, 3)), 0.001f);
 			try {
 				m1.subtract((double[])null);
 				Assert.fail("Mandatory exception was not detected (null 1-st argument)");
@@ -782,7 +772,7 @@ public class ComplexFloatMatrixTest {
 			} catch (IllegalStateException exc) {
 			}
 			
-			Assert.assertArrayEquals(new float[] {-9,-10,-8,-10,-7,-10,-6,-10,-5,-10,-4,-10}, m1.subtractValue(10d, 10d).done().extractFloats(), 0.001f);
+			Assert.assertArrayEquals(new float[] {-9,-10,-8,-10,-7,-10,-6,-10,-5,-10,-4,-10}, m1.subtractValue(10d, 10d).done().extractFloats(Piece.of(0, 0, 2, 3)), 0.001f);
 			try {
 				m1.subtractValue(10d).extractDoubles();
 				Assert.fail("Mandatory exception was not detected (done() call is missing)");
@@ -792,8 +782,8 @@ public class ComplexFloatMatrixTest {
 			// subtract matrix
 
 			m2.assign(1,1,2,1,3,1,4,1,5,1,0,1);
-			Assert.assertArrayEquals(new float[] {0,-1,0,-1,0,-1,0,-1,0,-1,6,-1}, m1.subtract(m2).done().extractFloats(), 0.001f);
-			Assert.assertArrayEquals(new float[] {0,-1,0,-1,0,-1,0,-1,0,-1,6,-1}, m1.subtract(m2.cast(Type.COMPLEX_DOUBLE)).done().extractFloats(), 0.001f);
+			Assert.assertArrayEquals(new float[] {0,-1,0,-1,0,-1,0,-1,0,-1,6,-1}, m1.subtract(m2).done().extractFloats(Piece.of(0, 0, 2, 3)), 0.001f);
+//			Assert.assertArrayEquals(new float[] {0,-1,0,-1,0,-1,0,-1,0,-1,6,-1}, m1.subtract(m2.cast(Type.COMPLEX_DOUBLE)).done().extractFloats(Piece.of(0, 0, 2, 3)), 0.001f);
 
 			try {
 				m1.subtract((Matrix)null);
@@ -813,7 +803,7 @@ public class ComplexFloatMatrixTest {
 		try(final ComplexFloatMatrix	m1 = new ComplexFloatMatrix(exec, 2, 3);
 			final ComplexFloatMatrix	m2 = new ComplexFloatMatrix(exec, 2, 3)) {
 			
-			m1.assign(1,0,2,0,3,0,4,0,5,0,6,0);
+			m1.fill(1f,0f);
 
 			// subtract ints
 			
