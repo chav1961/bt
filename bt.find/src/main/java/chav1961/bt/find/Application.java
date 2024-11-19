@@ -114,7 +114,7 @@ public class Application {
 							filePrinter.accept(f);
 				        }
 				    }
-				} catch (IOException | SyntaxException exc) {
+				} catch (IOException exc) {
 				}
 			}
 			else {
