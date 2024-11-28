@@ -111,7 +111,7 @@ class GPUBufferImpl implements GPUBuffer {
 													try {
 														for(int index = piece.getTop(), maxIndex = piece.getTop()+piece.getHeight(); index < maxIndex; index++) {
 															matrix.extractDoubles(Piece.of(index, piece.getLeft(), 1, piece.getWidth()), dContent);
-															CL.clEnqueueWriteBuffer(owner.owner.queue, buffer, CL.CL_TRUE, index * piece.getWidth() * Sizeof.cl_double , dContent.length * Sizeof.cl_double, Pointer.to(dContent), 0, null, null);
+															CL.clEnqueueWriteBuffer(owner.owner.queue, buffer, CL.CL_TRUE, index * piece.getWidth() * matrix.getType().getNumberOfItems() * Sizeof.cl_double , dContent.length * Sizeof.cl_double, Pointer.to(dContent), 0, null, null);
 														}
 													} finally {
 														event.post();
@@ -126,7 +126,7 @@ class GPUBufferImpl implements GPUBuffer {
 													try {
 														for(int index = piece.getTop(), maxIndex = piece.getTop()+piece.getHeight(), displ = 0; index < maxIndex; index++, displ++) {
 															matrix.extractFloats(Piece.of(index, piece.getLeft(), 1, piece.getWidth()), fContent);
-															CL.clEnqueueWriteBuffer(owner.owner.queue, buffer, CL.CL_TRUE, displ * piece.getWidth() * Sizeof.cl_float, fContent.length * Sizeof.cl_float, Pointer.to(fContent), 0, null, null);
+															CL.clEnqueueWriteBuffer(owner.owner.queue, buffer, CL.CL_TRUE, displ * piece.getWidth() * matrix.getType().getNumberOfItems() * Sizeof.cl_float, fContent.length * Sizeof.cl_float, Pointer.to(fContent), 0, null, null);
 														}
 													} finally {
 														event.post();
@@ -140,7 +140,7 @@ class GPUBufferImpl implements GPUBuffer {
 													try {
 														for(int index = piece.getTop(), maxIndex = piece.getTop()+piece.getHeight(); index < maxIndex; index++) {
 															matrix.extractInts(Piece.of(index, piece.getLeft(), 1, piece.getWidth()), iContent);
-															CL.clEnqueueWriteBuffer(owner.owner.queue, buffer, CL.CL_TRUE, index * piece.getWidth() * Sizeof.cl_int, iContent.length * Sizeof.cl_int, Pointer.to(iContent), 0, null, null);
+															CL.clEnqueueWriteBuffer(owner.owner.queue, buffer, CL.CL_TRUE, index * piece.getWidth() * matrix.getType().getNumberOfItems() * Sizeof.cl_int, iContent.length * Sizeof.cl_int, Pointer.to(iContent), 0, null, null);
 														}
 													} finally {
 														event.post();
@@ -154,7 +154,7 @@ class GPUBufferImpl implements GPUBuffer {
 													try {
 														for(int index = piece.getTop(), maxIndex = piece.getTop()+piece.getHeight(); index < maxIndex; index++) {
 															matrix.extractLongs(Piece.of(index, piece.getLeft(), 1, piece.getWidth()), lContent);
-															CL.clEnqueueReadBuffer(owner.owner.queue, buffer, CL.CL_TRUE, index * piece.getWidth() * Sizeof.cl_long, lContent.length * Sizeof.cl_long, Pointer.to(lContent), 0, null, null);
+															CL.clEnqueueReadBuffer(owner.owner.queue, buffer, CL.CL_TRUE, index * piece.getWidth() * matrix.getType().getNumberOfItems() * Sizeof.cl_long, lContent.length * Sizeof.cl_long, Pointer.to(lContent), 0, null, null);
 														}
 													} finally {
 														event.post();

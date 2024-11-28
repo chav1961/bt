@@ -134,6 +134,210 @@ public class ComplexFloatMatrix extends LargeMatrix {
 														+ "	  source[start + col] -= val;\n"
 														+ "	}\n"
 														+ "}";
+	private static final String	SUBTRACT_FROM_INT_ARRAY_NAME = "subtractFromIntArray"+Type.COMPLEX_FLOAT.getProgramSuffix();
+	private static final String	SUBTRACT_FROM_INT_ARRAY_KERNEL =    "__kernel void "+SUBTRACT_FROM_INT_ARRAY_NAME+"(const int columns,\n"
+														+ "                      __global float* source,\n"
+														+ "                      const __global int* subtract) {\n"
+														+ "	int row = get_global_id(0);\n"
+														+ "	int start = 2 * columns * row;\n"
+														+ "	for(int col = 0; col < 2 * columns; col++) {\n"
+														+ "	  source[start + col] = subtract[start + col] - source[start + col];\n"
+														+ "	}\n"
+														+ "}";
+	private static final String	SUBTRACT_FROM_LONG_ARRAY_NAME = "subtractFromLongArray"+Type.COMPLEX_FLOAT.getProgramSuffix();
+	private static final String	SUBTRACT_FROM_LONG_ARRAY_KERNEL =    "__kernel void "+SUBTRACT_FROM_LONG_ARRAY_NAME+"(const int columns,\n"
+														+ "                      __global float* source,\n"
+														+ "                      const __global long* subtract) {\n"
+														+ "	int row = get_global_id(0);\n"
+														+ "	int start = 2 * columns * row;\n"
+														+ "	for(int col = 0; col < 2 * columns; col++) {\n"
+														+ "	  source[start + col] = subtract[start + col] - source[start + col];\n"
+														+ "	}\n"
+														+ "}";
+	private static final String	SUBTRACT_FROM_FLOAT_ARRAY_NAME = "subtractFromFloatArray"+Type.COMPLEX_FLOAT.getProgramSuffix();
+	private static final String	SUBTRACT_FROM_FLOAT_ARRAY_KERNEL =    "__kernel void "+SUBTRACT_FROM_FLOAT_ARRAY_NAME+"(const int columns,\n"
+														+ "                      __global float2* source,\n"
+														+ "                      const __global float2* subtract) {\n"
+														+ "	int row = get_global_id(0);\n"
+														+ "	int start = columns * row;\n"
+														+ "	for(int col = 0; col < columns; col++) {\n"
+														+ "	  source[start + col] = subtract[start + col] - source[start + col];\n"
+														+ "	}\n"
+														+ "}";
+	private static final String	SUBTRACT_FROM_DOUBLE_ARRAY_NAME = "subtractFromDoubleArray"+Type.COMPLEX_FLOAT.getProgramSuffix();
+	private static final String	SUBTRACT_FROM_DOUBLE_ARRAY_KERNEL =    "__kernel void "+SUBTRACT_FROM_DOUBLE_ARRAY_NAME+"(const int columns,\n"
+														+ "                      __global float* source,\n"
+														+ "                      const __global double* subtract) {\n"
+														+ "	int row = get_global_id(0);\n"
+														+ "	int start = 2 * columns * row;\n"
+														+ "	for(int col = 0; col < 2 * columns; col++) {\n"
+														+ "	  source[start + col] = subtract[start + col] - source[start + col];\n"
+														+ "	}\n"
+														+ "}";
+	private static final String	SUBTRACT_FROM_VALUE_NAME = "subtractFromValue"+Type.COMPLEX_FLOAT.getProgramSuffix();
+	private static final String	SUBTRACT_FROM_VALUE_KERNEL =    "__kernel void "+SUBTRACT_FROM_VALUE_NAME+"(const int columns,\n"
+														+ "                      __global float2* source,\n"
+														+ "                      const float real,\n"
+														+ "                      const float image) {\n"
+														+ "	int row = get_global_id(0);\n"
+														+ "	int start = columns * row;\n"
+														+ "	float2 val = (float2)(real, image);\n"
+														+ "	for(int col = 0; col < columns; col++) {\n"
+														+ "	  source[start + col] = val - source[start + col];\n"
+														+ "	}\n"
+														+ "}";
+	private static final String	MUL_VALUE_NAME = "mulValue"+Type.COMPLEX_FLOAT.getProgramSuffix();
+	private static final String	MUL_VALUE_KERNEL =    "__kernel void "+MUL_VALUE_NAME+"(const int columns,\n"
+														+ "                      __global float* source,\n"
+														+ "                      const float real,\n"
+														+ "                      const float image) {\n"
+														+ "	int row = get_global_id(0);\n"
+														+ "	int start = 2 * columns * row;\n"
+														+ "	for(int col = 0; col < 2 * columns; col+=2) {\n"
+														+ "   float r = source[start + col] * real - source[start + col + 1] * image;\n"
+														+ "   float i = source[start + col + 1] * real + source[start + col] * image;\n"
+														+ "	  source[start + col] = r;\n"
+														+ "	  source[start + col + 1] = i;\n"
+														+ "	}\n"
+														+ "}";
+	private static final String	DIV_VALUE_NAME = "divValue"+Type.COMPLEX_FLOAT.getProgramSuffix();
+	private static final String	DIV_VALUE_KERNEL =    "__kernel void "+DIV_VALUE_NAME+"(const int columns,\n"
+														+ "                      __global float* source,\n"
+														+ "                      const float real,\n"
+														+ "                      const float image) {\n"
+														+ "	int row = get_global_id(0);\n"
+														+ "	int start = 2 * columns * row;\n"
+														+ "	float znam = 1 / (real * real + image * image);\n"
+														+ "	for(int col = 0; col < 2 * columns; col+=2) {\n"
+														+ "   float r = znam * (source[start + col] * real + source[start + col + 1] * image);\n"
+														+ "   float i = znam * (source[start + col + 1] * real - source[start + col] * image);\n"
+														+ "	  source[start + col] = r;\n"
+														+ "	  source[start + col + 1] = i;\n"
+														+ "	}\n"
+														+ "}";
+	private static final String	DIV_FROM_VALUE_NAME = "divFromValue"+Type.COMPLEX_FLOAT.getProgramSuffix();
+	private static final String	DIV_FROM_VALUE_KERNEL =    "__kernel void "+DIV_FROM_VALUE_NAME+"(const int columns,\n"
+														+ "                      __global float* source,\n"
+														+ "                      const float real,\n"
+														+ "                      const float image) {\n"
+														+ "	int row = get_global_id(0);\n"
+														+ "	int start = 2 * columns * row;\n"
+														+ "	for(int col = 0; col < 2 * columns; col+=2) {\n"
+														+ "	  float znam = 1 / (source[start + col] * source[start + col] + source[start + col + 1] * source[start + col + 1]);\n"
+														+ "   float r = znam * (source[start + col] * real + source[start + col + 1] * image);\n"
+														+ "   float i = znam * (source[start + col] * image - source[start + col + 1] * real);\n"
+														+ "	  source[start + col] = r;\n"
+														+ "	  source[start + col + 1] = i;\n"
+														+ "	}\n"
+														+ "}";
+	private static final String	MULH_INT_ARRAY_NAME = "mulHadamardIntArray"+Type.COMPLEX_FLOAT.getProgramSuffix();
+	private static final String	MULH_INT_ARRAY_KERNEL =    "__kernel void "+MULH_INT_ARRAY_NAME+"(const int columns,\n"
+														+ "                      __global float* source,\n"
+														+ "                      const __global int* mul) {\n"
+														+ "	int row = get_global_id(0);\n"
+														+ "	int start = 2 * columns * row;\n"
+														+ "	for(int col = 0; col < 2 * columns; col+=2) {\n"
+														+ "   float r = source[start + col] * mul[start + col] - source[start + col + 1] * mul[start + col + 1];\n"
+														+ "   float i = source[start + col] * mul[start + col + 1] + source[start + col] * mul[start + col + 1];\n"
+														+ "	  source[start + col] = r;\n"
+														+ "	  source[start + col + 1] = i;\n"
+														+ "	}\n"
+														+ "}";
+	private static final String	MULH_LONG_ARRAY_NAME = "mulHadamardLongArray"+Type.COMPLEX_FLOAT.getProgramSuffix();
+	private static final String	MULH_LONG_ARRAY_KERNEL =    "__kernel void "+MULH_LONG_ARRAY_NAME+"(const int columns,\n"
+														+ "                      __global float* source,\n"
+														+ "                      const __global long* mul) {\n"
+														+ "	int row = get_global_id(0);\n"
+														+ "	int start = 2 * columns * row;\n"
+														+ "	for(int col = 0; col < 2 * columns; col+=2) {\n"
+														+ "   float r = source[start + col] * mul[start + col] - source[start + col + 1] * mul[start + col + 1];\n"
+														+ "   float i = source[start + col] * mul[start + col + 1] + source[start + col] * mul[start + col + 1];\n"
+														+ "	  source[start + col] = r;\n"
+														+ "	  source[start + col + 1] = i;\n"
+														+ "	}\n"
+														+ "}";
+	private static final String	MULH_FLOAT_ARRAY_NAME = "mulHadamardFloatArray"+Type.COMPLEX_FLOAT.getProgramSuffix();
+	private static final String	MULH_FLOAT_ARRAY_KERNEL =    "__kernel void "+MULH_FLOAT_ARRAY_NAME+"(const int columns,\n"
+														+ "                      __global float* source,\n"
+														+ "                      const __global float* mul) {\n"
+														+ "	int row = get_global_id(0);\n"
+														+ "	int start = 2 * columns * row;\n"
+														+ "	for(int col = 0; col < 2 * columns; col+=2) {\n"
+														+ "   float r = source[start + col] * mul[start + col] - source[start + col + 1] * mul[start + col + 1];\n"
+														+ "   float i = source[start + col] * mul[start + col + 1] + source[start + col] * mul[start + col + 1];\n"
+														+ "	  source[start + col] = r;\n"
+														+ "	  source[start + col + 1] = i;\n"
+														+ "	}\n"
+														+ "}";
+	private static final String	MULH_DOUBLE_ARRAY_NAME = "mulHadamardDoubleArray"+Type.COMPLEX_FLOAT.getProgramSuffix();
+	private static final String	MULH_DOUBLE_ARRAY_KERNEL =    "__kernel void "+MULH_DOUBLE_ARRAY_NAME+"(const int columns,\n"
+														+ "                      __global float* source,\n"
+														+ "                      const __global double* mul) {\n"
+														+ "	int row = get_global_id(0);\n"
+														+ "	int start = 2 * columns * row;\n"
+														+ "	for(int col = 0; col < 2 * columns; col+=2) {\n"
+														+ "   float r = (float)(source[start + col] * mul[start + col] - source[start + col + 1] * mul[start + col + 1]);\n"
+														+ "   float i = (float)(source[start + col] * mul[start + col + 1] + source[start + col] * mul[start + col + 1]);\n"
+														+ "	  source[start + col] = r;\n"
+														+ "	  source[start + col + 1] = i;\n"
+														+ "	}\n"
+														+ "}";
+	private static final String	MULHINV_INT_ARRAY_NAME = "mulInvHadamardIntArray"+Type.COMPLEX_FLOAT.getProgramSuffix();
+	private static final String	MULHINV_INT_ARRAY_KERNEL =    "__kernel void "+MULHINV_INT_ARRAY_NAME+"(const int columns,\n"
+														+ "                      __global float* source,\n"
+														+ "                      const __global int* mul) {\n"
+														+ "	int row = get_global_id(0);\n"
+														+ "	int start = 2 * columns * row;\n"
+														+ "	for(int col = 0; col < 2 * columns; col+=2) {\n"
+														+ "	  float znam = 1 / (mul[start + col] * mul[start + col] + mul[start + col + 1] * mul[start + col + 1]);\n"
+														+ "   float r = znam * (source[start + col] * mul[start + col] + source[start + col + 1] * mul[start + col + 1]);\n"
+														+ "   float i = znam * (source[start + col] * mul[start + col + 1] - source[start + col] * mul[start + col + 1]);\n"
+														+ "	  source[start + col] = r;\n"
+														+ "	  source[start + col + 1] = i;\n"
+														+ "	}\n"
+														+ "}";
+	private static final String	MULHINV_LONG_ARRAY_NAME = "mulInvHadamardLongArray"+Type.COMPLEX_FLOAT.getProgramSuffix();
+	private static final String	MULHINV_LONG_ARRAY_KERNEL =    "__kernel void "+MULHINV_LONG_ARRAY_NAME+"(const int columns,\n"
+														+ "                      __global float* source,\n"
+														+ "                      const __global long* mul) {\n"
+														+ "	int row = get_global_id(0);\n"
+														+ "	int start = 2 * columns * row;\n"
+														+ "	for(int col = 0; col < 2 * columns; col+=2) {\n"
+														+ "	  float znam = 1 / (mul[start + col] * mul[start + col] + mul[start + col + 1] * mul[start + col + 1]);\n"
+														+ "   float r = znam * (source[start + col] * mul[start + col] + source[start + col + 1] * mul[start + col + 1]);\n"
+														+ "   float i = znam * (source[start + col] * mul[start + col + 1] - source[start + col] * mul[start + col + 1]);\n"
+														+ "	  source[start + col] = r;\n"
+														+ "	  source[start + col + 1] = i;\n"
+														+ "	}\n"
+														+ "}";
+	private static final String	MULHINV_FLOAT_ARRAY_NAME = "mulInvHadamardFloatArray"+Type.COMPLEX_FLOAT.getProgramSuffix();
+	private static final String	MULHINV_FLOAT_ARRAY_KERNEL =    "__kernel void "+MULHINV_FLOAT_ARRAY_NAME+"(const int columns,\n"
+														+ "                      __global float* source,\n"
+														+ "                      const __global float* mul) {\n"
+														+ "	int row = get_global_id(0);\n"
+														+ "	int start = 2 * columns * row;\n"
+														+ "	for(int col = 0; col < 2 * columns; col+=2) {\n"
+														+ "	  float znam = 1 / (mul[start + col] * mul[start + col] + mul[start + col + 1] * mul[start + col + 1]);\n"
+														+ "   float r = znam * (source[start + col] * mul[start + col] + source[start + col + 1] * mul[start + col + 1]);\n"
+														+ "   float i = znam * (source[start + col] * mul[start + col + 1] - source[start + col] * mul[start + col + 1]);\n"
+														+ "	  source[start + col] = r;\n"
+														+ "	  source[start + col + 1] = i;\n"
+														+ "	}\n"
+														+ "}";
+	private static final String	MULHINV_DOUBLE_ARRAY_NAME = "mulInvHadamardDoubleArray"+Type.COMPLEX_FLOAT.getProgramSuffix();
+	private static final String	MULHINV_DOUBLE_ARRAY_KERNEL =    "__kernel void "+MULHINV_DOUBLE_ARRAY_NAME+"(const int columns,\n"
+														+ "                      __global float* source,\n"
+														+ "                      const __global double* mul) {\n"
+														+ "	int row = get_global_id(0);\n"
+														+ "	int start = 2 * columns * row;\n"
+														+ "	for(int col = 0; col < 2 * columns; col+=2) {\n"
+														+ "	  float znam = (float)(1 / (mul[start + col] * mul[start + col] + mul[start + col + 1] * mul[start + col + 1]));\n"
+														+ "   float r = (float)(znam * (source[start + col] * mul[start + col] + source[start + col + 1] * mul[start + col + 1]));\n"
+														+ "   float i = (float)(znam * (source[start + col] * mul[start + col + 1] - source[start + col] * mul[start + col + 1]));\n"
+														+ "	  source[start + col] = r;\n"
+														+ "	  source[start + col + 1] = i;\n"
+														+ "	}\n"
+														+ "}";
 	
 	private final int[]		intBuffer = new int[2];
 	private GPUScheduler	sched = null; 
@@ -974,45 +1178,6 @@ public class ComplexFloatMatrix extends LargeMatrix {
 		}
 		else {
 			result = lineByLineValue(ADD_VALUE_NAME, ADD_VALUE_KERNEL, real, image);
-//			try {
-//				final GPUExecutable	prog = getOrCreateProgram(ADD_VALUE_NAME, ADD_VALUE_KERNEL);
-//				final int	leftRows = calcGPUBufferSize(getType(), numberOfRows(), numberOfColumns());
-//				final int	leftBufferSize = leftRows * numberOfColumns() * getType().getNumberOfItems();
-//				final int	occupiedBytes = getType().getNumberOfItems() * getType().getItemSize();
-//				
-//				try(final ComplexFloatMatrix	temp = new ComplexFloatMatrix(getExecutor(), getFileKeeper().getParentFile(), 1, 1)) {
-//					final long[]				taskSize = new long[1]; 
-//					File						tempStoreFile = null;
-//					
-//					temp.beginTransaction();
-//					try(final GPUBuffer			left = temp.getScheduler().allocateGPUBuffer(leftBufferSize * getType().getItemSize());
-//						final TemporaryStore	store = temp.getScheduler().allocateTemporaryStore(getFileKeeper().getParentFile(), 1L * occupiedBytes * numberOfRows() * numberOfColumns(), false)) {
-//
-//						tempStoreFile = store.getContentFile();
-//						for (int leftIndex = 0, maxIndex = numberOfRows(); leftIndex < maxIndex; leftIndex += leftRows) {
-//							final int		leftPiece = leftIndex + leftRows > numberOfRows() ? numberOfRows() - leftIndex : leftRows;
-//							final Piece		currentPiece = Piece.of(leftIndex, 0, leftPiece, numberOfColumns());
-//							final long		blockSize = occupiedBytes * currentPiece.getWidth() * currentPiece.getHeight();
-//							
-//							try(final TemporaryBuffer	out = store.getBuffer(leftIndex * blockSize / leftRows, (int)blockSize);
-//								final GPUEvent 	downloadEventLeft = left.download(currentPiece, this);
-//								final GPUEvent 	calcEvent = temp.getScheduler().createEvent()) {
-//								
-//								downloadEventLeft.awaitCurrent();
-//								taskSize[0] = leftPiece;
-//								prog.execute(calcEvent, taskSize, numberOfColumns(), left, real, image);
-//								calcEvent.awaitCurrent();
-//								left.upload(out, getType()).awaitCurrent().close();
-//							}
-//						}
-//					}
-//					result = new ComplexFloatMatrix(getExecutor(), getFileKeeper().getParentFile(), numberOfRows(), numberOfColumns(), tempStoreFile, false);
-// 				}
-//			} catch (ContentException | CalculationException exc) {
-//				throw new IllegalStateException("Internal error: "+exc.getLocalizedMessage(), exc); 				
-//			} catch (IOException | InterruptedException exc) {
-//				throw new IllegalStateException("Internal error: "+exc.getLocalizedMessage(), exc); 				
-//			}
 		}
 		result.beginTransaction();
 		return result;
@@ -1280,69 +1445,254 @@ public class ComplexFloatMatrix extends LargeMatrix {
 	}
 
 	@Override
-	public Matrix subtractFrom(int... content) {
-		// TODO Auto-generated method stub
-		return null;
+	public Matrix subtractFrom(final int... content) {
+		if (content == null) {
+			throw new NullPointerException("Content to add can't be null");
+		}
+		else {
+			final ComplexFloatMatrix	result;
+			
+			if (content.length == 0) {
+				try {
+					result = (ComplexFloatMatrix) this.clone();
+				} catch (CloneNotSupportedException e) {
+					throw new IllegalStateException(e.getMessage(), e);
+				}
+			}
+			else {
+				result = lineByLineAny(SUBTRACT_FROM_INT_ARRAY_NAME, SUBTRACT_FROM_INT_ARRAY_KERNEL, content.length, 
+								new ControlledDataInput() {
+										int 		index = 0;
+										
+										@Override
+										public int readInt() throws IOException {
+											if (index >= content.length) {
+												throw new EOFException();
+											}
+											else if (index < content.length) {
+												return content[index++];
+											}
+											else {
+												index++;
+												return 0;
+											}
+										}
+					
+										@Override
+										public long getReadAmount() {
+											return index;
+										}
+									}, Type.REAL_INT);
+			}
+			result.beginTransaction();
+			return result;
+		}
 	}
 
 	@Override
-	public Matrix subtractFrom(long... content) {
-		// TODO Auto-generated method stub
-		return null;
+	public Matrix subtractFrom(final long... content) {
+		if (content == null) {
+			throw new NullPointerException("Content to add can't be null");
+		}
+		else {
+			final ComplexFloatMatrix	result;
+			
+			if (content.length == 0) {
+				try {
+					result = (ComplexFloatMatrix) this.clone();
+				} catch (CloneNotSupportedException e) {
+					throw new IllegalStateException(e.getMessage(), e);
+				}
+			}
+			else {
+				result = lineByLineAny(SUBTRACT_FROM_LONG_ARRAY_NAME, SUBTRACT_FROM_LONG_ARRAY_KERNEL, content.length, 
+						new ControlledDataInput() {
+								int 		index = 0;
+								
+								@Override
+								public long readLong() throws IOException {
+									if (index >= content.length) {
+										throw new EOFException();
+									}
+									else if (index < content.length) {
+										return content[index++];
+									}
+									else {
+										index++;
+										return 0;
+									}
+								}
+			
+								@Override
+								public long getReadAmount() {
+									return index;
+								}
+							}, Type.REAL_LONG);
+			}
+			result.beginTransaction();
+			return result;
+		}
 	}
 
 	@Override
-	public Matrix subtractFrom(float... content) {
-		// TODO Auto-generated method stub
-		return null;
+	public Matrix subtractFrom(final float... content) {
+		if (content == null) {
+			throw new NullPointerException("Content to add can't be null");
+		}
+		else {
+			final ComplexFloatMatrix	result;
+			
+			if (content.length == 0) {
+				try {
+					result = (ComplexFloatMatrix) this.clone();
+				} catch (CloneNotSupportedException e) {
+					throw new IllegalStateException(e.getMessage(), e);
+				}
+			}
+			else {
+				result = lineByLineAny(SUBTRACT_FROM_FLOAT_ARRAY_NAME, SUBTRACT_FROM_FLOAT_ARRAY_KERNEL, content.length, 
+						new ControlledDataInput() {
+								int 		index = 0;
+								
+								@Override
+								public float readFloat() throws IOException {
+									if (index >= content.length) {
+										throw new EOFException();
+									}
+									else if (index < content.length) {
+										return content[index++];
+									}
+									else {
+										index++;
+										return 0;
+									}
+								}
+			
+								@Override
+								public long getReadAmount() {
+									return index;
+								}
+							}, Type.REAL_FLOAT);
+			}
+			result.beginTransaction();
+			return result;
+		}
 	}
 
 	@Override
-	public Matrix subtractFrom(double... content) {
-		// TODO Auto-generated method stub
-		return null;
+	public Matrix subtractFrom(final double... content) {
+		if (content == null) {
+			throw new NullPointerException("Content to add can't be null");
+		}
+		else {
+			final ComplexFloatMatrix	result;
+			
+			if (content.length == 0) {
+				try {
+					result = (ComplexFloatMatrix) this.clone();
+				} catch (CloneNotSupportedException e) {
+					throw new IllegalStateException(e.getMessage(), e);
+				}
+			}
+			else {
+				result = lineByLineAny(SUBTRACT_FROM_DOUBLE_ARRAY_NAME, SUBTRACT_FROM_DOUBLE_ARRAY_KERNEL, content.length, 
+						new ControlledDataInput() {
+								int 		index = 0;
+								
+								@Override
+								public double readDouble() throws IOException {
+									if (index >= content.length) {
+										throw new EOFException();
+									}
+									else if (index < content.length) {
+										return content[index++];
+									}
+									else {
+										index++;
+										return 0;
+									}
+								}
+			
+								@Override
+								public long getReadAmount() {
+									return index;
+								}
+							}, Type.REAL_DOUBLE);
+			}
+			result.beginTransaction();
+			return result;
+		}
 	}
 
 	@Override
-	public Matrix subtractFrom(Matrix matrix) {
-		// TODO Auto-generated method stub
-		return null;
+	public Matrix subtractFrom(final Matrix matrix) {
+		if (matrix == null) {
+			throw new NullPointerException("Matrix can't be null");
+		}
+		else if (matrix.numberOfRows() != numberOfRows() || matrix.numberOfColumns() != numberOfColumns()) {
+			throw new IllegalArgumentException("Different matrix size: current="+numberOfRows()+'x'+numberOfColumns()+", another="+matrix.numberOfRows()+'x'+matrix.numberOfColumns()); 
+		}
+		else {
+			final ComplexFloatMatrix	result;
+			
+			switch (matrix.getType()) {
+				case COMPLEX_DOUBLE : 
+					result = lineByLineAny(SUBTRACT_FROM_DOUBLE_ARRAY_NAME, SUBTRACT_FROM_DOUBLE_ARRAY_KERNEL, matrix);
+					break;
+				case COMPLEX_FLOAT 	:
+					result = lineByLineAny(SUBTRACT_FROM_FLOAT_ARRAY_NAME, SUBTRACT_FROM_FLOAT_ARRAY_KERNEL, matrix);
+					break;
+				case REAL_DOUBLE : case REAL_FLOAT : case REAL_INT : case REAL_LONG : case BIT :
+					throw new IllegalArgumentException("Attempt to subtract real and complex matrix. Use cast() before");
+				default : 
+					throw new UnsupportedOperationException("Matrix type ["+matrix.getType()+"] is not supported yet");
+			}
+			result.beginTransaction();
+			return result;
+		}
 	}
 
 	@Override
-	public Matrix subtractFromValue(int value) {
-		// TODO Auto-generated method stub
-		return null;
+	public Matrix subtractFromValue(final int value) {
+		return subtractFromValue((float)value, 0f);
 	}
 
 	@Override
-	public Matrix subtractFromValue(long value) {
-		// TODO Auto-generated method stub
-		return null;
+	public Matrix subtractFromValue(final long value) {
+		return subtractFromValue((float)value, 0f);
 	}
 
 	@Override
-	public Matrix subtractFromValue(float value) {
-		// TODO Auto-generated method stub
-		return null;
+	public Matrix subtractFromValue(final float value) {
+		return subtractFromValue(value, 0f);
 	}
 
 	@Override
-	public Matrix subtractFromValue(float real, float image) {
-		// TODO Auto-generated method stub
-		return null;
+	public Matrix subtractFromValue(final float real, final float image) {
+		final ComplexFloatMatrix	result;
+		
+		if (real == 0 && image == 0) {
+			try {
+				result = (ComplexFloatMatrix) this.clone();
+			} catch (CloneNotSupportedException e) {
+				throw new IllegalStateException(e.getMessage(), e);
+			}
+		}
+		else {
+			result = lineByLineValue(SUBTRACT_FROM_VALUE_NAME, SUBTRACT_FROM_VALUE_KERNEL, real, image);
+		}
+		result.beginTransaction();
+		return result;
 	}
 
 	@Override
-	public Matrix subtractFromValue(double value) {
-		// TODO Auto-generated method stub
-		return null;
+	public Matrix subtractFromValue(final double value) {
+		return subtractFromValue((float)value, 0f);
 	}
 
 	@Override
-	public Matrix subtractFromValue(double real, double image) {
-		// TODO Auto-generated method stub
-		return null;
+	public Matrix subtractFromValue(final double real, final double image) {
+		return subtractFromValue((float)real, (float)image);
 	}
 
 	@Override
@@ -1358,171 +1708,548 @@ public class ComplexFloatMatrix extends LargeMatrix {
 	}
 
 	@Override
-	public Matrix mulValue(int value) {
-		// TODO Auto-generated method stub
-		return null;
+	public Matrix mulValue(final int value) {
+		return mulValue((float)value, 0f);
 	}
 
 	@Override
-	public Matrix mulValue(long value) {
-		// TODO Auto-generated method stub
-		return null;
+	public Matrix mulValue(final long value) {
+		return mulValue((float)value, 0f);
 	}
 
 	@Override
-	public Matrix mulValue(float value) {
-		// TODO Auto-generated method stub
-		return null;
+	public Matrix mulValue(final float value) {
+		return mulValue(value, 0f);
 	}
 
 	@Override
-	public Matrix mulValue(float real, float image) {
-		// TODO Auto-generated method stub
-		return null;
+	public Matrix mulValue(final float real, final float image) {
+		final ComplexFloatMatrix	result;
+		
+		if (real == 0 && image == 0) {
+			try {
+				result = (ComplexFloatMatrix) this.clone();
+			} catch (CloneNotSupportedException e) {
+				throw new IllegalStateException(e.getMessage(), e);
+			}
+		}
+		else {
+			result = lineByLineValue(MUL_VALUE_NAME, MUL_VALUE_KERNEL, real, image);
+		}
+		result.beginTransaction();
+		return result;
 	}
 
 	@Override
-	public Matrix mulValue(double value) {
-		// TODO Auto-generated method stub
-		return null;
+	public Matrix mulValue(final double value) {
+		return mulValue((float)value, 0f);
 	}
 
 	@Override
-	public Matrix mulValue(double real, double image) {
-		// TODO Auto-generated method stub
-		return null;
+	public Matrix mulValue(final double real, final double image) {
+		return mulValue((float)real, (float)image);
 	}
 
 	@Override
-	public Matrix divValue(int value) {
-		// TODO Auto-generated method stub
-		return null;
+	public Matrix divValue(final int value) {
+		return divValue((float)value, 0f);
 	}
 
 	@Override
-	public Matrix divValue(long value) {
-		// TODO Auto-generated method stub
-		return null;
+	public Matrix divValue(final long value) {
+		return divValue((float)value, 0f);
 	}
 
 	@Override
-	public Matrix divValue(float value) {
-		// TODO Auto-generated method stub
-		return null;
+	public Matrix divValue(final float value) {
+		return divValue(value, 0f);
 	}
 
 	@Override
-	public Matrix divValue(float real, float image) {
-		// TODO Auto-generated method stub
-		return null;
+	public Matrix divValue(final float real, final float image) {
+		final ComplexFloatMatrix	result;
+		
+		if (real == 0 && image == 0) {
+			try {
+				result = (ComplexFloatMatrix) this.clone();
+			} catch (CloneNotSupportedException e) {
+				throw new IllegalStateException(e.getMessage(), e);
+			}
+		}
+		else {
+			result = lineByLineValue(DIV_VALUE_NAME, DIV_VALUE_KERNEL, real, image);
+		}
+		result.beginTransaction();
+		return result;
 	}
 
 	@Override
-	public Matrix divValue(double value) {
-		// TODO Auto-generated method stub
-		return null;
+	public Matrix divValue(final double value) {
+		return divValue((float)value, 0f);
 	}
 
 	@Override
-	public Matrix divValue(double real, double image) {
-		// TODO Auto-generated method stub
-		return null;
+	public Matrix divValue(final double real, final double image) {
+		return divValue((float)real, (float)image);
 	}
 
 	@Override
 	public Matrix divFromValue(int value) {
-		// TODO Auto-generated method stub
-		return null;
+		return divFromValue((float)value, 0f);
 	}
 
 	@Override
 	public Matrix divFromValue(long value) {
-		// TODO Auto-generated method stub
-		return null;
+		return divFromValue((float)value, 0f);
 	}
 
 	@Override
 	public Matrix divFromValue(float value) {
-		// TODO Auto-generated method stub
-		return null;
+		return divFromValue(value, 0f);
 	}
 
 	@Override
-	public Matrix divFromValue(float real, float image) {
-		// TODO Auto-generated method stub
-		return null;
+	public Matrix divFromValue(final float real, final float image) {
+		final ComplexFloatMatrix	result;
+		
+		if (real == 0 && image == 0) {
+			try {
+				result = (ComplexFloatMatrix) this.clone();
+			} catch (CloneNotSupportedException e) {
+				throw new IllegalStateException(e.getMessage(), e);
+			}
+		}
+		else {
+			result = lineByLineValue(DIV_FROM_VALUE_NAME, DIV_FROM_VALUE_KERNEL, real, image);
+		}
+		result.beginTransaction();
+		return result;
 	}
 
 	@Override
 	public Matrix divFromValue(double value) {
-		// TODO Auto-generated method stub
-		return null;
+		return divFromValue((float)value, 0f);
 	}
 
 	@Override
 	public Matrix divFromValue(double real, double image) {
-		// TODO Auto-generated method stub
-		return null;
+		return divFromValue((float)real, (float)image);
 	}
 
 	@Override
-	public Matrix mulHadamard(int... content) {
-		// TODO Auto-generated method stub
-		return null;
+	public Matrix mulHadamard(final int... content) {
+		if (content == null) {
+			throw new NullPointerException("Content to add can't be null");
+		}
+		else {
+			final ComplexFloatMatrix	result;
+			
+			if (content.length == 0) {
+				try {
+					result = (ComplexFloatMatrix) this.clone();
+				} catch (CloneNotSupportedException e) {
+					throw new IllegalStateException(e.getMessage(), e);
+				}
+			}
+			else {
+				result = lineByLineAny(MULH_INT_ARRAY_NAME, MULH_INT_ARRAY_KERNEL, content.length, 
+								new ControlledDataInput() {
+										int 		index = 0;
+										
+										@Override
+										public int readInt() throws IOException {
+											if (index >= content.length) {
+												throw new EOFException();
+											}
+											else if (index < content.length) {
+												return content[index++];
+											}
+											else {
+												index++;
+												return 0;
+											}
+										}
+					
+										@Override
+										public long getReadAmount() {
+											return index;
+										}
+									}, Type.REAL_INT);
+			}
+			result.beginTransaction();
+			return result;
+		}
 	}
 
 	@Override
-	public Matrix mulHadamard(long... content) {
-		// TODO Auto-generated method stub
-		return null;
+	public Matrix mulHadamard(final long... content) {
+		if (content == null) {
+			throw new NullPointerException("Content to add can't be null");
+		}
+		else {
+			final ComplexFloatMatrix	result;
+			
+			if (content.length == 0) {
+				try {
+					result = (ComplexFloatMatrix) this.clone();
+				} catch (CloneNotSupportedException e) {
+					throw new IllegalStateException(e.getMessage(), e);
+				}
+			}
+			else {
+				result = lineByLineAny(MULH_LONG_ARRAY_NAME, MULH_LONG_ARRAY_KERNEL, content.length, 
+						new ControlledDataInput() {
+								int 		index = 0;
+								
+								@Override
+								public long readLong() throws IOException {
+									if (index >= content.length) {
+										throw new EOFException();
+									}
+									else if (index < content.length) {
+										return content[index++];
+									}
+									else {
+										index++;
+										return 0;
+									}
+								}
+			
+								@Override
+								public long getReadAmount() {
+									return index;
+								}
+							}, Type.REAL_LONG);
+			}
+			result.beginTransaction();
+			return result;
+		}
 	}
 
 	@Override
-	public Matrix mulHadamard(float... content) {
-		// TODO Auto-generated method stub
-		return null;
+	public Matrix mulHadamard(final float... content) {
+		if (content == null) {
+			throw new NullPointerException("Content to add can't be null");
+		}
+		else {
+			final ComplexFloatMatrix	result;
+			
+			if (content.length == 0) {
+				try {
+					result = (ComplexFloatMatrix) this.clone();
+				} catch (CloneNotSupportedException e) {
+					throw new IllegalStateException(e.getMessage(), e);
+				}
+			}
+			else {
+				result = lineByLineAny(MULH_FLOAT_ARRAY_NAME, MULH_FLOAT_ARRAY_KERNEL, content.length, 
+						new ControlledDataInput() {
+								int 		index = 0;
+								
+								@Override
+								public float readFloat() throws IOException {
+									if (index >= content.length) {
+										throw new EOFException();
+									}
+									else if (index < content.length) {
+										return content[index++];
+									}
+									else {
+										index++;
+										return 0;
+									}
+								}
+			
+								@Override
+								public long getReadAmount() {
+									return index;
+								}
+							}, Type.REAL_FLOAT);
+			}
+			result.beginTransaction();
+			return result;
+		}
 	}
 
 	@Override
-	public Matrix mulHadamard(double... content) {
-		// TODO Auto-generated method stub
-		return null;
+	public Matrix mulHadamard(final double... content) {
+		if (content == null) {
+			throw new NullPointerException("Content to add can't be null");
+		}
+		else {
+			final ComplexFloatMatrix	result;
+			
+			if (content.length == 0) {
+				try {
+					result = (ComplexFloatMatrix) this.clone();
+				} catch (CloneNotSupportedException e) {
+					throw new IllegalStateException(e.getMessage(), e);
+				}
+			}
+			else {
+				result = lineByLineAny(MULH_DOUBLE_ARRAY_NAME, MULH_DOUBLE_ARRAY_KERNEL, content.length, 
+						new ControlledDataInput() {
+								int 		index = 0;
+								
+								@Override
+								public double readDouble() throws IOException {
+									if (index >= content.length) {
+										throw new EOFException();
+									}
+									else if (index < content.length) {
+										return content[index++];
+									}
+									else {
+										index++;
+										return 0;
+									}
+								}
+			
+								@Override
+								public long getReadAmount() {
+									return index;
+								}
+							}, Type.REAL_DOUBLE);
+			}
+			result.beginTransaction();
+			return result;
+		}
 	}
 
 	@Override
-	public Matrix mulHadamard(Matrix matrix) {
-		// TODO Auto-generated method stub
-		return null;
+	public Matrix mulHadamard(final Matrix matrix) {
+		if (matrix == null) {
+			throw new NullPointerException("Matrix can't be null");
+		}
+		else if (matrix.numberOfRows() != numberOfRows() || matrix.numberOfColumns() != numberOfColumns()) {
+			throw new IllegalArgumentException("Different matrix size: current="+numberOfRows()+'x'+numberOfColumns()+", another="+matrix.numberOfRows()+'x'+matrix.numberOfColumns()); 
+		}
+		else {
+			final ComplexFloatMatrix	result;
+			
+			switch (matrix.getType()) {
+				case COMPLEX_DOUBLE : 
+					result = lineByLineAny(MULH_DOUBLE_ARRAY_NAME, MULH_DOUBLE_ARRAY_KERNEL, matrix);
+					break;
+				case COMPLEX_FLOAT 	:
+					result = lineByLineAny(MULH_FLOAT_ARRAY_NAME, MULH_FLOAT_ARRAY_KERNEL, matrix);
+					break;
+				case REAL_DOUBLE : case REAL_FLOAT : case REAL_INT : case REAL_LONG : case BIT :
+					throw new IllegalArgumentException("Attempt to subtract real and complex matrix. Use cast() before");
+				default : 
+					throw new UnsupportedOperationException("Matrix type ["+matrix.getType()+"] is not supported yet");
+			}
+			result.beginTransaction();
+			return result;
+		}
 	}
 
 	@Override
-	public Matrix mulInvHadamard(int... content) {
-		// TODO Auto-generated method stub
-		return null;
+	public Matrix mulInvHadamard(final int... content) {
+		if (content == null) {
+			throw new NullPointerException("Content to add can't be null");
+		}
+		else {
+			final ComplexFloatMatrix	result;
+			
+			if (content.length == 0) {
+				try {
+					result = (ComplexFloatMatrix) this.clone();
+				} catch (CloneNotSupportedException e) {
+					throw new IllegalStateException(e.getMessage(), e);
+				}
+			}
+			else {
+				result = lineByLineAny(MULHINV_INT_ARRAY_NAME, MULHINV_INT_ARRAY_KERNEL, content.length, 
+								new ControlledDataInput() {
+										int 		index = 0;
+										
+										@Override
+										public int readInt() throws IOException {
+											if (index >= content.length) {
+												throw new EOFException();
+											}
+											else if (index < content.length) {
+												return content[index++];
+											}
+											else {
+												index++;
+												return 0;
+											}
+										}
+					
+										@Override
+										public long getReadAmount() {
+											return index;
+										}
+									}, Type.REAL_INT);
+			}
+			result.beginTransaction();
+			return result;
+		}
 	}
 
 	@Override
-	public Matrix mulInvHadamard(long... content) {
-		// TODO Auto-generated method stub
-		return null;
+	public Matrix mulInvHadamard(final long... content) {
+		if (content == null) {
+			throw new NullPointerException("Content to add can't be null");
+		}
+		else {
+			final ComplexFloatMatrix	result;
+			
+			if (content.length == 0) {
+				try {
+					result = (ComplexFloatMatrix) this.clone();
+				} catch (CloneNotSupportedException e) {
+					throw new IllegalStateException(e.getMessage(), e);
+				}
+			}
+			else {
+				result = lineByLineAny(MULHINV_LONG_ARRAY_NAME, MULHINV_LONG_ARRAY_KERNEL, content.length, 
+						new ControlledDataInput() {
+								int 		index = 0;
+								
+								@Override
+								public long readLong() throws IOException {
+									if (index >= content.length) {
+										throw new EOFException();
+									}
+									else if (index < content.length) {
+										return content[index++];
+									}
+									else {
+										index++;
+										return 0;
+									}
+								}
+			
+								@Override
+								public long getReadAmount() {
+									return index;
+								}
+							}, Type.REAL_LONG);
+			}
+			result.beginTransaction();
+			return result;
+		}
 	}
 
 	@Override
-	public Matrix mulInvHadamard(float... content) {
-		// TODO Auto-generated method stub
-		return null;
+	public Matrix mulInvHadamard(final float... content) {
+		if (content == null) {
+			throw new NullPointerException("Content to add can't be null");
+		}
+		else {
+			final ComplexFloatMatrix	result;
+			
+			if (content.length == 0) {
+				try {
+					result = (ComplexFloatMatrix) this.clone();
+				} catch (CloneNotSupportedException e) {
+					throw new IllegalStateException(e.getMessage(), e);
+				}
+			}
+			else {
+				result = lineByLineAny(MULHINV_FLOAT_ARRAY_NAME, MULHINV_FLOAT_ARRAY_KERNEL, content.length, 
+						new ControlledDataInput() {
+								int 		index = 0;
+								
+								@Override
+								public float readFloat() throws IOException {
+									if (index >= content.length) {
+										throw new EOFException();
+									}
+									else if (index < content.length) {
+										return content[index++];
+									}
+									else {
+										index++;
+										return 0;
+									}
+								}
+			
+								@Override
+								public long getReadAmount() {
+									return index;
+								}
+							}, Type.REAL_FLOAT);
+			}
+			result.beginTransaction();
+			return result;
+		}
 	}
 
 	@Override
-	public Matrix mulInvHadamard(double... content) {
-		// TODO Auto-generated method stub
-		return null;
+	public Matrix mulInvHadamard(final double... content) {
+		if (content == null) {
+			throw new NullPointerException("Content to add can't be null");
+		}
+		else {
+			final ComplexFloatMatrix	result;
+			
+			if (content.length == 0) {
+				try {
+					result = (ComplexFloatMatrix) this.clone();
+				} catch (CloneNotSupportedException e) {
+					throw new IllegalStateException(e.getMessage(), e);
+				}
+			}
+			else {
+				result = lineByLineAny(MULHINV_DOUBLE_ARRAY_NAME, MULHINV_DOUBLE_ARRAY_KERNEL, content.length, 
+						new ControlledDataInput() {
+								int 		index = 0;
+								
+								@Override
+								public double readDouble() throws IOException {
+									if (index >= content.length) {
+										throw new EOFException();
+									}
+									else if (index < content.length) {
+										return content[index++];
+									}
+									else {
+										index++;
+										return 0;
+									}
+								}
+			
+								@Override
+								public long getReadAmount() {
+									return index;
+								}
+							}, Type.REAL_DOUBLE);
+			}
+			result.beginTransaction();
+			return result;
+		}
 	}
 
 	@Override
-	public Matrix mulInvHadamard(Matrix matrix) {
-		// TODO Auto-generated method stub
-		return null;
+	public Matrix mulInvHadamard(final Matrix matrix) {
+		if (matrix == null) {
+			throw new NullPointerException("Matrix can't be null");
+		}
+		else if (matrix.numberOfRows() != numberOfRows() || matrix.numberOfColumns() != numberOfColumns()) {
+			throw new IllegalArgumentException("Different matrix size: current="+numberOfRows()+'x'+numberOfColumns()+", another="+matrix.numberOfRows()+'x'+matrix.numberOfColumns()); 
+		}
+		else {
+			final ComplexFloatMatrix	result;
+			
+			switch (matrix.getType()) {
+				case COMPLEX_DOUBLE : 
+					result = lineByLineAny(MULHINV_DOUBLE_ARRAY_NAME, MULHINV_DOUBLE_ARRAY_KERNEL, matrix);
+					break;
+				case COMPLEX_FLOAT 	:
+					result = lineByLineAny(MULHINV_FLOAT_ARRAY_NAME, MULHINV_FLOAT_ARRAY_KERNEL, matrix);
+					break;
+				case REAL_DOUBLE : case REAL_FLOAT : case REAL_INT : case REAL_LONG : case BIT :
+					throw new IllegalArgumentException("Attempt to subtract real and complex matrix. Use cast() before");
+				default : 
+					throw new UnsupportedOperationException("Matrix type ["+matrix.getType()+"] is not supported yet");
+			}
+			result.beginTransaction();
+			return result;
+		}
 	}
 
 	@Override
