@@ -13,6 +13,7 @@ import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.file.StandardOpenOption;
 import java.util.Arrays;
+import java.util.function.DoubleFunction;
 
 import chav1961.bt.openclmatrix.internal.GPUExecutor;
 import chav1961.bt.openclmatrix.internal.GPUExecutor.GPUBuffer;
@@ -27,6 +28,7 @@ import chav1961.purelib.basic.exceptions.ContentException;
 import chav1961.purelib.basic.exceptions.SyntaxException;
 import chav1961.purelib.matrix.interfaces.Matrix;
 import chav1961.purelib.matrix.interfaces.MatrixCalc;
+import chav1961.purelib.streams.DataInputAdapter;
 
 public class ComplexFloatMatrix extends LargeMatrix {
 	private static final int	MAX_GPU_BUFFER_SIZE_IN_ITEMS = GPUBuffer.MAX_GPU_BUFFER_SIZE / Type.COMPLEX_FLOAT.getItemSize();
@@ -210,7 +212,7 @@ public class ComplexFloatMatrix extends LargeMatrix {
 														+ "	float znam = 1 / (real * real + image * image);\n"
 														+ "	for(int col = 0; col < 2 * columns; col+=2) {\n"
 														+ "   float r = znam * (source[start + col] * real + source[start + col + 1] * image);\n"
-														+ "   float i = znam * (source[start + col + 1] * real - source[start + col] * image);\n"
+														+ "   float i = znam * (real * source[start + col] - image * source[start + col + 1]);\n"
 														+ "	  source[start + col] = r;\n"
 														+ "	  source[start + col + 1] = i;\n"
 														+ "	}\n"
@@ -224,8 +226,8 @@ public class ComplexFloatMatrix extends LargeMatrix {
 														+ "	int start = 2 * columns * row;\n"
 														+ "	for(int col = 0; col < 2 * columns; col+=2) {\n"
 														+ "	  float znam = 1 / (source[start + col] * source[start + col] + source[start + col + 1] * source[start + col + 1]);\n"
-														+ "   float r = znam * (source[start + col] * real + source[start + col + 1] * image);\n"
-														+ "   float i = znam * (source[start + col] * image - source[start + col + 1] * real);\n"
+														+ "   float r = znam * (real * source[start + col] + image * source[start + col + 1]);\n"
+														+ "   float i = znam * (image * source[start + col + 1] - real * source[start + col]);\n"
 														+ "	  source[start + col] = r;\n"
 														+ "	  source[start + col + 1] = i;\n"
 														+ "	}\n"
@@ -289,9 +291,9 @@ public class ComplexFloatMatrix extends LargeMatrix {
 														+ "	int row = get_global_id(0);\n"
 														+ "	int start = 2 * columns * row;\n"
 														+ "	for(int col = 0; col < 2 * columns; col+=2) {\n"
-														+ "	  float znam = 1 / (mul[start + col] * mul[start + col] + mul[start + col + 1] * mul[start + col + 1]);\n"
+														+ "	  float znam = 1.0f / (mul[start + col] * mul[start + col] + mul[start + col + 1] * mul[start + col + 1]);\n"
 														+ "   float r = znam * (source[start + col] * mul[start + col] + source[start + col + 1] * mul[start + col + 1]);\n"
-														+ "   float i = znam * (source[start + col] * mul[start + col + 1] - source[start + col] * mul[start + col + 1]);\n"
+														+ "   float i = znam * (mul[start + col] * source[start + col + 1] - mul[start + col + 1] * source[start + col]);\n"
 														+ "	  source[start + col] = r;\n"
 														+ "	  source[start + col + 1] = i;\n"
 														+ "	}\n"
@@ -303,9 +305,9 @@ public class ComplexFloatMatrix extends LargeMatrix {
 														+ "	int row = get_global_id(0);\n"
 														+ "	int start = 2 * columns * row;\n"
 														+ "	for(int col = 0; col < 2 * columns; col+=2) {\n"
-														+ "	  float znam = 1 / (mul[start + col] * mul[start + col] + mul[start + col + 1] * mul[start + col + 1]);\n"
+														+ "	  float znam = 1.0f / (mul[start + col] * mul[start + col] + mul[start + col + 1] * mul[start + col + 1]);\n"
 														+ "   float r = znam * (source[start + col] * mul[start + col] + source[start + col + 1] * mul[start + col + 1]);\n"
-														+ "   float i = znam * (source[start + col] * mul[start + col + 1] - source[start + col] * mul[start + col + 1]);\n"
+														+ "   float i = znam * (mul[start + col] * source[start + col + 1] - mul[start + col + 1] * source[start + col]);\n"
 														+ "	  source[start + col] = r;\n"
 														+ "	  source[start + col + 1] = i;\n"
 														+ "	}\n"
@@ -317,9 +319,9 @@ public class ComplexFloatMatrix extends LargeMatrix {
 														+ "	int row = get_global_id(0);\n"
 														+ "	int start = 2 * columns * row;\n"
 														+ "	for(int col = 0; col < 2 * columns; col+=2) {\n"
-														+ "	  float znam = 1 / (mul[start + col] * mul[start + col] + mul[start + col + 1] * mul[start + col + 1]);\n"
+														+ "	  float znam = 1.0f / (mul[start + col] * mul[start + col] + mul[start + col + 1] * mul[start + col + 1]);\n"
 														+ "   float r = znam * (source[start + col] * mul[start + col] + source[start + col + 1] * mul[start + col + 1]);\n"
-														+ "   float i = znam * (source[start + col] * mul[start + col + 1] - source[start + col] * mul[start + col + 1]);\n"
+														+ "   float i = znam * (mul[start + col] * source[start + col + 1] - mul[start + col + 1] * source[start + col]);\n"
 														+ "	  source[start + col] = r;\n"
 														+ "	  source[start + col + 1] = i;\n"
 														+ "	}\n"
@@ -331,12 +333,177 @@ public class ComplexFloatMatrix extends LargeMatrix {
 														+ "	int row = get_global_id(0);\n"
 														+ "	int start = 2 * columns * row;\n"
 														+ "	for(int col = 0; col < 2 * columns; col+=2) {\n"
-														+ "	  float znam = (float)(1 / (mul[start + col] * mul[start + col] + mul[start + col + 1] * mul[start + col + 1]));\n"
+														+ "	  float znam = (float)(1.0 / (mul[start + col] * mul[start + col] + mul[start + col + 1] * mul[start + col + 1]));\n"
 														+ "   float r = (float)(znam * (source[start + col] * mul[start + col] + source[start + col + 1] * mul[start + col + 1]));\n"
-														+ "   float i = (float)(znam * (source[start + col] * mul[start + col + 1] - source[start + col] * mul[start + col + 1]));\n"
+														+ "   float i = (float)(znam * (mul[start + col] * source[start + col + 1] - mul[start + col + 1] * source[start + col]));\n"
 														+ "	  source[start + col] = r;\n"
 														+ "	  source[start + col + 1] = i;\n"
 														+ "	}\n"
+														+ "}";
+	private static final String	MULHINV_FROM_INT_ARRAY_NAME = "mulInvHadamardFromIntArray"+Type.COMPLEX_FLOAT.getProgramSuffix();
+	private static final String	MULHINV_FROM_INT_ARRAY_KERNEL =    "__kernel void "+MULHINV_FROM_INT_ARRAY_NAME+"(const int columns,\n"
+														+ "                      __global float* source,\n"
+														+ "                      const __global int* mul) {\n"
+														+ "	int row = get_global_id(0);\n"
+														+ "	int start = 2 * columns * row;\n"
+														+ "	for(int col = 0; col < 2 * columns; col+=2) {\n"
+														+ "	  float znam = 1.0f / (source[start + col] * source[start + col] + source[start + col + 1] * source[start + col + 1]);\n"
+														+ "   float r = znam * (mul[start + col] * source[start + col] + mul[start + col + 1] * source[start + col + 1]);\n"
+														+ "   float i = znam * (source[start + col] * mul[start + col + 1] - source[start + col + 1] * mul[start + col]);\n"
+														+ "	  source[start + col] = r;\n"
+														+ "	  source[start + col + 1] = i;\n"
+														+ "	}\n"
+														+ "}";
+	private static final String	MULHINV_FROM_LONG_ARRAY_NAME = "mulInvHadamardFromLongArray"+Type.COMPLEX_FLOAT.getProgramSuffix();
+	private static final String	MULHINV_FROM_LONG_ARRAY_KERNEL =    "__kernel void "+MULHINV_FROM_LONG_ARRAY_NAME+"(const int columns,\n"
+														+ "                      __global float* source,\n"
+														+ "                      const __global long* mul) {\n"
+														+ "	int row = get_global_id(0);\n"
+														+ "	int start = 2 * columns * row;\n"
+														+ "	for(int col = 0; col < 2 * columns; col+=2) {\n"
+														+ "	  float znam = 1.0f / (source[start + col] * source[start + col] + source[start + col + 1] * source[start + col + 1]);\n"
+														+ "   float r = znam * (mul[start + col] * source[start + col] + mul[start + col + 1] * source[start + col + 1]);\n"
+														+ "   float i = znam * (source[start + col] * mul[start + col + 1] - source[start + col + 1] * mul[start + col]);\n"
+														+ "	  source[start + col] = r;\n"
+														+ "	  source[start + col + 1] = i;\n"
+														+ "	}\n"
+														+ "}";
+	private static final String	MULHINV_FROM_FLOAT_ARRAY_NAME = "mulInvHadamardFromFloatArray"+Type.COMPLEX_FLOAT.getProgramSuffix();
+	private static final String	MULHINV_FROM_FLOAT_ARRAY_KERNEL =    "__kernel void "+MULHINV_FROM_FLOAT_ARRAY_NAME+"(const int columns,\n"
+														+ "                      __global float* source,\n"
+														+ "                      const __global float* mul) {\n"
+														+ "	int row = get_global_id(0);\n"
+														+ "	int start = 2 * columns * row;\n"
+														+ "	for(int col = 0; col < 2 * columns; col+=2) {\n"
+														+ "	  float znam = 1.0f / (source[start + col] * source[start + col] + source[start + col + 1] * source[start + col + 1]);\n"
+														+ "   float r = znam * (mul[start + col] * source[start + col] + mul[start + col + 1] * source[start + col + 1]);\n"
+														+ "   float i = znam * (source[start + col] * mul[start + col + 1] - source[start + col + 1] * mul[start + col]);\n"
+														+ "	  source[start + col] = r;\n"
+														+ "	  source[start + col + 1] = i;\n"
+														+ "	}\n"
+														+ "}";
+	private static final String	MULHINV_FROM_DOUBLE_ARRAY_NAME = "mulInvHadamardFromDoubleArray"+Type.COMPLEX_FLOAT.getProgramSuffix();
+	private static final String	MULHINV_FROM_DOUBLE_ARRAY_KERNEL =    "__kernel void "+MULHINV_FROM_DOUBLE_ARRAY_NAME+"(const int columns,\n"
+														+ "                      __global float* source,\n"
+														+ "                      const __global double* mul) {\n"
+														+ "	int row = get_global_id(0);\n"
+														+ "	int start = 2 * columns * row;\n"
+														+ "	for(int col = 0; col < 2 * columns; col+=2) {\n"
+														+ "	  float znam = 1.0f / (source[start + col] * source[start + col] + source[start + col + 1] * source[start + col + 1]);\n"
+														+ "   float r = (float)(znam * (mul[start + col] * source[start + col] + mul[start + col + 1] * source[start + col + 1]));\n"
+														+ "   float i = (float)(znam * (source[start + col] * mul[start + col + 1] - source[start + col + 1] * mul[start + col]));\n"
+														+ "	  source[start + col] = r;\n"
+														+ "	  source[start + col + 1] = i;\n"
+														+ "	}\n"
+														+ "}";
+	private static final String	SUM_BY_ROWS_NAME = "sumByRows"+Type.COMPLEX_FLOAT.getProgramSuffix();
+	private static final String	SUM_BY_ROWS_KERNEL =    "__kernel void "+SUM_BY_ROWS_NAME+"(const int columns,\n"
+														+ "                      __global float* source,\n"
+														+ "                      __global float* target) {\n"
+														+ "	int row = get_global_id(0);\n"
+														+ "	int start = 2 * columns * row;\n"
+														+ "	float realSum = 0.0f, imageSum = 0.0f;\n"
+														+ "	for(int col = 0; col < 2 * columns; col+=2) {\n"
+														+ "	  realSum += source[start + col];\n"
+														+ "	  imageSum += source[start + col + 1];\n"
+														+ "	}\n"
+														+ "	target[2 * row] = realSum;\n"
+														+ "	target[2 * row + 1] = imageSum;\n"
+														+ "}";
+	private static final String	AVG_BY_ROWS_NAME = "avgByRows"+Type.COMPLEX_FLOAT.getProgramSuffix();
+	private static final String	AVG_BY_ROWS_KERNEL =    "__kernel void "+AVG_BY_ROWS_NAME+"(const int columns,\n"
+														+ "                      __global float* source,\n"
+														+ "                      __global float* target) {\n"
+														+ "	int row = get_global_id(0);\n"
+														+ "	int start = 2 * columns * row;\n"
+														+ "	float realSum = 0.0f, imageSum = 0.0f;\n"
+														+ "	for(int col = 0; col < 2 * columns; col+=2) {\n"
+														+ "	  realSum += source[start + col];\n"
+														+ "	  imageSum += source[start + col + 1];\n"
+														+ "	}\n"
+														+ "	target[2 * row] = realSum / columns;\n"
+														+ "	target[2 * row + 1] = imageSum / columns;\n"
+														+ "}";
+	private static final String	MIN_BY_ROWS_NAME = "minByRows"+Type.COMPLEX_FLOAT.getProgramSuffix();
+	private static final String	MIN_BY_ROWS_KERNEL =    "__kernel void "+MIN_BY_ROWS_NAME+"(const int columns,\n"
+														+ "                      __global float* source,\n"
+														+ "                      __global float* target) {\n"
+														+ "	int row = get_global_id(0);\n"
+														+ "	int start = 2 * columns * row;\n"
+														+ "	float realMin = source[start], imageMin = source[start + 1];\n"
+														+ "	for(int col = 2; col < 2 * columns; col+=2) {\n"
+														+ "	  if (source[start + col] * source[start + col] + source[start + col + 1] * source[start + col + 1] < realMin * realMin + imageMin * imageMin) {\n"
+														+ "	    realMin = source[start + col];\n"
+														+ "	    imageMin = source[start + col + 1];\n"
+														+ "	  }\n"
+														+ "	}\n"
+														+ "	target[2 * row] = realMin;\n"
+														+ "	target[2 * row + 1] = imageMin;\n"
+														+ "}";
+	private static final String	MAX_BY_ROWS_NAME = "maxByRows"+Type.COMPLEX_FLOAT.getProgramSuffix();
+	private static final String	MAX_BY_ROWS_KERNEL =    "__kernel void "+MAX_BY_ROWS_NAME+"(const int columns,\n"
+														+ "                      __global float* source,\n"
+														+ "                      __global float* target) {\n"
+														+ "	int row = get_global_id(0);\n"
+														+ "	int start = 2 * columns * row;\n"
+														+ "	float realMax = source[start], imageMax = source[start + 1];\n"
+														+ "	for(int col = 2; col < 2 * columns; col+=2) {\n"
+														+ "	  if (source[start + col] * source[start + col] + source[start + col + 1] * source[start + col + 1] > realMax * realMax + imageMax * imageMax) {\n"
+														+ "	    realMax = source[start + col];\n"
+														+ "	    imageMax = source[start + col + 1];\n"
+														+ "	  }\n"
+														+ "	}\n"
+														+ "	target[2 * row] = realMax;\n"
+														+ "	target[2 * row + 1] = imageMax;\n"
+														+ "}";
+	private static final String	SUM_BY_COLUMNS_NAME = "sumByColumns"+Type.COMPLEX_FLOAT.getProgramSuffix();
+	private static final String	SUM_BY_COLUMNS_KERNEL =    "__kernel void "+SUM_BY_COLUMNS_NAME+"(const int rows,"
+														+ "                      const int columns,\n"
+														+ "                      __global float* source,\n"
+														+ "                      __global float* target) {\n"
+														+ "	int column = get_global_id(0);\n"
+														+ "	int start = 2 * column;\n"
+														+ "	float realSum = 0.0f, imageSum = 0.0f;\n"
+														+ "	for(int row = 0; row < rows; row++) {\n"
+														+ "	  realSum += source[start + 2 * row * columns];\n"
+														+ "	  imageSum += source[start + 2 * row * columns + 1];\n"
+														+ "	}\n"
+														+ "	target[start] += realSum;\n"
+														+ "	target[start + 1] += imageSum;\n"
+														+ "}";
+	private static final String	MIN_BY_COLUMNS_NAME = "minByColumns"+Type.COMPLEX_FLOAT.getProgramSuffix();
+	private static final String	MIN_BY_COLUMNS_KERNEL =    "__kernel void "+MIN_BY_COLUMNS_NAME+"(const int rows,"
+														+ "                      const int columns,\n"
+														+ "                      __global float* source,\n"
+														+ "                      __global float* target) {\n"
+														+ "	int column = get_global_id(0);\n"
+														+ "	int start = 2 * column;\n"
+														+ "	float realMin = target[start], imageMin = target[start + 1];\n"
+														+ "	for(int row = 0; row < rows; row++) {\n"
+														+ "	  if (source[start + 2 * row * columns] * source[start + 2 * row * columns] + source[start + 2 * row * columns + 1] * source[start + 2 * row * columns + 1] < realMin * realMin + imageMin * imageMin) {\n"
+														+ "	    realMin = source[start + 2 * row * columns];\n"
+														+ "	    imageMin = source[start + 2 * row * columns + 1];\n"
+														+ "	  }\n"
+														+ "	}\n"
+														+ "	target[start] = realMin;\n"
+														+ "	target[start + 1] = imageMin;\n"
+														+ "}";
+	private static final String	MAX_BY_COLUMNS_NAME = "maxByColumns"+Type.COMPLEX_FLOAT.getProgramSuffix();
+	private static final String	MAX_BY_COLUMNS_KERNEL =    "__kernel void "+MAX_BY_COLUMNS_NAME+"(const int rows,"
+														+ "                      const int columns,\n"
+														+ "                      __global float* source,\n"
+														+ "                      __global float* target) {\n"
+														+ "	int column = get_global_id(0);\n"
+														+ "	int start = 2 * column;\n"
+														+ "	float realMax = target[start], imageMax = target[start + 1];\n"
+														+ "	for(int row = 0; row < rows; row++) {\n"
+														+ "	  if (source[start + 2 * row * columns] * source[start + 2 * row * columns] + source[start + 2 * row * columns + 1] * source[start + 2 * row * columns + 1] > realMax * realMax + imageMax * imageMax) {\n"
+														+ "	    realMax = source[start + 2 * row * columns];\n"
+														+ "	    imageMax = source[start + 2 * row * columns + 1];\n"
+														+ "	  }\n"
+														+ "	}\n"
+														+ "	target[start] = realMax;\n"
+														+ "	target[start + 1] = imageMax;\n"
 														+ "}";
 	
 	private final int[]		intBuffer = new int[2];
@@ -2254,32 +2421,210 @@ public class ComplexFloatMatrix extends LargeMatrix {
 
 	@Override
 	public Matrix mulInvFromHadamard(int... content) {
-		// TODO Auto-generated method stub
-		return null;
+		if (content == null) {
+			throw new NullPointerException("Content to add can't be null");
+		}
+		else {
+			final ComplexFloatMatrix	result;
+			
+			if (content.length == 0) {
+				try {
+					result = (ComplexFloatMatrix) this.clone();
+				} catch (CloneNotSupportedException e) {
+					throw new IllegalStateException(e.getMessage(), e);
+				}
+			}
+			else {
+				result = lineByLineAny(MULHINV_FROM_INT_ARRAY_NAME, MULHINV_FROM_INT_ARRAY_KERNEL, content.length, 
+								new ControlledDataInput() {
+										int 		index = 0;
+										
+										@Override
+										public int readInt() throws IOException {
+											if (index >= content.length) {
+												throw new EOFException();
+											}
+											else if (index < content.length) {
+												return content[index++];
+											}
+											else {
+												index++;
+												return 0;
+											}
+										}
+					
+										@Override
+										public long getReadAmount() {
+											return index;
+										}
+									}, Type.REAL_INT);
+			}
+			result.beginTransaction();
+			return result;
+		}
 	}
 
 	@Override
-	public Matrix mulInvFromHadamard(long... content) {
-		// TODO Auto-generated method stub
-		return null;
+	public Matrix mulInvFromHadamard(final long... content) {
+		if (content == null) {
+			throw new NullPointerException("Content to add can't be null");
+		}
+		else {
+			final ComplexFloatMatrix	result;
+			
+			if (content.length == 0) {
+				try {
+					result = (ComplexFloatMatrix) this.clone();
+				} catch (CloneNotSupportedException e) {
+					throw new IllegalStateException(e.getMessage(), e);
+				}
+			}
+			else {
+				result = lineByLineAny(MULHINV_FROM_LONG_ARRAY_NAME, MULHINV_FROM_LONG_ARRAY_KERNEL, content.length, 
+						new ControlledDataInput() {
+								int 		index = 0;
+								
+								@Override
+								public long readLong() throws IOException {
+									if (index >= content.length) {
+										throw new EOFException();
+									}
+									else if (index < content.length) {
+										return content[index++];
+									}
+									else {
+										index++;
+										return 0;
+									}
+								}
+			
+								@Override
+								public long getReadAmount() {
+									return index;
+								}
+							}, Type.REAL_LONG);
+			}
+			result.beginTransaction();
+			return result;
+		}
 	}
 
 	@Override
-	public Matrix mulInvFromHadamard(float... content) {
-		// TODO Auto-generated method stub
-		return null;
+	public Matrix mulInvFromHadamard(final float... content) {
+		if (content == null) {
+			throw new NullPointerException("Content to add can't be null");
+		}
+		else {
+			final ComplexFloatMatrix	result;
+			
+			if (content.length == 0) {
+				try {
+					result = (ComplexFloatMatrix) this.clone();
+				} catch (CloneNotSupportedException e) {
+					throw new IllegalStateException(e.getMessage(), e);
+				}
+			}
+			else {
+				result = lineByLineAny(MULHINV_FROM_FLOAT_ARRAY_NAME, MULHINV_FROM_FLOAT_ARRAY_KERNEL, content.length, 
+						new ControlledDataInput() {
+								int 		index = 0;
+								
+								@Override
+								public float readFloat() throws IOException {
+									if (index >= content.length) {
+										throw new EOFException();
+									}
+									else if (index < content.length) {
+										return content[index++];
+									}
+									else {
+										index++;
+										return 0;
+									}
+								}
+			
+								@Override
+								public long getReadAmount() {
+									return index;
+								}
+							}, Type.REAL_FLOAT);
+			}
+			result.beginTransaction();
+			return result;
+		}
 	}
 
 	@Override
-	public Matrix mulInvFromHadamard(double... content) {
-		// TODO Auto-generated method stub
-		return null;
+	public Matrix mulInvFromHadamard(final double... content) {
+		if (content == null) {
+			throw new NullPointerException("Content to add can't be null");
+		}
+		else {
+			final ComplexFloatMatrix	result;
+			
+			if (content.length == 0) {
+				try {
+					result = (ComplexFloatMatrix) this.clone();
+				} catch (CloneNotSupportedException e) {
+					throw new IllegalStateException(e.getMessage(), e);
+				}
+			}
+			else {
+				result = lineByLineAny(MULHINV_FROM_DOUBLE_ARRAY_NAME, MULHINV_FROM_DOUBLE_ARRAY_KERNEL, content.length, 
+						new ControlledDataInput() {
+								int 		index = 0;
+								
+								@Override
+								public double readDouble() throws IOException {
+									if (index >= content.length) {
+										throw new EOFException();
+									}
+									else if (index < content.length) {
+										return content[index++];
+									}
+									else {
+										index++;
+										return 0;
+									}
+								}
+			
+								@Override
+								public long getReadAmount() {
+									return index;
+								}
+							}, Type.REAL_DOUBLE);
+			}
+			result.beginTransaction();
+			return result;
+		}
 	}
 
 	@Override
-	public Matrix mulInvFromHadamard(Matrix matrix) {
-		// TODO Auto-generated method stub
-		return null;
+	public Matrix mulInvFromHadamard(final Matrix matrix) {
+		if (matrix == null) {
+			throw new NullPointerException("Matrix can't be null");
+		}
+		else if (matrix.numberOfRows() != numberOfRows() || matrix.numberOfColumns() != numberOfColumns()) {
+			throw new IllegalArgumentException("Different matrix size: current="+numberOfRows()+'x'+numberOfColumns()+", another="+matrix.numberOfRows()+'x'+matrix.numberOfColumns()); 
+		}
+		else {
+			final ComplexFloatMatrix	result;
+			
+			switch (matrix.getType()) {
+				case COMPLEX_DOUBLE : 
+					result = lineByLineAny(MULHINV_FROM_DOUBLE_ARRAY_NAME, MULHINV_FROM_DOUBLE_ARRAY_KERNEL, matrix);
+					break;
+				case COMPLEX_FLOAT 	:
+					result = lineByLineAny(MULHINV_FROM_FLOAT_ARRAY_NAME, MULHINV_FROM_FLOAT_ARRAY_KERNEL, matrix);
+					break;
+				case REAL_DOUBLE : case REAL_FLOAT : case REAL_INT : case REAL_LONG : case BIT :
+					throw new IllegalArgumentException("Attempt to subtract real and complex matrix. Use cast() before");
+				default : 
+					throw new UnsupportedOperationException("Matrix type ["+matrix.getType()+"] is not supported yet");
+			}
+			result.beginTransaction();
+			return result;
+		}
 	}
 
 	@Override
@@ -2318,9 +2663,80 @@ public class ComplexFloatMatrix extends LargeMatrix {
 	}
 
 	@Override
-	public Matrix aggregate(AggregateDirection dir, AggregateType aggType) {
-		// TODO Auto-generated method stub
-		return null;
+	public Matrix aggregate(final AggregateDirection dir, final AggregateType aggType) {
+		if (dir == null) {
+			throw new NullPointerException("Aggregate direction can't be null");
+		}
+		else if (aggType == null) {
+			throw new NullPointerException("Aggregate type can't be null");
+		}
+		else {
+			final ComplexFloatMatrix	result;
+
+			ensureTransactionCompleted();
+			switch (dir) {
+				case ByRows		:
+					switch (aggType) {
+						case Avg:
+							try(final Matrix	temp = aggregate(dir, AggregateType.Sum)) {
+								result = (ComplexFloatMatrix)temp.done().mulValue(1.0f/numberOfRows());
+							}
+							break;
+						case Max:
+							result = lineByLineRows(MAX_BY_COLUMNS_NAME, MAX_BY_COLUMNS_KERNEL, (s)->Double.MIN_VALUE);
+							break;
+						case Min:
+							result = lineByLineRows(MIN_BY_COLUMNS_NAME, MIN_BY_COLUMNS_KERNEL, (s)->Double.MAX_VALUE);
+							break;
+						case Sum:
+							result = lineByLineRows(SUM_BY_COLUMNS_NAME, SUM_BY_COLUMNS_KERNEL, (s)->0.0);
+							break;
+						default:
+							throw new UnsupportedOperationException("Aggregate direction ["+dir+"] is not supported yet");
+					}
+					break;
+				case ByColumns	:
+					switch (aggType) {
+						case Avg:
+							result = lineByLineColumns(AVG_BY_ROWS_NAME, AVG_BY_ROWS_KERNEL);
+							break;
+						case Max:
+							result = lineByLineColumns(MAX_BY_ROWS_NAME, MAX_BY_ROWS_KERNEL);
+							break;
+						case Min:
+							result = lineByLineColumns(MIN_BY_ROWS_NAME, MIN_BY_ROWS_KERNEL);
+							break;
+						case Sum:
+							result = lineByLineColumns(SUM_BY_ROWS_NAME, SUM_BY_ROWS_KERNEL);
+							break;
+						default:
+							throw new UnsupportedOperationException("Aggregate direction ["+dir+"] is not supported yet");
+					}
+					break;
+				case Total		:
+					switch (aggType) {
+						case Avg:
+							try(final Matrix		temp = aggregate(AggregateDirection.ByRows, AggregateType.Sum)) {
+								try(final Matrix	temp2 = temp.done().aggregate(AggregateDirection.ByColumns, AggregateType.Sum)) {
+									result = (ComplexFloatMatrix) temp2.done().mulValue(1.0f / (numberOfRows() * numberOfColumns()));
+								}
+							}
+							break;
+						case Max: case Min: case Sum:
+							try(final Matrix	temp = aggregate(AggregateDirection.ByRows, aggType)) {
+								result = (ComplexFloatMatrix) temp.done().aggregate(AggregateDirection.ByColumns, aggType);
+							}
+							break;
+						default:
+							throw new UnsupportedOperationException("Aggregate direction ["+dir+"] is not supported yet");
+					}
+					break;
+				default :
+					throw new UnsupportedOperationException("Aggregate direction ["+dir+"] is not supported yet");
+			}
+			result.beginTransaction();
+			return result;
+		}
 	}
 
 	@Override
@@ -2576,6 +2992,116 @@ public class ComplexFloatMatrix extends LargeMatrix {
 			throw new IllegalStateException("Internal error: "+exc.getLocalizedMessage(), exc); 				
 		}
 	}	
+
+	private ComplexFloatMatrix lineByLineColumns(final String programName, final String programCode) {
+		try {
+			final GPUExecutable	prog = getOrCreateProgram(programName, programCode);
+			final int	sourceRows = calcGPUBufferSize(getType(), numberOfRows(), numberOfColumns());
+			final int	sourceBufferSize = sourceRows * numberOfColumns() * getType().getNumberOfItems();
+			final int	occupiedBytes = getType().getNumberOfItems() * getType().getItemSize();
+			final int	targetRows = numberOfRows();
+			final int	targetBufferSize = targetRows * getType().getNumberOfItems();
+			
+			try(final ComplexFloatMatrix	temp = new ComplexFloatMatrix(getExecutor(), getFileKeeper().getParentFile(), 1, 1)) {
+				final long[]				taskSize = new long[1]; 
+				File						tempStoreFile = null;
+				
+				temp.beginTransaction();
+				try(final GPUBuffer			source = temp.getScheduler().allocateGPUBuffer(sourceBufferSize * getType().getItemSize());
+					final GPUBuffer			target = temp.getScheduler().allocateGPUBuffer(targetBufferSize * getType().getItemSize());
+					final TemporaryStore	store = temp.getScheduler().allocateTemporaryStore(getFileKeeper().getParentFile(), 1L * occupiedBytes * numberOfRows(), false)) {
+
+					tempStoreFile = store.getContentFile();
+					for (int leftIndex = 0, maxIndex = numberOfRows(); leftIndex < maxIndex; leftIndex += sourceRows) {
+						final int		leftPiece = leftIndex + sourceRows > numberOfRows() ? numberOfRows() - leftIndex : sourceRows;
+						final Piece		currentPieceSource = Piece.of(leftIndex, 0, leftPiece, numberOfColumns());
+						final Piece		currentPieceTarget = Piece.of(leftIndex, 0, leftPiece, 1);
+						final long		blockSize = occupiedBytes * currentPieceTarget.getHeight();
+						
+						try(final TemporaryBuffer	out = store.getBuffer(leftIndex * blockSize / sourceRows, (int)blockSize);
+//							final GPUEvent 	downloadEventRight = target.download(currentPieceTarget, matrix);
+							final GPUEvent 	downloadEventLeft = source.download(currentPieceSource, this);
+							final GPUEvent 	calcEvent = temp.getScheduler().createEvent()) {
+							
+//							downloadEventRight.awaitCurrent();
+							downloadEventLeft.awaitCurrent();
+
+							taskSize[0] = leftPiece;
+							prog.execute(calcEvent, taskSize, numberOfColumns(), source, target);
+							calcEvent.awaitCurrent();
+							target.upload(out, getType()).awaitCurrent().close();
+						}
+					}
+				}
+				return new ComplexFloatMatrix(getExecutor(), getFileKeeper().getParentFile(), numberOfRows(), 1, tempStoreFile, false);
+			}
+		} catch (ContentException | CalculationException exc) {
+			throw new IllegalStateException("Internal error: "+exc.getLocalizedMessage(), exc); 				
+		} catch (IOException | InterruptedException exc) {
+			throw new IllegalStateException("Internal error: "+exc.getLocalizedMessage(), exc); 				
+		}
+	}
+
+	private ComplexFloatMatrix lineByLineRows(final String programName, final String programCode, final DoubleFunction<Double> initial) {
+		try {
+			final GPUExecutable	prog = getOrCreateProgram(programName, programCode);
+			final int	sourceRows = calcGPUBufferSize(getType(), numberOfRows(), numberOfColumns());
+			final int	sourceBufferSize = sourceRows * numberOfColumns() * getType().getNumberOfItems();
+			final int	occupiedBytes = getType().getNumberOfItems() * getType().getItemSize();
+			final int	targetRows = numberOfRows();
+			final int	targetBufferSize = targetRows * getType().getNumberOfItems();
+			
+			try(final ComplexFloatMatrix	temp = new ComplexFloatMatrix(getExecutor(), getFileKeeper().getParentFile(), 1, 1)) {
+				final long[]				taskSize = new long[1]; 
+				File						tempStoreFile = null;
+				
+				temp.beginTransaction();
+				try(final GPUBuffer			source = temp.getScheduler().allocateGPUBuffer(sourceBufferSize * getType().getItemSize());
+					final GPUBuffer			target = temp.getScheduler().allocateGPUBuffer(targetBufferSize * getType().getItemSize());
+					final TemporaryStore	store = temp.getScheduler().allocateTemporaryStore(getFileKeeper().getParentFile(), 1L * occupiedBytes * numberOfColumns(), false)) {
+
+					tempStoreFile = store.getContentFile();
+					for (int leftIndex = 0, maxIndex = numberOfRows(); leftIndex < maxIndex; leftIndex += sourceRows) {
+						final int		leftPiece = leftIndex + sourceRows > numberOfRows() ? numberOfRows() - leftIndex : sourceRows;
+						final Piece		currentPieceSource = Piece.of(leftIndex, 0, leftPiece, numberOfColumns());
+						final Piece		currentPieceTarget = Piece.of(leftIndex, 0, 1, numberOfColumns());
+						final long		blockSize = occupiedBytes * currentPieceTarget.getWidth();
+						
+						try(final TemporaryBuffer	out = store.getBuffer(leftIndex * blockSize / sourceRows, (int)blockSize);
+							final GPUEvent 	downloadEventRight = target.download(new DataInputAdapter() {
+																	int index = 0;
+																	@Override
+																	public float readFloat() throws IOException {
+																		if (index < 2 * numberOfColumns()) {
+																			index++;
+																			return initial.apply(0.0).floatValue();
+																		}
+																		else {
+																			throw new EOFException();
+																		}
+																	}
+																}, getType());
+							final GPUEvent 	downloadEventLeft = source.download(currentPieceSource, this);
+							final GPUEvent 	calcEvent = temp.getScheduler().createEvent()) {
+							
+							downloadEventRight.awaitCurrent();
+							downloadEventLeft.awaitCurrent();
+
+							taskSize[0] = numberOfColumns();
+							prog.execute(calcEvent, taskSize, numberOfRows(), numberOfColumns(), source, target);
+							calcEvent.awaitCurrent();
+							target.upload(out, getType()).awaitCurrent().close();
+						}
+					}
+				}
+				return new ComplexFloatMatrix(getExecutor(), getFileKeeper().getParentFile(), 1, numberOfColumns(), tempStoreFile, false);
+			}
+		} catch (ContentException | CalculationException exc) {
+			throw new IllegalStateException("Internal error: "+exc.getLocalizedMessage(), exc); 				
+		} catch (IOException | InterruptedException exc) {
+			throw new IllegalStateException("Internal error: "+exc.getLocalizedMessage(), exc); 				
+		}
+	}
 	
 	private int calcArraySize() {
 		return (int) Math.min(Integer.MAX_VALUE, 1L * numberOfRows() * numberOfColumns());
