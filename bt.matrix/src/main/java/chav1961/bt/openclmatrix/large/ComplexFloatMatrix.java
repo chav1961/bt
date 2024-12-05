@@ -2628,7 +2628,81 @@ public class ComplexFloatMatrix extends LargeMatrix {
 	}
 
 	@Override
-	public Matrix tensorMul(Matrix matrix) {
+	public Matrix tensorMul(final Matrix matrix) {
+		if (matrix == null) {
+			throw new NullPointerException("Matrix to multiply can't be null");
+		}
+		else if (matrix.getType() != getType()) {
+			throw new IllegalArgumentException("Current matrix type ["+getType()+"] is differ from another one ["+matrix.getType()+"]. Call cast(...) before");
+		}
+		else {
+			final long	outRows = 1L * numberOfRows() * matrix.numberOfRows();
+			final long	outCols = 1L * numberOfColumns() * matrix.numberOfColumns();
+			
+			if (outRows > Integer.MAX_VALUE || outCols > Integer.MAX_VALUE) {
+				throw new IllegalArgumentException("Result matrix size(s) is greater than 2^31");
+			}
+			else {
+				try {
+					final GPUExecutable	prog = getOrCreateProgram("", "");
+					final int	leftRows = calcGPUBufferSize(getType(), numberOfRows(), numberOfColumns());
+					final int	leftBufferSize = leftRows * numberOfColumns() * getType().getNumberOfItems();
+					final int	rightRows = calcGPUBufferSize(matrix.getType(), matrix.numberOfRows(), matrix.numberOfColumns());
+					final int	rightBufferSize = rightRows * matrix.numberOfColumns() * matrix.getType().getNumberOfItems();
+					final int	targetRows = calcGPUBufferSize(getType(), (int)outRows, (int)outCols);
+					final int	targetBufferSize = targetRows * matrix.numberOfColumns() * matrix.getType().getNumberOfItems();
+					final int	occupiedBytes = getType().getNumberOfItems() * getType().getItemSize();
+					
+					try(final ComplexFloatMatrix	temp = new ComplexFloatMatrix(getExecutor(), getFileKeeper().getParentFile(), 1, 1)) {
+						final long[]				taskSize = new long[1]; 
+						File						tempStoreFile = null;
+						
+						temp.beginTransaction();
+						try(final GPUBuffer			left = temp.getScheduler().allocateGPUBuffer(leftBufferSize * getType().getItemSize());
+							final GPUBuffer			right = temp.getScheduler().allocateGPUBuffer(rightBufferSize * getType().getItemSize());
+							final GPUBuffer			target = temp.getScheduler().allocateGPUBuffer(targetBufferSize * getType().getItemSize());
+							final TemporaryStore	store = temp.getScheduler().allocateTemporaryStore(getFileKeeper().getParentFile(), 1L * occupiedBytes * outRows * outCols, false)) {
+							int				targetIndex = 0;
+							
+							for (int leftIndex = 0, maxLeftIndex = numberOfRows(); leftIndex < maxLeftIndex; leftIndex += leftRows) {
+								final int		leftPiece = leftIndex + leftRows > maxLeftIndex ? maxLeftIndex - leftIndex : leftRows;
+								final Piece		leftCurrentPiece = Piece.of(leftIndex, 0, leftPiece, numberOfColumns());
+								final GPUEvent 	downloadEventLeft = left.download(leftCurrentPiece, this);
+								
+								for (int rightIndex = 0, maxRightIndex = matrix.numberOfRows(); rightIndex < maxRightIndex; rightIndex += rightRows) {
+									final int		rightPiece = rightIndex + rightRows > maxRightIndex ? maxRightIndex - rightIndex : rightRows;
+									final Piece		rightCurrentPiece = Piece.of(rightIndex, 0, rightPiece, matrix.numberOfColumns());
+									final GPUEvent 	downloadEventRight = right.download(rightCurrentPiece, this);
+									final int		maxRows = targetIndex + leftPiece * rightPiece;
+
+									for (; targetIndex < maxRows; targetIndex += targetRows) {
+										final int		targetPiece = targetIndex + targetRows > outRows ? (int)outRows - targetIndex : targetRows;
+										final Piece		targetCurrentPiece = Piece.of(targetIndex, 0, targetPiece, (int)outCols);
+
+										try(final TemporaryBuffer	out = store.getBuffer(targetIndex * targetPiece * outCols, (int)(targetPiece * outCols));
+											final GPUEvent 	calcEvent = temp.getScheduler().createEvent()) {
+												
+											downloadEventRight.awaitCurrent();
+											downloadEventLeft.awaitCurrent();
+
+											taskSize[0] = Math.min(leftPiece, rightPiece);
+											prog.execute(calcEvent, taskSize, numberOfColumns(), matrix.numberOfColumns(), left, right, target);
+											calcEvent.awaitCurrent();
+											target.upload(out, getType()).awaitCurrent().close();
+										}
+									}
+									targetIndex = maxRows;
+								}
+							}
+						}
+					}
+				} catch (ContentException | CalculationException exc) {
+					throw new IllegalStateException("Internal error: "+exc.getLocalizedMessage(), exc); 				
+				} catch (IOException | InterruptedException exc) {
+					throw new IllegalStateException("Internal error: "+exc.getLocalizedMessage(), exc); 				
+				}
+			}
+		}
 		// TODO Auto-generated method stub
 		return null;
 	}
