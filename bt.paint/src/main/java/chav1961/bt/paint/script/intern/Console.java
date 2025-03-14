@@ -505,7 +505,7 @@ public class Console {
 	private static String drawPath(final Predefines predef, final String path, final boolean fill) throws PaintScriptException { 
 		if (hasImage(predef)) {
 			try{ImageUtils.draw(DrawingType.PEN, predef.getPredefined(Predefines.PREDEF_CANVAS, CanvasWrapper.class).getImage().getImage(), null
-							, SVGUtils.extractCommands(path)
+							, SVGUtils.extractCommands(path, 1.0f)
 							, fill 
 								? new ColorPair(predef.getPredefined(Predefines.PREDEF_CANVAS, CanvasWrapper.class).getCanvasForeground().getColor(), predef.getPredefined(Predefines.PREDEF_CANVAS, CanvasWrapper.class).getCanvasBackground().getColor())
 								: predef.getPredefined(Predefines.PREDEF_CANVAS, CanvasWrapper.class).getCanvasForeground().getColor()

@@ -16,11 +16,11 @@ import javax.swing.JSplitPane;
 
 import chav1961.bt.installer.interfaces.ErrorType;
 import chav1961.bt.installer.screens.AbstractWizardStep.WizardStepOption;
-import chav1961.purelib.basic.AbstractLoggerFacade;
 import chav1961.purelib.basic.exceptions.EnvironmentException;
 import chav1961.purelib.basic.exceptions.FlowException;
 import chav1961.purelib.basic.exceptions.LocalizationException;
 import chav1961.purelib.basic.interfaces.LoggerFacade;
+import chav1961.purelib.basic.logs.AbstractLoggerFacade;
 import chav1961.purelib.ui.interfaces.ErrorProcessing;
 
 public class ProcessingInstallScreen extends AbstractWizardStep {
