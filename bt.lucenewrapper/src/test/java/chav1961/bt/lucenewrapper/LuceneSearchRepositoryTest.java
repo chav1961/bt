@@ -19,7 +19,6 @@ import chav1961.bt.lucenewrapper.interfaces.SearchableDocument;
 import chav1961.purelib.basic.PureLibSettings;
 import chav1961.purelib.basic.Utils;
 import chav1961.purelib.basic.exceptions.SyntaxException;
-import chav1961.purelib.fsys.FileSystemOnFile;
 import chav1961.purelib.fsys.interfaces.FileSystemInterface;
 
 public class LuceneSearchRepositoryTest {
@@ -32,7 +31,7 @@ public class LuceneSearchRepositoryTest {
 
 	@Test
 	public void basicTest() throws IOException, SearchRepositoryException, NullPointerException, SyntaxException {
-		try(final FileSystemInterface		fsi = new FileSystemOnFile(f.toURI());
+		try(final FileSystemInterface		fsi = FileSystemInterface.Factory.newInstance(URI.create(FileSystemInterface.FILESYSTEM_URI_SCHEME+":"+f.toURI().toString()));
 			final Directory 				dir = new LuceneFileSystemWrapperDirectory(fsi)) {
 			
 			LuceneSearchRepository.prepareDirectory(dir);
@@ -119,7 +118,7 @@ public class LuceneSearchRepositoryTest {
 
 	@Test
 	public void transactionTest() throws IOException, SearchRepositoryException, NullPointerException, SyntaxException {
-		try(final FileSystemInterface		fsi = new FileSystemOnFile(f.toURI());
+		try(final FileSystemInterface		fsi = FileSystemInterface.Factory.newInstance(URI.create(FileSystemInterface.FILESYSTEM_URI_SCHEME+":"+f.toURI().toString()));
 			final Directory 				dir = new LuceneFileSystemWrapperDirectory(fsi)) {
 			int count;
 			

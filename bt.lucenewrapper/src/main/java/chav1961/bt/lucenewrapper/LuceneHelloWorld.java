@@ -2,6 +2,7 @@ package chav1961.bt.lucenewrapper;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.URI;
 
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.document.Document;
@@ -20,7 +21,6 @@ import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.MMapDirectory;
 
 import chav1961.purelib.basic.PureLibSettings;
-import chav1961.purelib.fsys.FileSystemOnFile;
 import chav1961.purelib.fsys.interfaces.FileSystemInterface;
  
 public class LuceneHelloWorld {
@@ -30,7 +30,7 @@ public class LuceneHelloWorld {
 	 
 	 f.mkdirs(); 
 	 
-	 try(final FileSystemInterface	fsi = new FileSystemOnFile(f.toURI())) {
+	 try(final FileSystemInterface	fsi = FileSystemInterface.Factory.newInstance(URI.create(FileSystemInterface.FILESYSTEM_URI_SCHEME+":"+f.toURI().toString()))) {
 		 try(final Directory directory = new LuceneFileSystemWrapperDirectory(fsi)) {
 			 
 			 StandardAnalyzer standardAnalyzer = new StandardAnalyzer();
