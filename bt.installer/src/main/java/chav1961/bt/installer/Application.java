@@ -22,7 +22,6 @@ import chav1961.purelib.basic.SubstitutableProperties;
 import chav1961.purelib.basic.exceptions.CommandLineParametersException;
 import chav1961.purelib.basic.exceptions.LocalizationException;
 import chav1961.purelib.i18n.LocalizerFactory;
-import chav1961.purelib.i18n.XMLLocalizer;
 import chav1961.purelib.i18n.interfaces.Localizer;
 import chav1961.purelib.ui.interfaces.ErrorProcessing;
 import chav1961.purelib.ui.interfaces.WizardStep;
@@ -48,7 +47,7 @@ public class Application {
 		final Args			arguments = new Args();
 		
 		try {
-			final URI		localizerURI = URI.create(XMLLocalizer.LOCALIZER_SCHEME+":xml:"+Application.class.getResource(LOCALIZING_STRINGS_RESOURCE_NAME).toURI().toASCIIString());
+			final URI		localizerURI = URI.create(Localizer.LOCALIZER_SCHEME+":xml:"+Application.class.getResource(LOCALIZING_STRINGS_RESOURCE_NAME).toURI().toASCIIString());
 			
 			try(final Localizer		localizer = LocalizerFactory.getLocalizer(localizerURI, Application.class.getClassLoader())) {
 				final ArgParser 	parms = arguments.parse(args);

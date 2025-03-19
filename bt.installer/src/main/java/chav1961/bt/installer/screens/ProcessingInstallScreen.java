@@ -2,28 +2,23 @@ package chav1961.bt.installer.screens;
 
 import java.awt.Image;
 import java.io.IOException;
-import java.net.URI;
 import java.util.Map;
 import java.util.Properties;
-import java.util.Set;
 
 import javax.imageio.ImageIO;
-import javax.swing.JEditorPane;
 import javax.swing.JList;
 import javax.swing.JPanel;
 import javax.swing.JProgressBar;
 import javax.swing.JSplitPane;
 
 import chav1961.bt.installer.interfaces.ErrorType;
-import chav1961.bt.installer.screens.AbstractWizardStep.WizardStepOption;
 import chav1961.purelib.basic.exceptions.EnvironmentException;
 import chav1961.purelib.basic.exceptions.FlowException;
 import chav1961.purelib.basic.exceptions.LocalizationException;
-import chav1961.purelib.basic.interfaces.LoggerFacade;
-import chav1961.purelib.basic.logs.AbstractLoggerFacade;
 import chav1961.purelib.ui.interfaces.ErrorProcessing;
 
 public class ProcessingInstallScreen extends AbstractWizardStep {
+	private static final long serialVersionUID = 1L;
 	private final WizardStepOption[]	options;
 
 	public ProcessingInstallScreen(final String stepId, final String caption, final String description, final String helpId, final WizardStepOption... options) {
