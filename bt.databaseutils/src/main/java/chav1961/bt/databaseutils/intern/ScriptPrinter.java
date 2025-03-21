@@ -11,9 +11,9 @@ import chav1961.purelib.basic.exceptions.PrintingException;
 import chav1961.purelib.enumerations.ContinueMode;
 import chav1961.purelib.enumerations.NodeEnterMode;
 import chav1961.purelib.model.FieldFormat;
-import chav1961.purelib.model.TableContainer;
-import chav1961.purelib.model.UniqueIdContainer;
 import chav1961.purelib.model.interfaces.ContentMetadataInterface;
+import chav1961.purelib.model.interfaces.TableContainer;
+import chav1961.purelib.model.interfaces.UniqueIdContainer;
 import chav1961.purelib.streams.char2char.CodePrintStreamWrapper;
 
 public class ScriptPrinter {

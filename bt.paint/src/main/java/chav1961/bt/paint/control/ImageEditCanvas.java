@@ -14,9 +14,9 @@ import javax.swing.event.ChangeListener;
 import chav1961.bt.paint.script.interfaces.StrokeWrapper.LineCaps;
 import chav1961.bt.paint.script.interfaces.StrokeWrapper.LineJoin;
 import chav1961.bt.paint.script.interfaces.StrokeWrapper.LineStroke;
+import chav1961.purelib.basic.util.interfaces.ImageKeeper;
 import chav1961.purelib.concurrent.LightWeightListenerList;
 import chav1961.purelib.i18n.interfaces.Localizer;
-import chav1961.purelib.model.interfaces.ImageKeeper;
 import chav1961.purelib.ui.swing.useful.JBackgroundComponent;
 import chav1961.purelib.ui.swing.useful.SelectionFrameManager;
 
