@@ -48,5 +48,6 @@
   	<module>bt.openclmatrix</module>
   	<module>bt.preproc</module>
   	<module>bt.databaseutils</module>
+  	<module>bt.nanoftp</module>
   </modules>
 </project>
