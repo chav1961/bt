@@ -39,14 +39,15 @@ public class FTPSession implements Runnable, LoggerFacadeOwner {
 	private static final File[]	EMPTY_FILE_ARRAY = new File[0];
 
 	private static enum Commands {
-		USER(false, false, "", ""),
-		PASS(false, false, "", ""),
-		CWD(false, false, "", ""),
-		CDUP(false, false, "", ""),
-		LIST(false, false, "", ""),
-  		NLST(false, false, "", ""),
-		PWD(false, false, "", ""),
-  		XPWD(false, false, "", ""),
+		REIN(false, false, "", "Reset and reinitialize connection"),
+		USER(false, false, "<UserName>", "Type user name to logon"),
+		PASS(false, false, "<Password>", "Type password to logon"),
+		CWD(false, false, "<NewDirectory>", "Change working directory"),
+		CDUP(false, false, "", "Change current directory to it's parent"),
+		LIST(false, false, "[<Directory>]", "List current or typed directory content in Unix 'ls' format"),
+  		NLST(false, false, "[<Directory>]", "List names from current or typed directory"),
+		PWD(false, false, "", "Print current working directory name"),
+  		XPWD(false, false, "", "Print current working directory name"),
 		PASV(false, false, "", ""),
   		EPSV(false, false, "", ""),
 		SYST(false, false, "", ""),
@@ -55,20 +56,20 @@ public class FTPSession implements Runnable, LoggerFacadeOwner {
   		PORT(false, false, "", ""),
   		EPRT(false, false, "", ""),
   		RETR(false, false, "", ""),
-  		MKD(false, false, "", ""),
-		XMKD(false, false, "", ""),
-  		RMD(false, false, "", ""),
-  		XRMD(false, false, "", ""),
-  		DELE(false, false, "", ""),
+  		MKD(false, false, "<NewDirectory>", "Create new directory on the server"),
+		XMKD(false, false, "<NewDirectory>", "Create new directory on the server"),
+  		RMD(false, false, "<Directory2Remove>", "Remove directory typed"),
+  		XRMD(false, false, "<Directory2Remove>", "Remove directory typed"),
+  		DELE(false, false, "<File2Remove>", "Remove file typed"),
   		TYPE(false, false, "", ""),
   		APPE(false, false, "", ""),
   		STOR(false, false, "", ""),
   		REST(false, false, "", ""),
   		RNFR(false, false, "", ""),
   		RNTO(false, false, "", ""),
-  		HELP(false, false, "", ""),
+  		HELP(false, false, "[<CommandAbbr>]", "Helo either command list or one command description"),
   		SIZE(false, true, "", ""),
-  		QUIT(true, false, "", "");
+  		QUIT(true, false, "", "Close connection and quit");
 		
 		private final boolean	exitRequred;
 		private final boolean	isFeature;
@@ -111,8 +112,9 @@ public class FTPSession implements Runnable, LoggerFacadeOwner {
 		MSG_COMMANDS_HELP(211, " Command: %1$s %2$s - %3$s\r\n"),
 		MSG_COMMANDS_HELP_MISSING(211, " Command %1$s is not supported\r\n"),
 		MSG_FILE_SIZE(213, " %1$d\r\n"),
-		MSG_SYSTEM(215, " Nano FTP-Server\r\n"),
+		MSG_SYSTEM(215, " %1$s\r\n"),
 		MSG_WELCOME(220, " Welcome to the nano FTP-Server\r\n"),
+		MSG_CONNECTION_RESET(220, " Connection reset. Type 'USER' or 'ACCT' command to connect\r\n"),
 		MSG_CLOSING_CONN(221, " Closing connection\r\n"),
 		MSG_TRANSFER_COMPLETED(226, " Transfer completed\r\n"),
 		MSG_TRANSFER_COMPLETED_DETAILED(226, " Transfer completed, %1$d bytes transmitted, avg speed is %2$.3f bytes/sec.\r\n"),
@@ -188,11 +190,11 @@ public class FTPSession implements Runnable, LoggerFacadeOwner {
 
 	private String 			currDirectory;
 	private Writer 			controlOutWriter;
-	private TransferType 	transferMode = TransferType.UNKNOWN;
-	private LoggingStatus 	currentLoggingStatus = LoggingStatus.NOTLOGGEDIN;
-	private String			currentUser = null;
-	private long			restoreLocation = -1;
-	private File			oldFile = null;
+	private TransferType 	transferMode;
+	private LoggingStatus 	currentLoggingStatus;
+	private String			currentUser;
+	private long			restoreLocation;
+	private File			oldFile;
   
   /**
    * <p>Constructor of the class instance</p>
@@ -208,7 +210,7 @@ public class FTPSession implements Runnable, LoggerFacadeOwner {
     this.validator = validator;
     this.debugMode = debugMode;
     this.root = root;
-    this.currDirectory = "/";
+    clearSettings();
   }
 
   @Override
@@ -261,6 +263,9 @@ public class FTPSession implements Runnable, LoggerFacadeOwner {
 		  	
 		  try {
 			  switch (cmd) {
+			  	case REIN :
+			  		handleRein();
+			  		break;
 			  	case USER :
 			  		handleUser(args);
 			  		break;
@@ -360,6 +365,16 @@ public class FTPSession implements Runnable, LoggerFacadeOwner {
 	  }
   }
 
+  /**
+   * Handler for REIN command. Re-initialize user connection.
+   * 
+   * @throws IOException 
+   */
+  private void handleRein() throws IOException {
+	  clearSettings();
+	  sendAnswer(MessageType.MSG_CONNECTION_RESET);
+  }  
+  
   /**
    * Handler for USER command. User identifies the client.
    * 
@@ -741,11 +756,11 @@ public class FTPSession implements Runnable, LoggerFacadeOwner {
   }
 
   /**
-   * Handler for the SYST command.
+   * Handler for the SYST command. Return OS name.
    * @throws IOException 
    */
   private void handleSyst() throws IOException {
-	  sendAnswer(MessageType.MSG_SYSTEM);
+	  sendAnswer(MessageType.MSG_SYSTEM, System.getProperty("os.name"));
   }
 
   /**
@@ -1201,6 +1216,15 @@ public class FTPSession implements Runnable, LoggerFacadeOwner {
 		wr.write('\r');
 		wr.write('\n');
     }
+  }
+
+  private void clearSettings() {
+	  this.currDirectory = "/";
+	  this.transferMode = TransferType.UNKNOWN;
+	  this.currentLoggingStatus = LoggingStatus.NOTLOGGEDIN;
+	  this.currentUser = null;
+	  this.restoreLocation = -1;
+	  this.oldFile = null;
   }
   
   private boolean isCommandAvailableNow() {
