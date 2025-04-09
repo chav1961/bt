@@ -16,8 +16,8 @@ import chav1961.purelib.basic.interfaces.LoggerFacade.Severity;
 
 public class Application {
 	public static final String	ARG_FTP_PORT = "port";
+	public static final String	ARG_FTP_DATA_PORT = "dataPort";
 	public static final String	ARG_FTP_ROOT = "root";
-	public static final String	ARG_IP_MASK = "mask";
 	public static final String	ARG_DEBUG_TRACE = "d";
 
 	public static void main(String[] args) {
@@ -27,15 +27,11 @@ public class Application {
 			final ArgParser		parsed = parser.parse(args);
 			final File			root = parsed.getValue(ARG_FTP_ROOT, File.class);
 			final int			ftpPort = parsed.getValue(ARG_FTP_PORT, int.class);
+			final int			ftpDataPort = parsed.getValue(ARG_FTP_DATA_PORT, int.class);
 			final boolean		needDebug = parsed.getValue(ARG_DEBUG_TRACE, boolean.class);
-			final String		mask = parsed.getValue(ARG_IP_MASK, String.class);
 			
-			if (!mask.matches("\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}")) {
-				throw new CommandLineParametersException("IP address mask invalid, must have NNN.NNN.NNN.NNN format");
-			}
-			else if (root.exists() && root.isDirectory() && root.canRead()) {
+			if (root.exists() && root.isDirectory() && root.canRead()) {
 				final SimpleValidator	validator = new SimpleValidator(root);
-				final InetAddress 		ipMask = InetAddress.getByName(mask);
 				
 				try(final ServerSocket	ss = new ServerSocket(ftpPort)) {
 
@@ -54,19 +50,11 @@ public class Application {
 						try {
 							final Socket		sock = ss.accept();
 							
-							if (isAddressAvailable((InetSocketAddress)sock.getRemoteSocketAddress(), ipMask, (InetSocketAddress)ss.getLocalSocketAddress())) {
-								final FTPSession 	w = new FTPSession(sock, logger, root, validator, needDebug);
-								final Thread		t = new Thread(w);
-				
-								t.setDaemon(true);
-								t.start();
-							}
-							else {
-								try {
-									sock.close();
-								} catch (IOException exc) {
-								}
-							}
+							final FTPSession 	w = new FTPSession(sock, ftpDataPort, logger, root, validator, needDebug);
+							final Thread		t = new Thread(w);
+			
+							t.setDaemon(true);
+							t.start();
 						} catch (IOException exc) {
 							break;
 						}
@@ -89,24 +77,11 @@ public class Application {
 		}
 	}
 
-	private static boolean isAddressAvailable(final InetSocketAddress remote, final InetAddress mask, final InetSocketAddress local) {
-//		final byte[]	left = remote.getAddress().getAddress();
-//		final byte[]	and = local.getAddress().getAddress();
-//		final byte[]	right = local.getAddress().getAddress();
-//		
-//		for(int index = 0; index < left.length; index++) {
-//			if ((left[index] & and[index]) != (right[index] & and[index])) {
-//				return false;
-//			}
-//		}
-		return true;
-	}
-
 	private static class ApplicationArgParser extends ArgParser {
 		private static final ArgParser.AbstractArg[]	KEYS = {
-			new IntegerArg(ARG_FTP_PORT, true, false, "FTP server port to connect", new long[][]{new long[]{0, Short.MAX_VALUE}}),
+			new IntegerArg(ARG_FTP_PORT, true, false, "FTP server port to connect", new long[][]{new long[]{1024, Character.MAX_VALUE}}),
+			new IntegerArg(ARG_FTP_DATA_PORT, false, "fixed FTP data port number to transmit content. If not typed or zero, any scratch port will be used", 0, new long[][]{new long[]{1024, Character.MAX_VALUE}}),
 			new FileArg(ARG_FTP_ROOT, true, true, "Root directory for FTP server users"),
-			new StringArg(ARG_IP_MASK, false, "Available IP clients mask", "255.255.255.0"),
 			new BooleanArg(ARG_DEBUG_TRACE, false, "Turn on debug trace on stderr", false)
 		};
 		
