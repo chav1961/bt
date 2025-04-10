@@ -2,11 +2,8 @@ package chav1961.bt.nanoftp;
 
 import java.io.File;
 import java.io.IOException;
-import java.net.InetAddress;
-import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.net.SocketAddress;
 import java.net.URI;
 
 import chav1961.purelib.basic.ArgParser;
