@@ -5,8 +5,12 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
-public class SimpleValidator {
+class SimpleValidator {
 	private final Map<String, char[]>	users = new HashMap<>();
+
+	public SimpleValidator(final String user, final String password) {
+		users.put(user.toUpperCase(), password.toCharArray());
+	}
 	
 	public SimpleValidator(final File root) {
 		final File[]	content = root.listFiles((File f)->f.isDirectory());
@@ -15,9 +19,6 @@ public class SimpleValidator {
 			for(File item : content) {
 				users.put(item.getName().toUpperCase(), item.getName().toCharArray());
 			}
-		}
-		else {
-			users.put("anonymous".toUpperCase(), "anonymous".toCharArray());
 		}
 	}
 
