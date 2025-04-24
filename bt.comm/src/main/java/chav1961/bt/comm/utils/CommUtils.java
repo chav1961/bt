@@ -1,6 +1,8 @@
 package chav1961.bt.comm.utils;
 
 
+import java.io.FileNotFoundException;
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -13,6 +15,7 @@ import com.fazecast.jSerialComm.SerialPort;
 import chav1961.purelib.basic.PureLibSettings;
 import chav1961.purelib.basic.PureLibSettings.CurrentOS;
 import chav1961.purelib.basic.SubstitutableProperties;
+import chav1961.purelib.basic.URIUtils;
 import chav1961.purelib.basic.Utils;
 
 public class CommUtils {
@@ -132,8 +135,10 @@ public class CommUtils {
 		
 		public static FlowControl of(final int mode) {
 			for(FlowControl item : values()) {
-				if ((item.getFlowControlMask() & mode) == item.getFlowControlMask() && item.isControlSupportedFor(PureLibSettings.CURRENT_OS)) {
-					return item;
+				if (item.isControlSupportedFor(PureLibSettings.CURRENT_OS)) {
+					if (item.getFlowControlMask() == mode) {
+						return item;
+					}
 				}
 			}
 			throw new IllegalArgumentException("Flow control mask is not identified or is not available for current OS"); 
@@ -149,6 +154,20 @@ public class CommUtils {
 			result.add(comPort.getSystemPortName());
 		}
 		return result;
+	}
+	
+	public static boolean hasCommPort(final String portName) {
+		if (Utils.checkEmptyOrNullString(portName)) {
+			throw new IllegalArgumentException("Port name can't be null or empty"); 
+		}
+		else {
+			for (String item : commPortsAvailable()) {
+				if (portName.equalsIgnoreCase(item)) {
+					return true;
+				}
+			}
+			return false;
+		}
 	}
 	
 	public static SubstitutableProperties getCommPortProperties(final String portName) {
@@ -174,94 +193,133 @@ public class CommUtils {
 		}
 	}
 
-	public static SerialPort prepareCommPort(final String name, final SubstitutableProperties props) {
-		for (SerialPort comPort : SerialPort.getCommPorts()) {
-			if (comPort.getSystemPortName().equals(name)) {
-				comPort.setComPortParameters(props.getProperty(BAUD_RATE, int.class, DEFAULT_BAUD_RATE), 
-						props.getProperty(DATA_BITS, int.class, DEFAULT_DATA_BITS), 
-						props.getProperty(STOP_BITS, CommUtils.StopBits.class, DEFAULT_STOP_BITS).getStopBitsMode(), 
-						props.getProperty(PARITY, CommUtils.Parity.class, DEFAULT_PARITY).getParityMode()
-						);
-				comPort.setFlowControl(props.getProperty(FLOW_CONTROL, CommUtils.FlowControl.class, DEFAULT_FLOW_CONTROL).getFlowControlMask());
-				return comPort;
+	public static SerialPort prepareCommPort(final URI comm) throws FileNotFoundException {
+		if (comm == null || !comm.isAbsolute()) {
+			throw new IllegalArgumentException("Comm port can't be null and must be absolute");
+		}
+		else {
+			final SubstitutableProperties	props = CommUtils.parseCommQueryParameters(URIUtils.parseQuery(comm));	
+			final String		name = comm.getScheme();
+			final SerialPort	port = CommUtils.prepareCommPort(name, props);
+			
+			if (!CommUtils.hasCommPort(name)) {
+				throw new FileNotFoundException("Unknown comm port name ["+name+"]"); 
+			}
+			else {
+				port.setComPortTimeouts(SerialPort.TIMEOUT_WRITE_BLOCKING | SerialPort.TIMEOUT_READ_BLOCKING, 5000, 5000);
+				return port;
 			}
 		}
-		return null;
+	}	
+	
+	public static SerialPort prepareCommPort(final String name, final SubstitutableProperties props) {
+		if (Utils.checkEmptyOrNullString(name)) {
+			throw new IllegalArgumentException("Port name can't be null or empty"); 
+		}
+		else {
+			for (SerialPort comPort : SerialPort.getCommPorts()) {
+				if (comPort.getSystemPortName().equals(name)) {
+					comPort.setComPortParameters(props.getProperty(BAUD_RATE, int.class, DEFAULT_BAUD_RATE), 
+							props.getProperty(DATA_BITS, int.class, DEFAULT_DATA_BITS), 
+							props.getProperty(STOP_BITS, CommUtils.StopBits.class, DEFAULT_STOP_BITS).getStopBitsMode(), 
+							props.getProperty(PARITY, CommUtils.Parity.class, DEFAULT_PARITY).getParityMode()
+							);
+					comPort.setFlowControl(props.getProperty(FLOW_CONTROL, CommUtils.FlowControl.class, DEFAULT_FLOW_CONTROL).getFlowControlMask());
+					return comPort;
+				}
+			}
+			throw new IllegalArgumentException("Port name ["+name+"] not found");
+		}
 	}
 	
 	public static SubstitutableProperties parseCommQueryParameters(final Hashtable<String,String[]> source) {
-		final SubstitutableProperties	result = new SubstitutableProperties();
-		
-		if (source.containsKey(DATA_BITS)) {
-			try {
-				final int bits = Integer.valueOf(source.get(DATA_BITS)[0]);
+		if (source == null) {
+			throw new NullPointerException("Source can't be null");
+		}
+		else {
+			final SubstitutableProperties	result = new SubstitutableProperties();
+			
+			if (source.containsKey(DATA_BITS)) {
+				try {
+					final int bits = Integer.valueOf(source.get(DATA_BITS)[0]);
+					
+					if (bits != 5 && bits != 7 && bits != 8) {
+						throw new IllegalArgumentException("Query option ["+DATA_BITS+"] has illegal value ["+source.get(DATA_BITS)[0]+"]. Only 5, 7 and 8 are valid here"); 
+					}
+					else {
+						result.setProperty(DATA_BITS, source.remove(DATA_BITS)[0]);
+					}
+				} catch (NumberFormatException exc) {
+					throw new IllegalArgumentException("Query option ["+DATA_BITS+"] has illegal number ["+source.get(DATA_BITS)[0]+"]"); 
+				}
+			}
+			else {
+				result.setProperty(DATA_BITS, DEFAULT_DATA_BITS);
+			}
+	
+			if (source.containsKey(STOP_BITS)) {
+				final String	content = source.remove(STOP_BITS)[0];
 				
-				if (bits != 5 && bits != 7 && bits != 8) {
-					throw new IllegalArgumentException("Query option ["+DATA_BITS+"] has illegal value ["+source.get(DATA_BITS)[0]+"]. Only 5, 7 and 8 are valid here"); 
+				try {
+					result.setProperty(STOP_BITS, StopBits.valueOf(content).name());
+				} catch (IllegalArgumentException exc) {
+					try {
+						result.setProperty(STOP_BITS, StopBits.valueOf(Float.valueOf(content)).toString());
+					} catch (NumberFormatException exc1) {
+						throw new IllegalArgumentException("Query option ["+STOP_BITS+"] has illegal number ["+content+"]. Only 1, 1.5 and 2 or "+Arrays.toString(StopBits.values())+" are valid here"); 
+					}
 				}
-				else {
-					result.setProperty(DATA_BITS, source.remove(DATA_BITS)[0]);
+			}
+			else {
+				result.setProperty(STOP_BITS, DEFAULT_STOP_BITS);
+			}
+	
+			if (source.containsKey(PARITY)) {
+				final String	content = source.remove(PARITY)[0];
+
+				try {
+					result.setProperty(PARITY, Parity.valueOf(content).name());
+				} catch (IllegalArgumentException exc) {
+					throw new IllegalArgumentException("Query option ["+PARITY+"] has illegal value ["+content+"]. Only "+Arrays.toString(Parity.values())+" are available here"); 
 				}
-			} catch (NumberFormatException exc) {
-				throw new IllegalArgumentException("Query option ["+DATA_BITS+"] has illegal number ["+source.get(DATA_BITS)[0]+"]"); 
 			}
-		}
-		else {
-			result.setProperty(DATA_BITS, DEFAULT_DATA_BITS);
-		}
-
-		if (source.containsKey(STOP_BITS)) {
-			try {
-				result.setProperty(STOP_BITS, StopBits.valueOf(source.remove(STOP_BITS)[0]).name());
-			} catch (IllegalArgumentException exc) {
-				throw new IllegalArgumentException("Query option ["+STOP_BITS+"] has illegal number ["+source.get(STOP_BITS)[0]+"]. Only 1, 1.5 and 2 are valid here"); 
+			else {
+				result.setProperty(PARITY, DEFAULT_PARITY);
 			}
-		}
-		else {
-			result.setProperty(STOP_BITS, DEFAULT_STOP_BITS);
-		}
+	
+			if (source.containsKey(BAUD_RATE)) {
+				final String	content = source.remove(BAUD_RATE)[0];
 
-		if (source.containsKey(PARITY)) {
-			try {
-				result.setProperty(PARITY, Parity.valueOf(source.remove(PARITY)[0]).name());
-			} catch (IllegalArgumentException exc) {
-				throw new IllegalArgumentException("Query option ["+PARITY+"] has illegal value ["+source.get(PARITY)[0]+"]. Only "+Arrays.toString(Parity.values())+" are available here"); 
-			}
-		}
-		else {
-			result.setProperty(PARITY, DEFAULT_PARITY);
-		}
-
-		if (source.containsKey(BAUD_RATE)) {
-			try {
-				final int baudRate = Integer.valueOf(source.get(BAUD_RATE)[0]);
-				
-				if (!AVAILABLE_BAUDS.contains(baudRate)) {
-					throw new IllegalArgumentException("Query option ["+BAUD_RATE+"] has unsupported value ["+source.get(BAUD_RATE)[0]+"]. Only "+AVAILABLE_BAUDS+" are valid here"); 
+				try {
+					final int baudRate = Integer.valueOf(content);
+					
+					if (!AVAILABLE_BAUDS.contains(baudRate)) {
+						throw new IllegalArgumentException("Query option ["+BAUD_RATE+"] has unsupported value ["+content+"]. Only "+AVAILABLE_BAUDS+" are valid here"); 
+					}
+					else {
+						result.setProperty(BAUD_RATE, content);
+					}
+				} catch (NumberFormatException exc) {
+					throw new IllegalArgumentException("Query option ["+BAUD_RATE+"] has illegal number ["+content+"]"); 
 				}
-				else {
-					result.setProperty(BAUD_RATE, source.remove(BAUD_RATE)[0]);
-				}
-			} catch (NumberFormatException exc) {
-				throw new IllegalArgumentException("Query option ["+BAUD_RATE+"] has illegal number ["+source.get(BAUD_RATE)[0]+"]"); 
 			}
-		}
-		else {
-			result.setProperty(BAUD_RATE, DEFAULT_BAUD_RATE);
-		}
-
-		if (source.containsKey(FLOW_CONTROL)) {
-			result.setProperty(FLOW_CONTROL, FlowControl.valueOf(source.remove(FLOW_CONTROL)[0]).name());
-		}
-		else {
-			result.setProperty(FLOW_CONTROL, DEFAULT_FLOW_CONTROL);
-		}
-
-		if (!source.isEmpty()) {
-			throw new IllegalArgumentException("Unknown query option(s) "+source.keySet()+" detected");
-		}
-		else {
-			return result;
+			else {
+				result.setProperty(BAUD_RATE, DEFAULT_BAUD_RATE);
+			}
+	
+			if (source.containsKey(FLOW_CONTROL)) {
+				result.setProperty(FLOW_CONTROL, FlowControl.valueOf(source.remove(FLOW_CONTROL)[0]).name());
+			}
+			else {
+				result.setProperty(FLOW_CONTROL, DEFAULT_FLOW_CONTROL);
+			}
+	
+			if (!source.isEmpty()) {
+				throw new IllegalArgumentException("Unknown query option(s) "+source.keySet()+" detected");
+			}
+			else {
+				return result;
+			}
 		}
 	}
 }

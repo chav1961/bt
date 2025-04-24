@@ -9,7 +9,15 @@ import java.nio.channels.SocketChannel;
 import java.nio.channels.spi.AbstractSelector;
 import java.nio.channels.spi.SelectorProvider;
 
+import com.fazecast.jSerialComm.SerialPort;
+
 class ComPortSelectorProvider extends SelectorProvider {
+	private final SerialPort	port;
+	
+	ComPortSelectorProvider(final SerialPort port) {
+		this.port = port;
+	}
+	
 	@Override
 	public DatagramChannel openDatagramChannel() throws IOException {
 		throw new UnsupportedOperationException("This method is not supported");
@@ -27,8 +35,7 @@ class ComPortSelectorProvider extends SelectorProvider {
 
 	@Override
 	public AbstractSelector openSelector() throws IOException {
-		// TODO Auto-generated method stub
-		return null;
+		return new ComPortSelector(this.port);
 	}
 
 	@Override

@@ -1,36 +1,35 @@
 package chav1961.bt.comm.spi;
 
+
 import java.io.IOException;
+
 import java.net.URL;
 import java.net.URLConnection;
 import java.net.URLStreamHandler;
 
 /**
  * <p>This class is  handler to support "comm" schema URL. Format of comm URL is:</p>
- * <code><b>playback://</b>&lt;device&gt;?&lt;parameters&gt;</code>
+ * <code><b>comm://</b>&lt;device&gt;?&lt;parameters&gt;</code>
  * <ul>
- * <li>device - play audio device or one of predefined logical device names</li>
- * <li>parameters - audio device parameters</li>
- * </ul>
- * <p>Predefined logical name of the device can be:</p>
- * <ul>
- * <li>audio - any audio device supports playing</li>
- * <li>microphone - any available speaker on your computer</li>
+ * <li>device - communication port (for example <b>COM1:</b>)</li>
+ * <li>parameters - communication parameters</li>
  * </ul>
  * <p>Parameters can be:</p>
  * <ul>
- * <li>rate=&lt;number&gt; - audio rate. Available values are 96000, 48000, 44100 (default), 22050, 16000, 11025, 8000</li>
- * <li>bits=&lt;number&gt; - number of bytes in one sample. Available values are 8, 16 (default), 24</li>
- * <li>signed=&lt;choise&gt; - is content signed. Available values are signed (default), unsigned</li>
- * <li>endian=&lt;choise&gt; - is content big or little endial. Available values are big (default), little</li>
- * <li>channels=&lt;number&gt; - number of channels in the stream. Available values are 1, 2 (default)</li>
- * <li>encoding=&lt;choise&gt; - stream encoding. Available values are pcm (default), ulaw, alaw, gsm</li>
+ * <li>baud=&lt;number&gt; - baud rate. Available values are (110, 300, 600, 1200, 2400, 4800, 9600, 19200, 38400, 57600, 115200)</li>
+ * <li>parity=&lt;value&gt; - parity check (see {@linkplain CommUtils.Parity}).
+ * <li>stop=&lt;value&gt; - number of stop bits. Available values are 1, 1.5 and 2 or {@linkplain CommUtils.StopBits}</li>
+ * <li>data=&lt;number&gt; - data bits length. Available values are 5, 7 and 8</li>
+ * <li>flow=&lt;value&gt; - flow control.type (see {@linkplain CommUtils.FlowControl}). </li>
  * </ul>
  * @see URLStreamHandler   
  * @see CommHandlerProvider   
+ * @see CommUtils.Parity
+ * @see CommUtils.StopBits
+ * @see CommUtils.FlowControl
  * @author Alexander Chernomyrdin aka chav1961
- * @since 0.0.4
- * @last.update 0.0.7
+ * @since 0.0.1
+ * @thread.safe
  */
 class Handler extends URLStreamHandler {
 	public static final String	PROTOCOL = "comm";

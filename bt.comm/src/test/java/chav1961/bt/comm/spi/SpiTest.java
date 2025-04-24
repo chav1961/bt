@@ -10,7 +10,6 @@ import java.net.URI;
 import java.net.URL;
 import java.net.URLConnection;
 
-import org.junit.Assert;
 import org.junit.Test;
 
 public class SpiTest {
@@ -22,6 +21,16 @@ public class SpiTest {
 		
 		conn.connect();
 		try(final InputStream		is = conn.getInputStream();
+			final Reader			rdr = new InputStreamReader(is);
+			final BufferedReader	brdr = new BufferedReader(rdr)) {
+			String	line;
+			
+			while ((line = brdr.readLine()) != null) {
+				System.err.println("Line="+line);
+			}
+		}
+
+		try(final InputStream		is = url.openStream();
 			final Reader			rdr = new InputStreamReader(is);
 			final BufferedReader	brdr = new BufferedReader(rdr)) {
 			String	line;

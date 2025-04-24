@@ -23,8 +23,8 @@ public class ComPortSelector extends AbstractSelector {
 	protected final List<ComPortSelectionKey>	keys = new ArrayList<>();
 	protected final Semaphore	sema = new Semaphore(0);
 
-	protected ComPortSelector() {
-		super(ComPortChannel.cpsp);
+	protected ComPortSelector(ComPortSelectorProvider provider) {
+		super(provider);
 	}
 
 	@Override
@@ -108,7 +108,7 @@ public class ComPortSelector extends AbstractSelector {
 	}
 	
 	public static Selector open() {
-		return new ComPortSelector();
+		return new ComPortSelector(null);
 	}
 	
 	private static class KeyDescription {
