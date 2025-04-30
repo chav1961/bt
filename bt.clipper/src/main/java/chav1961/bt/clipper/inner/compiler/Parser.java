@@ -153,9 +153,6 @@ public class Parser {
 		OPERATORS.placeName(".not.",OperType.Not);
 		OPERATORS.placeName(".and.",OperType.And);
 		OPERATORS.placeName(".or.",OperType.Or);
-		OPERATORS.placeName(".NOT.",OperType.Not);
-		OPERATORS.placeName(".AND.",OperType.And);
-		OPERATORS.placeName(".OR.",OperType.Or);
 	}
 	
 	public static Lexema[] parse(final Reader reader, final ClipperRuntime runtime, final boolean usePreprocessor, final boolean keepComments) throws SyntaxException {

@@ -21,32 +21,18 @@
   
   <modules>
   	<module>bt.starter</module>
-  	<module>bt.xsys</module>
   	<module>bt.nlp</module>
   	<module>bt.winsl</module>
   	<module>bt.lightrepo</module>
-  	<module>bt.model</module>
-  	<module>bt.opc</module>
-  	<module>bt.mnemoed</module>
-  	<module>bt.mnemort</module>
   	<module>bt.lucenewrapper</module>
   	<module>bt.comm</module>
-  	<module>bt.database</module>
-  	<module>bt.mediaplayer</module>
-  	<module>bt.pythonwrapper</module>
   	<module>bt.clipper</module>
   	<module>bt.paint</module>
   	<module>bt.security</module>
   	<module>bt.audio</module>
-  	<module>bt.voice</module>
-  	<module>bt.installer</module>
-  	<module>bt.ocr</module>
   	<module>bt.jj</module>
   	<module>bt.installbuilder</module>
-  	<module>bt.find</module>
   	<module>bt.etc</module>
   	<module>bt.openclmatrix</module>
-  	<module>bt.preproc</module>
-  	<module>bt.databaseutils</module>
   </modules>
 </project>
