@@ -48,7 +48,6 @@ import chav1961.purelib.basic.interfaces.SyntaxTreeInterface;
 import chav1961.purelib.cdb.CompilerUtils;
 import chav1961.purelib.cdb.SyntaxNode;
 import chav1961.purelib.sql.SQLUtils;
-import chav1961.purelib.ui.swing.terminal.TermUtils.LineStyle;
 
 public class ScriptExecutorUtil {
 	public static Object execute(final SyntaxNode node, final SyntaxTreeInterface<EntityDescriptor> names, final Predefines predef, final int depth, final int level) throws PaintScriptException, InterruptedException {

@@ -14,7 +14,6 @@ import chav1961.bt.paint.script.intern.parsers.ScriptParserUtil.Lexema;
 import chav1961.bt.paint.script.intern.parsers.ScriptParserUtil.OperatorTypes;
 import chav1961.bt.paint.script.intern.parsers.ScriptParserUtil.SyntaxNodeType;
 import chav1961.purelib.basic.AndOrTree;
-import chav1961.purelib.basic.OrdinalSyntaxTree;
 import chav1961.purelib.basic.exceptions.SyntaxException;
 import chav1961.purelib.basic.interfaces.SyntaxTreeInterface;
 import chav1961.purelib.cdb.SyntaxNode;
@@ -22,7 +21,7 @@ import chav1961.purelib.cdb.SyntaxNode;
 public class ScriptParserUtilTest {
 	@Test
 	public void parseLexTest() throws SyntaxException {
-		final SyntaxTreeInterface<Object>	names = new OrdinalSyntaxTree<>();
+		final SyntaxTreeInterface<Object>	names = new AndOrTree<>();
 		List<Lexema>	result;
 
 		// single chars

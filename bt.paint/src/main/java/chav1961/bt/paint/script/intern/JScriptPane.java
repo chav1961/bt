@@ -13,7 +13,7 @@ import javax.swing.text.StyleConstants;
 import chav1961.bt.paint.script.intern.interfaces.LexTypes;
 import chav1961.bt.paint.script.intern.parsers.ScriptParserUtil;
 import chav1961.bt.paint.script.intern.parsers.ScriptParserUtil.Lexema;
-import chav1961.purelib.basic.OrdinalSyntaxTree;
+import chav1961.purelib.basic.AndOrTree;
 import chav1961.purelib.basic.exceptions.SyntaxException;
 import chav1961.purelib.ui.HighlightItem;
 import chav1961.purelib.ui.swing.useful.JTextPaneHighlighter;
@@ -171,7 +171,7 @@ public class JScriptPane extends JTextPaneHighlighter<LexTypes> {
 		else {
 			try(final Reader						rdr = new StringReader(program)) {
 				final List<HighlightItem<LexTypes>>	result = new ArrayList<>();
-				final List<Lexema>					lex = ScriptParserUtil.parseLex(rdr, new OrdinalSyntaxTree<LexTypes>(), true);
+				final List<Lexema>					lex = ScriptParserUtil.parseLex(rdr, new AndOrTree<LexTypes>(), true);
 				final Lexema[]						content = lex.toArray(new Lexema[lex.size()]);
 				
 				for(int index = 0; index < content.length -1; index++) {
