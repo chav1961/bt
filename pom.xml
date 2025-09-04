@@ -34,5 +34,6 @@
   	<module>bt.installbuilder</module>
   	<module>bt.etc</module>
   	<module>bt.openclmatrix</module>
+  	<module>bt.svgeditor</module>
   </modules>
 </project>

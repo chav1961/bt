@@ -1,0 +1,211 @@
+=== Syntax
+
+
+=== Drawing command list
+
+1. Draw line:
+
+{{{
+	line <xFrom::int>,<yFrom::int> [to] <xTo::int>,<yTo::int>"
+}}}
+
+Draws line from point(xFrom,yFrom) to point(xTo,yTo) with current foreground and line style.
+
+Keyword 'line' can be reduced to 'l'.
+
+2. Draw rectangle
+
+{{{
+	rectangle <rect::Rectangle> [on]
+}}}
+
+Draws rectangle with current foreground and line style. If **on** option is typed, fills the 
+rectangle with current background color.
+
+Keyword 'rectanlge' can be reduced to 'rect'.
+
+3. Draw ellipse
+
+{{{
+	ellipse <rect::Rectangle> [on]
+}}}
+
+Draw ellipse inside rectangle typed with current foreground and line style. If **on** option is typed, fills the 
+ellipse with current background color.
+
+Keyword 'ellipse' can be reduced to 'ell'.
+
+4. Draw text
+
+{{{
+	text <rect::Rectangle> <foreground::color>[/<background::color>] <content::any>
+}}}
+
+Draw text inside rectangle typed with foreground color typed. If background color is typed, fill the
+rectange with bthe background color. Content is any character sequence
+
+Keyword 'text' can be reduced to 't'.
+
+5. Draw path
+
+{{{
+	path [on] <content::any>
+}}}
+
+Draw path with current foreground and line style. Syntax of the path is exactly syntax of <p> tag for SVG format. If **on** option is typed, fills the 
+path with current background color.
+
+Keyword 'path' can be reduced to 'p'.
+
+
+6. Fill area
+
+{{{
+	fill <x::int>,<y::int> <color::color>
+}}}
+
+Fill area from point(x,y). Point point(x,y) and all it's neigbours with the same color will change it's previous colot to color typed.
+
+
+=== Converting command list
+
+1. Rotate image
+
+{{{
+	rotate {cw|ccw}
+}}}
+
+Rotate image to 90 degrees clockwise (**cw** option) or countercloclwise (**ccw** option).
+
+Keyword 'rotate' can be reduced to 'rot'.
+
+2. Mirror image
+
+{{{
+	mirror {hor|vert}
+}}}
+
+Mirror image horizontally (**hor** option) or vertically (**vert** option).
+
+Keyword 'mirror' can be reduced to 'mir'.
+
+3. Scale image
+
+{{{
+	scale <newX::int>[,<newY::int>]
+}}}
+
+Scale image. NewX and newY are percents to scale. If newY is not typed, newX will be used instead.
+
+4. Crop image
+
+{{{
+	crop <rect::Rectangle>
+}}}
+
+Crop image content.
+
+5. Resize image
+
+{{{
+	resize <newX::int>,<newY::int> [center]
+}}}
+
+Resize image without scaling content. If **center** option is typed, old image content will be moved to the center 
+of new image.
+
+6. Gray-scale image
+
+{{{
+	gray
+}}}
+
+Convert image content to gray scale.
+
+6. Transparent image
+
+{{{
+	transparent [except] <color::color>
+}}}
+
+Make all points of image with the given color as transparent points. If **except** option is typed, all points with the 
+color typed will retain opaque, but all others will be transparent.
+
+Keyword 'transparent' can be reduced to 'trans'.
+
+=== Image manipulation commands list
+
+1. Copy image piece to clipboard
+
+{{{
+	copy [<xFrom::int>,<yFrom:int> {size <width::int>,<height::int>| [to] <xTo::int>,<yTo::int>}]
+}}}
+
+Copy image piece from rectangle typed to clipboard.
+
+Keyword 'copy' can be reduced to 'cp'.
+
+2. Paste image
+
+{{{
+	paste <xFrom::int>,<yFrom::int> [{size <width::int>,<height::int>|[to] <xTo::int>,<yTo::int>}] [from <name::string>]"
+}}}
+
+Paste image from clipboard or file to point(xFrom,yFrom). If size or end point is typed, only the rectangle typed will be filled with image pasted.
+If **from** option is typed, file name will be used as image source.
+
+3. Create new image
+
+{{{
+	new <width::int>,<height::int> <type::ImageType> [<color::color>]
+}}}
+
+create new image with the goven size and type. If color is typed, all the image created will be filled with it.
+
+4. Load image
+
+{{{
+	load <name::string>
+}}}
+
+Load image from file typed.
+
+=== Setting commands list
+
+1. Set current foreground
+
+{{{
+	foreground {<color::color>| <x::int>,<y::int>}
+}}}
+
+Set current foreground with color from the given point(x,y) or with color typed.
+
+Keyword 'foreground' can be reduced to 'fore'.
+
+2. Set current background
+
+{{{
+	background {<color::color>| <x::int>,<y::int>}
+}}}
+
+Set current background with color from the given point(x,y) or with color typed.
+
+Keyword 'background' can be reduced to 'back'.
+
+3. Set current font
+
+{{{
+	font <family> <size::int> [bold] [italic]
+}}}
+
+Set current font to use with drawing text.
+
+3. Set current line style
+
+{{{
+	stroke [<thickness::int>] {solid|dashed|dotted} [{butt|round|square} [{miter|round|bevel}]]
+}}}
+
+Set current line stype to use with drawing figures.
+
+Keyword 'stroke' can be reduced to 'str'.

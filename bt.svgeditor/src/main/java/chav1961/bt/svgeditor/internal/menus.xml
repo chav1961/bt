@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<app:root xmlns:app="http://ui.purelib.chav1961/">
+	<app:i18n location="i18n:xml:root://chav1961.bt.svgeditor.Application/chav1961/bt/svgeditor/i18n/localization.xml"/>
+ 	<app:menu id="mainmenu">
+		<app:submenu name="menu.main.file" caption="menu.main.file" tooltip="menu.main.file.tt">
+			<app:item name="menu.main.file.new" caption="menu.main.file.new" tooltip="menu.main.file.new.tt" action="newImage"/>
+			<app:item name="menu.main.file.load" caption="menu.main.file.load" tooltip="menu.main.file.load.tt" action="loadImage"/>
+			<app:submenu name="menu.main.file.load.lru" caption="menu.main.file.load.lru" tooltip="menu.main.file.load.lru.tt">
+				<app:separator/>
+			</app:submenu>
+			<app:separator/>
+			<app:item name="menu.main.file.save" caption="menu.main.file.save" tooltip="menu.main.file.save.tt" action="saveImage"/>
+			<app:item name="menu.main.file.saveAs" caption="menu.main.file.saveAs" tooltip="menu.main.file.saveAs.tt" action="saveImageAs"/>
+			<app:separator/>
+			<app:item name="menu.main.file.print" caption="menu.main.file.print" tooltip="menu.main.file.print.tt" action="printImage"/>
+			<app:submenu name="menu.main.file.import" caption="menu.main.file.import" tooltip="menu.main.file.import.tt">
+				<app:item name="menu.main.file.import.stl" caption="menu.main.file.import.stl" tooltip="menu.main.file.import.stl.tt" action="importSTL"/>
+				<app:item name="menu.main.file.import.dxf" caption="menu.main.file.import.dxf" tooltip="menu.main.file.import.dxf.tt" action="importDXF"/>
+			</app:submenu>
+			<app:submenu name="menu.main.file.export" caption="menu.main.file.export" tooltip="menu.main.file.export.tt">
+				<app:item name="menu.main.file.export.stl" caption="menu.main.file.export.stl" tooltip="menu.main.file.export.stl.tt" action="exportSTL"/>
+				<app:item name="menu.main.file.export.dxf" caption="menu.main.file.export.dxf" tooltip="menu.main.file.export.dxf.tt" action="exportDXF"/>
+				<app:separator/>
+				<app:item name="menu.main.file.export.png" caption="menu.main.file.export.png" tooltip="menu.main.file.export.png.tt" action="exportPNG"/>
+				<app:item name="menu.main.file.export.gif" caption="menu.main.file.export.gif" tooltip="menu.main.file.export.gif.tt" action="exportGIF"/>
+				<app:item name="menu.main.file.export.bmp" caption="menu.main.file.export.bmp" tooltip="menu.main.file.export.bmp.tt" action="exportBMP"/>
+			</app:submenu>
+			<app:separator/>
+			<app:item name="menu.main.file.exit" caption="menu.main.file.exit" tooltip="menu.main.file.exit.tt" action="exit"/>
+		</app:submenu>
+		<app:submenu name="menu.main.edit" caption="menu.main.edit" tooltip="menu.main.edit.tt">
+			<app:item name="menu.main.edit.undo" caption="menu.main.edit.undo" tooltip="menu.main.edit.undo.tt" action="undo"/>
+			<app:item name="menu.main.edit.redo" caption="menu.main.edit.redo" tooltip="menu.main.edit.redo.tt" action="redo"/>
+			<app:separator/>
+			<app:item name="menu.main.edit.cut" caption="menu.main.edit.cut" tooltip="menu.main.edit.cut.tt" action="cut"/>
+			<app:item name="menu.main.edit.copy" caption="menu.main.edit.copy" tooltip="menu.main.edit.copy.tt" action="copy"/>
+			<app:item name="menu.main.edit.paste" caption="menu.main.edit.paste" tooltip="menu.main.edit.paste.tt" action="paste"/>
+			<app:item name="menu.main.edit.delete" caption="menu.main.edit.delete" tooltip="menu.main.edit.delete.tt" action="delete"/>
+			<app:separator/>
+			<app:item name="menu.main.edit.duplicate" caption="menu.main.edit.duplicate" tooltip="menu.main.edit.duplicate.tt" action="duplicate"/>
+			<app:item name="menu.main.edit.array" caption="menu.main.edit.array" tooltip="menu.main.edit.array.tt" action="array"/>
+			<app:separator/>
+			<app:item name="menu.main.edit.grid" caption="menu.main.edit.grid" tooltip="menu.main.edit.grid.tt" checkable="true" action="grid"/>
+			<app:item name="menu.main.edit.ortho" caption="menu.main.edit.ortho" tooltip="menu.main.edit.ortho.tt" checkable="true" action="ortho"/>
+			<app:separator/>
+			<app:item name="menu.main.edit.find" caption="menu.main.edit.find" tooltip="menu.main.edit.find.tt" action="find"/>
+			<app:item name="menu.main.edit.replace" caption="menu.main.edit.replace" tooltip="menu.main.edit.replace.tt" action="replace"/>
+		</app:submenu>
+		<app:submenuref name="menu.main.insert" ref="menu.main.insert"/>
+		<app:submenu name="menu.main.tools" caption="menu.main.tools" tooltip="menu.main.tools.tt">
+		 	<app:submenu name="menu.main.tools.playerBar" caption="menu.main.tools.playerbar" tooltip="menu.main.tools.playerbar.tt">
+				<app:item name="menu.main.tools.playerbar.recording" caption="toolbar.playerbar.recording" tooltip="toolbar.playerbar.recording.tt" checkable="true" action="player.recording"/>
+				<app:item name="menu.main.tools.playerbar.pause" caption="toolbar.playerbar.pause" tooltip="toolbar.playerbar.pause.tt" checkable="true" action="player.pause"/>
+				<app:separator/>
+				<app:submenu name="menu.main.tools.playerbar.play" caption="toolbar.playerbar.play" tooltip="toolbar.playerbar.play.tt">
+					<app:item name="menu.main.tools.playerbar.play.last" caption="toolbar.playerbar.play.last" tooltip="toolbar.playerbar.play.last.tt" action="player.play.last"/>
+					<app:item name="menu.main.tools.playerbar.play.file" caption="toolbar.playerbar.play.file" tooltip="toolbar.playerbar.play.file.tt" action="player.play.file"/>
+				</app:submenu>
+			</app:submenu>
+			<app:item name="menu.main.tools.recalc" caption="menu.main.tools.recalc" tooltip="menu.main.tools.recalc.tt" action="recalculate"/>
+			<app:separator/>
+			<app:builtinSubmenu name="builtin.languages" caption="menu.main.tools.languages" tooltip="menu.main.tools.languages.tt"/>
+			<app:item name="menu.main.tools.settings" caption="menu.main.tools.settings" tooltip="menu.main.tools.settings.tt" action="settings"/>
+		</app:submenu>
+		<app:submenu name="menu.main.help" caption="menu.main.help" tooltip="menu.main.help.tt">
+			<app:item name="menu.main.help.overview" caption="menu.main.help.overview" tooltip="menu.main.help.overview.tt" action="overview"/>
+			<app:separator/>
+			<app:item name="menu.main.help.about" caption="menu.main.help.about" tooltip="menu.main.help.about.tt" action="about"/>
+		</app:submenu>
+	</app:menu>
+	<app:keyset id="mainmenu.keyset">
+		<app:key code="N" ctrl="true" action="newImage"/>
+		<app:key code="O" ctrl="true" action="loadImage"/>
+		<app:key code="S" ctrl="true" action="saveImage"/>
+		<app:key code="P" ctrl="true" action="printImage"/>
+		<app:key code="Q" ctrl="true" action="exit"/>
+		<app:key code="Z" ctrl="true" action="undo"/>
+		<app:key code="Y" ctrl="true" action="redo"/>
+		<app:key code="X" ctrl="true" action="cut"/>
+		<app:key code="C" ctrl="true" action="copy"/>
+		<app:key code="DELETE" action="delete"/>
+		<app:key code="V" ctrl="true" action="paste"/>
+		<app:key code="D" ctrl="true" action="duplicate"/>
+		<app:key code="*" ctrl="true" action="array"/>
+		<app:key code="F" ctrl="true" action="find"/>
+		<app:key code="H" ctrl="true" action="replace"/>
+		<app:key code="W" ctrl="true" action="player.recording"/>
+		<app:key code="PAUSE" ctrl="true" action="player.pause"/>
+		<app:key code="G" ctrl="true" action="player.play.last"/>
+		<app:key code="F1" action="overview"/>
+	</app:keyset>
+ 	<app:menu id="insertmenu">
+		<app:submenu name="menu.main.insert" caption="menu.main.insert" tooltip="menu.main.insert.tt">
+			<app:item name="menu.main.insert.line" caption="menu.main.insert.line" tooltip="menu.main.insert.line.tt" action="InsertLine"/>
+			<app:item name="menu.main.insert.polyline" caption="menu.main.insert.polyline" tooltip="menu.main.insert.polyline.tt" action="InsertPolyline"/>
+			<app:item name="menu.main.insert.text" caption="menu.main.insert.text" tooltip="menu.main.insert.text.tt" action="InsertText"/>
+			<app:separator/>
+			<app:item name="menu.main.insert.rectangle" caption="menu.main.insert.rectangle" tooltip="menu.main.insert.rectangle.tt" action="InsertRectangle"/>
+			<app:item name="menu.main.insert.roundedrectangle" caption="menu.main.insert.roundedrectangle" tooltip="menu.main.insert.roundedrectangle.tt" action="InsertRoundedRectangle"/>
+			<app:item name="menu.main.insert.circle" caption="menu.main.insert.circle" tooltip="menu.main.insert.circle.tt" action="InsertCircle"/>
+			<app:item name="menu.main.insert.ellipse" caption="menu.main.insert.ellipse" tooltip="menu.main.insert.ellipse.tt" action="InsertEllipse"/>
+			<app:item name="menu.main.insert.rhumb" caption="menu.main.insert.rhumb" tooltip="menu.main.insert.rhumb.tt" action="InsertRhumb"/>
+			<app:separator/>
+			<app:submenu name="menu.main.insert.arrow" caption="menu.main.insert.arrow" tooltip="menu.main.insert.arrow.tt">
+				<app:item name="menu.main.insert.arrow.direct" caption="menu.main.insert.arrow.direct" tooltip="menu.main.insert.arrow.direct.tt" action="InsertArrow.direct"/>
+				<app:item name="menu.main.insert.arrow.ortho" caption="menu.main.insert.arrow.ortho" tooltip="menu.main.insert.arrow.ortho.tt" action="InsertArrow.ortho"/>
+				<app:item name="menu.main.insert.arrow.arc" caption="menu.main.insert.arrow.arc" tooltip="menu.main.insert.arrow.arc.tt" action="InsertArrow.arc"/>
+			</app:submenu>
+			<app:submenu name="menu.main.insert.tooltip" caption="menu.main.insert.tooltip" tooltip="menu.main.insert.tooltip.tt">
+				<app:item name="menu.main.insert.tooltip.rectangle" caption="menu.main.insert.tooltip.rectangle" tooltip="menu.main.insert.tooltip.rectangle.tt" action="InsertTooltip.rectangle"/>
+				<app:item name="menu.main.insert.tooltip.roundedrectangle" caption="menu.main.insert.tooltip.roundedrectangle" tooltip="menu.main.insert.tooltip.roundedrectangle.tt" action="InsertTooltip.roundedrectangle"/>
+				<app:item name="menu.main.insert.tooltip.ellipse" caption="menu.main.insert.tooltip.ellipse" tooltip="menu.main.insert.tooltip.ellipse.tt" action="InsertTooltip.ellipse"/>
+			</app:submenu>
+		</app:submenu>
+	</app:menu>
+</app:root>
