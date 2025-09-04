@@ -1,6 +1,7 @@
 package chav1961.bt.svgeditor.internal;
 
 
+import java.awt.BorderLayout;
 import java.awt.Dimension;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
@@ -16,6 +17,7 @@ import java.util.concurrent.CountDownLatch;
 import javax.swing.JFrame;
 import javax.swing.JMenuBar;
 
+import chav1961.bt.svgeditor.screen.SVGEditor;
 import chav1961.purelib.basic.SubstitutableProperties;
 import chav1961.purelib.basic.exceptions.LocalizationException;
 import chav1961.purelib.basic.interfaces.LoggerFacade;
@@ -30,6 +32,7 @@ import chav1961.purelib.ui.interfaces.LRUPersistence;
 import chav1961.purelib.ui.swing.SwingUtils;
 import chav1961.purelib.ui.swing.useful.JEnableMaskManipulator;
 import chav1961.purelib.ui.swing.useful.JFileContentManipulator;
+import chav1961.purelib.ui.swing.useful.JFileSelectionDialog.FilterCallback;
 import chav1961.purelib.ui.swing.useful.JEnableMaskManipulator.ItemDescriptor;
 import chav1961.purelib.ui.swing.useful.JStateString;
 import chav1961.purelib.ui.swing.useful.interfaces.FileContentChangedEvent;
@@ -46,6 +49,8 @@ public class AppWindow extends JFrame implements LocaleChangeListener, LoggerFac
 	private static final String		APP_TITLE = "chav1961.bt.svgeditor.Application.title";
 	private static final String		APP_HELP_TITLE = "chav1961.bt.svgeditor.Application.help.title";
 	private static final String		APP_HELP_CONTENT = "chav1961.bt.svgeditor.Application.help.content";
+
+	private static final String		APP_FILTER_NAME = "chav1961.bt.svgeditor.Application.filter.names";
 	
 	private static final String		MENU_MAIN_FILE_LOAD_LRU = "menu.main.file.load.lru";
 	private static final String		MENU_MAIN_FILE_SAVE = "menu.main.file.save";
@@ -76,7 +81,9 @@ public class AppWindow extends JFrame implements LocaleChangeListener, LoggerFac
 	private final List<String>				lruFiles = new ArrayList<>();
 	private final LRUPersistence			persistence;
 	private final JFileContentManipulator	fcm;
+	private final int						fcmIndex;
 	private final JStateString				state;
+	private final SVGEditor					editor;
 	private final CountDownLatch			latch = new CountDownLatch(1);
 	
 	public AppWindow(final Localizer parentLocalizer, final SubstitutableProperties props) throws NullPointerException, IllegalArgumentException, IOException {
@@ -91,17 +98,19 @@ public class AppWindow extends JFrame implements LocaleChangeListener, LoggerFac
 		this.menuBar = SwingUtils.toJComponent(mdi.byUIPath(URI.create("ui:/model/navigation.top.mainmenu")), JMenuBar.class);
 		this.emm = new JEnableMaskManipulator(getMenus(this), true, menuBar);
 		this.state = new JStateString(localizer);
+		this.editor = new SVGEditor(localizer);
 		this.fsi = FileSystemFactory.createFileSystem(URI.create("fsys:file:/"));
 		this.persistence = LRUPersistence.of(props, LRU_PREFIX);
-		this.fcm = new JFileContentManipulator("system", fsi, localizer, 
-							()->InputStream.nullInputStream(), 
-							()->OutputStream.nullOutputStream(),
-							persistence, lruFiles);
+		this.fcm = new JFileContentManipulator("system", fsi, localizer, editor, editor, persistence, lruFiles);
 		this.fcm.addFileContentChangeListener((e)->processLRU(e));
 		this.fcm.setOwner(this);
+		this.fcmIndex = this.fcm.appendNewFileSupport();
+		this.fcm.setFilters(FilterCallback.of(APP_FILTER_NAME, "*.svg"));
 		this.fcm.setProgressIndicator(state);
 		
 		setJMenuBar(menuBar);
+		getContentPane().add(editor, BorderLayout.CENTER);
+		getContentPane().add(state, BorderLayout.SOUTH);
 		fillLocalizedStrings();
 		
 		SwingUtils.centerMainWindow(this, 0.85f);
@@ -122,8 +131,10 @@ public class AppWindow extends JFrame implements LocaleChangeListener, LoggerFac
 	}
 
 	@Override
-	public void localeChanged(Locale oldLocale, Locale newLocale) throws LocalizationException {
-		// TODO Auto-generated method stub
+	public void localeChanged(final Locale oldLocale, final Locale newLocale) throws LocalizationException {
+		SwingUtils.refreshLocale(menuBar, oldLocale, newLocale);
+		SwingUtils.refreshLocale(editor, oldLocale, newLocale);
+		SwingUtils.refreshLocale(state, oldLocale, newLocale);
 		fillLocalizedStrings();
 	}
 
@@ -140,18 +151,38 @@ public class AppWindow extends JFrame implements LocaleChangeListener, LoggerFac
 
 	@OnAction("action:/newImage")
 	private void newImage() {
+		try {
+			fcm.newFile();
+		} catch (IOException e) {
+			getLogger().message(Severity.error, e, e.getLocalizedMessage());
+		}
 	}
 	
 	@OnAction("action:/loadImage")
 	private void loadImage() {
+		try {
+			fcm.openFile();
+		} catch (IOException e) {
+			getLogger().message(Severity.error, e, e.getLocalizedMessage());
+		}
 	}
 	
 	@OnAction("action:/saveImage")
 	private void saveImage() {
+		try {
+			fcm.saveFile();
+		} catch (IOException e) {
+			getLogger().message(Severity.error, e, e.getLocalizedMessage());
+		}
 	}
 	
 	@OnAction("action:/saveImageAs")
 	private void saveImageAs() {
+		try {
+			fcm.saveFileAs();
+		} catch (IOException e) {
+			getLogger().message(Severity.error, e, e.getLocalizedMessage());
+		}
 	}
 	
 	@OnAction("action:/printImage")
@@ -188,7 +219,14 @@ public class AppWindow extends JFrame implements LocaleChangeListener, LoggerFac
 	
 	@OnAction("action:/exit")
 	private void exit() {
-		latch.countDown();
+		try {
+			if (fcm.commit()) {
+				latch.countDown();
+			}
+		} catch (IOException e) {
+			getLogger().message(Severity.error, e, e.getLocalizedMessage());
+			latch.countDown();
+		}
 	}
 	
 	@OnAction("action:/undo")

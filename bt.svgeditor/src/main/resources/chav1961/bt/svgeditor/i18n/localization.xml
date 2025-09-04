@@ -23,20 +23,21 @@
 		<key name="chav1961.bt.paint.Application.player.enterSubstitutions">Type substitution values for variables</key>
 		<key name="chav1961.bt.svgeditor.Application.help.title">About...</key>
 		<key name="chav1961.bt.svgeditor.Application.help.content">uri(aboutApplication.cre)</key>
+		<key name="chav1961.bt.svgeditor.Application.filter.names">SVG files</key>
 
 <!-- Main menu -->
 		<key name="menu.main.file">File</key>
 		<key name="menu.main.file.tt">File menu, export/import, print and exit</key>
-		<key name="menu.main.file.new">*</key>
-		<key name="menu.main.file.new.tt">*</key>
-		<key name="menu.main.file.load">*</key>
-		<key name="menu.main.file.load.tt">*</key>
-		<key name="menu.main.file.load.lru">*</key>
-		<key name="menu.main.file.load.lru.tt">*</key>
-		<key name="menu.main.file.save">*</key>
-		<key name="menu.main.file.save.tt">*</key>
-		<key name="menu.main.file.saveAs">*</key>
-		<key name="menu.main.file.saveAs.tt">*</key>
+		<key name="menu.main.file.new">New</key>
+		<key name="menu.main.file.new.tt">Creates new empty SVG file</key>
+		<key name="menu.main.file.load">Load</key>
+		<key name="menu.main.file.load.tt">Loads SVG file</key>
+		<key name="menu.main.file.load.lru">Last recent</key>
+		<key name="menu.main.file.load.lru.tt">Loads last recently used files</key>
+		<key name="menu.main.file.save">Save</key>
+		<key name="menu.main.file.save.tt">Save current SVG file</key>
+		<key name="menu.main.file.saveAs">Save as...</key>
+		<key name="menu.main.file.saveAs.tt">Save current SVG file to new location</key>
 		<key name="menu.main.file.print">*</key>
 		<key name="menu.main.file.print.tt">*</key>
 		<key name="menu.main.file.import">*</key>
@@ -333,6 +334,10 @@
 <!-- ImageEditPanel.JCommandField -->
 		<key name="chav1961.bt.paint.bgeditor.JCommandField.help">uri(commands.cre)</key>
 
+<!-- SVGEditor class localization -->
+		<key name="chav1961.bt.svgeditor.screen.SVGEditor.command.prompt">Type command:</key>
+		<key name="chav1961.bt.svgeditor.screen.SVGEditor.command.prompt.tt">Type command here</key>
+
 <!-- AskImageSize class localization -->
 		<key name="askimagesize.title">Type image size</key>
 		<key name="askimagesize.title.tt">Type image size</key>
@@ -426,20 +431,21 @@
 		<key name="chav1961.bt.paint.Application.player.enterSubstitutions">Введите значения подстановочных переменных</key>
 		<key name="chav1961.bt.svgeditor.Application.help.title">О программе</key>
 		<key name="chav1961.bt.svgeditor.Application.help.content">uri(aboutApplication.cre)</key>
+		<key name="chav1961.bt.svgeditor.Application.filter.names">Файлы SVG</key>
 		
 <!-- Главное меню -->
 		<key name="menu.main.file">Файл</key>
 		<key name="menu.main.file.tt">Файловое меню, экспорт/импорт, печать и завершение работы программы</key>
-		<key name="menu.main.file.new">*</key>
-		<key name="menu.main.file.new.tt">*</key>
-		<key name="menu.main.file.load">*</key>
-		<key name="menu.main.file.load.tt">*</key>
-		<key name="menu.main.file.load.lru">*</key>
-		<key name="menu.main.file.load.lru.tt">*</key>
-		<key name="menu.main.file.save">*</key>
-		<key name="menu.main.file.save.tt">*</key>
-		<key name="menu.main.file.saveAs">*</key>
-		<key name="menu.main.file.saveAs.tt">*</key>
+		<key name="menu.main.file.new">Новый</key>
+		<key name="menu.main.file.new.tt">Создать новый SVG-файл</key>
+		<key name="menu.main.file.load">Загрузить</key>
+		<key name="menu.main.file.load.tt">Загрузить существующий SVG-файл*</key>
+		<key name="menu.main.file.load.lru">Загрузить последние...</key>
+		<key name="menu.main.file.load.lru.tt">Загрузить один из ранее загруженных SVG-файлов</key>
+		<key name="menu.main.file.save">Сохранить</key>
+		<key name="menu.main.file.save.tt">Сохранить изменения в редактируемом файле</key>
+		<key name="menu.main.file.saveAs">Сохранить как...</key>
+		<key name="menu.main.file.saveAs.tt">Сохранить редактируемый файл в новое место</key>
 		<key name="menu.main.file.print">*</key>
 		<key name="menu.main.file.print.tt">*</key>
 		<key name="menu.main.file.import">*</key>
@@ -673,6 +679,10 @@
 <!-- ImageEditPanel.JCommandField -->
 		<key name="chav1961.bt.paint.bgeditor.JCommandField.help">uri(commands.cre)</key>
 		
+<!-- Локализация класса SVGEditor -->
+		<key name="chav1961.bt.svgeditor.screen.SVGEditor.command.prompt">Введите команду:</key>
+		<key name="chav1961.bt.svgeditor.screen.SVGEditor.command.prompt.tt">Введите команду</key>
+				
 <!-- Локализация класса ImageEditPanel -->
 		<key name="chav1961.bt.paint.editor.ImageEditPanel.selectColor">Выберите цвет</key>		
 		<key name="chav1961.bt.paint.editor.ImageEditPanel.undo.crop">отменить обрезку</key>
