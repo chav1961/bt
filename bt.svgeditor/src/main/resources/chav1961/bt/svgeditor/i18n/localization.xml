@@ -2,7 +2,7 @@
 <localization xmlns="http://www.i18n.purelib.chav1961.ru/">
 	<lang name="en">
 <!-- Application -->
-		<key name="chav1961.bt.svgeditor.Application.title">(c) 2022, A.V.Chernomyrdin. Simple graphic editor V.R.=0.0 %1$s</key>
+		<key name="chav1961.bt.svgeditor.Application.title">(c) 2025, A.V.Chernomyrdin. Simple SVG editor V.R.=0.0 %1$s</key>
 		<key name="application.about.title">About...</key>
 		<key name="application.about.content">uri(about.cre)</key>
 		<key name="chav1961.bt.paint.Application.filter.pngfiles">PNG images</key>
@@ -21,9 +21,11 @@
 		<key name="chav1961.bt.paint.Application.endbatch.content">All files in the batch are processed. Quit from application?</key>
 		<key name="chav1961.bt.paint.Application.customfilter.typeItems">Type items for custom filter</key>
 		<key name="chav1961.bt.paint.Application.player.enterSubstitutions">Type substitution values for variables</key>
+		
 		<key name="chav1961.bt.svgeditor.Application.help.title">About...</key>
 		<key name="chav1961.bt.svgeditor.Application.help.content">uri(aboutApplication.cre)</key>
 		<key name="chav1961.bt.svgeditor.Application.filter.names">SVG files</key>
+		<key name="chav1961.bt.svgeditor.Application.message.file.not.exists">File (%1$s) is not exists and will be removed from LRU list</key>
 
 <!-- Main menu -->
 		<key name="menu.main.file">File</key>
@@ -38,8 +40,8 @@
 		<key name="menu.main.file.save.tt">Save current SVG file</key>
 		<key name="menu.main.file.saveAs">Save as...</key>
 		<key name="menu.main.file.saveAs.tt">Save current SVG file to new location</key>
-		<key name="menu.main.file.print">*</key>
-		<key name="menu.main.file.print.tt">*</key>
+		<key name="menu.main.file.print">Print</key>
+		<key name="menu.main.file.print.tt">Print SVG content as picture</key>
 		<key name="menu.main.file.import">*</key>
 		<key name="menu.main.file.import.tt">*</key>
 		<key name="menu.main.file.import.stl">*</key>
@@ -136,8 +138,8 @@
 		<key name="toolbar.playerbar.play.file.tt">*</key>
 		<key name="menu.main.tools.recalc">*</key>
 		<key name="menu.main.tools.recalc.tt">*</key>
-		<key name="menu.main.tools.languages">*</key>
-		<key name="menu.main.tools.languages.tt">*</key>
+		<key name="menu.main.tools.languages">Language</key>
+		<key name="menu.main.tools.languages.tt">Selects UI interface language</key>
 		<key name="menu.main.tools.settings">*</key>
 		<key name="menu.main.tools.settings.tt">*</key>
 		<key name="menu.main.help">Help</key>
@@ -410,7 +412,7 @@
 	</lang>
 	<lang name="ru">
 <!-- Приложение -->
-		<key name="chav1961.bt.svgeditor.Application.title">(c) 2022, А.В.Черномырдин. Простой графический редактор V.R.=0.0 %1$s</key>
+		<key name="chav1961.bt.svgeditor.Application.title">(c) 2025, А.В.Черномырдин. Простой редактор SVG V.R.=0.0 %1$s</key>
 		<key name="application.about.title">О программе...</key>
 		<key name="application.about.content">uri(about.cre)</key>
 		<key name="chav1961.bt.paint.Application.filter.pngfiles">PNG изображения</key>
@@ -432,6 +434,7 @@
 		<key name="chav1961.bt.svgeditor.Application.help.title">О программе</key>
 		<key name="chav1961.bt.svgeditor.Application.help.content">uri(aboutApplication.cre)</key>
 		<key name="chav1961.bt.svgeditor.Application.filter.names">Файлы SVG</key>
+		<key name="chav1961.bt.svgeditor.Application.message.file.not.exists">Файл (%1$s) не найден и будет удален из списка последних загруженных</key>
 		
 <!-- Главное меню -->
 		<key name="menu.main.file">Файл</key>
@@ -446,8 +449,8 @@
 		<key name="menu.main.file.save.tt">Сохранить изменения в редактируемом файле</key>
 		<key name="menu.main.file.saveAs">Сохранить как...</key>
 		<key name="menu.main.file.saveAs.tt">Сохранить редактируемый файл в новое место</key>
-		<key name="menu.main.file.print">*</key>
-		<key name="menu.main.file.print.tt">*</key>
+		<key name="menu.main.file.print">Печать</key>
+		<key name="menu.main.file.print.tt">Печать содержимого SVG в виде картинки</key>
 		<key name="menu.main.file.import">*</key>
 		<key name="menu.main.file.import.tt">*</key>
 		<key name="menu.main.file.import.stl">*</key>
@@ -544,8 +547,8 @@
 		<key name="toolbar.playerbar.play.file.tt">*</key>
 		<key name="menu.main.tools.recalc">*</key>
 		<key name="menu.main.tools.recalc.tt">*</key>
-		<key name="menu.main.tools.languages">*</key>
-		<key name="menu.main.tools.languages.tt">*</key>
+		<key name="menu.main.tools.languages">Язык</key>
+		<key name="menu.main.tools.languages.tt">Выбрать язык графического интерфейса</key>
 		<key name="menu.main.tools.settings">*</key>
 		<key name="menu.main.tools.settings.tt">*</key>
 		<key name="menu.main.help">*</key>

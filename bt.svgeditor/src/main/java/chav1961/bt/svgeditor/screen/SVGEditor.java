@@ -1,6 +1,7 @@
 package chav1961.bt.svgeditor.screen;
 
 import java.awt.BorderLayout;
+import java.awt.Color;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -48,6 +49,7 @@ public class SVGEditor extends JPanel implements LocaleChangeListener, LoggerFac
 			this.localizer = localizer;
 			commandPanel.add(commandLabel, BorderLayout.WEST);
 			commandPanel.add(command, BorderLayout.CENTER);
+			canvas.setBackground(Color.black);
 			add(new JScrollPane(canvas), BorderLayout.CENTER);
 			add(commandPanel, BorderLayout.SOUTH);
 			
@@ -68,7 +70,11 @@ public class SVGEditor extends JPanel implements LocaleChangeListener, LoggerFac
 	
 	@Override
 	public LoggerFacade getLogger() {
-		return SwingUtils.getNearestLogger(this);
+		return SwingUtils.getNearestLogger(getParent());
+	}
+
+	public boolean isEmpty() {
+		return true;
 	}
 	
 	public <T> T execute(final CharSequence seq, final Class<T> awaited) throws SyntaxException {

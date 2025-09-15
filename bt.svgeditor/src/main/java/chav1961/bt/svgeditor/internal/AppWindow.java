@@ -3,43 +3,45 @@ package chav1961.bt.svgeditor.internal;
 
 import java.awt.BorderLayout;
 import java.awt.Dimension;
-import java.awt.event.WindowAdapter;
-import java.awt.event.WindowEvent;
+import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
 import java.net.URI;
 import java.util.ArrayList;
+import java.util.Hashtable;
 import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.CountDownLatch;
 
 import javax.swing.JFrame;
+import javax.swing.JMenu;
 import javax.swing.JMenuBar;
+import javax.swing.JMenuItem;
 
 import chav1961.bt.svgeditor.screen.SVGEditor;
+import chav1961.purelib.basic.PureLibSettings;
 import chav1961.purelib.basic.SubstitutableProperties;
 import chav1961.purelib.basic.exceptions.LocalizationException;
 import chav1961.purelib.basic.interfaces.LoggerFacade;
 import chav1961.purelib.basic.interfaces.LoggerFacade.Severity;
+import chav1961.purelib.basic.interfaces.LoggerFacadeOwner;
 import chav1961.purelib.fsys.FileSystemFactory;
 import chav1961.purelib.fsys.interfaces.FileSystemInterface;
-import chav1961.purelib.basic.interfaces.LoggerFacadeOwner;
+import chav1961.purelib.i18n.LocalizerFactory;
+import chav1961.purelib.i18n.interfaces.Localizer;
+import chav1961.purelib.i18n.interfaces.Localizer.LocaleChangeListener;
 import chav1961.purelib.i18n.interfaces.LocalizerOwner;
+import chav1961.purelib.i18n.interfaces.SupportedLanguages;
 import chav1961.purelib.model.ContentModelFactory;
 import chav1961.purelib.model.interfaces.ContentMetadataInterface;
 import chav1961.purelib.ui.interfaces.LRUPersistence;
 import chav1961.purelib.ui.swing.SwingUtils;
+import chav1961.purelib.ui.swing.interfaces.OnAction;
 import chav1961.purelib.ui.swing.useful.JEnableMaskManipulator;
+import chav1961.purelib.ui.swing.useful.JEnableMaskManipulator.ItemDescriptor;
 import chav1961.purelib.ui.swing.useful.JFileContentManipulator;
 import chav1961.purelib.ui.swing.useful.JFileSelectionDialog.FilterCallback;
-import chav1961.purelib.ui.swing.useful.JEnableMaskManipulator.ItemDescriptor;
 import chav1961.purelib.ui.swing.useful.JStateString;
 import chav1961.purelib.ui.swing.useful.interfaces.FileContentChangedEvent;
-import chav1961.purelib.i18n.LocalizerFactory;
-import chav1961.purelib.i18n.interfaces.Localizer;
-import chav1961.purelib.i18n.interfaces.Localizer.LocaleChangeListener;
-import chav1961.purelib.ui.swing.interfaces.OnAction;
 
 public class AppWindow extends JFrame implements LocaleChangeListener, LoggerFacadeOwner, LocalizerOwner, AutoCloseable {
 	private static final long serialVersionUID = 6899575079681432788L;
@@ -51,11 +53,13 @@ public class AppWindow extends JFrame implements LocaleChangeListener, LoggerFac
 	private static final String		APP_HELP_CONTENT = "chav1961.bt.svgeditor.Application.help.content";
 
 	private static final String		APP_FILTER_NAME = "chav1961.bt.svgeditor.Application.filter.names";
+	public static final String		APP_MESSAGE_FILE_NOT_EXISTS = "chav1961.bt.svgeditor.Application.message.file.not.exists";
 	
 	private static final String		MENU_MAIN_FILE_LOAD_LRU = "menu.main.file.load.lru";
 	private static final String		MENU_MAIN_FILE_SAVE = "menu.main.file.save";
 	private static final String		MENU_MAIN_FILE_SAVE_AS = "menu.main.file.saveAs";
 	private static final String		MENU_MAIN_FILE_PRINT = "menu.main.file.print";
+	private static final String		MENU_MAIN_FILE_IMPORT = "menu.main.file.import";
 	private static final String		MENU_MAIN_FILE_EXPORT = "menu.main.file.export";
 	private static final String		MENU_MAIN_EDIT = "menu.main.edit";
 	private static final String		MENU_MAIN_EDIT_UNDO = "menu.main.edit.undo";
@@ -102,9 +106,9 @@ public class AppWindow extends JFrame implements LocaleChangeListener, LoggerFac
 		this.fsi = FileSystemFactory.createFileSystem(URI.create("fsys:file:/"));
 		this.persistence = LRUPersistence.of(props, LRU_PREFIX);
 		this.fcm = new JFileContentManipulator("system", fsi, localizer, editor, editor, persistence, lruFiles);
-		this.fcm.addFileContentChangeListener((e)->processLRU(e));
 		this.fcm.setOwner(this);
-		this.fcmIndex = this.fcm.appendNewFileSupport();
+		this.fcm.setCurrentFileSupport(this.fcmIndex = this.fcm.appendNewFileSupport());
+		this.fcm.addFileContentChangeListener((e)->processLRU(e));
 		this.fcm.setFilters(FilterCallback.of(APP_FILTER_NAME, "*.svg"));
 		this.fcm.setProgressIndicator(state);
 		
@@ -117,6 +121,7 @@ public class AppWindow extends JFrame implements LocaleChangeListener, LoggerFac
         SwingUtils.assignActionListeners(menuBar, this);
 		SwingUtils.assignExitMethod4MainWindow(this, ()->exit());
 
+		emm.applyMasks();
 		state.message(Severity.info, "Ready");
 	}
 	
@@ -353,9 +358,10 @@ public class AppWindow extends JFrame implements LocaleChangeListener, LoggerFac
 	private void recalculate() {
 	}
 	
-	@OnAction("action:/builtin.languages")
-	private void builtinLang() {
-	}
+	@OnAction("action:builtin:/builtin.languages")
+    public void language(final Hashtable<String,String[]> langs) throws LocalizationException {
+		PureLibSettings.PURELIB_LOCALIZER.setCurrentLocale(SupportedLanguages.valueOf(langs.get("lang")[0]).getLocale());
+	}	
 	
 	@OnAction("action:/settings")
 	private void settings() {
@@ -370,39 +376,84 @@ public class AppWindow extends JFrame implements LocaleChangeListener, LoggerFac
 		SwingUtils.showAboutScreen(this, getLocalizer(), APP_HELP_TITLE, APP_HELP_CONTENT, URI.create("root://"+getClass().getCanonicalName()+"/chav1961/bt/svgeditor/internal/avatar.jpg"), new Dimension(640, 400));
 	}
 	
-	private void processLRU(final FileContentChangedEvent<Object> e) {
-		// TODO Auto-generated method stub
-		switch (e.getChangeType()) {
-			case FILE_LOADED:
+	private void processLRU(final FileContentChangedEvent<Object> event) {
+		switch (event.getChangeType()) {
+			case LRU_LIST_REFRESHED			:
+				fillLRU(fcm.getLastUsed());
 				break;
-			case FILE_STORED:
+			case FILE_LOADED 				:
+				refreshTitle();
 				break;
-			case FILE_STORED_AS:
+			case FILE_STORED 				:
+				fcm.clearModificationFlag();
 				break;
-			case FILE_SUPPORT_ID_CHANGED:
+			case FILE_STORED_AS 			:
+				fcm.clearModificationFlag();
+				refreshTitle();
 				break;
-			case LRU_LIST_REFRESHED:
+			case MODIFICATION_FLAG_CLEAR 	:
+				emm.applyMasks();
+				refreshTitle();
 				break;
-			case MODIFICATION_FLAG_CLEAR:
+			case MODIFICATION_FLAG_SET 		:
+				emm.applyMasks();
+				refreshTitle();
 				break;
-			case MODIFICATION_FLAG_SET:
+			case FILE_SUPPORT_ID_CHANGED	:
 				break;
-			case NEW_FILE_CREATED:
+			case NEW_FILE_CREATED 			:
+				refreshTitle();
+				emm.applyMasks();
 				break;
-			default:
-				throw new UnsupportedOperationException("Change type ["+e.getChangeType()+"] is not supported yet");
+			default :
+				throw new UnsupportedOperationException("Change type ["+event.getChangeType()+"] is not supported yet");
 		}
+	}
+	
+	private void fillLRU(final List<String> lastUsed) {
+		final JMenu	menu = (JMenu)SwingUtils.findComponentByName(menuBar, MENU_MAIN_FILE_LOAD_LRU);
+		
+		menu.removeAll();
+		for (String file : lastUsed) {
+			final JMenuItem	item = new JMenuItem(file);
+			
+			item.addActionListener((e)->loadLRU(item.getText()));
+			menu.add(item);
+		}
+		emm.applyMasks();
+	}
+	
+	void loadLRU(final String path) {
+		final File	f = new File(path);
+		
+		if (f.exists() && f.isFile() && f.canRead()) {
+			try{fcm.openFile(path);
+			} catch (IOException e) {
+				getLogger().message(Severity.error, e, e.getLocalizedMessage());
+			}
+		}
+		else {
+			fcm.removeFileNameFromLRU(path);
+			getLogger().message(Severity.warning, APP_MESSAGE_FILE_NOT_EXISTS, path);
+		}
+	}
+	
+	private boolean hasAnyLRU() {
+		final JMenu	menu = (JMenu)SwingUtils.findComponentByName(menuBar, MENU_MAIN_FILE_LOAD_LRU);
+		
+		return menu.getMenuComponentCount() > 0;
 	}
 	
 	private ItemDescriptor[] getMenus(final AppWindow item) {
 		int	index = 0;
 		
 		return new ItemDescriptor[] {
-				new ItemDescriptor(MENU_MAIN_FILE_LOAD_LRU, 1L << index++, ()->true),
-				new ItemDescriptor(MENU_MAIN_FILE_SAVE, 1L << index++, ()->true),
-				new ItemDescriptor(MENU_MAIN_FILE_SAVE_AS, 1L << index++, ()->true),
-				new ItemDescriptor(MENU_MAIN_FILE_PRINT, 1L << index++, ()->true),
-				new ItemDescriptor(MENU_MAIN_FILE_EXPORT, 1L << index++, ()->true),
+				new ItemDescriptor(MENU_MAIN_FILE_LOAD_LRU, 1L << index++, ()->hasAnyLRU()),
+				new ItemDescriptor(MENU_MAIN_FILE_SAVE, 1L << index++, ()->fcm.wasChanged()),
+				new ItemDescriptor(MENU_MAIN_FILE_SAVE_AS, 1L << index++, ()->!fcm.isFileNew()),
+				new ItemDescriptor(MENU_MAIN_FILE_PRINT, 1L << index++, ()->!editor.isEmpty()),
+				new ItemDescriptor(MENU_MAIN_FILE_IMPORT, 1L << index++, ()->true),
+				new ItemDescriptor(MENU_MAIN_FILE_EXPORT, 1L << index++, ()->!editor.isEmpty()),
 				new ItemDescriptor(MENU_MAIN_EDIT, 1L << index++, ()->true),
 				new ItemDescriptor(MENU_MAIN_EDIT_UNDO, 1L << index++, ()->true),
 				new ItemDescriptor(MENU_MAIN_EDIT_REDO, 1L << index++, ()->true),
@@ -420,7 +471,8 @@ public class AppWindow extends JFrame implements LocaleChangeListener, LoggerFac
 	}
 	
 	private void refreshTitle() {
-		setTitle(getLocalizer().getValue(APP_TITLE));
+		setTitle(String.format(getLocalizer().getValue(APP_TITLE), 
+				(fcm.wasChanged() ? "*" : " ") + fcm.getCurrentNameOfTheFile()));
 	}
 	
 	private void fillLocalizedStrings() {
