@@ -62,8 +62,8 @@
 		<key name="menu.main.file.export.bmp.tt">*</key>
 		<key name="menu.main.file.exit">Quit</key>
 		<key name="menu.main.file.exit.tt">Quit program</key>
-		<key name="menu.main.edit">*</key>
-		<key name="menu.main.edit.tt">*</key>
+		<key name="menu.main.edit">Edit</key>
+		<key name="menu.main.edit.tt">Edit SVG content</key>
 		<key name="menu.main.edit.undo">*</key>
 		<key name="menu.main.edit.undo.tt">*</key>
 		<key name="menu.main.edit.redo">*</key>
@@ -88,8 +88,8 @@
 		<key name="menu.main.edit.find.tt">*</key>
 		<key name="menu.main.edit.replace">*</key>
 		<key name="menu.main.edit.replace.tt">*</key>
-		<key name="menu.main.insert">*</key>
-		<key name="menu.main.insert.tt">*</key>
+		<key name="menu.main.insert">Insert</key>
+		<key name="menu.main.insert.tt">Insert graphical primitives</key>
 		<key name="menu.main.insert.line">*</key>
 		<key name="menu.main.insert.line.tt">*</key>
 		<key name="menu.main.insert.polyline">*</key>
@@ -122,8 +122,8 @@
 		<key name="menu.main.insert.tooltip.roundedrectangle.tt">*</key>
 		<key name="menu.main.insert.tooltip.ellipse">*</key>
 		<key name="menu.main.insert.tooltip.ellipse.tt">*</key>
-		<key name="menu.main.tools">*</key>
-		<key name="menu.main.tools.tt">*</key>
+		<key name="menu.main.tools">Tools</key>
+		<key name="menu.main.tools.tt">Tools, settings etc...</key>
 		<key name="menu.main.tools.playerbar">*</key>
 		<key name="menu.main.tools.playerbar.tt">*</key>
 		<key name="toolbar.playerbar.recording">*</key>
@@ -143,11 +143,11 @@
 		<key name="menu.main.tools.settings">*</key>
 		<key name="menu.main.tools.settings.tt">*</key>
 		<key name="menu.main.help">Help</key>
-		<key name="menu.main.help.tt">Help</key>
+		<key name="menu.main.help.tt">Help about product</key>
 		<key name="menu.main.help.overview">Overview</key>
 		<key name="menu.main.help.overview.tt">Product overview</key>
 		<key name="menu.main.help.about">About...</key>
-		<key name="menu.main.help.about.tt">Information about the program</key>
+		<key name="menu.main.help.about.tt">Information about program</key>
 <!-- Toolbar ColorBar -->
 		<key name="toolbar.colorbar.black">Black</key>
 		<key name="toolbar.colorbar.black.tt">Captain Obvious says: Black color</key>
@@ -470,9 +470,9 @@
 		<key name="menu.main.file.export.bmp">*</key>
 		<key name="menu.main.file.export.bmp.tt">*</key>
 		<key name="menu.main.file.exit">Выход</key>
-		<key name="menu.main.file.exit.tt">Завершение работы прораммы</key>
-		<key name="menu.main.edit">*</key>
-		<key name="menu.main.edit.tt">*</key>
+		<key name="menu.main.file.exit.tt">Завершение работы программы</key>
+		<key name="menu.main.edit">Редактировать</key>
+		<key name="menu.main.edit.tt">Редактировать содержимое экрана</key>
 		<key name="menu.main.edit.undo">*</key>
 		<key name="menu.main.edit.undo.tt">*</key>
 		<key name="menu.main.edit.redo">*</key>
@@ -497,8 +497,8 @@
 		<key name="menu.main.edit.find.tt">*</key>
 		<key name="menu.main.edit.replace">*</key>
 		<key name="menu.main.edit.replace.tt">*</key>
-		<key name="menu.main.insert">*</key>
-		<key name="menu.main.insert.tt">*</key>
+		<key name="menu.main.insert">Вставка</key>
+		<key name="menu.main.insert.tt">Вставка графических примитивов</key>
 		<key name="menu.main.insert.line">*</key>
 		<key name="menu.main.insert.line.tt">*</key>
 		<key name="menu.main.insert.polyline">*</key>
@@ -531,8 +531,8 @@
 		<key name="menu.main.insert.tooltip.roundedrectangle.tt">*</key>
 		<key name="menu.main.insert.tooltip.ellipse">*</key>
 		<key name="menu.main.insert.tooltip.ellipse.tt">*</key>
-		<key name="menu.main.tools">*</key>
-		<key name="menu.main.tools.tt">*</key>
+		<key name="menu.main.tools">Инструменты</key>
+		<key name="menu.main.tools.tt">Настройки, опции и т.д.</key>
 		<key name="menu.main.tools.playerbar">*</key>
 		<key name="menu.main.tools.playerbar.tt">*</key>
 		<key name="toolbar.playerbar.recording">*</key>
@@ -551,12 +551,12 @@
 		<key name="menu.main.tools.languages.tt">Выбрать язык графического интерфейса</key>
 		<key name="menu.main.tools.settings">*</key>
 		<key name="menu.main.tools.settings.tt">*</key>
-		<key name="menu.main.help">*</key>
-		<key name="menu.main.help.tt">*</key>
-		<key name="menu.main.help.overview">*</key>
-		<key name="menu.main.help.overview.tt">*</key>
-		<key name="menu.main.help.about">*</key>
-		<key name="menu.main.help.about.tt">*</key>
+		<key name="menu.main.help">Справка</key>
+		<key name="menu.main.help.tt">Справочная информация</key>
+		<key name="menu.main.help.overview">Обзор</key>
+		<key name="menu.main.help.overview.tt">Обзор приложения</key>
+		<key name="menu.main.help.about">О программе</key>
+		<key name="menu.main.help.about.tt">Информация о программе</key>
 <!-- Toolbar ColorBar -->
 		<key name="toolbar.colorbar.black">Черный</key>
 		<key name="toolbar.colorbar.black.tt">Кэп сообщает: черный цвет</key>

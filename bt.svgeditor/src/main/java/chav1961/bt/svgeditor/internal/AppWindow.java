@@ -69,6 +69,7 @@ public class AppWindow extends JFrame implements LocaleChangeListener, LoggerFac
 	private static final String		MENU_MAIN_EDIT_PASTE = "menu.main.edit.paste";
 	private static final String		MENU_MAIN_EDIT_FIND = "menu.main.edit.find";
 	private static final String		MENU_MAIN_EDIT_REPLACE = "menu.main.edit.replace";
+	private static final String		MENU_MAIN_INSERT = "menu.main.insert";
 	private static final String		MENU_MAIN_TOOLS_PLAYERBAR_RECORDING = "menu.main.tools.playerbar.recording";
 	private static final String		MENU_MAIN_TOOLS_PLAYERBAR_PAUSE = "menu.main.tools.playerbar.pause";
 	private static final String		MENU_MAIN_TOOLS_PLAYERBAR_PLAY_LAST = "menu.main.tools.playerbar.play.last";
@@ -89,6 +90,7 @@ public class AppWindow extends JFrame implements LocaleChangeListener, LoggerFac
 	private final JStateString				state;
 	private final SVGEditor					editor;
 	private final CountDownLatch			latch = new CountDownLatch(1);
+	private boolean		anyContentExists = false;
 	
 	public AppWindow(final Localizer parentLocalizer, final SubstitutableProperties props) throws NullPointerException, IllegalArgumentException, IOException {
 		this.mdi = ContentModelFactory.forXmlDescription(getClass().getResourceAsStream("menus.xml"));
@@ -382,6 +384,7 @@ public class AppWindow extends JFrame implements LocaleChangeListener, LoggerFac
 				fillLRU(fcm.getLastUsed());
 				break;
 			case FILE_LOADED 				:
+				anyContentExists = true;
 				refreshTitle();
 				break;
 			case FILE_STORED 				:
@@ -403,6 +406,7 @@ public class AppWindow extends JFrame implements LocaleChangeListener, LoggerFac
 				break;
 			case NEW_FILE_CREATED 			:
 				refreshTitle();
+				anyContentExists = true;
 				emm.applyMasks();
 				break;
 			default :
@@ -454,7 +458,7 @@ public class AppWindow extends JFrame implements LocaleChangeListener, LoggerFac
 				new ItemDescriptor(MENU_MAIN_FILE_PRINT, 1L << index++, ()->!editor.isEmpty()),
 				new ItemDescriptor(MENU_MAIN_FILE_IMPORT, 1L << index++, ()->true),
 				new ItemDescriptor(MENU_MAIN_FILE_EXPORT, 1L << index++, ()->!editor.isEmpty()),
-				new ItemDescriptor(MENU_MAIN_EDIT, 1L << index++, ()->true),
+				new ItemDescriptor(MENU_MAIN_EDIT, 1L << index++, ()->anyContentExists),
 				new ItemDescriptor(MENU_MAIN_EDIT_UNDO, 1L << index++, ()->true),
 				new ItemDescriptor(MENU_MAIN_EDIT_REDO, 1L << index++, ()->true),
 				new ItemDescriptor(MENU_MAIN_EDIT_CUT, 1L << index++, ()->true),
@@ -462,6 +466,7 @@ public class AppWindow extends JFrame implements LocaleChangeListener, LoggerFac
 				new ItemDescriptor(MENU_MAIN_EDIT_PASTE, 1L << index++, ()->true),
 				new ItemDescriptor(MENU_MAIN_EDIT_FIND, 1L << index++, ()->true),
 				new ItemDescriptor(MENU_MAIN_EDIT_REPLACE, 1L << index++, ()->true),
+				new ItemDescriptor(MENU_MAIN_INSERT, 1L << index++, ()->anyContentExists),
 				new ItemDescriptor(MENU_MAIN_TOOLS_PLAYERBAR_RECORDING, 1L << index++, ()->true),
 				new ItemDescriptor(MENU_MAIN_TOOLS_PLAYERBAR_PAUSE, 1L << index++, ()->true, ()->true),
 				new ItemDescriptor(MENU_MAIN_TOOLS_PLAYERBAR_PLAY_LAST, 1L << index++, ()->true),

@@ -46,7 +46,7 @@
 			<app:item name="menu.main.edit.find" caption="menu.main.edit.find" tooltip="menu.main.edit.find.tt" action="find"/>
 			<app:item name="menu.main.edit.replace" caption="menu.main.edit.replace" tooltip="menu.main.edit.replace.tt" action="replace"/>
 		</app:submenu>
-		<app:submenuref name="menu.main.insert" ref="menu.main.insert"/>
+		<app:submenuref name="menu.main.insert" ref="ui:/model/navigation.top.insert"/>
 		<app:submenu name="menu.main.tools" caption="menu.main.tools" tooltip="menu.main.tools.tt">
 		 	<app:submenu name="menu.main.tools.playerBar" caption="menu.main.tools.playerbar" tooltip="menu.main.tools.playerbar.tt">
 				<app:item name="menu.main.tools.playerbar.recording" caption="toolbar.playerbar.recording" tooltip="toolbar.playerbar.recording.tt" checkable="true" action="player.recording"/>
@@ -89,7 +89,7 @@
 		<app:key code="G" ctrl="true" action="player.play.last"/>
 		<app:key code="F1" action="overview"/>
 	</app:keyset>
- 	<app:menu id="insertmenu">
+ 	<app:menu id="insert">
 		<app:submenu name="menu.main.insert" caption="menu.main.insert" tooltip="menu.main.insert.tt">
 			<app:item name="menu.main.insert.line" caption="menu.main.insert.line" tooltip="menu.main.insert.line.tt" action="InsertLine"/>
 			<app:item name="menu.main.insert.polyline" caption="menu.main.insert.polyline" tooltip="menu.main.insert.polyline.tt" action="InsertPolyline"/>
