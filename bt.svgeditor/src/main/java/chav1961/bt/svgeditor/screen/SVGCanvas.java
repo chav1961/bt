@@ -13,19 +13,24 @@ import java.awt.event.MouseWheelEvent;
 import java.awt.event.MouseWheelListener;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Rectangle2D;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Locale;
 
 import javax.swing.JComponent;
 import javax.swing.Scrollable;
 
+import chav1961.bt.svgeditor.primitives.LineWrapper;
+import chav1961.bt.svgeditor.primitives.PrimitiveWrapper;
 import chav1961.purelib.basic.exceptions.LocalizationException;
 import chav1961.purelib.i18n.interfaces.Localizer.LocaleChangeListener;
 
-public class SVGCanvas extends JComponent implements LocaleChangeListener, MouseListener, MouseMotionListener, MouseWheelListener{
+public class SVGCanvas extends JComponent implements LocaleChangeListener, MouseListener, MouseMotionListener, MouseWheelListener {
 	private static final long 	serialVersionUID = -4725462263857678033L;
 	private static final double DEFAULT_MOUSE_WHEEL_SPEED = 10;
 
 	private final double	mouseWheelSpeed;
+	private final List<PrimitiveWrapper>	content = new ArrayList<>();
 	private Dimension		conventionalSize = new Dimension(100,100);
 	private double			currentScale = 1;
 
@@ -34,6 +39,7 @@ public class SVGCanvas extends JComponent implements LocaleChangeListener, Mouse
 	}
 	
 	public SVGCanvas(final double mouseWheelSpeed) {
+		content.add(new LineWrapper(0,0,100,100));
 		this.mouseWheelSpeed = mouseWheelSpeed;
 		addMouseListener(this);
 		addMouseMotionListener(this);
@@ -108,6 +114,10 @@ public class SVGCanvas extends JComponent implements LocaleChangeListener, Mouse
 		return conventionalSize;
 	}
 	
+	public int getItemCount() {
+		return content.size();
+	}
+	
 	public void setConventionalSize(final Dimension size) {
 		if (size == null) {
 			throw new NullPointerException("Conventional size to set can't be null");
@@ -148,8 +158,12 @@ public class SVGCanvas extends JComponent implements LocaleChangeListener, Mouse
 		pickCoordinates(g2d);
 		fillBackground(g2d);
 
-		g2d.setColor(Color.red);
-		g2d.drawLine(0, 0, (int)getConventionalSize().getWidth(), (int)getConventionalSize().getHeight());
+		for(PrimitiveWrapper item : content) {
+			item.draw(g2d, this);
+		}
+		
+//		g2d.setColor(Color.red);
+//		g2d.drawLine(0, 0, (int)getConventionalSize().getWidth(), (int)getConventionalSize().getHeight());
 		
 		g2d.setTransform(oldAt);
 	}

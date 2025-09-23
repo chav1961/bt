@@ -2,7 +2,14 @@ package chav1961.bt.svgeditor.internal;
 
 
 import java.awt.BorderLayout;
+import java.awt.Color;
 import java.awt.Dimension;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.print.PageFormat;
+import java.awt.print.Printable;
+import java.awt.print.PrinterException;
+import java.awt.print.PrinterJob;
 import java.io.File;
 import java.io.IOException;
 import java.net.URI;
@@ -16,6 +23,9 @@ import javax.swing.JFrame;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
+import javax.print.*;
+import javax.print.attribute.*;
+import javax.print.attribute.standard.*;
 
 import chav1961.bt.svgeditor.screen.SVGEditor;
 import chav1961.purelib.basic.PureLibSettings;
@@ -53,7 +63,9 @@ public class AppWindow extends JFrame implements LocaleChangeListener, LoggerFac
 	private static final String		APP_HELP_CONTENT = "chav1961.bt.svgeditor.Application.help.content";
 
 	private static final String		APP_FILTER_NAME = "chav1961.bt.svgeditor.Application.filter.names";
+	public static final String		APP_MESSAGE_READY = "chav1961.bt.svgeditor.Application.message.ready";
 	public static final String		APP_MESSAGE_FILE_NOT_EXISTS = "chav1961.bt.svgeditor.Application.message.file.not.exists";
+	public static final String		APP_MESSAGE_PRINTING_COMPLETED = "chav1961.bt.svgeditor.Application.message.printing.completed";
 	
 	private static final String		MENU_MAIN_FILE_LOAD_LRU = "menu.main.file.load.lru";
 	private static final String		MENU_MAIN_FILE_SAVE = "menu.main.file.save";
@@ -124,7 +136,7 @@ public class AppWindow extends JFrame implements LocaleChangeListener, LoggerFac
 		SwingUtils.assignExitMethod4MainWindow(this, ()->exit());
 
 		emm.applyMasks();
-		state.message(Severity.info, "Ready");
+		state.message(Severity.info, APP_MESSAGE_READY);
 	}
 	
 	@Override
@@ -194,6 +206,43 @@ public class AppWindow extends JFrame implements LocaleChangeListener, LoggerFac
 	
 	@OnAction("action:/printImage")
 	private void printImage() {
+        final PrintService[] 	services = PrinterJob.lookupPrintServices();
+
+        if (services.length > 0) {
+            try {
+        		final PrintRequestAttributeSet aset = new HashPrintRequestAttributeSet();
+        		
+                aset.add(OrientationRequested.PORTRAIT);
+                aset.add(new Copies(1));
+                aset.add(new JobName("Print SVG", getLocalizer().currentLocale().getLocale()));
+                final PrinterJob pj = PrinterJob.getPrinterJob();
+                
+                // https://docs.oracle.com/javase/8/docs/technotes/guides/jps/spec/JPSTOC.fm.html
+                // https://docs.oracle.com/javase/8/docs/technotes/guides/jps/spec/PrintGIF.java
+                pj.setPrintable(new Printable() {
+        			@Override
+        			public int print(final Graphics graphics, final PageFormat pageFormat, final int pageIndex) throws PrinterException {
+        				final Graphics2D g2d = (Graphics2D)graphics;
+        				// TODO Auto-generated method stub
+        				
+                        g2d.translate(pageFormat.getImageableX(), pageFormat.getImageableY()); 
+                        g2d.drawString("example string", 250, 250);
+                        g2d.setColor(Color.black);
+                        g2d.fillRect(0, 0, 200, 200);        				
+        				return pageIndex == 0 ? PAGE_EXISTS : NO_SUCH_PAGE;
+        			}
+                });
+                pj.setPrintService(services[0]);
+            	
+            	if (pj.printDialog(aset)) {
+            		pj.print(aset);
+        			getLogger().message(Severity.info, APP_MESSAGE_PRINTING_COMPLETED);
+            	}
+            } catch (PrinterException pe) { 
+    			getLogger().message(Severity.error, pe, pe.getLocalizedMessage());
+            }
+        }
+		
 	}
 	
 	@OnAction("action:/importSTL")
@@ -455,9 +504,9 @@ public class AppWindow extends JFrame implements LocaleChangeListener, LoggerFac
 				new ItemDescriptor(MENU_MAIN_FILE_LOAD_LRU, 1L << index++, ()->hasAnyLRU()),
 				new ItemDescriptor(MENU_MAIN_FILE_SAVE, 1L << index++, ()->fcm.wasChanged()),
 				new ItemDescriptor(MENU_MAIN_FILE_SAVE_AS, 1L << index++, ()->!fcm.isFileNew()),
-				new ItemDescriptor(MENU_MAIN_FILE_PRINT, 1L << index++, ()->!editor.isEmpty()),
+				new ItemDescriptor(MENU_MAIN_FILE_PRINT, 1L << index++, ()->anyContentExists && !editor.isEmpty() && PrinterJob.lookupPrintServices().length > 0),
 				new ItemDescriptor(MENU_MAIN_FILE_IMPORT, 1L << index++, ()->true),
-				new ItemDescriptor(MENU_MAIN_FILE_EXPORT, 1L << index++, ()->!editor.isEmpty()),
+				new ItemDescriptor(MENU_MAIN_FILE_EXPORT, 1L << index++, ()->anyContentExists && !editor.isEmpty()),
 				new ItemDescriptor(MENU_MAIN_EDIT, 1L << index++, ()->anyContentExists),
 				new ItemDescriptor(MENU_MAIN_EDIT_UNDO, 1L << index++, ()->true),
 				new ItemDescriptor(MENU_MAIN_EDIT_REDO, 1L << index++, ()->true),

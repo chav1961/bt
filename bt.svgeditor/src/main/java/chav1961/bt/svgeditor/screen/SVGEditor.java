@@ -74,7 +74,7 @@ public class SVGEditor extends JPanel implements LocaleChangeListener, LoggerFac
 	}
 
 	public boolean isEmpty() {
-		return true;
+		return canvas.getItemCount() == 0;
 	}
 	
 	public <T> T execute(final CharSequence seq, final Class<T> awaited) throws SyntaxException {
