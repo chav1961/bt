@@ -29,6 +29,7 @@
 		<key name="chav1961.bt.svgeditor.Application.message.file.not.exists">File (%1$s) is not exists and will be removed from LRU list</key>
 		<key name="chav1961.bt.svgeditor.Application.message.printing.completed">Printing completed</key>
 
+		<key name="chav1961.bt.svgeditor.Application.canvas.state">Row=%1$4d Col=%2$4d Scale=%3$6.4f</key>
 <!-- Main menu -->
 		<key name="menu.main.file">File</key>
 		<key name="menu.main.file.tt">File menu, export/import, print and exit</key>
@@ -441,6 +442,7 @@
 		<key name="chav1961.bt.svgeditor.Application.message.file.not.exists">Файл (%1$s) не найден и будет удален из списка последних загруженных</key>
 		<key name="chav1961.bt.svgeditor.Application.message.printing.completed">Печать завершена</key>
 		
+		<key name="chav1961.bt.svgeditor.Application.canvas.state">Стр=%1$4d Поз=%2$4d Масшт=%3$6.4f</key>
 <!-- Главное меню -->
 		<key name="menu.main.file">Файл</key>
 		<key name="menu.main.file.tt">Файловое меню, экспорт/импорт, печать и завершение работы программы</key>

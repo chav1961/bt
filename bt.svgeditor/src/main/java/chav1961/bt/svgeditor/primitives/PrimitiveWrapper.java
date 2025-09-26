@@ -3,28 +3,38 @@ package chav1961.bt.svgeditor.primitives;
 import java.awt.Color;
 import java.awt.Graphics2D;
 import java.awt.Point;
+import java.awt.geom.AffineTransform;
 import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
 
 import chav1961.bt.svgeditor.screen.SVGCanvas;
 
 public abstract class PrimitiveWrapper {
-	private Color		foreColor = Color.WHITE;
-	private Color		backColor = Color.BLACK;
-	private boolean		useBackground = true;
-	private Rectangle2D	areaOccupied = new Rectangle2D.Double(0,0,1,1);
+	private Color			foreColor = Color.WHITE;
+	private Color			backColor = Color.BLACK;
+	private boolean			useBackground = true;
+	private boolean			dragMode = false;
+	private boolean			highlight = false;
+	private Point2D			startDragPoint = null;
+	private Rectangle2D		areaOccupied = new Rectangle2D.Double(0,0,1,1);
+	private AffineTransform	at = new AffineTransform();
 	
 	public PrimitiveWrapper() {
 		
 	}
 
 	public abstract void draw(final Graphics2D g, final SVGCanvas canvas);
+	public abstract boolean isAbout(final Point2D point, final float delta);
+	public abstract void commitChanges();
 
-	
 	public Color getForeColor() {
 		return foreColor;
 	}
 
+	public Color getEffectiveForeColor() {
+		return isHighlight() ? foreColor.darker() : foreColor;
+	}
+	
 	public void setForeColor(final Color foreColor) {
 		if (foreColor == null) {
 			throw new NullPointerException("Foreground color can't be null");
@@ -38,6 +48,10 @@ public abstract class PrimitiveWrapper {
 		return backColor;
 	}
 
+	public Color getEffectiveBackColor() {
+		return isHighlight() ? backColor.darker() : backColor;
+	}
+	
 	public void setBackColor(final Color backColor) {
 		if (backColor == null) {
 			throw new NullPointerException("Background color can't be null");
@@ -55,6 +69,14 @@ public abstract class PrimitiveWrapper {
 		this.useBackground = useBackground;
 	}
 
+	public boolean isDragMode() {
+		return dragMode;
+	}
+
+	public void setDragMode(boolean dragMode) {
+		this.dragMode = dragMode;
+	}
+
 	public Rectangle2D getAreaOccupied() {
 		return areaOccupied;
 	}
@@ -63,6 +85,57 @@ public abstract class PrimitiveWrapper {
 		this.areaOccupied = areaOccupied;
 	}
 
+	public boolean isHighlight() {
+		return highlight;
+	}
+
+	public void setHighlight(final boolean highlight) {
+		this.highlight = highlight;
+	}
+
+	public void startDrag(final Point2D from) {
+		if (from == null) {
+			throw new NullPointerException("From point can't be null"); 
+		}
+		else if (isDragMode()) {
+			throw new IllegalStateException("This primitive is already in drag mode");
+		}
+		else {
+			setDragMode(true);
+			startDragPoint = from;
+		}
+	}
+	
+	public void endDrag() {
+		if (!isDragMode()) {
+			throw new IllegalStateException("This primitive is not in drag mode");
+		}
+		else {
+			setDragMode(false);
+		}
+	}
+	
+	public AffineTransform getTransform() {
+		return at;
+	}
+
+	public void setTransform(final AffineTransform at) {
+		if (at == null) {
+			throw new NullPointerException("Transform to set can't be null");
+		}
+		else if (!this.at.equals(at)) {
+			this.at = at;
+		}
+	}
+
+	public void clearTransform() {
+		this.at = new AffineTransform();
+	}
+	
+	protected Point2D getStartDragPoint() {
+		return startDragPoint;
+	}
+	
 	protected static Rectangle2D calcAreaOccupied(final Point2D... points) {
 		double xMin = points[0].getX(), xMax = xMin;
 		double yMin = points[0].getY(), yMax = yMin;

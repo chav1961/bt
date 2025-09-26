@@ -2,6 +2,8 @@ package chav1961.bt.svgeditor.screen;
 
 import java.awt.BorderLayout;
 import java.awt.Color;
+import java.awt.Point;
+import java.awt.geom.Point2D;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -10,10 +12,12 @@ import java.io.OutputStream;
 import java.util.Locale;
 
 import javax.swing.JLabel;
+import javax.swing.JLayeredPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTextField;
 
+import chav1961.bt.svgeditor.interfaces.StateChangedListener;
 import chav1961.purelib.basic.exceptions.LocalizationException;
 import chav1961.purelib.basic.exceptions.SyntaxException;
 import chav1961.purelib.basic.interfaces.InputStreamGetter;
@@ -36,6 +40,7 @@ public class SVGEditor extends JPanel implements LocaleChangeListener, LoggerFac
 	private final JLabel		commandLabel = new JLabel();
 	private final JTextField	command = new JTextField();
 	private final SVGCanvas		canvas = new SVGCanvas();
+	private final JLayeredPane	pane = new JLayeredPane();
 	private byte[]	temp = new byte[0];
 	
 	public SVGEditor(final Localizer localizer) {
@@ -50,7 +55,8 @@ public class SVGEditor extends JPanel implements LocaleChangeListener, LoggerFac
 			commandPanel.add(commandLabel, BorderLayout.WEST);
 			commandPanel.add(command, BorderLayout.CENTER);
 			canvas.setBackground(Color.black);
-			add(new JScrollPane(canvas), BorderLayout.CENTER);
+			pane.add(canvas, JLayeredPane.FRAME_CONTENT_LAYER);
+			add(new JScrollPane(pane), BorderLayout.CENTER);
 			add(commandPanel, BorderLayout.SOUTH);
 			
 			fillLocalizedStrings();
@@ -81,6 +87,32 @@ public class SVGEditor extends JPanel implements LocaleChangeListener, LoggerFac
 		return null;
 	}
 
+	public void addStateChangedListener(final StateChangedListener l) {
+		if (l == null) {
+			throw new NullPointerException("Listener to add can't be null");
+		}
+		else {
+			canvas.addStateChangedListener(l);
+		}
+	}
+
+	public void removeStateChangedListener(final StateChangedListener l) {
+		if (l == null) {
+			throw new NullPointerException("Listener to remove can't be null");
+		}
+		else {
+			canvas.removeStateChangedListener(l);
+		}
+	}
+	
+	public Point2D currentMousePoint() {
+		return canvas.currentMousePoint();
+	}
+
+	public double currentScale() {
+		return canvas.currentScale();
+	}
+	
 	private void fillLocalizedStrings() {
 		commandLabel.setText(getLocalizer().getValue(APP_COMMAND_PROMPT));
 		command.setToolTipText(getLocalizer().getValue(APP_COMMAND_PROMPT_TT));

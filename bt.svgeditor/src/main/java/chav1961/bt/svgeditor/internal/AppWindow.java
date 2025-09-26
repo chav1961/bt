@@ -6,6 +6,8 @@ import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
+import java.awt.event.MouseEvent;
+import java.awt.geom.Point2D;
 import java.awt.print.PageFormat;
 import java.awt.print.Printable;
 import java.awt.print.PrinterException;
@@ -20,13 +22,17 @@ import java.util.Locale;
 import java.util.concurrent.CountDownLatch;
 
 import javax.swing.JFrame;
+import javax.swing.JLabel;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
+import javax.swing.JPanel;
+import javax.swing.border.EtchedBorder;
 import javax.print.*;
 import javax.print.attribute.*;
 import javax.print.attribute.standard.*;
 
+import chav1961.bt.svgeditor.interfaces.StateChangedListener;
 import chav1961.bt.svgeditor.screen.SVGEditor;
 import chav1961.purelib.basic.PureLibSettings;
 import chav1961.purelib.basic.SubstitutableProperties;
@@ -66,6 +72,7 @@ public class AppWindow extends JFrame implements LocaleChangeListener, LoggerFac
 	public static final String		APP_MESSAGE_READY = "chav1961.bt.svgeditor.Application.message.ready";
 	public static final String		APP_MESSAGE_FILE_NOT_EXISTS = "chav1961.bt.svgeditor.Application.message.file.not.exists";
 	public static final String		APP_MESSAGE_PRINTING_COMPLETED = "chav1961.bt.svgeditor.Application.message.printing.completed";
+	public static final String		APP_CANVAS_STATE = "chav1961.bt.svgeditor.Application.canvas.state";
 	
 	private static final String		MENU_MAIN_FILE_LOAD_LRU = "menu.main.file.load.lru";
 	private static final String		MENU_MAIN_FILE_SAVE = "menu.main.file.save";
@@ -100,6 +107,7 @@ public class AppWindow extends JFrame implements LocaleChangeListener, LoggerFac
 	private final JFileContentManipulator	fcm;
 	private final int						fcmIndex;
 	private final JStateString				state;
+	private final JLabel					canvasState;	
 	private final SVGEditor					editor;
 	private final CountDownLatch			latch = new CountDownLatch(1);
 	private boolean		anyContentExists = false;
@@ -128,7 +136,27 @@ public class AppWindow extends JFrame implements LocaleChangeListener, LoggerFac
 		
 		setJMenuBar(menuBar);
 		getContentPane().add(editor, BorderLayout.CENTER);
-		getContentPane().add(state, BorderLayout.SOUTH);
+		final JPanel	bottomPanel = new JPanel(new BorderLayout());
+		
+		this.canvasState = new JLabel();
+		canvasState.setBorder(new EtchedBorder(EtchedBorder.LOWERED));
+		bottomPanel.add(state, BorderLayout.CENTER);
+		bottomPanel.add(canvasState, BorderLayout.EAST);
+		getContentPane().add(bottomPanel, BorderLayout.SOUTH);
+		
+		editor.addStateChangedListener(new StateChangedListener() {
+			@Override
+			public void scaleChanged(final double oldScale, final double newScale) {
+				fillCanvasState();
+			}
+			
+			@Override
+			public void locationChanged(final MouseEvent event) {
+				fillCanvasState();
+			}
+		});
+		
+		
 		fillLocalizedStrings();
 		
 		SwingUtils.centerMainWindow(this, 0.85f);
@@ -531,5 +559,15 @@ public class AppWindow extends JFrame implements LocaleChangeListener, LoggerFac
 	
 	private void fillLocalizedStrings() {
 		refreshTitle();
+		fillCanvasState();
+	}
+	
+	private void fillCanvasState() {
+		final double	scale = editor.currentScale();
+		
+		canvasState.setText(getLocalizer().getValue(APP_CANVAS_STATE, 
+				(int)(editor.currentMousePoint().getY() * scale), 
+				(int)(editor.currentMousePoint().getX() * scale), 
+				scale));
 	}
 }

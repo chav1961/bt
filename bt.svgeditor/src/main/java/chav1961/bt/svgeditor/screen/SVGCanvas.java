@@ -1,6 +1,7 @@
 package chav1961.bt.svgeditor.screen;
 
 import java.awt.Color;
+import java.awt.Cursor;
 import java.awt.Dimension;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
@@ -12,6 +13,7 @@ import java.awt.event.MouseMotionListener;
 import java.awt.event.MouseWheelEvent;
 import java.awt.event.MouseWheelListener;
 import java.awt.geom.AffineTransform;
+import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
 import java.util.ArrayList;
 import java.util.List;
@@ -20,32 +22,49 @@ import java.util.Locale;
 import javax.swing.JComponent;
 import javax.swing.Scrollable;
 
+import chav1961.bt.svgeditor.interfaces.StateChangedListener;
 import chav1961.bt.svgeditor.primitives.LineWrapper;
 import chav1961.bt.svgeditor.primitives.PrimitiveWrapper;
 import chav1961.purelib.basic.exceptions.LocalizationException;
+import chav1961.purelib.concurrent.LightWeightListenerList;
 import chav1961.purelib.i18n.interfaces.Localizer.LocaleChangeListener;
 
 public class SVGCanvas extends JComponent implements LocaleChangeListener, MouseListener, MouseMotionListener, MouseWheelListener {
 	private static final long 	serialVersionUID = -4725462263857678033L;
 	private static final double DEFAULT_MOUSE_WHEEL_SPEED = 10;
 
-	private final double	mouseWheelSpeed;
+	private final LightWeightListenerList<StateChangedListener>	listeners = new LightWeightListenerList<>(StateChangedListener.class);
+	private final double		mouseWheelSpeed;
 	private final List<PrimitiveWrapper>	content = new ArrayList<>();
-	private Dimension		conventionalSize = new Dimension(100,100);
-	private double			currentScale = 1;
+	private final float			delta = 3;
+	private Dimension			conventionalSize = new Dimension(100,100);
+	private double				currentScale = 1;
+	private Point2D				startMousePoint = new Point(0,0);
+	private Point2D				currentMousePoint = new Point(0,0);
+	private Actions				currentAction = Actions.NONE;
+	private PrimitiveWrapper	currentWrapper = null;
+	private double				currentEntityScale = 1;
 
+	private static enum Actions {
+		NONE,
+		MOVE,
+		ROTATE,
+		SCALE
+	}
+	
 	public SVGCanvas() {
 		this(DEFAULT_MOUSE_WHEEL_SPEED);
 	}
 	
 	public SVGCanvas(final double mouseWheelSpeed) {
-		content.add(new LineWrapper(0,0,100,100));
+		content.add(new LineWrapper(20,20,80,80));
 		this.mouseWheelSpeed = mouseWheelSpeed;
 		addMouseListener(this);
 		addMouseMotionListener(this);
 		addMouseWheelListener(this);
 		setEnabled(true);
 		setFocusable(true);
+		setCursor(Cursor.getPredefinedCursor(Cursor.CROSSHAIR_CURSOR));
 		refreshDimension();
 	}
 
@@ -56,28 +75,70 @@ public class SVGCanvas extends JComponent implements LocaleChangeListener, Mouse
 
 	@Override
 	public void mouseWheelMoved(final MouseWheelEvent e) {
-		switch (e.getScrollType()) {
-			case MouseWheelEvent.WHEEL_UNIT_SCROLL :
-				scaleCanvas(e.getPreciseWheelRotation());
+		switch (currentAction) {
+			case NONE	:
+				switch (e.getScrollType()) {
+					case MouseWheelEvent.WHEEL_UNIT_SCROLL :
+						scaleCanvas(e.getPreciseWheelRotation());
+						break;
+					case MouseWheelEvent.WHEEL_BLOCK_SCROLL:
+						scaleCanvas(e.getPreciseWheelRotation() * e.getScrollAmount());
+						break;
+					default:
+						throw new UnsupportedOperationException("Scroll type ["+e.getScrollType()+"] is not supported yet");
+				}
 				break;
-			case MouseWheelEvent.WHEEL_BLOCK_SCROLL:
-				scaleCanvas(e.getPreciseWheelRotation() * e.getScrollAmount());
+			case ROTATE	:
 				break;
-			default:
-				throw new UnsupportedOperationException("Scroll type ["+e.getScrollType()+"] is not supported yet");
+			case MOVE	:
+				currentAction = Actions.SCALE;
+			case SCALE	:
+				switch (e.getScrollType()) {
+					case MouseWheelEvent.WHEEL_UNIT_SCROLL :
+						scaleEntity(currentWrapper, startMousePoint, e.getPreciseWheelRotation());
+						break;
+					case MouseWheelEvent.WHEEL_BLOCK_SCROLL:
+						scaleEntity(currentWrapper, startMousePoint, e.getPreciseWheelRotation() * e.getScrollAmount());
+						break;
+					default:
+						throw new UnsupportedOperationException("Scroll type ["+e.getScrollType()+"] is not supported yet");
+				}
+				break;
+			default :
+				throw new UnsupportedOperationException("Action ["+currentAction+"] is not supported yet");
 		}
 	}
 
 	@Override
-	public void mouseDragged(MouseEvent e) {
-		// TODO Auto-generated method stub
-		
+	public void mouseDragged(final MouseEvent e) {
+		final Point2D		p = toScaledPoint(e.getPoint());
+
+		currentMousePoint = p;
+		switch (currentAction) {
+			case MOVE	:
+				moveEntity(currentWrapper, startMousePoint, p);
+				listeners.fireEvent((l)->l.locationChanged(e));
+				break;
+			case NONE	:
+				break;
+			case ROTATE	:
+				final double angle	= Math.atan2(getEffectiveY(currentAction, p.getY()-startMousePoint.getY()), getEffectiveX(currentAction, p.getX()-startMousePoint.getX()));
+				
+				rotateEntity(currentWrapper, startMousePoint, getEffectiveAngle(currentAction, angle));				
+				break;
+			case SCALE	:
+				break;
+			default :
+				throw new UnsupportedOperationException("Action ["+currentAction+"] is not supported yet");
+		}
 	}
 
+
 	@Override
-	public void mouseMoved(MouseEvent e) {
-		// TODO Auto-generated method stub
-		
+	public void mouseMoved(final MouseEvent e) {
+		highlightSelections(e);
+		currentMousePoint = toScaledPoint(e.getPoint());
+		listeners.fireEvent((l)->l.locationChanged(e));
 	}
 
 	@Override
@@ -87,15 +148,52 @@ public class SVGCanvas extends JComponent implements LocaleChangeListener, Mouse
 	}
 
 	@Override
-	public void mousePressed(MouseEvent e) {
-		// TODO Auto-generated method stub
+	public void mousePressed(final MouseEvent e) {
+		final Point2D	p = toScaledPoint(e.getPoint());
 		
+		startMousePoint = p;
+		currentWrapper = null;
+		currentAction = Actions.NONE;
+				
+		for(PrimitiveWrapper item : content) {
+			if (item.isAbout(p, delta)) {
+				currentWrapper = item;
+				currentAction = (e.getModifiersEx() & MouseEvent.CTRL_DOWN_MASK) != 0 ? Actions.ROTATE : Actions.MOVE;
+				currentEntityScale = 1;				
+				currentWrapper.startDrag(p);
+				break;
+			}
+		}
 	}
 
 	@Override
 	public void mouseReleased(MouseEvent e) {
-		// TODO Auto-generated method stub
-		
+		switch (currentAction) {
+			case MOVE	:
+				currentWrapper.endDrag();
+				currentWrapper.commitChanges();
+				currentWrapper.clearTransform();
+				currentWrapper = null;
+				break;
+			case NONE	:
+				break;
+			case ROTATE	:
+				currentWrapper.endDrag();
+				currentWrapper.commitChanges();
+				currentWrapper.clearTransform();
+				currentWrapper = null;
+				break;
+			case SCALE	:
+				currentWrapper.endDrag();
+				currentWrapper.commitChanges();
+				currentWrapper.clearTransform();
+				currentWrapper = null;
+				break;
+			default:
+				throw new UnsupportedOperationException("Action ["+currentAction+"] is not supported yet");
+		}
+		highlightSelections(e);
+		currentAction = Actions.NONE;
 	}
 
 	@Override
@@ -110,6 +208,24 @@ public class SVGCanvas extends JComponent implements LocaleChangeListener, Mouse
 		
 	}
 
+	public void addStateChangedListener(final StateChangedListener l) {
+		if (l == null) {
+			throw new NullPointerException("Listener to add can't be null");
+		}
+		else {
+			listeners.addListener(l);
+		}
+	}
+
+	public void removeStateChangedListener(final StateChangedListener l) {
+		if (l == null) {
+			throw new NullPointerException("Listener to remove can't be null");
+		}
+		else {
+			listeners.removeListener(l);
+		}
+	}
+	
 	public Dimension getConventionalSize() {
 		return conventionalSize;
 	}
@@ -150,6 +266,18 @@ public class SVGCanvas extends JComponent implements LocaleChangeListener, Mouse
 		}
 	}
 
+	public Point2D startMousePoint() {
+		return startMousePoint;
+	}
+	
+	public Point2D currentMousePoint() {
+		return currentMousePoint;
+	}
+
+	public double currentScale() {
+		return currentScale;
+	}
+	
 	@Override
 	protected void paintComponent(final Graphics g) {
 		final Graphics2D		g2d = (Graphics2D)g;
@@ -167,24 +295,19 @@ public class SVGCanvas extends JComponent implements LocaleChangeListener, Mouse
 		
 		g2d.setTransform(oldAt);
 	}
+
+	protected Point2D toScaledPoint(final Point2D point) {
+		return new Point2D.Double(point.getX() * currentScale, point.getY() * currentScale);
+	}
 	
 	private void scaleCanvas(final double value) {
-		if (value < 0) {
-			currentScale /= (1 - value/mouseWheelSpeed);
-		}
-		else if (value == 0) {
-			currentScale = 1;
-		}
-		else {
-			currentScale *= (1 + value/mouseWheelSpeed);
-		}
-		if (currentScale < 0.001) {
-			currentScale = 0.001;
-		}
-		else if (currentScale > 10) {
-			currentScale = 10;
-		}
+		final double	oldScale = currentScale;
+		
+		currentScale = calculateScale(currentScale, value);
 		refreshDimension();
+		if (oldScale != currentScale) {
+			listeners.fireEvent((l)->l.scaleChanged(oldScale, currentScale));
+		}
 	}
 
 	private void refreshDimension() {
@@ -200,8 +323,8 @@ public class SVGCanvas extends JComponent implements LocaleChangeListener, Mouse
 		final Dimension	realSize = getSize();
 		final Dimension	size = new Rectangle(new Point(0,0), effectiveSize).intersection(new Rectangle(new Point(0,0), realSize)).getSize();
 		
-		at.translate(0, getHeight());
-		at.scale(size.getWidth()/awaitedSize.getWidth(), -size.getHeight()/awaitedSize.getHeight());
+		at.translate(0, 0);
+		at.scale(size.getWidth()/awaitedSize.getWidth(), size.getHeight()/awaitedSize.getHeight());
 		g2d.setTransform(at);
 	}
 
@@ -212,6 +335,107 @@ public class SVGCanvas extends JComponent implements LocaleChangeListener, Mouse
 		g2d.setColor(getBackground());
 		g2d.fill(rect);
 		g2d.setColor(oldColor);
+	}
+
+	private void highlightSelections(final MouseEvent e) {
+		final Point2D		p = toScaledPoint(e.getPoint());
+		PrimitiveWrapper	oldItem = null, newItem = null;
+		Cursor	c = Cursor.getPredefinedCursor(Cursor.CROSSHAIR_CURSOR);
+		
+		for(PrimitiveWrapper item : content) {
+			if (item.isHighlight()) {
+				oldItem = item;
+				break;
+			}
+		}
+		
+		for(PrimitiveWrapper item : content) {
+			if (item.isAbout(p, delta)) {
+				c = Cursor.getPredefinedCursor(Cursor.HAND_CURSOR);
+				newItem = item;
+				break;
+			}
+		}
+		setCursor(c);
+		if (oldItem != newItem) {
+			if (oldItem != null) {
+				oldItem.setHighlight(false);
+			}
+			if (newItem != null) {
+				newItem.setHighlight(true);
+			}
+			repaint();
+		}
+	}
+
+	private void moveEntity(final PrimitiveWrapper entity, final Point2D anchor, final Point2D current) {
+		final AffineTransform	at = new AffineTransform();
+		
+		at.translate(getEffectiveX(Actions.MOVE, current.getX()) - anchor.getX(), 
+					 getEffectiveY(Actions.MOVE, current.getY()) - anchor.getY());
+		entity.setTransform(at);
+		repaint();
+	}
+	
+	
+	private void scaleEntity(final PrimitiveWrapper entity, final Point2D anchor, final double scale) {
+		final AffineTransform	at = new AffineTransform();
+		
+		currentEntityScale = getEffectiveScale(Actions.SCALE, calculateScale(currentEntityScale, scale));
+		at.translate(anchor.getX(), anchor.getY());
+		at.scale(currentEntityScale, currentEntityScale);
+		at.translate(-anchor.getX(), -anchor.getY());
+		
+		entity.setTransform(at);
+		repaint();
+	}
+
+	private void rotateEntity(final PrimitiveWrapper entity, final Point2D anchor, double angle) {
+		final AffineTransform	at = new AffineTransform();
+		
+		at.translate(anchor.getX(), anchor.getY());
+		at.rotate(angle);
+		at.translate(-anchor.getX(), -anchor.getY());
+		
+		entity.setTransform(at);
+		repaint();
+	}
+	
+	private double getEffectiveX(final Actions action, final double x) {
+		return x;
+	}
+
+	private double getEffectiveY(final Actions action, final double y) {
+		return y;
+	}
+
+	private double getEffectiveScale(final Actions action, final double scale) {
+		return scale;
+	}
+
+	private double getEffectiveAngle(final Actions action, final double angle) {
+		return angle;
+	}
+
+	private double calculateScale(final double currentScale, final double step) {
+		double	scale = currentScale;
+		
+		if (step < 0) {
+			scale /= (1 - step/mouseWheelSpeed);
+		}
+		else if (step == 0) {
+			scale = 1;
+		}
+		else {
+			scale *= (1 + step/mouseWheelSpeed);
+		}
+		if (scale < 0.001) {
+			scale = 0.001;
+		}
+		else if (scale > 10) {
+			scale = 10;
+		}
+		return scale;
 	}
 	
 	private void fillLocalizedStrings() {
