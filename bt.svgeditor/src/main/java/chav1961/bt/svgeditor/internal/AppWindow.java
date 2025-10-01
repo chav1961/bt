@@ -123,7 +123,7 @@ public class AppWindow extends JFrame implements LocaleChangeListener, LoggerFac
 		
 		this.menuBar = SwingUtils.toJComponent(mdi.byUIPath(URI.create("ui:/model/navigation.top.mainmenu")), JMenuBar.class);
 		this.emm = new JEnableMaskManipulator(getMenus(this), true, menuBar);
-		this.state = new JStateString(localizer);
+		this.state = new JStateString(localizer, 10);
 		this.editor = new SVGEditor(localizer);
 		this.fsi = FileSystemFactory.createFileSystem(URI.create("fsys:file:/"));
 		this.persistence = LRUPersistence.of(props, LRU_PREFIX);

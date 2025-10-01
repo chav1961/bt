@@ -18,6 +18,7 @@ import java.awt.geom.Rectangle2D;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.function.Consumer;
 
 import javax.swing.JComponent;
 import javax.swing.Scrollable;
@@ -25,6 +26,7 @@ import javax.swing.Scrollable;
 import chav1961.bt.svgeditor.interfaces.StateChangedListener;
 import chav1961.bt.svgeditor.primitives.LineWrapper;
 import chav1961.bt.svgeditor.primitives.PrimitiveWrapper;
+import chav1961.purelib.basic.exceptions.CalculationException;
 import chav1961.purelib.basic.exceptions.LocalizationException;
 import chav1961.purelib.concurrent.LightWeightListenerList;
 import chav1961.purelib.i18n.interfaces.Localizer.LocaleChangeListener;
@@ -35,7 +37,7 @@ public class SVGCanvas extends JComponent implements LocaleChangeListener, Mouse
 
 	private final LightWeightListenerList<StateChangedListener>	listeners = new LightWeightListenerList<>(StateChangedListener.class);
 	private final double		mouseWheelSpeed;
-	private final List<PrimitiveWrapper>	content = new ArrayList<>();
+	private final List<ItemDescriptor>	content = new ArrayList<>();
 	private final float			delta = 3;
 	private Dimension			conventionalSize = new Dimension(100,100);
 	private double				currentScale = 1;
@@ -57,7 +59,7 @@ public class SVGCanvas extends JComponent implements LocaleChangeListener, Mouse
 	}
 	
 	public SVGCanvas(final double mouseWheelSpeed) {
-		content.add(new LineWrapper(20,20,80,80));
+		content.add(new ItemDescriptor(new LineWrapper(20,20,80,80)));
 		this.mouseWheelSpeed = mouseWheelSpeed;
 		addMouseListener(this);
 		addMouseMotionListener(this);
@@ -133,7 +135,6 @@ public class SVGCanvas extends JComponent implements LocaleChangeListener, Mouse
 		}
 	}
 
-
 	@Override
 	public void mouseMoved(final MouseEvent e) {
 		highlightSelections(e);
@@ -155,9 +156,9 @@ public class SVGCanvas extends JComponent implements LocaleChangeListener, Mouse
 		currentWrapper = null;
 		currentAction = Actions.NONE;
 				
-		for(PrimitiveWrapper item : content) {
-			if (item.isAbout(p, delta)) {
-				currentWrapper = item;
+		for(ItemDescriptor item : content) {
+			if (item.wrapper.isAbout(p, delta)) {
+				currentWrapper = item.wrapper;
 				currentAction = (e.getModifiersEx() & MouseEvent.CTRL_DOWN_MASK) != 0 ? Actions.ROTATE : Actions.MOVE;
 				currentEntityScale = 1;				
 				currentWrapper.startDrag(p);
@@ -225,6 +226,56 @@ public class SVGCanvas extends JComponent implements LocaleChangeListener, Mouse
 			listeners.removeListener(l);
 		}
 	}
+
+	public void add(final PrimitiveWrapper wrapper) {
+		if (wrapper == null) {
+			throw new NullPointerException("Wrapper to add can't be null");
+		}
+		else {
+			content.add(new ItemDescriptor(wrapper));
+			refreshDimension();
+		}
+	}
+
+	public boolean isSelected(final PrimitiveWrapper wrapper) {
+		if (wrapper == null) {
+			throw new NullPointerException("Wrapper to test can't be null");
+		}
+		else {
+			for(ItemDescriptor item : content) {
+				if (item.wrapper.equals(wrapper)) {
+					return item.selected;
+				}
+			}
+			return false;
+		}
+	}
+	
+	public void setSelected(final PrimitiveWrapper wrapper, final boolean selected) {
+		if (wrapper == null) {
+			throw new NullPointerException("Wrapper to set can't be null");
+		}
+		else {
+			for(ItemDescriptor item : content) {
+				if (item.wrapper.equals(wrapper)) {
+					item.selected = selected;
+					refreshDimension();
+					return;
+				}
+			}
+		}
+	}
+	
+	public void forEach(final Consumer<PrimitiveWrapper> consumer) {
+		if (consumer == null) {
+			throw new NullPointerException("Consumer can't be null");
+		}
+		else {
+			for(ItemDescriptor item : content.toArray(new ItemDescriptor[content.size()])) {
+				consumer.accept(item.wrapper);
+			}
+		}
+	}
 	
 	public Dimension getConventionalSize() {
 		return conventionalSize;
@@ -286,8 +337,8 @@ public class SVGCanvas extends JComponent implements LocaleChangeListener, Mouse
 		pickCoordinates(g2d);
 		fillBackground(g2d);
 
-		for(PrimitiveWrapper item : content) {
-			item.draw(g2d, this);
+		for(ItemDescriptor item : content) {
+			item.wrapper.draw(g2d, this, item.selected);
 		}
 		
 //		g2d.setColor(Color.red);
@@ -342,17 +393,17 @@ public class SVGCanvas extends JComponent implements LocaleChangeListener, Mouse
 		PrimitiveWrapper	oldItem = null, newItem = null;
 		Cursor	c = Cursor.getPredefinedCursor(Cursor.CROSSHAIR_CURSOR);
 		
-		for(PrimitiveWrapper item : content) {
-			if (item.isHighlight()) {
-				oldItem = item;
+		for(ItemDescriptor item : content) {
+			if (item.wrapper.isHighlight()) {
+				oldItem = item.wrapper;
 				break;
 			}
 		}
 		
-		for(PrimitiveWrapper item : content) {
-			if (item.isAbout(p, delta)) {
+		for(ItemDescriptor item : content) {
+			if (item.wrapper.isAbout(p, delta)) {
 				c = Cursor.getPredefinedCursor(Cursor.HAND_CURSOR);
-				newItem = item;
+				newItem = item.wrapper;
 				break;
 			}
 		}
@@ -443,4 +494,17 @@ public class SVGCanvas extends JComponent implements LocaleChangeListener, Mouse
 		
 	}
 
+	private static class ItemDescriptor {
+		private final PrimitiveWrapper	wrapper;
+		private boolean					selected;
+		
+		public ItemDescriptor(final PrimitiveWrapper wrapper) {
+			this(wrapper, false);
+		}
+		
+		public ItemDescriptor(final PrimitiveWrapper wrapper, final boolean selected) {
+			this.wrapper = wrapper;
+			this.selected = selected;
+		}
+	}
 }

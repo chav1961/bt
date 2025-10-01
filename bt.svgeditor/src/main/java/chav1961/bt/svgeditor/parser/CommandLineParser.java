@@ -1,10 +1,15 @@
 package chav1961.bt.svgeditor.parser;
 
-import chav1961.bt.svgeditor.parser.Command.CommanType;
+
+import chav1961.bt.svgeditor.parser.Command.CommandType;
+import chav1961.bt.svgeditor.screen.SVGCanvas;
 import chav1961.purelib.basic.CharUtils;
 import chav1961.purelib.basic.CharUtils.ArgumentType;
 import chav1961.purelib.basic.CharUtils.Optional;
+import chav1961.purelib.basic.CharUtils.Mark;
+import chav1961.purelib.basic.CharUtils.Choise;
 import chav1961.purelib.basic.Utils;
+import chav1961.purelib.basic.exceptions.CalculationException;
 import chav1961.purelib.basic.exceptions.CommandLineParametersException;
 import chav1961.purelib.basic.exceptions.SyntaxException;
 
@@ -22,14 +27,78 @@ import chav1961.purelib.basic.exceptions.SyntaxException;
  * <RelativePoint> ::= {'@'<int>',''@'<int>}
  */
 public class CommandLineParser {
-	static final Command[]		COMMANDS = {
-										new Command(CommanType.NEW_ENTITY, "line %1:point %2:point", "1", "1",
-												(c,v)->{}, 
+	private static final Command[]	COMMANDS = {
+										new Command(CommandType.NEW_ENTITY, "l[ine]", 
+												"l[ine] %1:point [to] [@]%2:point", "1", "1",
+												(parser,canvas,command,parameters)->{
+													new LineProcessor(parameters).execute(canvas);
+												}, 
 												ArgumentType.signedInt, ',', ArgumentType.signedInt, 
 												new Optional("to"),
+												new Optional("@", new Mark(1)),
 												ArgumentType.signedInt, ',', ArgumentType.signedInt 
+												),
+										new Command(CommandType.SELECTION, "sel[ect]", 
+												"sel[ect] {n[one]|a[ll]|{[+]|[-]}{w[indow] %1:point [@] %2:point|c[rossing] %1:point [@] %2:point|l[ast]|at %1:point [%2:int]}", "1", "1",
+												(parser,canvas,command,parameters)->{
+													new SelectionProcessor(parameters).execute(canvas);
+												}, 
+												new Choise(
+													new Object[] {
+														"n", new Mark(1)	
+													},
+													new Object[] {
+														"none", new Mark(1)	
+													},
+													new Object[] {
+														"a", new Mark(2)	
+													},
+													new Object[] {
+														"all", new Mark(2)	
+													},
+													new Object[] {
+														new Choise(
+															new Object[] {"+", new Mark(3)},
+															new Object[] {"-", new Mark(4)},
+															new Object[] {new Mark(5)}
+														),
+														new Choise(
+															new Object[] {
+																new Choise(
+																	"w", "window"
+																),
+																new Mark(6),
+																ArgumentType.signedInt, ',', ArgumentType.signedInt,
+																new Optional("@", new Mark(10)),
+																ArgumentType.signedInt, ',', ArgumentType.signedInt
+															},
+															new Object[] {
+																new Choise(
+																	"c", "crossing"
+																),
+																new Mark(7),
+																ArgumentType.signedInt, ',', ArgumentType.signedInt,
+																new Optional("@", new Mark(10)),
+																ArgumentType.signedInt, ',', ArgumentType.signedInt
+															},
+															new Object[] {
+																new Choise(
+																	"l", "last"
+																),
+																new Mark(8),
+															},
+															new Object[] {
+																"at",
+																new Mark(9),
+																ArgumentType.signedInt, ',', ArgumentType.signedInt,
+																new Optional(ArgumentType.signedInt)
+															}
+														)
+													}
 												)
-									};
+											)
+//	"sel[ect] {n[one]|a[ll]|{[+]|[-]}{w[indow] %1:point [@] %2:point|c[rossing] %1:point [@] %2:point|l[ast]|at %1:point [%2:int]}", "1", "1",
+										};
 
 	private static final char	EOF = '\uFFFF';
 	
@@ -40,7 +109,6 @@ public class CommandLineParser {
 	}
 
 	public CommandLineParser(final Command... commands) {
-		// TODO Auto-generated constructor stub
 		if (commands == null || commands.length == 0 || Utils.checkArrayContent4Nulls(commands) >= 0) {
 			throw new IllegalArgumentException("Commands is null, empty or contains nulls inside");
 		}
@@ -49,22 +117,38 @@ public class CommandLineParser {
 		}
 	}
 	
-	public void parse(final CharSequence descriptor) throws CommandLineParametersException {
-		// TODO Auto-generated method stub
+	public void parse(final CharSequence descriptor, final SVGCanvas canvas) throws CommandLineParametersException, CalculationException {
 		final char[]	temp = CharUtils.terminateAndConvert2CharArray(descriptor, EOF);
+		final int[]		nameLocation = new int[2];
+		final int		start = CharUtils.parseName(temp, CharUtils.skipBlank(temp, 0, false), nameLocation);
+		final String	name = new String(temp, nameLocation[0], nameLocation[1] - nameLocation[0] + 1);
 		
 		for(Command item : commands) {
 			try{
-				if (CharUtils.tryExtract(temp, 0, item.param) == temp.length) {
-					final Object[]	values = new Object[100];
-					
-					CharUtils.extract(temp, 0, values, item.param);
-					item.consumer.accept(item, values);
-					return;
+				if (namesCompared(name, item.getCommandName()) && CharUtils.tryExtract(temp, start, item.param) >= 0) {
+					try {
+						final Object[]	values = new Object[100];
+						
+						CharUtils.extract(temp, start, values, item.param);						
+						item.consumer.accept(this, canvas, item, values);
+						return;
+					} catch (SyntaxException e) {
+						throw new CalculationException(e);
+					}
 				}
 			} catch (SyntaxException e) {
 			}
 		}
-		throw new CommandLineParametersException("Unknown command");
+		throw new CommandLineParametersException("Unknown command ["+name+"]");
+	}
+
+	private boolean namesCompared(final String command, final String template) {
+		if (template.contains("[") && template.contains("]")) {
+			return command.equalsIgnoreCase(template.substring(0, template.indexOf('[')))
+				|| command.equalsIgnoreCase(template.replace("[","").replace("]",""));
+		}
+		else {
+			return command.equalsIgnoreCase(template);
+		}
 	}
 }

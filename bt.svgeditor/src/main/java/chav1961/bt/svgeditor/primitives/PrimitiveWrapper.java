@@ -23,10 +23,13 @@ public abstract class PrimitiveWrapper {
 		
 	}
 
-	public abstract void draw(final Graphics2D g, final SVGCanvas canvas);
-	public abstract boolean isAbout(final Point2D point, final float delta);
+	public abstract void draw(final Graphics2D g, final SVGCanvas canvas, final boolean selected);
 	public abstract void commitChanges();
-
+	
+	public abstract boolean isIntersects(final Rectangle2D rect);
+	public abstract boolean isAbout(final Point2D point, final float delta);
+	public abstract Point2D getNearest(final Point2D point, final double dist);
+	
 	public Color getForeColor() {
 		return foreColor;
 	}
@@ -130,6 +133,15 @@ public abstract class PrimitiveWrapper {
 
 	public void clearTransform() {
 		this.at = new AffineTransform();
+	}
+
+	public boolean isInside(final Rectangle2D rect) {
+		if (rect == null) {
+			throw new NullPointerException("Rectangle to test can't be null"); 
+		}
+		else {
+			return rect.contains(getAreaOccupied());
+		}
 	}
 	
 	protected Point2D getStartDragPoint() {

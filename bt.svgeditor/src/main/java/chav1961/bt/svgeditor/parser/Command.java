@@ -2,15 +2,22 @@ package chav1961.bt.svgeditor.parser;
 
 import java.util.function.BiConsumer;
 
+import chav1961.bt.svgeditor.screen.SVGCanvas;
 import chav1961.purelib.basic.Utils;
+import chav1961.purelib.basic.exceptions.CalculationException;
+import chav1961.purelib.basic.exceptions.CommandLineParametersException;
 
 public class Command {
-	public static enum CommanType {
+	public static enum CommandType {
 		NEW_ENTITY,
 		TRANSFORM_ENTITY,
 		REMOVE_ENTITY,
 		PROPERTIES_CHANGE,
 		SELECTION
+	}
+	
+	public static interface CommandConsumer {
+		void accept(CommandLineParser parser, SVGCanvas canvas, Command command, Object... parameters) throws CommandLineParametersException, CalculationException; 
 	}
 	
 	// <Descriptor>	::= <Name>[<Parameter>...]
@@ -28,16 +35,20 @@ public class Command {
 	// Example:
 	//	line from:point to:point color:color=green
 	
-	private final CommanType	type;
+	private final CommandType	type;
+	private final String		commandName;
 	private final String		descriptor;
 	private final String		helpPrefix;
 	private final String		helpReference;
-	final BiConsumer<Command,Object[]>	consumer;
+	final CommandConsumer		consumer;
 	final Object[]				param;
 	
-	public Command(final CommanType type, final String descriptor, final String helpPrefix, final String helpReference, final BiConsumer<Command, Object[]> processor, final Object... parameters) {
+	public Command(final CommandType type, final String commandName, final String descriptor, final String helpPrefix, final String helpReference, final CommandConsumer processor, final Object... parameters) {
 		if (type == null) {
 			throw new NullPointerException("Commnad type can't be null");
+		}
+		else if (Utils.checkEmptyOrNullString(commandName)) {
+			throw new IllegalArgumentException("Command name can be neither null nor empty");
 		}
 		else if (Utils.checkEmptyOrNullString(descriptor)) {
 			throw new IllegalArgumentException("Command descriptor can be neither null nor empty");
@@ -56,6 +67,7 @@ public class Command {
 		}
 		else {
 			this.type = type;
+			this.commandName = commandName;
 			this.descriptor = descriptor;
 			this.helpPrefix = helpPrefix;
 			this.helpReference = helpReference;
@@ -64,8 +76,12 @@ public class Command {
 		}
 	}
 	
-	public CommanType getType() {
+	public CommandType getType() {
 		return type;
+	}
+
+	public String getCommandName() {
+		return commandName;
 	}
 
 	public String getDescriptor() {

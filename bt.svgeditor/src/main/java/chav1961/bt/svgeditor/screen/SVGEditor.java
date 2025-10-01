@@ -18,6 +18,11 @@ import javax.swing.JScrollPane;
 import javax.swing.JTextField;
 
 import chav1961.bt.svgeditor.interfaces.StateChangedListener;
+import chav1961.bt.svgeditor.parser.CommandLineParser;
+import chav1961.purelib.basic.CharUtils;
+import chav1961.purelib.basic.Utils;
+import chav1961.purelib.basic.exceptions.CalculationException;
+import chav1961.purelib.basic.exceptions.CommandLineParametersException;
 import chav1961.purelib.basic.exceptions.LocalizationException;
 import chav1961.purelib.basic.exceptions.SyntaxException;
 import chav1961.purelib.basic.interfaces.InputStreamGetter;
@@ -41,6 +46,7 @@ public class SVGEditor extends JPanel implements LocaleChangeListener, LoggerFac
 	private final JTextField	command = new JTextField();
 	private final SVGCanvas		canvas = new SVGCanvas();
 	private final JLayeredPane	pane = new JLayeredPane();
+	private final CommandLineParser	parser = new CommandLineParser();
 	private byte[]	temp = new byte[0];
 	
 	public SVGEditor(final Localizer localizer) {
@@ -58,6 +64,16 @@ public class SVGEditor extends JPanel implements LocaleChangeListener, LoggerFac
 			pane.add(canvas, JLayeredPane.FRAME_CONTENT_LAYER);
 			add(new JScrollPane(pane), BorderLayout.CENTER);
 			add(commandPanel, BorderLayout.SOUTH);
+			
+			command.addActionListener((e)->{
+				if (!Utils.checkEmptyOrNullString(command.getText())) {
+					try {
+						parser.parse(command.getText(), canvas);
+					} catch (CommandLineParametersException | CalculationException exc) {
+						getLogger().message(Severity.severe, exc, exc.getLocalizedMessage());
+					}
+				}
+			});
 			
 			fillLocalizedStrings();
 		}
