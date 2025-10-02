@@ -38,6 +38,7 @@ import chav1961.purelib.i18n.interfaces.Localizer;
 import chav1961.purelib.i18n.interfaces.Localizer.LocaleChangeListener;
 import chav1961.purelib.i18n.interfaces.LocalizerOwner;
 import chav1961.purelib.ui.swing.SwingUtils;
+import chav1961.purelib.ui.swing.useful.CommandHistory;
 
 public class SVGEditor extends JPanel implements LocaleChangeListener, LoggerFacadeOwner, LocalizerOwner, InputStreamGetter, OutputStreamGetter {
 	private static final long serialVersionUID = 6904531215744148397L;
