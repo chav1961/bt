@@ -3,6 +3,8 @@ package chav1961.bt.svgeditor.screen;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Point;
+import java.awt.event.ActionListener;
+import java.awt.event.KeyEvent;
 import java.awt.geom.Point2D;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -11,11 +13,13 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.Locale;
 
+import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JLayeredPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTextField;
+import javax.swing.KeyStroke;
 
 import chav1961.bt.svgeditor.interfaces.StateChangedListener;
 import chav1961.bt.svgeditor.parser.CommandLineParser;
@@ -40,12 +44,15 @@ public class SVGEditor extends JPanel implements LocaleChangeListener, LoggerFac
 
 	private static final String	APP_COMMAND_PROMPT = "chav1961.bt.svgeditor.screen.SVGEditor.command.prompt";
 	private static final String	APP_COMMAND_PROMPT_TT = "chav1961.bt.svgeditor.screen.SVGEditor.command.prompt.tt";
+	private static final String	APP_COMMAND_COMPLETED = "chav1961.bt.svgeditor.screen.SVGEditor.command.completed";
+	private static final String	APP_COMMAND_ERROR = "chav1961.bt.svgeditor.screen.SVGEditor.command.error";
 	
-	private final Localizer		localizer;
-	private final JLabel		commandLabel = new JLabel();
-	private final JTextField	command = new JTextField();
-	private final SVGCanvas		canvas = new SVGCanvas();
-	private final JLayeredPane	pane = new JLayeredPane();
+	private final Localizer			localizer;
+	private final JLabel			commandLabel = new JLabel();
+	private final JTextField		command = new JTextField();
+	private final SVGCanvas			canvas = new SVGCanvas();
+	private final JLayeredPane		pane = new JLayeredPane();
+	private final CommandHistory	history = CommandHistory.of(command,(c)->{executeCommand(c);});
 	private final CommandLineParser	parser = new CommandLineParser();
 	private byte[]	temp = new byte[0];
 	
@@ -64,16 +71,6 @@ public class SVGEditor extends JPanel implements LocaleChangeListener, LoggerFac
 			pane.add(canvas, JLayeredPane.FRAME_CONTENT_LAYER);
 			add(new JScrollPane(pane), BorderLayout.CENTER);
 			add(commandPanel, BorderLayout.SOUTH);
-			
-			command.addActionListener((e)->{
-				if (!Utils.checkEmptyOrNullString(command.getText())) {
-					try {
-						parser.parse(command.getText(), canvas);
-					} catch (CommandLineParametersException | CalculationException exc) {
-						getLogger().message(Severity.severe, exc, exc.getLocalizedMessage());
-					}
-				}
-			});
 			
 			fillLocalizedStrings();
 		}
@@ -157,5 +154,15 @@ public class SVGEditor extends JPanel implements LocaleChangeListener, LoggerFac
 				getLogger().message(Severity.note, "Storing successful");
 			}
 		};
+	}
+	
+	private void executeCommand(final String command) throws Exception {
+		try{
+			parser.parse(command, canvas);
+			getLogger().message(Severity.info, APP_COMMAND_COMPLETED);
+		} catch (CommandLineParametersException | CalculationException exc) {
+			getLogger().message(Severity.severe, exc, APP_COMMAND_ERROR, exc.getLocalizedMessage());
+			throw exc;
+		}
 	}
 }

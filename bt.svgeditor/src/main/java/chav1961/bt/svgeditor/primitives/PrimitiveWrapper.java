@@ -9,7 +9,7 @@ import java.awt.geom.Rectangle2D;
 
 import chav1961.bt.svgeditor.screen.SVGCanvas;
 
-public abstract class PrimitiveWrapper {
+public abstract class PrimitiveWrapper implements Cloneable {
 	private Color			foreColor = Color.WHITE;
 	private Color			backColor = Color.BLACK;
 	private boolean			useBackground = true;
@@ -29,6 +29,18 @@ public abstract class PrimitiveWrapper {
 	public abstract boolean isIntersects(final Rectangle2D rect);
 	public abstract boolean isAbout(final Point2D point, final float delta);
 	public abstract Point2D getNearest(final Point2D point, final double dist);
+
+	@Override
+	public Object clone() throws CloneNotSupportedException {
+		final PrimitiveWrapper	clone = (PrimitiveWrapper) super.clone();
+		
+		clone.areaOccupied = (Rectangle2D) clone.areaOccupied.clone();
+		clone.at = (AffineTransform) clone.at.clone();
+		if (clone.startDragPoint != null) {
+			clone.startDragPoint = (Point2D) clone.startDragPoint.clone();
+		}
+		return clone;
+	}
 	
 	public Color getForeColor() {
 		return foreColor;

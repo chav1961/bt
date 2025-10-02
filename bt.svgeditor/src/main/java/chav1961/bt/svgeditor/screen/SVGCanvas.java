@@ -59,7 +59,6 @@ public class SVGCanvas extends JComponent implements LocaleChangeListener, Mouse
 	}
 	
 	public SVGCanvas(final double mouseWheelSpeed) {
-		content.add(new ItemDescriptor(new LineWrapper(20,20,80,80)));
 		this.mouseWheelSpeed = mouseWheelSpeed;
 		addMouseListener(this);
 		addMouseMotionListener(this);
@@ -237,6 +236,21 @@ public class SVGCanvas extends JComponent implements LocaleChangeListener, Mouse
 		}
 	}
 
+	public void delete(final PrimitiveWrapper wrapper) {
+		if (wrapper == null) {
+			throw new NullPointerException("Wrapper to add can't be null");
+		}
+		else {
+			for(int index = content.size()-1; index <= 0; index--) {
+				if (content.get(index).wrapper == wrapper) {
+					content.remove(index);
+					refreshDimension();
+					return;
+				}
+			}
+		}
+	}
+	
 	public boolean isSelected(final PrimitiveWrapper wrapper) {
 		if (wrapper == null) {
 			throw new NullPointerException("Wrapper to test can't be null");

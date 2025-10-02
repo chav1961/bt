@@ -60,7 +60,7 @@ public class SelectionProcessor extends AbstractCommandProcessor {
 									new Content<Integer>(Integer.class, (c,v)->ulX = v),
 									new Content<Integer>(Integer.class, (c,v)->ulY = v),
 									new Content<Integer>(Integer.class, (c,v)->drX = v),
-									new Content<Integer>(Integer.class, (c,v)->drX = v)
+									new Content<Integer>(Integer.class, (c,v)->drY = v)
 								};
 	private final Content<?>[]	VARIANT_4 = {
 									new Content<Mark>(Mark.class, new Mark(5), (c,v)->{}),
@@ -69,7 +69,7 @@ public class SelectionProcessor extends AbstractCommandProcessor {
 									new Content<Integer>(Integer.class, (c,v)->ulY = v),
 									new Content<Mark>(Mark.class, new Mark(10), (c,v)->{}),
 									new Content<Integer>(Integer.class, (c,v)->drX = ulX + v),
-									new Content<Integer>(Integer.class, (c,v)->drX = ulY + v)
+									new Content<Integer>(Integer.class, (c,v)->drY = ulY + v)
 								};
 	private final Content<?>[]	VARIANT_5 = {
 									new Content<Mark>(Mark.class, new Mark(5), (c,v)->{}),
@@ -77,7 +77,7 @@ public class SelectionProcessor extends AbstractCommandProcessor {
 									new Content<Integer>(Integer.class, (c,v)->ulX = v),
 									new Content<Integer>(Integer.class, (c,v)->ulY = v),
 									new Content<Integer>(Integer.class, (c,v)->drX = v),
-									new Content<Integer>(Integer.class, (c,v)->drX = v)
+									new Content<Integer>(Integer.class, (c,v)->drY = v)
 								};
 	private final Content<?>[]	VARIANT_6 = {
 									new Content<Mark>(Mark.class, new Mark(5), (c,v)->{}),
@@ -86,7 +86,7 @@ public class SelectionProcessor extends AbstractCommandProcessor {
 									new Content<Integer>(Integer.class, (c,v)->ulY = v),
 									new Content<Mark>(Mark.class, new Mark(10), (c,v)->{}),
 									new Content<Integer>(Integer.class, (c,v)->drX = ulX + v),
-									new Content<Integer>(Integer.class, (c,v)->drX = ulY + v)
+									new Content<Integer>(Integer.class, (c,v)->drY = ulY + v)
 								};
 	private final Content<?>[]	VARIANT_7 = {
 									new Content<Mark>(Mark.class, new Mark(5), (c,v)->{}),
@@ -112,7 +112,7 @@ public class SelectionProcessor extends AbstractCommandProcessor {
 									new Content<Integer>(Integer.class, (c,v)->ulX = v),
 									new Content<Integer>(Integer.class, (c,v)->ulY = v),
 									new Content<Integer>(Integer.class, (c,v)->drX = v),
-									new Content<Integer>(Integer.class, (c,v)->drX = v)
+									new Content<Integer>(Integer.class, (c,v)->drY = v)
 								};
 	private final Content<?>[]	VARIANT_11 = {
 									new Content<Mark>(Mark.class, new Mark(3), (c,v)->{}),
@@ -121,7 +121,7 @@ public class SelectionProcessor extends AbstractCommandProcessor {
 									new Content<Integer>(Integer.class, (c,v)->ulY = v),
 									new Content<Mark>(Mark.class, new Mark(10), (c,v)->{}),
 									new Content<Integer>(Integer.class, (c,v)->drX = ulX + v),
-									new Content<Integer>(Integer.class, (c,v)->drX = ulY + v)
+									new Content<Integer>(Integer.class, (c,v)->drY = ulY + v)
 								};
 	private final Content<?>[]	VARIANT_12 = {
 									new Content<Mark>(Mark.class, new Mark(3), (c,v)->{}),
@@ -129,7 +129,7 @@ public class SelectionProcessor extends AbstractCommandProcessor {
 									new Content<Integer>(Integer.class, (c,v)->ulX = v),
 									new Content<Integer>(Integer.class, (c,v)->ulY = v),
 									new Content<Integer>(Integer.class, (c,v)->drX = v),
-									new Content<Integer>(Integer.class, (c,v)->drX = v)
+									new Content<Integer>(Integer.class, (c,v)->drY = v)
 								};
 	private final Content<?>[]	VARIANT_13 = {
 									new Content<Mark>(Mark.class, new Mark(3), (c,v)->{}),
@@ -138,7 +138,7 @@ public class SelectionProcessor extends AbstractCommandProcessor {
 									new Content<Integer>(Integer.class, (c,v)->ulY = v),
 									new Content<Mark>(Mark.class, new Mark(10), (c,v)->{}),
 									new Content<Integer>(Integer.class, (c,v)->drX = ulX + v),
-									new Content<Integer>(Integer.class, (c,v)->drX = ulY + v)
+									new Content<Integer>(Integer.class, (c,v)->drY = ulY + v)
 								};
 	private final Content<?>[]	VARIANT_14 = {
 									new Content<Mark>(Mark.class, new Mark(3), (c,v)->{}),
@@ -173,7 +173,7 @@ public class SelectionProcessor extends AbstractCommandProcessor {
 									new Content<Integer>(Integer.class, (c,v)->ulY = v),
 									new Content<Mark>(Mark.class, new Mark(10), (c,v)->{}),
 									new Content<Integer>(Integer.class, (c,v)->drX = ulX + v),
-									new Content<Integer>(Integer.class, (c,v)->drX = ulY + v)
+									new Content<Integer>(Integer.class, (c,v)->drY = ulY + v)
 								};
 	private final Content<?>[]	VARIANT_19 = {
 									new Content<Mark>(Mark.class, new Mark(4), (c,v)->{}),
@@ -181,7 +181,7 @@ public class SelectionProcessor extends AbstractCommandProcessor {
 									new Content<Integer>(Integer.class, (c,v)->ulX = v),
 									new Content<Integer>(Integer.class, (c,v)->ulY = v),
 									new Content<Integer>(Integer.class, (c,v)->drX = v),
-									new Content<Integer>(Integer.class, (c,v)->drX = v)
+									new Content<Integer>(Integer.class, (c,v)->drY = v)
 								};
 	private final Content<?>[]	VARIANT_20 = {
 									new Content<Mark>(Mark.class, new Mark(4), (c,v)->{}),
@@ -190,7 +190,7 @@ public class SelectionProcessor extends AbstractCommandProcessor {
 									new Content<Integer>(Integer.class, (c,v)->ulY = v),
 									new Content<Mark>(Mark.class, new Mark(10), (c,v)->{}),
 									new Content<Integer>(Integer.class, (c,v)->drX = ulX + v),
-									new Content<Integer>(Integer.class, (c,v)->drX = ulY + v)
+									new Content<Integer>(Integer.class, (c,v)->drY = ulY + v)
 								};
 	private final Content<?>[]	VARIANT_21 = {
 									new Content<Mark>(Mark.class, new Mark(4), (c,v)->{}),

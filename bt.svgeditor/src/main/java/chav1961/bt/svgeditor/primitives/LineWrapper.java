@@ -12,7 +12,7 @@ import java.awt.geom.Rectangle2D;
 import chav1961.bt.svgeditor.screen.SVGCanvas;
 
 public class LineWrapper extends PrimitiveWrapper {
-	private static final float[]	DASHED_LINE = new float[] {1.0f, 1.0f};
+	private static final float[]	DASHED_LINE = new float[] {3.0f, 3.0f};
 	
 	private Point2D	from;
 	private Point2D	to;
@@ -57,6 +57,16 @@ public class LineWrapper extends PrimitiveWrapper {
 	}
 
 	@Override
+	public Object clone() throws CloneNotSupportedException {
+		final LineWrapper	clone = (LineWrapper) super.clone();
+		
+		clone.from = (Point2D) clone.from.clone(); 
+		clone.to = (Point2D) clone.to.clone(); 
+		clone.line = (Line2D) clone.line.clone(); 
+		return clone;
+	}
+	
+	@Override
 	public void draw(final Graphics2D g2d, final SVGCanvas canvas, final boolean selected) {
 		final Color				oldColor = g2d.getColor();
 		final AffineTransform	oldTransform = g2d.getTransform();
@@ -97,13 +107,8 @@ public class LineWrapper extends PrimitiveWrapper {
 	}
 
 	@Override
-	public boolean isInside(final Rectangle2D rect) {
-		return rect.intersects(getAreaOccupied());
-	}
-
-	@Override
 	public boolean isIntersects(final Rectangle2D rect) {
-		return rect.intersects(getAreaOccupied());
+		return rect.intersectsLine(line);
 	}
 
 	@Override
@@ -111,10 +116,7 @@ public class LineWrapper extends PrimitiveWrapper {
 		return null;
 	}
 	
-	
 	private void refreshLine() {
 		line = new Line2D.Double(getFrom().getX(), getFrom().getY(), getTo().getX(), getTo().getY());
 	}
-
-
 }

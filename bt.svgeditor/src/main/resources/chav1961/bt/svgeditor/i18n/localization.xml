@@ -342,6 +342,8 @@
 <!-- SVGEditor class localization -->
 		<key name="chav1961.bt.svgeditor.screen.SVGEditor.command.prompt">Type command:</key>
 		<key name="chav1961.bt.svgeditor.screen.SVGEditor.command.prompt.tt">Type command here</key>
+		<key name="chav1961.bt.svgeditor.screen.SVGEditor.command.completed">Completed</key>
+		<key name="chav1961.bt.svgeditor.screen.SVGEditor.command.error">Error on execution command (%1$s)</key>
 
 <!-- AskImageSize class localization -->
 		<key name="askimagesize.title">Type image size</key>
@@ -692,6 +694,8 @@
 <!-- Локализация класса SVGEditor -->
 		<key name="chav1961.bt.svgeditor.screen.SVGEditor.command.prompt">Введите команду:</key>
 		<key name="chav1961.bt.svgeditor.screen.SVGEditor.command.prompt.tt">Введите команду</key>
+		<key name="chav1961.bt.svgeditor.screen.SVGEditor.command.completed">Выполнено</key>
+		<key name="chav1961.bt.svgeditor.screen.SVGEditor.command.error">Ошибка при выполнении команды (%1$s)</key>
 				
 <!-- Локализация класса ImageEditPanel -->
 		<key name="chav1961.bt.paint.editor.ImageEditPanel.selectColor">Выберите цвет</key>		

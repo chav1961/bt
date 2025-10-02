@@ -28,6 +28,16 @@ import chav1961.purelib.basic.exceptions.SyntaxException;
  */
 public class CommandLineParser {
 	private static final Command[]	COMMANDS = {
+										new Command(CommandType.MENU, "new", 
+												"new", "1", "1",
+												(parser,canvas,command,parameters)->{
+													new MenuItemProcessor("action:/newImage").execute(canvas);
+												}, new Mark(1)),
+										new Command(CommandType.MENU, "q[uit]", 
+												"q[uit]", "1", "1",
+												(parser,canvas,command,parameters)->{
+													new MenuItemProcessor("action:/exit").execute(canvas);
+												}, new Mark(1)),
 										new Command(CommandType.NEW_ENTITY, "l[ine]", 
 												"l[ine] %1:point [to] [@]%2:point", "1", "1",
 												(parser,canvas,command,parameters)->{
@@ -37,6 +47,32 @@ public class CommandLineParser {
 												new Optional("to"),
 												new Optional("@", new Mark(1)),
 												ArgumentType.signedInt, ',', ArgumentType.signedInt 
+												),
+										new Command(CommandType.REMOVE_ENTITY, "del[ete]", 
+												"del[ete] {a[ll]|l[ast]|sel[ected]}", "1", "1",
+												(parser,canvas,command,parameters)->{
+													new DeleteProcessor(parameters).execute(canvas);
+												}, 
+												new Choise(
+													new Object[] {
+														"a", new Mark(1)	
+													},
+													new Object[] {
+														"all", new Mark(1)	
+													},
+													new Object[] {
+														"l", new Mark(2)	
+													},
+													new Object[] {
+														"last", new Mark(2)	
+													},
+													new Object[] {
+														"sel", new Mark(3)	
+													},
+													new Object[] {
+														"selected", new Mark(3)	
+													}
+												)
 												),
 										new Command(CommandType.SELECTION, "sel[ect]", 
 												"sel[ect] {n[one]|a[ll]|{[+]|[-]}{w[indow] %1:point [@] %2:point|c[rossing] %1:point [@] %2:point|l[ast]|at %1:point [%2:int]}", "1", "1",
@@ -97,7 +133,6 @@ public class CommandLineParser {
 													}
 												)
 											)
-//	"sel[ect] {n[one]|a[ll]|{[+]|[-]}{w[indow] %1:point [@] %2:point|c[rossing] %1:point [@] %2:point|l[ast]|at %1:point [%2:int]}", "1", "1",
 										};
 
 	private static final char	EOF = '\uFFFF';
@@ -139,7 +174,7 @@ public class CommandLineParser {
 			} catch (SyntaxException e) {
 			}
 		}
-		throw new CommandLineParametersException("Unknown command ["+name+"]");
+		throw new CommandLineParametersException("Unknown command ["+name+"] or illegal command arguments");
 	}
 
 	private boolean namesCompared(final String command, final String template) {

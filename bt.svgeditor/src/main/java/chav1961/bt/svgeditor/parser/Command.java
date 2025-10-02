@@ -1,7 +1,5 @@
 package chav1961.bt.svgeditor.parser;
 
-import java.util.function.BiConsumer;
-
 import chav1961.bt.svgeditor.screen.SVGCanvas;
 import chav1961.purelib.basic.Utils;
 import chav1961.purelib.basic.exceptions.CalculationException;
@@ -13,7 +11,8 @@ public class Command {
 		TRANSFORM_ENTITY,
 		REMOVE_ENTITY,
 		PROPERTIES_CHANGE,
-		SELECTION
+		SELECTION,
+		MENU
 	}
 	
 	public static interface CommandConsumer {
