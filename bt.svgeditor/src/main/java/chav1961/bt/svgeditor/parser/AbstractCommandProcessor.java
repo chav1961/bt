@@ -58,6 +58,6 @@ public abstract class AbstractCommandProcessor {
 				return;
 			}
 		}
-		throw new CommandLineParametersException("");
+		throw new CommandLineParametersException("No any parameters valiants parsed");
 	}
 }

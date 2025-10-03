@@ -343,6 +343,21 @@ public class SVGCanvas extends JComponent implements LocaleChangeListener, Mouse
 		return currentScale;
 	}
 	
+	public void beginTransaction() {
+		
+	}
+
+	public void commit() {
+		forEach((item)->item.commitChanges());
+		refreshDimension();
+	}
+	
+	public void rollback() {
+		forEach((item)->item.clearTransform());
+		refreshDimension();
+	}
+	
+	
 	@Override
 	protected void paintComponent(final Graphics g) {
 		final Graphics2D		g2d = (Graphics2D)g;
@@ -364,6 +379,13 @@ public class SVGCanvas extends JComponent implements LocaleChangeListener, Mouse
 	protected Point2D toScaledPoint(final Point2D point) {
 		return new Point2D.Double(point.getX() * currentScale, point.getY() * currentScale);
 	}
+
+	CanvasSnapshot getSnapshot() {
+		return null;
+	}
+
+	void restoreSnapshot(CanvasSnapshot snapshot) {
+	}
 	
 	private void scaleCanvas(final double value) {
 		final double	oldScale = currentScale;
@@ -373,12 +395,6 @@ public class SVGCanvas extends JComponent implements LocaleChangeListener, Mouse
 		if (oldScale != currentScale) {
 			listeners.fireEvent((l)->l.scaleChanged(oldScale, currentScale));
 		}
-	}
-
-	private void refreshDimension() {
-		setSize(getEffectiveSize());
-		setPreferredSize(getEffectiveSize());
-		repaint();
 	}
 
 	private void pickCoordinates(final Graphics2D g2d) {
@@ -502,6 +518,12 @@ public class SVGCanvas extends JComponent implements LocaleChangeListener, Mouse
 		}
 		return scale;
 	}
+
+	private void refreshDimension() {
+		setSize(getEffectiveSize());
+		setPreferredSize(getEffectiveSize());
+		repaint();
+	}
 	
 	private void fillLocalizedStrings() {
 		// TODO Auto-generated method stub
@@ -520,5 +542,9 @@ public class SVGCanvas extends JComponent implements LocaleChangeListener, Mouse
 			this.wrapper = wrapper;
 			this.selected = selected;
 		}
+	}
+	
+	static class CanvasSnapshot {
+		
 	}
 }

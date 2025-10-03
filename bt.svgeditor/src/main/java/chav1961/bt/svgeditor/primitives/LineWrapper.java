@@ -102,6 +102,7 @@ public class LineWrapper extends PrimitiveWrapper {
 	public void commitChanges() {
 		getTransform().transform((Point2D)from.clone(), from);
 		getTransform().transform((Point2D)to.clone(), to);
+		clearTransform();
 		setAreaOccupied(calcAreaOccupied(from, to));
 		refreshLine();
 	}
@@ -112,8 +113,39 @@ public class LineWrapper extends PrimitiveWrapper {
 	}
 
 	@Override
-	public Point2D getNearest(final Point2D point, double dist) {
-		return null;
+	public Point2D getNearest(final Point2D point, final double dist, final boolean anchorsOnly) {
+		if (anchorsOnly) {
+			if (point.distance(from) <= dist) {
+				return from;
+			}
+			else if (point.distance(to) <= dist) {
+				return to;
+			}
+			else {
+				return null;
+			}
+		}
+		else if (line.ptSegDist(point) < dist) { // https://otvet.mail.ru/question/228851600
+			if (from.getX() == to.getX()) {
+				return new Point2D.Double(from.getX(), point.getY());
+			}
+			else if (from.getY() == to.getY()) {
+				return new Point2D.Double(point.getX(), from.getY());
+			}
+			else {
+				final double	a = (to.getY() - from.getY())/(to.getX() - from.getX());
+				final double	b = from.getY() - 2* from.getX();
+				final double	a2 = a * a;
+				final double	a2p1 = 1/a2+1;
+				final double	xP = (a*point.getY()+point.getX()-a*b)*a2p1;
+				final double	yP = (a2*point.getY()+a*point.getX()+b)*a2p1;
+
+				return new Point2D.Double(xP, yP);				
+			}
+		}
+		else {
+			return null;
+		}
 	}
 	
 	private void refreshLine() {

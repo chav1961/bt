@@ -93,6 +93,10 @@ public class SVGEditor extends JPanel implements LocaleChangeListener, LoggerFac
 		return SwingUtils.getNearestLogger(getParent());
 	}
 
+	public void setFocus() {
+		command.requestFocusInWindow();
+	}
+	
 	public boolean isEmpty() {
 		return canvas.getItemCount() == 0;
 	}
@@ -127,11 +131,6 @@ public class SVGEditor extends JPanel implements LocaleChangeListener, LoggerFac
 		return canvas.currentScale();
 	}
 	
-	private void fillLocalizedStrings() {
-		commandLabel.setText(getLocalizer().getValue(APP_COMMAND_PROMPT));
-		command.setToolTipText(getLocalizer().getValue(APP_COMMAND_PROMPT_TT));
-	}
-
 	@Override
 	public OutputStream getOutputContent() throws IOException {
 		// TODO Auto-generated method stub
@@ -165,5 +164,10 @@ public class SVGEditor extends JPanel implements LocaleChangeListener, LoggerFac
 			getLogger().message(Severity.severe, exc, APP_COMMAND_ERROR, exc.getLocalizedMessage());
 			throw exc;
 		}
+	}
+
+	private void fillLocalizedStrings() {
+		commandLabel.setText(getLocalizer().getValue(APP_COMMAND_PROMPT));
+		command.setToolTipText(getLocalizer().getValue(APP_COMMAND_PROMPT_TT));
 	}
 }

@@ -187,7 +187,6 @@ public class AppWindow extends JFrame implements LocaleChangeListener, LoggerFac
 
 	@Override
 	public void close() throws RuntimeException {
-		// TODO Auto-generated method stub
 		parentLocalizer.pop();
 		dispose();
 	}
@@ -196,6 +195,14 @@ public class AppWindow extends JFrame implements LocaleChangeListener, LoggerFac
 		latch.await();
 	}
 
+	@Override
+	public void setVisible(final boolean visible) {
+		super.setVisible(visible);
+		if (visible) {
+			editor.setFocus();
+		}
+	}
+	
 	@OnAction("action:/newImage")
 	private void newImage() {
 		try {

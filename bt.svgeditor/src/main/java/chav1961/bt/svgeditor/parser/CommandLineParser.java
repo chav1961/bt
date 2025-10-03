@@ -48,6 +48,36 @@ public class CommandLineParser {
 												new Optional("@", new Mark(1)),
 												ArgumentType.signedInt, ',', ArgumentType.signedInt 
 												),
+										new Command(CommandType.TRANSFORM_ENTITY, "m[ove]", 
+												"m[ove] {a[ll]|l[ast]|sel[ected]} %1:point [to] [@]%2:point\"", "1", "1",
+												(parser,canvas,command,parameters)->{
+													new MoveProcessor(parameters).execute(canvas);
+												}, 
+												new Choise(
+													new Object[] {
+														"all", new Mark(1)	
+													},
+													new Object[] {
+														"a", new Mark(1)	
+													},
+													new Object[] {
+														"last", new Mark(2)	
+													},
+													new Object[] {
+														"l", new Mark(2)	
+													},
+													new Object[] {
+														"selected", new Mark(3)	
+													},
+													new Object[] {
+														"sel", new Mark(3)	
+													}
+												),
+												ArgumentType.signedInt, ',', ArgumentType.signedInt, 
+												new Optional("to"),
+												new Optional("@", new Mark(4)),
+												ArgumentType.signedInt, ',', ArgumentType.signedInt 
+												),
 										new Command(CommandType.REMOVE_ENTITY, "del[ete]", 
 												"del[ete] {a[ll]|l[ast]|sel[ected]}", "1", "1",
 												(parser,canvas,command,parameters)->{
@@ -55,22 +85,22 @@ public class CommandLineParser {
 												}, 
 												new Choise(
 													new Object[] {
-														"a", new Mark(1)	
-													},
-													new Object[] {
 														"all", new Mark(1)	
 													},
 													new Object[] {
-														"l", new Mark(2)	
+														"a", new Mark(1)	
 													},
 													new Object[] {
 														"last", new Mark(2)	
 													},
 													new Object[] {
-														"sel", new Mark(3)	
+														"l", new Mark(2)	
 													},
 													new Object[] {
 														"selected", new Mark(3)	
+													},
+													new Object[] {
+														"sel", new Mark(3)	
 													}
 												)
 												),
@@ -81,16 +111,16 @@ public class CommandLineParser {
 												}, 
 												new Choise(
 													new Object[] {
-														"n", new Mark(1)	
-													},
-													new Object[] {
 														"none", new Mark(1)	
 													},
 													new Object[] {
-														"a", new Mark(2)	
+														"n", new Mark(1)	
 													},
 													new Object[] {
 														"all", new Mark(2)	
+													},
+													new Object[] {
+														"a", new Mark(2)	
 													},
 													new Object[] {
 														new Choise(
@@ -101,7 +131,7 @@ public class CommandLineParser {
 														new Choise(
 															new Object[] {
 																new Choise(
-																	"w", "window"
+																	"window", "w" 
 																),
 																new Mark(6),
 																ArgumentType.signedInt, ',', ArgumentType.signedInt,
@@ -110,7 +140,7 @@ public class CommandLineParser {
 															},
 															new Object[] {
 																new Choise(
-																	"c", "crossing"
+																	"crossing", "c" 
 																),
 																new Mark(7),
 																ArgumentType.signedInt, ',', ArgumentType.signedInt,
@@ -119,7 +149,7 @@ public class CommandLineParser {
 															},
 															new Object[] {
 																new Choise(
-																	"l", "last"
+																	"last", "l"
 																),
 																new Mark(8),
 															},
@@ -160,7 +190,8 @@ public class CommandLineParser {
 		
 		for(Command item : commands) {
 			try{
-				if (namesCompared(name, item.getCommandName()) && CharUtils.tryExtract(temp, start, item.param) >= 0) {
+				if (namesCompared(name, item.getCommandName()) 
+						&& CharUtils.tryExtract(temp, start, item.param) >= 0) {
 					try {
 						final Object[]	values = new Object[100];
 						
