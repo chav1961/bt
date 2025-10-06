@@ -27,7 +27,7 @@ public abstract class PrimitiveWrapper implements Cloneable {
 	public abstract void commitChanges();
 	
 	public abstract boolean isIntersects(final Rectangle2D rect);
-	public abstract boolean isAbout(final Point2D point, final float delta);
+	public abstract boolean isAbout(final Point2D point, final double delta);
 	public abstract Point2D getNearest(final Point2D point, final double dist, final boolean anchorsOnly);
 
 	@Override

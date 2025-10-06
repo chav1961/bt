@@ -16,22 +16,22 @@ import java.awt.geom.AffineTransform;
 import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 import java.util.function.Consumer;
 
 import javax.swing.JComponent;
-import javax.swing.Scrollable;
 
 import chav1961.bt.svgeditor.interfaces.StateChangedListener;
-import chav1961.bt.svgeditor.primitives.LineWrapper;
 import chav1961.bt.svgeditor.primitives.PrimitiveWrapper;
-import chav1961.purelib.basic.exceptions.CalculationException;
 import chav1961.purelib.basic.exceptions.LocalizationException;
 import chav1961.purelib.concurrent.LightWeightListenerList;
+import chav1961.purelib.concurrent.LightWeightListenerList.LightWeightListenerCallback;
 import chav1961.purelib.i18n.interfaces.Localizer.LocaleChangeListener;
+import chav1961.purelib.ui.swing.interfaces.Undoable;
 
-public class SVGCanvas extends JComponent implements LocaleChangeListener, MouseListener, MouseMotionListener, MouseWheelListener {
+public class SVGCanvas extends JComponent implements LocaleChangeListener {
 	private static final long 	serialVersionUID = -4725462263857678033L;
 	private static final double DEFAULT_MOUSE_WHEEL_SPEED = 10;
 
@@ -39,30 +39,30 @@ public class SVGCanvas extends JComponent implements LocaleChangeListener, Mouse
 	private final double		mouseWheelSpeed;
 	private final List<ItemDescriptor>	content = new ArrayList<>();
 	private final float			delta = 3;
+	private final CanvasHistory	cHistory = new CanvasHistory();
+	private final List<MouseManager>	mmList = new ArrayList<>();
 	private Dimension			conventionalSize = new Dimension(100,100);
 	private double				currentScale = 1;
-	private Point2D				startMousePoint = new Point(0,0);
-	private Point2D				currentMousePoint = new Point(0,0);
-	private Actions				currentAction = Actions.NONE;
-	private PrimitiveWrapper	currentWrapper = null;
-	private double				currentEntityScale = 1;
+	private Point2D				currentMousePoint = new Point2D.Double(0, 0);
 
-	private static enum Actions {
-		NONE,
-		MOVE,
-		ROTATE,
-		SCALE
-	}
-	
 	public SVGCanvas() {
 		this(DEFAULT_MOUSE_WHEEL_SPEED);
 	}
 	
 	public SVGCanvas(final double mouseWheelSpeed) {
 		this.mouseWheelSpeed = mouseWheelSpeed;
-		addMouseListener(this);
-		addMouseMotionListener(this);
-		addMouseWheelListener(this);
+		this.mmList.add(new EditManager(this, mouseWheelSpeed));
+		addMouseMotionListener(new MouseMotionListener() {
+			@Override
+			public void mouseMoved(MouseEvent e) {
+				currentMousePoint = e.getPoint();
+			}
+			
+			@Override
+			public void mouseDragged(MouseEvent e) {
+				currentMousePoint = e.getPoint();
+			}
+		});
 		setEnabled(true);
 		setFocusable(true);
 		setCursor(Cursor.getPredefinedCursor(Cursor.CROSSHAIR_CURSOR));
@@ -74,140 +74,35 @@ public class SVGCanvas extends JComponent implements LocaleChangeListener, Mouse
 		fillLocalizedStrings();
 	}
 
-	@Override
-	public void mouseWheelMoved(final MouseWheelEvent e) {
-		switch (currentAction) {
-			case NONE	:
-				switch (e.getScrollType()) {
-					case MouseWheelEvent.WHEEL_UNIT_SCROLL :
-						scaleCanvas(e.getPreciseWheelRotation());
-						break;
-					case MouseWheelEvent.WHEEL_BLOCK_SCROLL:
-						scaleCanvas(e.getPreciseWheelRotation() * e.getScrollAmount());
-						break;
-					default:
-						throw new UnsupportedOperationException("Scroll type ["+e.getScrollType()+"] is not supported yet");
-				}
-				break;
-			case ROTATE	:
-				break;
-			case MOVE	:
-				currentAction = Actions.SCALE;
-			case SCALE	:
-				switch (e.getScrollType()) {
-					case MouseWheelEvent.WHEEL_UNIT_SCROLL :
-						scaleEntity(currentWrapper, startMousePoint, e.getPreciseWheelRotation());
-						break;
-					case MouseWheelEvent.WHEEL_BLOCK_SCROLL:
-						scaleEntity(currentWrapper, startMousePoint, e.getPreciseWheelRotation() * e.getScrollAmount());
-						break;
-					default:
-						throw new UnsupportedOperationException("Scroll type ["+e.getScrollType()+"] is not supported yet");
-				}
-				break;
-			default :
-				throw new UnsupportedOperationException("Action ["+currentAction+"] is not supported yet");
+	public Undoable<CanvasSnapshot> getUndoable() {
+		return cHistory;
+	}
+
+	public void pushMouseManager(final MouseManager mm) {
+		if (mm == null) {
+			throw new NullPointerException("Mouse manager to push can't be null");
+		}
+		else {
+			if (!mmList.isEmpty()) {
+				mmList.get(0).removeListeners(this);
+			}
+			mmList.add(0, mm);
+			mm.addListeners(this);
 		}
 	}
-
-	@Override
-	public void mouseDragged(final MouseEvent e) {
-		final Point2D		p = toScaledPoint(e.getPoint());
-
-		currentMousePoint = p;
-		switch (currentAction) {
-			case MOVE	:
-				moveEntity(currentWrapper, startMousePoint, p);
-				listeners.fireEvent((l)->l.locationChanged(e));
-				break;
-			case NONE	:
-				break;
-			case ROTATE	:
-				final double angle	= Math.atan2(getEffectiveY(currentAction, p.getY()-startMousePoint.getY()), getEffectiveX(currentAction, p.getX()-startMousePoint.getX()));
-				
-				rotateEntity(currentWrapper, startMousePoint, getEffectiveAngle(currentAction, angle));				
-				break;
-			case SCALE	:
-				break;
-			default :
-				throw new UnsupportedOperationException("Action ["+currentAction+"] is not supported yet");
+	
+	public void popMouseManager() {
+		if (mmList.isEmpty()) {
+			throw new IllegalStateException("Mouse manager stack exhausted");
 		}
-	}
-
-	@Override
-	public void mouseMoved(final MouseEvent e) {
-		highlightSelections(e);
-		currentMousePoint = toScaledPoint(e.getPoint());
-		listeners.fireEvent((l)->l.locationChanged(e));
-	}
-
-	@Override
-	public void mouseClicked(MouseEvent e) {
-		// TODO Auto-generated method stub
-		
-	}
-
-	@Override
-	public void mousePressed(final MouseEvent e) {
-		final Point2D	p = toScaledPoint(e.getPoint());
-		
-		startMousePoint = p;
-		currentWrapper = null;
-		currentAction = Actions.NONE;
-				
-		for(ItemDescriptor item : content) {
-			if (item.wrapper.isAbout(p, delta)) {
-				currentWrapper = item.wrapper;
-				currentAction = (e.getModifiersEx() & MouseEvent.CTRL_DOWN_MASK) != 0 ? Actions.ROTATE : Actions.MOVE;
-				currentEntityScale = 1;				
-				currentWrapper.startDrag(p);
-				break;
+		else {
+			mmList.remove(0).removeListeners(this);
+			if (!mmList.isEmpty()) {
+				mmList.get(0).addListeners(this);
 			}
 		}
 	}
-
-	@Override
-	public void mouseReleased(MouseEvent e) {
-		switch (currentAction) {
-			case MOVE	:
-				currentWrapper.endDrag();
-				currentWrapper.commitChanges();
-				currentWrapper.clearTransform();
-				currentWrapper = null;
-				break;
-			case NONE	:
-				break;
-			case ROTATE	:
-				currentWrapper.endDrag();
-				currentWrapper.commitChanges();
-				currentWrapper.clearTransform();
-				currentWrapper = null;
-				break;
-			case SCALE	:
-				currentWrapper.endDrag();
-				currentWrapper.commitChanges();
-				currentWrapper.clearTransform();
-				currentWrapper = null;
-				break;
-			default:
-				throw new UnsupportedOperationException("Action ["+currentAction+"] is not supported yet");
-		}
-		highlightSelections(e);
-		currentAction = Actions.NONE;
-	}
-
-	@Override
-	public void mouseEntered(MouseEvent e) {
-		// TODO Auto-generated method stub
-		
-	}
-
-	@Override
-	public void mouseExited(MouseEvent e) {
-		// TODO Auto-generated method stub
-		
-	}
-
+	
 	public void addStateChangedListener(final StateChangedListener l) {
 		if (l == null) {
 			throw new NullPointerException("Listener to add can't be null");
@@ -232,7 +127,9 @@ public class SVGCanvas extends JComponent implements LocaleChangeListener, Mouse
 		}
 		else {
 			content.add(new ItemDescriptor(wrapper));
+			cHistory.appendUndo(getSnapshot());
 			refreshDimension();
+			fireEvent((l)->l.contentChanged());
 		}
 	}
 
@@ -244,7 +141,9 @@ public class SVGCanvas extends JComponent implements LocaleChangeListener, Mouse
 			for(int index = content.size()-1; index <= 0; index--) {
 				if (content.get(index).wrapper == wrapper) {
 					content.remove(index);
+					cHistory.appendUndo(getSnapshot());
 					refreshDimension();
+					fireEvent((l)->l.contentChanged());
 					return;
 				}
 			}
@@ -331,10 +230,6 @@ public class SVGCanvas extends JComponent implements LocaleChangeListener, Mouse
 		}
 	}
 
-	public Point2D startMousePoint() {
-		return startMousePoint;
-	}
-	
 	public Point2D currentMousePoint() {
 		return currentMousePoint;
 	}
@@ -376,27 +271,41 @@ public class SVGCanvas extends JComponent implements LocaleChangeListener, Mouse
 		g2d.setTransform(oldAt);
 	}
 
-	protected Point2D toScaledPoint(final Point2D point) {
+	Point2D toScaledPoint(final Point2D point) {
 		return new Point2D.Double(point.getX() * currentScale, point.getY() * currentScale);
 	}
 
 	CanvasSnapshot getSnapshot() {
-		return null;
+		return new CanvasSnapshot(this);
 	}
 
-	void restoreSnapshot(CanvasSnapshot snapshot) {
+	void restoreSnapshot(final CanvasSnapshot snapshot) {
+		final double	oldScale = this.currentScale;
+		
+		this.currentScale = snapshot.currentScale;
+		content.clear();
+		content.addAll(Arrays.asList(snapshot.items));
+		refreshDimension();
+		if (oldScale != currentScale) {
+			fireEvent((l)->l.scaleChanged(oldScale, currentScale));
+		}
+		fireEvent((l)->l.contentChanged());
 	}
 	
-	private void scaleCanvas(final double value) {
+	void scaleCanvas(final double value) {
 		final double	oldScale = currentScale;
 		
 		currentScale = calculateScale(currentScale, value);
 		refreshDimension();
 		if (oldScale != currentScale) {
-			listeners.fireEvent((l)->l.scaleChanged(oldScale, currentScale));
+			fireEvent((l)->l.scaleChanged(oldScale, currentScale));
 		}
 	}
 
+	Iterable<ItemDescriptor> getDescriptors() {
+		return content;
+	}
+	
 	private void pickCoordinates(final Graphics2D g2d) {
 		final AffineTransform	at = new AffineTransform(g2d.getTransform());
 		final Dimension	awaitedSize = getConventionalSize();
@@ -418,83 +327,27 @@ public class SVGCanvas extends JComponent implements LocaleChangeListener, Mouse
 		g2d.setColor(oldColor);
 	}
 
-	private void highlightSelections(final MouseEvent e) {
-		final Point2D		p = toScaledPoint(e.getPoint());
-		PrimitiveWrapper	oldItem = null, newItem = null;
-		Cursor	c = Cursor.getPredefinedCursor(Cursor.CROSSHAIR_CURSOR);
-		
-		for(ItemDescriptor item : content) {
-			if (item.wrapper.isHighlight()) {
-				oldItem = item.wrapper;
-				break;
-			}
-		}
-		
-		for(ItemDescriptor item : content) {
-			if (item.wrapper.isAbout(p, delta)) {
-				c = Cursor.getPredefinedCursor(Cursor.HAND_CURSOR);
-				newItem = item.wrapper;
-				break;
-			}
-		}
-		setCursor(c);
-		if (oldItem != newItem) {
-			if (oldItem != null) {
-				oldItem.setHighlight(false);
-			}
-			if (newItem != null) {
-				newItem.setHighlight(true);
-			}
-			repaint();
-		}
+	void fireEvent(final LightWeightListenerCallback<StateChangedListener> callback) {
+		listeners.fireEvent(callback);
 	}
 
-	private void moveEntity(final PrimitiveWrapper entity, final Point2D anchor, final Point2D current) {
-		final AffineTransform	at = new AffineTransform();
-		
-		at.translate(getEffectiveX(Actions.MOVE, current.getX()) - anchor.getX(), 
-					 getEffectiveY(Actions.MOVE, current.getY()) - anchor.getY());
-		entity.setTransform(at);
-		repaint();
+	double getDelta() {
+		return delta;
 	}
 	
-	
-	private void scaleEntity(final PrimitiveWrapper entity, final Point2D anchor, final double scale) {
-		final AffineTransform	at = new AffineTransform();
-		
-		currentEntityScale = getEffectiveScale(Actions.SCALE, calculateScale(currentEntityScale, scale));
-		at.translate(anchor.getX(), anchor.getY());
-		at.scale(currentEntityScale, currentEntityScale);
-		at.translate(-anchor.getX(), -anchor.getY());
-		
-		entity.setTransform(at);
-		repaint();
-	}
-
-	private void rotateEntity(final PrimitiveWrapper entity, final Point2D anchor, double angle) {
-		final AffineTransform	at = new AffineTransform();
-		
-		at.translate(anchor.getX(), anchor.getY());
-		at.rotate(angle);
-		at.translate(-anchor.getX(), -anchor.getY());
-		
-		entity.setTransform(at);
-		repaint();
-	}
-	
-	private double getEffectiveX(final Actions action, final double x) {
+	double getEffectiveX(final double x) {
 		return x;
 	}
 
-	private double getEffectiveY(final Actions action, final double y) {
+	double getEffectiveY(final double y) {
 		return y;
 	}
 
-	private double getEffectiveScale(final Actions action, final double scale) {
+	double getEffectiveScale(final double scale) {
 		return scale;
 	}
 
-	private double getEffectiveAngle(final Actions action, final double angle) {
+	double getEffectiveAngle(final double angle) {
 		return angle;
 	}
 
@@ -530,9 +383,9 @@ public class SVGCanvas extends JComponent implements LocaleChangeListener, Mouse
 		
 	}
 
-	private static class ItemDescriptor {
-		private final PrimitiveWrapper	wrapper;
-		private boolean					selected;
+	static class ItemDescriptor {
+		final PrimitiveWrapper	wrapper;
+		boolean					selected;
 		
 		public ItemDescriptor(final PrimitiveWrapper wrapper) {
 			this(wrapper, false);
@@ -545,6 +398,21 @@ public class SVGCanvas extends JComponent implements LocaleChangeListener, Mouse
 	}
 	
 	static class CanvasSnapshot {
+		private final double			currentScale;
+		private final ItemDescriptor[]	items;
 		
+		private CanvasSnapshot(final SVGCanvas canvas) {
+			this.currentScale = canvas.currentScale;
+			this.items = new ItemDescriptor[canvas.content.size()];
+			int	index = 0;
+			
+			for (ItemDescriptor item : canvas.content) {
+				try {
+					items[index++] = new ItemDescriptor((PrimitiveWrapper) item.wrapper.clone(), item.selected);
+				} catch (CloneNotSupportedException e) {
+					throw new IllegalArgumentException(e);
+				}
+			}
+		}
 	}
 }

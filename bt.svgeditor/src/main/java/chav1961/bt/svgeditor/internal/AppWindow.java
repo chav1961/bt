@@ -154,6 +154,11 @@ public class AppWindow extends JFrame implements LocaleChangeListener, LoggerFac
 			public void locationChanged(final MouseEvent event) {
 				fillCanvasState();
 			}
+			
+			public void contentChanged() {
+				fillCanvasState();
+				emm.applyMasks();
+			};
 		});
 		
 		
@@ -322,10 +327,12 @@ public class AppWindow extends JFrame implements LocaleChangeListener, LoggerFac
 	
 	@OnAction("action:/undo")
 	private void undo() {
+		editor.undo();
 	}
 	
 	@OnAction("action:/redo")
 	private void redo() {
+		editor.redo();
 	}
 	
 	@OnAction("action:/cut")
@@ -543,8 +550,8 @@ public class AppWindow extends JFrame implements LocaleChangeListener, LoggerFac
 				new ItemDescriptor(MENU_MAIN_FILE_IMPORT, 1L << index++, ()->true),
 				new ItemDescriptor(MENU_MAIN_FILE_EXPORT, 1L << index++, ()->anyContentExists && !editor.isEmpty()),
 				new ItemDescriptor(MENU_MAIN_EDIT, 1L << index++, ()->anyContentExists),
-				new ItemDescriptor(MENU_MAIN_EDIT_UNDO, 1L << index++, ()->true),
-				new ItemDescriptor(MENU_MAIN_EDIT_REDO, 1L << index++, ()->true),
+				new ItemDescriptor(MENU_MAIN_EDIT_UNDO, 1L << index++, ()->editor.canUndo()),
+				new ItemDescriptor(MENU_MAIN_EDIT_REDO, 1L << index++, ()->editor.canRedo()),
 				new ItemDescriptor(MENU_MAIN_EDIT_CUT, 1L << index++, ()->true),
 				new ItemDescriptor(MENU_MAIN_EDIT_COPY, 1L << index++, ()->true),
 				new ItemDescriptor(MENU_MAIN_EDIT_PASTE, 1L << index++, ()->true),

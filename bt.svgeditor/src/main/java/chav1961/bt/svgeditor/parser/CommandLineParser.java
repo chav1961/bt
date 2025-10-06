@@ -38,6 +38,16 @@ public class CommandLineParser {
 												(parser,canvas,command,parameters)->{
 													new MenuItemProcessor("action:/exit").execute(canvas);
 												}, new Mark(1)),
+										new Command(CommandType.MENU, "u[ndo]", 
+												"u[ndo]", "1", "1",
+												(parser,canvas,command,parameters)->{
+													new MenuItemProcessor("action:/undo").execute(canvas);
+												}, new Mark(1)),
+										new Command(CommandType.MENU, "r[edo]", 
+												"r[edo]", "1", "1",
+												(parser,canvas,command,parameters)->{
+													new MenuItemProcessor("action:/redo").execute(canvas);
+												}, new Mark(1)),
 										new Command(CommandType.NEW_ENTITY, "l[ine]", 
 												"l[ine] %1:point [to] [@]%2:point", "1", "1",
 												(parser,canvas,command,parameters)->{

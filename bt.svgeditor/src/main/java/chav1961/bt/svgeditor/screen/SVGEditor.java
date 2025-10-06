@@ -53,7 +53,6 @@ public class SVGEditor extends JPanel implements LocaleChangeListener, LoggerFac
 	private final JTextField		command = new JTextField();
 	private final SVGCanvas			canvas = new SVGCanvas();
 	private final JLayeredPane		pane = new JLayeredPane();
-	private final CommandHistory	history = CommandHistory.of(command,(c)->{executeCommand(c);});
 	private final CommandLineParser	parser = new CommandLineParser();
 	private byte[]	temp = new byte[0];
 	
@@ -72,7 +71,9 @@ public class SVGEditor extends JPanel implements LocaleChangeListener, LoggerFac
 			pane.add(canvas, JLayeredPane.FRAME_CONTENT_LAYER);
 			add(new JScrollPane(pane), BorderLayout.CENTER);
 			add(commandPanel, BorderLayout.SOUTH);
-			
+	
+			CommandHistory.of(command,(c)->{executeCommand(c);});
+			canvas.getUndoable().appendUndo(canvas.getSnapshot());
 			fillLocalizedStrings();
 		}
 	}
@@ -93,6 +94,31 @@ public class SVGEditor extends JPanel implements LocaleChangeListener, LoggerFac
 		return SwingUtils.getNearestLogger(getParent());
 	}
 
+	public boolean canUndo() {
+		return canvas.getUndoable().canUndo();
+	}
+	
+	public void undo() {
+		if (canUndo()) {
+			canvas.restoreSnapshot(canvas.getUndoable().undo());
+		}
+	}
+
+	public boolean canRedo() {
+		return canvas.getUndoable().canRedo();
+	}
+
+	public void redo() {
+		if (canRedo()) {
+			canvas.restoreSnapshot(canvas.getUndoable().redo());
+		}
+	}
+	
+	public void clearHistory() {
+		canvas.getUndoable().clearUndo();
+		canvas.getUndoable().appendUndo(canvas.getSnapshot());
+	}
+	
 	public void setFocus() {
 		command.requestFocusInWindow();
 	}

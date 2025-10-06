@@ -86,7 +86,7 @@ public class LineWrapper extends PrimitiveWrapper {
 	}
 
 	@Override
-	public boolean isAbout(final Point2D point, final float delta) {
+	public boolean isAbout(final Point2D point, final double delta) {
 		if (point == null) {
 			throw new NullPointerException("Point to check can't be null");
 		}
