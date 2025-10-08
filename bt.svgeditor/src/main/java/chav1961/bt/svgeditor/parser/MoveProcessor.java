@@ -94,11 +94,15 @@ public class MoveProcessor extends AbstractCommandProcessor {
 		}
 		final AffineTransform	at = new AffineTransform();
 		
-		canvas.beginTransaction();
-		at.translate(xTo-xFrom, yTo-yFrom);
-		for(PrimitiveWrapper item : toMove) {
-			item.setTransform(at);
+		if (!toMove.isEmpty()) {
+			canvas.beginTransaction(toMove.size() > 1 
+					? "Move ["+toMove.size()+"] items" 
+					: "Move ["+toMove.get(0).getClass().getSimpleName()+"]");
+			at.translate(xTo-xFrom, yTo-yFrom);
+			for(PrimitiveWrapper item : toMove) {
+				item.setTransform(at);
+			}
+			canvas.commit();
 		}
-		canvas.commit();
 	}
 }

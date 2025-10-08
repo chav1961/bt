@@ -3,6 +3,7 @@ package chav1961.bt.svgeditor.screen;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Point;
+import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.awt.geom.Point2D;
@@ -13,6 +14,8 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.Locale;
 
+import javax.swing.AbstractAction;
+import javax.swing.Action;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JLayeredPane;
@@ -22,6 +25,7 @@ import javax.swing.JTextField;
 import javax.swing.KeyStroke;
 
 import chav1961.bt.svgeditor.interfaces.StateChangedListener;
+import chav1961.bt.svgeditor.internal.AppWindow;
 import chav1961.bt.svgeditor.parser.CommandLineParser;
 import chav1961.purelib.basic.CharUtils;
 import chav1961.purelib.basic.Utils;
@@ -47,24 +51,36 @@ public class SVGEditor extends JPanel implements LocaleChangeListener, LoggerFac
 	private static final String	APP_COMMAND_PROMPT_TT = "chav1961.bt.svgeditor.screen.SVGEditor.command.prompt.tt";
 	private static final String	APP_COMMAND_COMPLETED = "chav1961.bt.svgeditor.screen.SVGEditor.command.completed";
 	private static final String	APP_COMMAND_ERROR = "chav1961.bt.svgeditor.screen.SVGEditor.command.error";
-	
-	private final Localizer			localizer;
+
 	private final JLabel			commandLabel = new JLabel();
 	private final JTextField		command = new JTextField();
-	private final SVGCanvas			canvas = new SVGCanvas();
 	private final JLayeredPane		pane = new JLayeredPane();
 	private final CommandLineParser	parser = new CommandLineParser();
+	private final AppWindow			owner;
+	private final Localizer			localizer;
+	private final SVGCanvas			canvas;
+	private boolean	insertionTurnedOn = false;
 	private byte[]	temp = new byte[0];
+
+	public static enum InsertAction {
+		INSERT_LINE
+	}
 	
-	public SVGEditor(final Localizer localizer) {
+	public SVGEditor(final AppWindow owner, final Localizer localizer) {
 		super(new BorderLayout());
-		if (localizer == null) {
+		if (owner == null) {
+			throw new NullPointerException("Owner can't be null");
+		}
+		else if (localizer == null) {
 			throw new NullPointerException("Localizer can't be null");
 		}
 		else {
 			final JPanel	commandPanel = new JPanel(new BorderLayout());
 			
+			this.owner = owner;
 			this.localizer = localizer;
+			this.canvas = new SVGCanvas(localizer);
+			owner.getProperties().addPropertyChangeListener(canvas);
 			commandPanel.add(commandLabel, BorderLayout.WEST);
 			commandPanel.add(command, BorderLayout.CENTER);
 			canvas.setBackground(Color.black);
@@ -73,7 +89,6 @@ public class SVGEditor extends JPanel implements LocaleChangeListener, LoggerFac
 			add(commandPanel, BorderLayout.SOUTH);
 	
 			CommandHistory.of(command,(c)->{executeCommand(c);});
-			canvas.getUndoable().appendUndo(canvas.getSnapshot());
 			fillLocalizedStrings();
 		}
 	}
@@ -100,7 +115,7 @@ public class SVGEditor extends JPanel implements LocaleChangeListener, LoggerFac
 	
 	public void undo() {
 		if (canUndo()) {
-			canvas.restoreSnapshot(canvas.getUndoable().undo());
+			canvas.restoreSnapshot(canvas.getUndoable().undo()[0]);
 		}
 	}
 
@@ -110,13 +125,12 @@ public class SVGEditor extends JPanel implements LocaleChangeListener, LoggerFac
 
 	public void redo() {
 		if (canRedo()) {
-			canvas.restoreSnapshot(canvas.getUndoable().redo());
+			canvas.restoreSnapshot(canvas.getUndoable().redo()[1]);
 		}
 	}
 	
 	public void clearHistory() {
 		canvas.getUndoable().clearUndo();
-		canvas.getUndoable().appendUndo(canvas.getSnapshot());
 	}
 	
 	public void setFocus() {
@@ -131,6 +145,30 @@ public class SVGEditor extends JPanel implements LocaleChangeListener, LoggerFac
 		return null;
 	}
 
+	public void startInsertion(final InsertAction action) {
+		if (action == null) {
+			throw new NullPointerException("Insert action can't be null");
+		}
+		else {
+			if (isInInsertionNow()) {
+				endInsertion(false);
+			}
+			canvas.pushMouseManager(new InsertManager(canvas, action));
+			canvas.requestFocusInWindow();
+			insertionTurnedOn = true;
+		}
+	}
+	
+	public boolean isInInsertionNow() {
+		return insertionTurnedOn;
+	}
+	
+	public void endInsertion(final boolean commit) {
+		canvas.popMouseManager();
+		setFocus();
+		insertionTurnedOn = false;
+	}
+	
 	public void addStateChangedListener(final StateChangedListener l) {
 		if (l == null) {
 			throw new NullPointerException("Listener to add can't be null");

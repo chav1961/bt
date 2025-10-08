@@ -13,8 +13,8 @@ import chav1961.purelib.ui.swing.interfaces.Undoable.UndoEvent;
 import chav1961.purelib.ui.swing.interfaces.Undoable.UndoEventType;
 import chav1961.purelib.ui.swing.interfaces.Undoable.UndoListener;
 
-public class CanvasHistory implements Undoable<CanvasSnapshot> {
-	private final List<CanvasSnapshot>	commands = new ArrayList<>();
+public class CanvasHistory implements Undoable<CanvasSnapshot[]> {
+	private final List<CanvasSnapshot[]>	commands = new ArrayList<>();
 	private final LightWeightListenerList<UndoListener>	listeners = new LightWeightListenerList<>(UndoListener.class);
 	private int		cursor = -1;
 
@@ -23,17 +23,17 @@ public class CanvasHistory implements Undoable<CanvasSnapshot> {
 	
 	@Override
 	public boolean canUndo() {
-		return !commands.isEmpty() && cursor > 0;
+		return !commands.isEmpty() && cursor >= 0;
 	}
 
 	@Override
-	public CanvasSnapshot undo() throws IllegalStateException {
+	public CanvasSnapshot[] undo() throws IllegalStateException {
 		if (!canUndo()) {
 			throw new IllegalStateException("Undo can't be done because content is too few");
 		}
 		else {
 			final UndoEvent			ue = new UndoEvent(this, 0, UndoEventType.CHANGE_UNDO);
-			final CanvasSnapshot	result = commands.get(--cursor);
+			final CanvasSnapshot[]	result = commands.get(cursor--);
 			
 			SwingUtilities.invokeLater(()->listeners.fireEvent((l)->l.undoChanged(ue)));
 			return result;
@@ -46,13 +46,13 @@ public class CanvasHistory implements Undoable<CanvasSnapshot> {
 	}
 
 	@Override
-	public CanvasSnapshot redo() throws IllegalStateException {
+	public CanvasSnapshot[] redo() throws IllegalStateException {
 		if (!canRedo()) {
 			throw new IllegalStateException("Redo can't be done because content is too few");
 		}
 		else {
 			final UndoEvent			ue = new UndoEvent(this, 0, UndoEventType.CHANGE_UNDO);
-			final CanvasSnapshot	result = commands.get(++cursor);
+			final CanvasSnapshot[]	result = commands.get(++cursor);
 			
 			SwingUtilities.invokeLater(()->listeners.fireEvent((l)->l.undoChanged(ue)));
 			return result;
@@ -60,7 +60,7 @@ public class CanvasHistory implements Undoable<CanvasSnapshot> {
 	}
 
 	@Override
-	public void appendUndo(CanvasSnapshot item) throws NullPointerException {
+	public void appendUndo(final CanvasSnapshot[] item) throws NullPointerException {
 		if (item == null) {
 			throw new NullPointerException("Command to append can't be null");
 		}
@@ -83,7 +83,7 @@ public class CanvasHistory implements Undoable<CanvasSnapshot> {
 	}
 
 	@Override
-	public CanvasSnapshot getCurrentItem() throws IllegalStateException {
+	public CanvasSnapshot[] getCurrentItem() throws IllegalStateException {
 		if (cursor < 0 || cursor >= commands.size()) {
 			throw new IllegalStateException("Current command is not available because content is too few");
 		}
@@ -109,6 +109,15 @@ public class CanvasHistory implements Undoable<CanvasSnapshot> {
 		}
 		else {
 			listeners.removeListener(l);
+		}
+	}
+	
+	public void removeLastSnapshot() {
+		if (!commands.isEmpty()) {
+			final UndoEvent	ue = new UndoEvent(this, 0, UndoEventType.REMOVE_UNDO);
+			
+			commands.remove(cursor--);
+			listeners.fireEvent((l)->l.undoChanged(ue));
 		}
 	}
 }

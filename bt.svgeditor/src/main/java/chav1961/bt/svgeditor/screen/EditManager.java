@@ -188,33 +188,36 @@ class EditManager extends MouseManager {
 	private void moveEntity(final PrimitiveWrapper entity, final Point2D anchor, final Point2D current) {
 		final AffineTransform	at = new AffineTransform();
 		
+		canvas.beginTransaction("Move ["+entity.getClass().getSimpleName()+"]");
 		at.translate(canvas.getEffectiveX(current.getX()) - anchor.getX(), 
 				canvas.getEffectiveY(current.getY()) - anchor.getY());
 		entity.setTransform(at);
-		canvas.repaint();
+		canvas.commit();
 	}
 
 	private void rotateEntity(final PrimitiveWrapper entity, final Point2D anchor, double angle) {
 		final AffineTransform	at = new AffineTransform();
 		
+		canvas.beginTransaction("Rotate ["+entity.getClass().getSimpleName()+"]");
 		at.translate(anchor.getX(), anchor.getY());
 		at.rotate(angle);
 		at.translate(-anchor.getX(), -anchor.getY());
 		
 		entity.setTransform(at);
-		canvas.repaint();
+		canvas.commit();
 	}
 	
 	private void scaleEntity(final PrimitiveWrapper entity, final Point2D anchor, final double scale) {
 		final AffineTransform	at = new AffineTransform();
 		
 		currentEntityScale = canvas.getEffectiveScale(calculateScale(currentEntityScale, scale));
+		canvas.beginTransaction("Scale ["+entity.getClass().getSimpleName()+"]");
 		at.translate(anchor.getX(), anchor.getY());
 		at.scale(currentEntityScale, currentEntityScale);
 		at.translate(-anchor.getX(), -anchor.getY());
 		
 		entity.setTransform(at);
-		canvas.repaint();
+		canvas.commit();
 	}
 	
 	private double calculateScale(final double currentScale, final double step) {

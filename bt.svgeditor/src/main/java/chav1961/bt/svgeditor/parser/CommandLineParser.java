@@ -28,6 +28,11 @@ import chav1961.purelib.basic.exceptions.SyntaxException;
  */
 public class CommandLineParser {
 	private static final Command[]	COMMANDS = {
+										new Command(CommandType.MENU, "help", 
+												"help", "1", "1",
+												(parser,canvas,command,parameters)->{
+													new HelpProcessor(parameters).execute(canvas);
+												}, new Mark(1)),
 										new Command(CommandType.MENU, "new", 
 												"new", "1", "1",
 												(parser,canvas,command,parameters)->{

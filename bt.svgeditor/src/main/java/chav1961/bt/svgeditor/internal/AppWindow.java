@@ -32,14 +32,17 @@ import javax.print.*;
 import javax.print.attribute.*;
 import javax.print.attribute.standard.*;
 
+import chav1961.bt.svgeditor.dialogs.SettingsDialog;
 import chav1961.bt.svgeditor.interfaces.StateChangedListener;
 import chav1961.bt.svgeditor.screen.SVGEditor;
 import chav1961.purelib.basic.PureLibSettings;
 import chav1961.purelib.basic.SubstitutableProperties;
+import chav1961.purelib.basic.exceptions.ContentException;
 import chav1961.purelib.basic.exceptions.LocalizationException;
 import chav1961.purelib.basic.interfaces.LoggerFacade;
 import chav1961.purelib.basic.interfaces.LoggerFacade.Severity;
 import chav1961.purelib.basic.interfaces.LoggerFacadeOwner;
+import chav1961.purelib.basic.interfaces.ModuleAccessor;
 import chav1961.purelib.fsys.FileSystemFactory;
 import chav1961.purelib.fsys.interfaces.FileSystemInterface;
 import chav1961.purelib.i18n.LocalizerFactory;
@@ -49,7 +52,9 @@ import chav1961.purelib.i18n.interfaces.LocalizerOwner;
 import chav1961.purelib.i18n.interfaces.SupportedLanguages;
 import chav1961.purelib.model.ContentModelFactory;
 import chav1961.purelib.model.interfaces.ContentMetadataInterface;
+import chav1961.purelib.ui.interfaces.FormManager;
 import chav1961.purelib.ui.interfaces.LRUPersistence;
+import chav1961.purelib.ui.swing.AutoBuiltForm;
 import chav1961.purelib.ui.swing.SwingUtils;
 import chav1961.purelib.ui.swing.interfaces.OnAction;
 import chav1961.purelib.ui.swing.useful.JEnableMaskManipulator;
@@ -124,7 +129,7 @@ public class AppWindow extends JFrame implements LocaleChangeListener, LoggerFac
 		this.menuBar = SwingUtils.toJComponent(mdi.byUIPath(URI.create("ui:/model/navigation.top.mainmenu")), JMenuBar.class);
 		this.emm = new JEnableMaskManipulator(getMenus(this), true, menuBar);
 		this.state = new JStateString(localizer, 10);
-		this.editor = new SVGEditor(localizer);
+		this.editor = new SVGEditor(this, localizer);
 		this.fsi = FileSystemFactory.createFileSystem(URI.create("fsys:file:/"));
 		this.persistence = LRUPersistence.of(props, LRU_PREFIX);
 		this.fcm = new JFileContentManipulator("system", fsi, localizer, editor, editor, persistence, lruFiles);
@@ -161,7 +166,6 @@ public class AppWindow extends JFrame implements LocaleChangeListener, LoggerFac
 			};
 		});
 		
-		
 		fillLocalizedStrings();
 		
 		SwingUtils.centerMainWindow(this, 0.85f);
@@ -196,16 +200,31 @@ public class AppWindow extends JFrame implements LocaleChangeListener, LoggerFac
 		dispose();
 	}
 
-	public void awaitingExit() throws InterruptedException {
-		latch.await();
-	}
-
 	@Override
 	public void setVisible(final boolean visible) {
 		super.setVisible(visible);
 		if (visible) {
 			editor.setFocus();
 		}
+	}
+
+	public void awaitingExit() throws InterruptedException {
+		latch.await();
+	}
+
+	public <T> boolean ask(final T instance, final int width, final int height) throws ContentException {
+		final ContentMetadataInterface	mdi = ContentModelFactory.forAnnotatedClass(instance.getClass());
+		
+		try(final AutoBuiltForm<T,?>	abf = new AutoBuiltForm<>(mdi, getLocalizer(), PureLibSettings.INTERNAL_LOADER, instance, (FormManager<?,T>)instance)) {
+			
+			((ModuleAccessor)instance).allowUnnamedModuleAccess(abf.getUnnamedModules());
+			abf.setPreferredSize(new Dimension(width,height));
+			return AutoBuiltForm.ask(this, getLocalizer(), abf);
+		}
+	}
+
+	public SubstitutableProperties getProperties() {
+		return props;
 	}
 	
 	@OnAction("action:/newImage")
@@ -457,7 +476,15 @@ public class AppWindow extends JFrame implements LocaleChangeListener, LoggerFac
 	}	
 	
 	@OnAction("action:/settings")
-	private void settings() {
+	private void settings() throws ContentException {
+		final SubstitutableProperties	temp = new SubstitutableProperties();
+		
+		temp.putAll(getProperties());
+		final SettingsDialog	dlg = new SettingsDialog(getLogger(), temp);
+		
+		if (ask(dlg, 200, 200)) {
+			getProperties().putAll(temp);
+		}
 	}
 	
 	@OnAction("action:/overview")

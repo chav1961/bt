@@ -15,6 +15,7 @@ import java.awt.event.MouseWheelListener;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
+import java.beans.PropertyChangeEvent;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -25,17 +26,26 @@ import javax.swing.JComponent;
 
 import chav1961.bt.svgeditor.interfaces.StateChangedListener;
 import chav1961.bt.svgeditor.primitives.PrimitiveWrapper;
+import chav1961.purelib.basic.SubstitutableProperties.PropertyGroupChangeEvent;
+import chav1961.purelib.basic.SubstitutableProperties.PropertyGroupChangeListener;
+import chav1961.purelib.basic.Utils;
 import chav1961.purelib.basic.exceptions.LocalizationException;
+import chav1961.purelib.basic.interfaces.LoggerFacade;
+import chav1961.purelib.basic.interfaces.LoggerFacadeOwner;
 import chav1961.purelib.concurrent.LightWeightListenerList;
 import chav1961.purelib.concurrent.LightWeightListenerList.LightWeightListenerCallback;
+import chav1961.purelib.i18n.interfaces.Localizer;
+import chav1961.purelib.i18n.interfaces.LocalizerOwner;
 import chav1961.purelib.i18n.interfaces.Localizer.LocaleChangeListener;
+import chav1961.purelib.ui.swing.SwingUtils;
 import chav1961.purelib.ui.swing.interfaces.Undoable;
 
-public class SVGCanvas extends JComponent implements LocaleChangeListener {
+public class SVGCanvas extends JComponent implements LocaleChangeListener, LoggerFacadeOwner, LocalizerOwner, PropertyGroupChangeListener {
 	private static final long 	serialVersionUID = -4725462263857678033L;
 	private static final double DEFAULT_MOUSE_WHEEL_SPEED = 10;
 
 	private final LightWeightListenerList<StateChangedListener>	listeners = new LightWeightListenerList<>(StateChangedListener.class);
+	private final Localizer		localizer;
 	private final double		mouseWheelSpeed;
 	private final List<ItemDescriptor>	content = new ArrayList<>();
 	private final float			delta = 3;
@@ -44,37 +54,60 @@ public class SVGCanvas extends JComponent implements LocaleChangeListener {
 	private Dimension			conventionalSize = new Dimension(100,100);
 	private double				currentScale = 1;
 	private Point2D				currentMousePoint = new Point2D.Double(0, 0);
+	private CanvasSnapshot[]	currentCanvasSnapshot = null;
 
-	public SVGCanvas() {
-		this(DEFAULT_MOUSE_WHEEL_SPEED);
+	public SVGCanvas(final Localizer localizer) {
+		this(localizer, DEFAULT_MOUSE_WHEEL_SPEED);
 	}
 	
-	public SVGCanvas(final double mouseWheelSpeed) {
-		this.mouseWheelSpeed = mouseWheelSpeed;
-		this.mmList.add(new EditManager(this, mouseWheelSpeed));
-		addMouseMotionListener(new MouseMotionListener() {
-			@Override
-			public void mouseMoved(MouseEvent e) {
-				currentMousePoint = e.getPoint();
-			}
-			
-			@Override
-			public void mouseDragged(MouseEvent e) {
-				currentMousePoint = e.getPoint();
-			}
-		});
-		setEnabled(true);
-		setFocusable(true);
-		setCursor(Cursor.getPredefinedCursor(Cursor.CROSSHAIR_CURSOR));
-		refreshDimension();
+	public SVGCanvas(final Localizer localizer, final double mouseWheelSpeed) {
+		if (localizer == null) {
+			throw new NullPointerException("Loalzier can't be null");
+		}
+		else if (mouseWheelSpeed <= 0) {
+			throw new IllegalArgumentException("Mouse wheel speed ["+mouseWheelSpeed+"] must be greater than 0");
+		}
+		else {
+			this.localizer = localizer;
+			this.mouseWheelSpeed = mouseWheelSpeed;
+			this.mmList.add(new EditManager(this, mouseWheelSpeed));
+			addMouseMotionListener(new MouseMotionListener() {
+				@Override
+				public void mouseMoved(MouseEvent e) {
+					currentMousePoint = e.getPoint();
+				}
+				
+				@Override
+				public void mouseDragged(MouseEvent e) {
+					currentMousePoint = e.getPoint();
+				}
+			});
+			setEnabled(true);
+			setFocusable(true);
+			setCursor(Cursor.getPredefinedCursor(Cursor.CROSSHAIR_CURSOR));
+			refreshDimension();
+		}
 	}
 
 	@Override
 	public void localeChanged(final Locale oldLocale, final Locale newLocale) throws LocalizationException {
+		for (MouseManager item : mmList) {
+			item.localeChanged(oldLocale, newLocale);
+		}
 		fillLocalizedStrings();
 	}
 
-	public Undoable<CanvasSnapshot> getUndoable() {
+	@Override
+	public Localizer getLocalizer() {
+		return localizer;
+	}
+
+	@Override
+	public LoggerFacade getLogger() {
+		return SwingUtils.getNearestLogger(this);
+	}
+	
+	public Undoable<CanvasSnapshot[]> getUndoable() {
 		return cHistory;
 	}
 
@@ -96,7 +129,10 @@ public class SVGCanvas extends JComponent implements LocaleChangeListener {
 			throw new IllegalStateException("Mouse manager stack exhausted");
 		}
 		else {
-			mmList.remove(0).removeListeners(this);
+			final MouseManager	mm = mmList.remove(0);
+			
+			mm.removeListeners(this);
+			mm.close();
 			if (!mmList.isEmpty()) {
 				mmList.get(0).addListeners(this);
 			}
@@ -126,27 +162,28 @@ public class SVGCanvas extends JComponent implements LocaleChangeListener {
 			throw new NullPointerException("Wrapper to add can't be null");
 		}
 		else {
+			beginTransaction("Add ["+wrapper.getClass().getSimpleName()+"]");
 			content.add(new ItemDescriptor(wrapper));
-			cHistory.appendUndo(getSnapshot());
-			refreshDimension();
+			commit();
 			fireEvent((l)->l.contentChanged());
 		}
 	}
 
 	public void delete(final PrimitiveWrapper wrapper) {
 		if (wrapper == null) {
-			throw new NullPointerException("Wrapper to add can't be null");
+			throw new NullPointerException("Wrapper to delete can't be null");
 		}
 		else {
+			beginTransaction("Delete ["+wrapper.getClass().getSimpleName()+"]");
 			for(int index = content.size()-1; index <= 0; index--) {
 				if (content.get(index).wrapper == wrapper) {
 					content.remove(index);
-					cHistory.appendUndo(getSnapshot());
-					refreshDimension();
+					commit();
 					fireEvent((l)->l.contentChanged());
 					return;
 				}
 			}
+			rollback();
 		}
 	}
 	
@@ -238,17 +275,25 @@ public class SVGCanvas extends JComponent implements LocaleChangeListener {
 		return currentScale;
 	}
 	
-	public void beginTransaction() {
-		
+	public void beginTransaction(final String comment) {
+		if (Utils.checkEmptyOrNullString(comment)) {
+			throw new IllegalArgumentException("Comment can be neither null nor empty"); 
+		}
+		else {
+			cHistory.appendUndo(currentCanvasSnapshot = new CanvasSnapshot[] {getSnapshot(comment), null});
+		}
 	}
 
 	public void commit() {
 		forEach((item)->item.commitChanges());
 		refreshDimension();
+		currentCanvasSnapshot[1] = getSnapshot("Commit");
+		repaint();
 	}
 	
 	public void rollback() {
 		forEach((item)->item.clearTransform());
+		cHistory.removeLastSnapshot();
 		refreshDimension();
 	}
 	
@@ -275,8 +320,8 @@ public class SVGCanvas extends JComponent implements LocaleChangeListener {
 		return new Point2D.Double(point.getX() * currentScale, point.getY() * currentScale);
 	}
 
-	CanvasSnapshot getSnapshot() {
-		return new CanvasSnapshot(this);
+	CanvasSnapshot getSnapshot(final String comment) {
+		return new CanvasSnapshot(this, comment);
 	}
 
 	void restoreSnapshot(final CanvasSnapshot snapshot) {
@@ -398,10 +443,12 @@ public class SVGCanvas extends JComponent implements LocaleChangeListener {
 	}
 	
 	static class CanvasSnapshot {
+		private final String			comment; 
 		private final double			currentScale;
 		private final ItemDescriptor[]	items;
 		
-		private CanvasSnapshot(final SVGCanvas canvas) {
+		private CanvasSnapshot(final SVGCanvas canvas, final String comment) {
+			this.comment = comment;
 			this.currentScale = canvas.currentScale;
 			this.items = new ItemDescriptor[canvas.content.size()];
 			int	index = 0;
@@ -413,6 +460,26 @@ public class SVGCanvas extends JComponent implements LocaleChangeListener {
 					throw new IllegalArgumentException(e);
 				}
 			}
+		}
+
+		@Override
+		public String toString() {
+			return "CanvasSnapshot [comment=" + comment + ", currentScale=" + currentScale + ", items="
+					+ Arrays.toString(items) + "]";
+		}
+	}
+
+	@Override
+	public void propertyChange(final PropertyChangeEvent event) {
+		for(MouseManager item : mmList) {
+			item.propertyChange(event);
+		}
+	}
+
+	@Override
+	public void propertiesChange(final PropertyGroupChangeEvent event) {
+		for(MouseManager item : mmList) {
+			item.propertiesChange(event);
 		}
 	}
 }
