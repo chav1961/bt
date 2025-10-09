@@ -1,6 +1,8 @@
 package chav1961.bt.svgeditor.parser;
 
 
+import java.util.Arrays;
+
 import chav1961.bt.svgeditor.parser.Command.CommandType;
 import chav1961.bt.svgeditor.screen.SVGCanvas;
 import chav1961.purelib.basic.CharUtils;
@@ -53,6 +55,13 @@ public class CommandLineParser {
 												(parser,canvas,command,parameters)->{
 													new MenuItemProcessor("action:/redo").execute(canvas);
 												}, new Mark(1)),
+										new Command(CommandType.MENU, "set", 
+												"set [%1:string = %2:string]", "1", "1",
+												(parser,canvas,command,parameters)->{
+													new SetProcessor("action:/settings", parameters).execute(canvas);
+												}, 
+												new Optional(ArgumentType.dottedName, '=', ArgumentType.raw) 
+												),
 										new Command(CommandType.NEW_ENTITY, "l[ine]", 
 												"l[ine] %1:point [to] [@]%2:point", "1", "1",
 												(parser,canvas,command,parameters)->{

@@ -145,8 +145,8 @@
 		<key name="menu.main.tools.recalc.tt">*</key>
 		<key name="menu.main.tools.languages">Language</key>
 		<key name="menu.main.tools.languages.tt">Selects UI interface language</key>
-		<key name="menu.main.tools.settings">*</key>
-		<key name="menu.main.tools.settings.tt">*</key>
+		<key name="menu.main.tools.settings">Settings</key>
+		<key name="menu.main.tools.settings.tt">Open settings window</key>
 		<key name="menu.main.help">Help</key>
 		<key name="menu.main.help.tt">Help about product</key>
 		<key name="menu.main.help.overview">Overview</key>
@@ -313,8 +313,8 @@
 		<key name="menu.main.tools.recalc.tt">*</key>
 		<key name="menu.main.tools.languages">Язык</key>
 		<key name="menu.main.tools.languages.tt">Выбрать язык графического интерфейса</key>
-		<key name="menu.main.tools.settings">*</key>
-		<key name="menu.main.tools.settings.tt">*</key>
+		<key name="menu.main.tools.settings">Настройки</key>
+		<key name="menu.main.tools.settings.tt">Открыть окно настроек</key>
 		<key name="menu.main.help">Справка</key>
 		<key name="menu.main.help.tt">Справочная информация</key>
 		<key name="menu.main.help.overview">Обзор</key>

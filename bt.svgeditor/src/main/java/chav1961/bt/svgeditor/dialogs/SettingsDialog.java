@@ -1,6 +1,7 @@
 package chav1961.bt.svgeditor.dialogs;
 
 import chav1961.purelib.basic.SubstitutableProperties;
+import chav1961.purelib.basic.Utils;
 import chav1961.purelib.basic.exceptions.FlowException;
 import chav1961.purelib.basic.exceptions.LocalizationException;
 import chav1961.purelib.basic.interfaces.LoggerFacade;
@@ -15,27 +16,51 @@ import chav1961.purelib.ui.interfaces.RefreshMode;
 @LocaleResource(value="settingsdialog.title",tooltip="settingsdialog.title.tt",help="settingsdialog.title.help")
 public class SettingsDialog implements FormManager<Object, SettingsDialog>, ModuleAccessor {
 	@FunctionalInterface
-	private static interface Callback {
+	private static interface EditorCallback {
 		void process (SubstitutableProperties props, String key, SettingsDialog settings);
 	}
-	
+
 	public static enum PropKeys {
-		ORTHO_MODE("ortho.mode", "orthoOn", (p,k,s)->s.orthoOn = p.getProperty(k, boolean.class, "false"),(p,k,s)->p.put(k, String.valueOf(s.orthoOn)));
+		UNKNOWN("", Object.class, "", (p,k,s)->{},(p,k,s)->{}),
+		ORTHO_MODE("ortho.mode", boolean.class, "orthoOn", 
+				(p,k,s)->s.orthoOn = p.getProperty(k, boolean.class, "false"),
+				(p,k,s)->p.put(k, String.valueOf(s.orthoOn))
+				);
 		
 		private final String	propKey;
+		private final Class<?>	propClass;
 		private final String	fieldName;
-		private final Callback	load;
-		private final Callback	store;
+		private final EditorCallback	load;
+		private final EditorCallback	store;
 		
-		private PropKeys(final String propKey, final String fieldName, final Callback load, final Callback store) {
+		private PropKeys(final String propKey, final Class<?> propClass, final String fieldName, final EditorCallback load, final EditorCallback store) {
 			this.propKey = propKey;
 			this.fieldName = fieldName;
+			this.propClass = propClass;
 			this.load = load;
 			this.store = store;
 		}
 		
-		public String getKey() {
+		public String getPropKey() {
 			return propKey;
+		}
+		
+		public Class<?> getPropClass() {
+			return propClass;
+		}
+		
+		public static PropKeys byName(final String name) {
+			if (Utils.checkEmptyOrNullString(name)) {
+				throw new IllegalArgumentException("Name can be neither null nor empty");
+			}
+			else {
+				for(PropKeys item : values()) {
+					if (item.getPropKey().equals(name)) {
+						return item;
+					}
+				}
+				return PropKeys.UNKNOWN;
+			}
 		}
 	}
 	
@@ -58,7 +83,7 @@ public class SettingsDialog implements FormManager<Object, SettingsDialog>, Modu
 			this.facade = facade;
 			this.props = props;
 			for(PropKeys item : PropKeys.values()) {
-				item.load.process(props, item.getKey(), this);
+				item.load.process(props, item.getPropKey(), this);
 			}
 		}
 	}
@@ -68,7 +93,7 @@ public class SettingsDialog implements FormManager<Object, SettingsDialog>, Modu
 		if (beforeCommit) {
 			for(PropKeys item : PropKeys.values()) {
 				if (item.fieldName.equals(fieldName)) {
-					item.store.process(props, item.getKey(), this);
+					item.store.process(props, item.getPropKey(), this);
 					break;
 				}
 			}

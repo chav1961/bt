@@ -12,7 +12,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
 public class MenuItemProcessor extends AbstractCommandProcessor {
-	private final String	action;
+	protected final String	action;
 	
 	public MenuItemProcessor(final String menuItem) {
 		if (Utils.checkEmptyOrNullString(menuItem)) {
