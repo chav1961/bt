@@ -73,22 +73,22 @@
 		<key name="menu.main.edit.undo.tt">Undo canvas content</key>
 		<key name="menu.main.edit.redo">Redo</key>
 		<key name="menu.main.edit.redo.tt">Redo canvas content</key>
-		<key name="menu.main.edit.cut">*</key>
-		<key name="menu.main.edit.cut.tt">*</key>
-		<key name="menu.main.edit.copy">*</key>
-		<key name="menu.main.edit.copy.tt">*</key>
-		<key name="menu.main.edit.paste">*</key>
-		<key name="menu.main.edit.paste.tt">*</key>
-		<key name="menu.main.edit.delete">*</key>
-		<key name="menu.main.edit.delete.tt">*</key>
+		<key name="menu.main.edit.cut">Cut selection</key>
+		<key name="menu.main.edit.cut.tt">Cut selection</key>
+		<key name="menu.main.edit.copy">Copy selection</key>
+		<key name="menu.main.edit.copy.tt">Copy selection</key>
+		<key name="menu.main.edit.paste">Paste</key>
+		<key name="menu.main.edit.paste.tt">Paste</key>
+		<key name="menu.main.edit.delete">Delete selected items</key>
+		<key name="menu.main.edit.delete.tt">Delete selected items</key>
 		<key name="menu.main.edit.duplicate">*</key>
 		<key name="menu.main.edit.duplicate.tt">*</key>
 		<key name="menu.main.edit.array">*</key>
 		<key name="menu.main.edit.array.tt">*</key>
-		<key name="menu.main.edit.grid">*</key>
-		<key name="menu.main.edit.grid.tt">*</key>
-		<key name="menu.main.edit.ortho">*</key>
-		<key name="menu.main.edit.ortho.tt">*</key>
+		<key name="menu.main.edit.grid">Drawing on grid</key>
+		<key name="menu.main.edit.grid.tt">Drawing on grid</key>
+		<key name="menu.main.edit.ortho">Orthogonal lines</key>
+		<key name="menu.main.edit.ortho.tt">Orthogonal lines</key>
 		<key name="menu.main.edit.find">*</key>
 		<key name="menu.main.edit.find.tt">*</key>
 		<key name="menu.main.edit.replace">*</key>
@@ -164,9 +164,16 @@
 		<key name="settingsdialog.title">Editor settings</key>
 		<key name="settingsdialog.title.tt">Editor settings</key>
 		<key name="settingsdialog.title.help">Editor settings</key>
+		<key name="settingsdialog.gridOn">Drawing on grid</key>
+		<key name="settingsdialog.gridOn.tt">Drawing on grid</key>
 		<key name="settingsdialog.orthoOn">Orthogonal lines only</key>
 		<key name="settingsdialog.orthoOn.tt">Orthogonal lines only</key>
-		
+		<key name="settingsdialog.defaultGrid">Default grid size</key>
+		<key name="settingsdialog.defaultGrid.tt">Default grid size</key>
+		<key name="settingsdialog.defaultDistance">Default distance for 'at' parameter</key>
+		<key name="settingsdialog.defaultDistance.tt">Default distance for 'at' parameter</key>
+		<key name="settingsdialog.error.gridDistanceTooSmall">Grid size is too small, must be at least [%1$d]</key>
+		<key name="settingsdialog.error.atDistanceTooSmall">Default distance is too small, must be at least [%1$d]</key>
 
 	</lang>
 	<lang name="ru">
@@ -241,22 +248,22 @@
 		<key name="menu.main.edit.undo.tt">Откат изменений на экране</key>
 		<key name="menu.main.edit.redo">Возврат</key>
 		<key name="menu.main.edit.redo.tt">Возврат ранее откаченных изменений экрана</key>
-		<key name="menu.main.edit.cut">*</key>
-		<key name="menu.main.edit.cut.tt">*</key>
-		<key name="menu.main.edit.copy">*</key>
-		<key name="menu.main.edit.copy.tt">*</key>
-		<key name="menu.main.edit.paste">*</key>
-		<key name="menu.main.edit.paste.tt">*</key>
-		<key name="menu.main.edit.delete">*</key>
-		<key name="menu.main.edit.delete.tt">*</key>
+		<key name="menu.main.edit.cut">Вырезать выделенные</key>
+		<key name="menu.main.edit.cut.tt">Вырезать выделенные</key>
+		<key name="menu.main.edit.copy">Скопировать выделенные</key>
+		<key name="menu.main.edit.copy.tt">Скопировать выделенные</key>
+		<key name="menu.main.edit.paste">Вставить из буфера</key>
+		<key name="menu.main.edit.paste.tt">Вставить из буфера</key>
+		<key name="menu.main.edit.delete">Удалить выделенные</key>
+		<key name="menu.main.edit.delete.tt">Удалить выделенные</key>
 		<key name="menu.main.edit.duplicate">*</key>
 		<key name="menu.main.edit.duplicate.tt">*</key>
 		<key name="menu.main.edit.array">*</key>
 		<key name="menu.main.edit.array.tt">*</key>
-		<key name="menu.main.edit.grid">*</key>
-		<key name="menu.main.edit.grid.tt">*</key>
-		<key name="menu.main.edit.ortho">*</key>
-		<key name="menu.main.edit.ortho.tt">*</key>
+		<key name="menu.main.edit.grid">Рисовать по сетке</key>
+		<key name="menu.main.edit.grid.tt">Рисовать по сетке</key>
+		<key name="menu.main.edit.ortho">Ортогональные линии</key>
+		<key name="menu.main.edit.ortho.tt">Ортогональные линии</key>
 		<key name="menu.main.edit.find">*</key>
 		<key name="menu.main.edit.find.tt">*</key>
 		<key name="menu.main.edit.replace">*</key>
@@ -332,9 +339,16 @@
 		<key name="settingsdialog.title">Настройки приложения</key>
 		<key name="settingsdialog.title.tt">Настройки приложения</key>
 		<key name="settingsdialog.title.help">Настройки приложения</key>
+		<key name="settingsdialog.gridOn">Рисовать по сетке</key>
+		<key name="settingsdialog.gridOn.tt">Рисовать по сетке</key>
 		<key name="settingsdialog.orthoOn">Только ортогональные линии</key>
 		<key name="settingsdialog.orthoOn.tt">Только ортогональные линии</key>
-
+		<key name="settingsdialog.defaultGrid">Шаг сетки</key>
+		<key name="settingsdialog.defaultGrid.tt">Шаг сетки. Не может быть меньше 10.</key>
+		<key name="settingsdialog.defaultDistance">Расстояние по умолчанию для параметра 'at'</key>
+		<key name="settingsdialog.defaultDistance.tt">Расстояние по умолчанию для параметра 'at'. Не может быть меньше 1</key>
+		<key name="settingsdialog.error.gridDistanceTooSmall">Шаг сетки слишком мелкий, должен быть не менее [%1$d]</key>
+		<key name="settingsdialog.error.atDistanceTooSmall">Расстояние по умолчанию слишком мало, должно быть не менее [%1$d]</key>
 		
 
 	</lang>

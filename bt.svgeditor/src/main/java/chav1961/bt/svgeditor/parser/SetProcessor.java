@@ -37,7 +37,7 @@ public class SetProcessor extends MenuItemProcessor {
 			if (canConvertTo(propKey.getPropClass(), value)) {
 				try {
 					switch (propKey) {
-						case ORTHO_MODE:
+						case GRID_MODE: case ORTHO_MODE:
 							props.setProperty(key, SQLUtils.convert(propKey.getPropClass(), value).toString());
 							break;
 						case UNKNOWN:

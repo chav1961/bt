@@ -128,6 +128,65 @@ public class CommandLineParser {
 													}
 												)
 												),
+										new Command(CommandType.TRANSFORM_ENTITY, "copy", 
+												"copy {a[ll]|l[ast]|sel[ected]}", "1", "1",
+												(parser,canvas,command,parameters)->{
+													new CopyProcessor(false, parameters).execute(canvas);
+												}, 
+												new Choise(
+													new Object[] {
+														"all", new Mark(1)	
+													},
+													new Object[] {
+														"a", new Mark(1)	
+													},
+													new Object[] {
+														"last", new Mark(2)	
+													},
+													new Object[] {
+														"l", new Mark(2)	
+													},
+													new Object[] {
+														"selected", new Mark(3)	
+													},
+													new Object[] {
+														"sel", new Mark(3)	
+													}
+												)
+												),
+										new Command(CommandType.REMOVE_ENTITY, "cut", 
+												"cut {a[ll]|l[ast]|sel[ected]}", "1", "1",
+												(parser,canvas,command,parameters)->{
+													new CopyProcessor(true, parameters).execute(canvas);
+												}, 
+												new Choise(
+													new Object[] {
+														"all", new Mark(1)	
+													},
+													new Object[] {
+														"a", new Mark(1)	
+													},
+													new Object[] {
+														"last", new Mark(2)	
+													},
+													new Object[] {
+														"l", new Mark(2)	
+													},
+													new Object[] {
+														"selected", new Mark(3)	
+													},
+													new Object[] {
+														"sel", new Mark(3)	
+													}
+												)
+												),
+										new Command(CommandType.NEW_ENTITY, "paste", 
+												"paste [%1:point]", "1", "1",
+												(parser,canvas,command,parameters)->{
+													new PasteProcessor(parameters).execute(canvas);
+												}, 
+												new Optional(ArgumentType.signedInt, ',', ArgumentType.signedInt),
+												new Mark(1)),
 										new Command(CommandType.SELECTION, "sel[ect]", 
 												"sel[ect] {n[one]|a[ll]|{[+]|[-]}{w[indow] %1:point [@] %2:point|c[rossing] %1:point [@] %2:point|l[ast]|at %1:point [%2:int]}", "1", "1",
 												(parser,canvas,command,parameters)->{

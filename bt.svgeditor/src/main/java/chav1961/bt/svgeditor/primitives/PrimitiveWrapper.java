@@ -2,14 +2,16 @@ package chav1961.bt.svgeditor.primitives;
 
 import java.awt.Color;
 import java.awt.Graphics2D;
-import java.awt.Point;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
+import java.io.Serializable;
 
 import chav1961.bt.svgeditor.screen.SVGCanvas;
 
-public abstract class PrimitiveWrapper implements Cloneable {
+public abstract class PrimitiveWrapper implements Cloneable, Serializable {
+	private static final long serialVersionUID = 1L;
+	
 	private Color			foreColor = Color.WHITE;
 	private Color			backColor = Color.BLACK;
 	private boolean			useBackground = true;

@@ -2,10 +2,6 @@ package chav1961.bt.svgeditor.screen;
 
 import java.awt.BorderLayout;
 import java.awt.Color;
-import java.awt.Point;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.awt.event.KeyEvent;
 import java.awt.geom.Point2D;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -14,24 +10,21 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.Locale;
 
-import javax.swing.AbstractAction;
-import javax.swing.Action;
-import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JLayeredPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTextField;
-import javax.swing.KeyStroke;
+import javax.swing.SwingUtilities;
 
+import chav1961.bt.svgeditor.dialogs.SettingsDialog;
 import chav1961.bt.svgeditor.interfaces.StateChangedListener;
 import chav1961.bt.svgeditor.internal.AppWindow;
 import chav1961.bt.svgeditor.parser.CommandLineParser;
-import chav1961.purelib.basic.CharUtils;
-import chav1961.purelib.basic.Utils;
 import chav1961.purelib.basic.exceptions.CalculationException;
 import chav1961.purelib.basic.exceptions.CommandLineParametersException;
 import chav1961.purelib.basic.exceptions.LocalizationException;
+import chav1961.purelib.basic.exceptions.PureLibException;
 import chav1961.purelib.basic.exceptions.SyntaxException;
 import chav1961.purelib.basic.interfaces.InputStreamGetter;
 import chav1961.purelib.basic.interfaces.LoggerFacade;
@@ -84,10 +77,22 @@ public class SVGEditor extends JPanel implements LocaleChangeListener, LoggerFac
 			commandPanel.add(commandLabel, BorderLayout.WEST);
 			commandPanel.add(command, BorderLayout.CENTER);
 			canvas.setBackground(Color.black);
+			SwingUtilities.invokeLater(()->canvas.setGridEnabled(owner.getProperty(SettingsDialog.PropKeys.GRID_MODE)));
 			pane.add(canvas, JLayeredPane.FRAME_CONTENT_LAYER);
 			add(new JScrollPane(pane), BorderLayout.CENTER);
 			add(commandPanel, BorderLayout.SOUTH);
 	
+			owner.getProperties().addPropertyChangeListener((e)->{
+				switch (SettingsDialog.PropKeys.byName(e.getPropertyName())) {
+					case GRID_MODE 		:
+						canvas.setGridEnabled(Boolean.valueOf(e.getNewValue().toString()));
+					case DEFAULT_GRID 	:
+						canvas.repaint();
+						break;
+					default:
+						break;
+				}
+			});
 			CommandHistory.of(command,(c)->{executeCommand(c);});
 			fillLocalizedStrings();
 		}
@@ -139,6 +144,10 @@ public class SVGEditor extends JPanel implements LocaleChangeListener, LoggerFac
 	
 	public boolean isEmpty() {
 		return canvas.getItemCount() == 0;
+	}
+	
+	public boolean isAnySelected() {
+		return canvas.isAnySelected();
 	}
 	
 	public <T> T execute(final CharSequence seq, final Class<T> awaited) throws SyntaxException {
@@ -220,7 +229,7 @@ public class SVGEditor extends JPanel implements LocaleChangeListener, LoggerFac
 		};
 	}
 	
-	private void executeCommand(final String command) throws Exception {
+	public void executeCommand(final String command) throws PureLibException {
 		try{
 			parser.parse(command, canvas);
 			getLogger().message(Severity.info, APP_COMMAND_COMPLETED);

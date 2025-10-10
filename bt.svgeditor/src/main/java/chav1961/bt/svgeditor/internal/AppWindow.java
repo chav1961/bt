@@ -6,8 +6,8 @@ import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
+import java.awt.Toolkit;
 import java.awt.event.MouseEvent;
-import java.awt.geom.Point2D;
 import java.awt.print.PageFormat;
 import java.awt.print.Printable;
 import java.awt.print.PrinterException;
@@ -34,11 +34,13 @@ import javax.print.attribute.standard.*;
 
 import chav1961.bt.svgeditor.dialogs.SettingsDialog;
 import chav1961.bt.svgeditor.interfaces.StateChangedListener;
+import chav1961.bt.svgeditor.parser.PrimitiveWrapperTransferable;
 import chav1961.bt.svgeditor.screen.SVGEditor;
 import chav1961.purelib.basic.PureLibSettings;
 import chav1961.purelib.basic.SubstitutableProperties;
 import chav1961.purelib.basic.exceptions.ContentException;
 import chav1961.purelib.basic.exceptions.LocalizationException;
+import chav1961.purelib.basic.exceptions.PureLibException;
 import chav1961.purelib.basic.interfaces.LoggerFacade;
 import chav1961.purelib.basic.interfaces.LoggerFacade.Severity;
 import chav1961.purelib.basic.interfaces.LoggerFacadeOwner;
@@ -91,6 +93,9 @@ public class AppWindow extends JFrame implements LocaleChangeListener, LoggerFac
 	private static final String		MENU_MAIN_EDIT_CUT = "menu.main.edit.cut";
 	private static final String		MENU_MAIN_EDIT_COPY = "menu.main.edit.copy";
 	private static final String		MENU_MAIN_EDIT_PASTE = "menu.main.edit.paste";
+	private static final String		MENU_MAIN_EDIT_DELETE = "menu.main.edit.delete";
+	private static final String		MENU_MAIN_EDIT_GRID = "menu.main.edit.grid";
+	private static final String		MENU_MAIN_EDIT_ORTHO = "menu.main.edit.ortho";
 	private static final String		MENU_MAIN_EDIT_FIND = "menu.main.edit.find";
 	private static final String		MENU_MAIN_EDIT_REPLACE = "menu.main.edit.replace";
 	private static final String		MENU_MAIN_INSERT = "menu.main.insert";
@@ -125,7 +130,7 @@ public class AppWindow extends JFrame implements LocaleChangeListener, LoggerFac
 		
 		parentLocalizer.push(this.localizer);
 		parentLocalizer.addLocaleChangeListener(this);
-		
+
 		this.menuBar = SwingUtils.toJComponent(mdi.byUIPath(URI.create("ui:/model/navigation.top.mainmenu")), JMenuBar.class);
 		this.emm = new JEnableMaskManipulator(getMenus(this), true, menuBar);
 		this.state = new JStateString(localizer, 10);
@@ -164,6 +169,24 @@ public class AppWindow extends JFrame implements LocaleChangeListener, LoggerFac
 				fillCanvasState();
 				emm.applyMasks();
 			};
+			
+			public void selectionChanged() {
+				emm.applyMasks();
+			};
+		});
+		
+		props.addPropertyChangeListener((e)->{
+			switch (SettingsDialog.PropKeys.byName(e.getPropertyName())) {
+				case ORTHO_MODE :
+					emm.applyCheckMasks();
+					break;
+				default:
+					break;
+			}
+		});
+		
+		Toolkit.getDefaultToolkit().getSystemClipboard().addFlavorListener((e)->{
+			emm.applyEnableMasks();
 		});
 		
 		fillLocalizedStrings();
@@ -225,6 +248,54 @@ public class AppWindow extends JFrame implements LocaleChangeListener, LoggerFac
 
 	public SubstitutableProperties getProperties() {
 		return props;
+	}
+
+	public <V> V getProperty(final SettingsDialog.PropKeys key) {
+		if (key == null) {
+			throw new NullPointerException("Key to get value can't be null");
+		}
+		else {
+			return (V) getProperties().getProperty(key.getPropKey(), key.getPropClass(), null);
+		}
+	}
+
+	public <V> V getProperty(final SettingsDialog.PropKeys key, final String defaultValue) {
+		if (key == null) {
+			throw new NullPointerException("Key to get value can't be null");
+		}
+		else if (defaultValue == null) {
+			throw new NullPointerException("Default value can't be null");
+		}
+		else {
+			return (V) getProperties().getProperty(key.getPropKey(), key.getPropClass(), defaultValue);
+		}
+	}
+	
+	public <V> V getProperty(final SettingsDialog.PropKeys key, final Class<V> clazz) {
+		if (key == null) {
+			throw new NullPointerException("Key to get value can't be null");
+		}
+		else if (clazz == null) {
+			throw new NullPointerException("Class to get value can't be null");
+		}
+		else {
+			return getProperties().getProperty(key.getPropKey(), clazz, null);
+		}
+	}
+	
+	public <V> V getProperty(final SettingsDialog.PropKeys key, final Class<V> clazz, final String defaultValue) {
+		if (key == null) {
+			throw new NullPointerException("Key to get value can't be null");
+		}
+		else if (clazz == null) {
+			throw new NullPointerException("Class to get value can't be null");
+		}
+		else if (defaultValue == null) {
+			throw new NullPointerException("Default value can't be null");
+		}
+		else {
+			return getProperties().getProperty(key.getPropKey(), clazz, defaultValue);
+		}
 	}
 	
 	@OnAction("action:/newImage")
@@ -355,19 +426,23 @@ public class AppWindow extends JFrame implements LocaleChangeListener, LoggerFac
 	}
 	
 	@OnAction("action:/cut")
-	private void cut() {
+	private void cut() throws PureLibException {
+		editor.executeCommand("cut selected");
 	}
 	
 	@OnAction("action:/copy")
-	private void copy() {
+	private void copy() throws PureLibException {
+		editor.executeCommand("copy selected");
 	}
 	
 	@OnAction("action:/paste")
-	private void paste() {
+	private void paste() throws PureLibException {
+		editor.executeCommand("paste 0,0");
 	}
 	
 	@OnAction("action:/delete")
-	private void delete() {
+	private void delete() throws PureLibException {
+		editor.executeCommand("delete selected");
 	}
 	
 	@OnAction("action:/duplicate")
@@ -383,7 +458,8 @@ public class AppWindow extends JFrame implements LocaleChangeListener, LoggerFac
 	}
 	
 	@OnAction("action:/ortho")
-	private void ortho() {
+	private void ortho(final Hashtable<String,String[]> modes) throws PureLibException {
+		editor.executeCommand("set "+SettingsDialog.PropKeys.ORTHO_MODE.getPropKey()+"="+modes.get("selected")[0]);
 	}
 	
 	@OnAction("action:/find")
@@ -482,7 +558,7 @@ public class AppWindow extends JFrame implements LocaleChangeListener, LoggerFac
 		temp.putAll(getProperties());
 		final SettingsDialog	dlg = new SettingsDialog(getLogger(), temp);
 		
-		if (ask(dlg, 200, 200)) {
+		if (ask(dlg, 300, 100)) {
 			getProperties().putAll(temp);
 		}
 	}
@@ -579,9 +655,12 @@ public class AppWindow extends JFrame implements LocaleChangeListener, LoggerFac
 				new ItemDescriptor(MENU_MAIN_EDIT, 1L << index++, ()->anyContentExists),
 				new ItemDescriptor(MENU_MAIN_EDIT_UNDO, 1L << index++, ()->editor.canUndo()),
 				new ItemDescriptor(MENU_MAIN_EDIT_REDO, 1L << index++, ()->editor.canRedo()),
-				new ItemDescriptor(MENU_MAIN_EDIT_CUT, 1L << index++, ()->true),
-				new ItemDescriptor(MENU_MAIN_EDIT_COPY, 1L << index++, ()->true),
-				new ItemDescriptor(MENU_MAIN_EDIT_PASTE, 1L << index++, ()->true),
+				new ItemDescriptor(MENU_MAIN_EDIT_CUT, 1L << index++, ()->editor.isAnySelected()),
+				new ItemDescriptor(MENU_MAIN_EDIT_COPY, 1L << index++, ()->editor.isAnySelected()),
+				new ItemDescriptor(MENU_MAIN_EDIT_PASTE, 1L << index++, ()->Toolkit.getDefaultToolkit().getSystemClipboard().isDataFlavorAvailable(PrimitiveWrapperTransferable.FLAVOR)),
+				new ItemDescriptor(MENU_MAIN_EDIT_DELETE, 1L << index++, ()->editor.isAnySelected()),
+				new ItemDescriptor(MENU_MAIN_EDIT_GRID, 1L << index++, ()->true, ()->getProperty(SettingsDialog.PropKeys.ORTHO_MODE, boolean.class)),
+				new ItemDescriptor(MENU_MAIN_EDIT_ORTHO, 1L << index++, ()->true, ()->getProperty(SettingsDialog.PropKeys.GRID_MODE, boolean.class)),
 				new ItemDescriptor(MENU_MAIN_EDIT_FIND, 1L << index++, ()->true),
 				new ItemDescriptor(MENU_MAIN_EDIT_REPLACE, 1L << index++, ()->true),
 				new ItemDescriptor(MENU_MAIN_INSERT, 1L << index++, ()->anyContentExists),

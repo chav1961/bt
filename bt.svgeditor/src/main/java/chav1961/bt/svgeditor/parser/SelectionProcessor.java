@@ -2,12 +2,15 @@ package chav1961.bt.svgeditor.parser;
 
 import java.awt.geom.Rectangle2D;
 
+import chav1961.bt.svgeditor.dialogs.SettingsDialog;
+import chav1961.bt.svgeditor.internal.AppWindow;
 import chav1961.bt.svgeditor.parser.AbstractCommandProcessor.Content;
 import chav1961.bt.svgeditor.primitives.PrimitiveWrapper;
 import chav1961.bt.svgeditor.screen.SVGCanvas;
 import chav1961.purelib.basic.CharUtils.Mark;
 import chav1961.purelib.basic.exceptions.CalculationException;
 import chav1961.purelib.basic.exceptions.CommandLineParametersException;
+import chav1961.purelib.ui.swing.SwingUtils;
 
 public class SelectionProcessor extends AbstractCommandProcessor {
 	private int		ulX, ulY;
@@ -220,6 +223,12 @@ public class SelectionProcessor extends AbstractCommandProcessor {
 	
 	@Override
 	public void execute(final SVGCanvas canvas) throws CalculationException {
+		final AppWindow	owner = SwingUtils.getNearestOwner(canvas, AppWindow.class);
+		
+		if (dist <= 0) {	// Default property value for distance
+			dist = (Integer)owner.getProperty(SettingsDialog.PropKeys.DEFAULT_DISTANCE, "1");
+		}
+		
 		switch (action) {
 			case APPEND_CROSSING	:
 				canvas.forEach((item)->{

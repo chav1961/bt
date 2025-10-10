@@ -7,4 +7,5 @@ public interface StateChangedListener extends EventListener {
 	void scaleChanged(double oldScale, double newScale);
 	void locationChanged(final MouseEvent event);
 	void contentChanged();
+	void selectionChanged();
 }

@@ -8,11 +8,9 @@ import java.awt.Graphics2D;
 import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.event.MouseEvent;
-import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionListener;
-import java.awt.event.MouseWheelEvent;
-import java.awt.event.MouseWheelListener;
 import java.awt.geom.AffineTransform;
+import java.awt.geom.Ellipse2D;
 import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
 import java.beans.PropertyChangeEvent;
@@ -24,7 +22,9 @@ import java.util.function.Consumer;
 
 import javax.swing.JComponent;
 
+import chav1961.bt.svgeditor.dialogs.SettingsDialog;
 import chav1961.bt.svgeditor.interfaces.StateChangedListener;
+import chav1961.bt.svgeditor.internal.AppWindow;
 import chav1961.bt.svgeditor.primitives.PrimitiveWrapper;
 import chav1961.purelib.basic.SubstitutableProperties.PropertyGroupChangeEvent;
 import chav1961.purelib.basic.SubstitutableProperties.PropertyGroupChangeListener;
@@ -35,14 +35,18 @@ import chav1961.purelib.basic.interfaces.LoggerFacadeOwner;
 import chav1961.purelib.concurrent.LightWeightListenerList;
 import chav1961.purelib.concurrent.LightWeightListenerList.LightWeightListenerCallback;
 import chav1961.purelib.i18n.interfaces.Localizer;
-import chav1961.purelib.i18n.interfaces.LocalizerOwner;
 import chav1961.purelib.i18n.interfaces.Localizer.LocaleChangeListener;
+import chav1961.purelib.i18n.interfaces.LocalizerOwner;
 import chav1961.purelib.ui.swing.SwingUtils;
 import chav1961.purelib.ui.swing.interfaces.Undoable;
 
 public class SVGCanvas extends JComponent implements LocaleChangeListener, LoggerFacadeOwner, LocalizerOwner, PropertyGroupChangeListener {
 	private static final long 	serialVersionUID = -4725462263857678033L;
 	private static final double DEFAULT_MOUSE_WHEEL_SPEED = 10;
+	private static final double GS_RED   = 0.299;
+	private static final double GS_GREEN = 0.587;
+	private static final double GS_BLUE  = 0.114;
+	private static final double TEEN_GRID_SCALE = 2.5;
 
 	private final LightWeightListenerList<StateChangedListener>	listeners = new LightWeightListenerList<>(StateChangedListener.class);
 	private final Localizer		localizer;
@@ -51,6 +55,7 @@ public class SVGCanvas extends JComponent implements LocaleChangeListener, Logge
 	private final float			delta = 3;
 	private final CanvasHistory	cHistory = new CanvasHistory();
 	private final List<MouseManager>	mmList = new ArrayList<>();
+	private boolean				gridEnabled = false;
 	private Dimension			conventionalSize = new Dimension(100,100);
 	private double				currentScale = 1;
 	private Point2D				currentMousePoint = new Point2D.Double(0, 0);
@@ -169,6 +174,21 @@ public class SVGCanvas extends JComponent implements LocaleChangeListener, Logge
 		}
 	}
 
+	public void add(final PrimitiveWrapper... wrappers) {
+		if (wrappers == null || wrappers.length == 0 || Utils.checkArrayContent4Nulls(wrappers) >= 0) {
+			throw new NullPointerException("Wrappers to add are null, empty or contains nulls inside");
+		}
+		else {
+			beginTransaction("Add ["+wrappers.length+"] items");
+			for(PrimitiveWrapper item : wrappers) {
+				content.add(new ItemDescriptor(item));
+			}
+			commit();
+			fireEvent((l)->l.contentChanged());
+		}
+	}
+	
+	
 	public void delete(final PrimitiveWrapper wrapper) {
 		if (wrapper == null) {
 			throw new NullPointerException("Wrapper to delete can't be null");
@@ -184,6 +204,33 @@ public class SVGCanvas extends JComponent implements LocaleChangeListener, Logge
 				}
 			}
 			rollback();
+		}
+	}
+
+	public void delete(final PrimitiveWrapper... wrappers) {
+		if (wrappers == null || wrappers.length == 0 || Utils.checkArrayContent4Nulls(wrappers) >= 0) {
+			throw new NullPointerException("Wrappers to delete are null, empty or contains nulls inside");
+		}
+		else {
+			boolean	wereDeletions = false;
+			
+			beginTransaction("Delete ["+wrappers.length+"] items");
+loop:		for (PrimitiveWrapper item : wrappers) {
+				for(int index = content.size()-1; index <= 0; index--) {
+					if (content.get(index).wrapper == item) {
+						content.remove(index);
+						wereDeletions = true;
+						continue loop;
+					}
+				}
+			}
+			if (wereDeletions) {
+				commit();
+				fireEvent((l)->l.contentChanged());
+			}
+			else {
+				rollback();
+			}
 		}
 	}
 	
@@ -210,10 +257,59 @@ public class SVGCanvas extends JComponent implements LocaleChangeListener, Logge
 				if (item.wrapper.equals(wrapper)) {
 					item.selected = selected;
 					refreshDimension();
+					fireEvent((l)->l.selectionChanged());
 					return;
 				}
 			}
 		}
+	}
+
+	public void setSelected(final boolean selected, final PrimitiveWrapper... wrappers) {
+		if (wrappers == null || Utils.checkArrayContent4Nulls(wrappers) >= 0) {
+			throw new IllegalArgumentException("Wrappers to set selected is null or contains nulls inside");
+		}
+		else if (wrappers.length == 0) {	// Select all primitives
+			boolean	anyChanges = false;
+			
+			for(ItemDescriptor item : content) {
+				if (item.selected != selected) {
+					anyChanges = true;
+				}
+				item.selected = selected;
+			}
+			if (anyChanges) {
+				refreshDimension();
+				fireEvent((l)->l.selectionChanged());
+			}
+		}
+		else {
+			boolean	anyChanges = false;
+			
+loop:		for (PrimitiveWrapper wrapper : wrappers) {
+				for(ItemDescriptor item : content) {
+					if (item.wrapper.equals(wrapper)) {
+						if (item.selected != selected) {
+							anyChanges = true;
+						}
+						item.selected = selected;
+						continue loop;
+					}
+				}
+			}
+			if (anyChanges) {
+				refreshDimension();
+				fireEvent((l)->l.selectionChanged());
+			}
+		}
+	}
+	
+	public boolean isAnySelected() {
+		for(ItemDescriptor item : content) {
+			if (item.selected) {
+				return true;
+			}
+		}
+		return false;
 	}
 	
 	public void forEach(final Consumer<PrimitiveWrapper> consumer) {
@@ -296,7 +392,15 @@ public class SVGCanvas extends JComponent implements LocaleChangeListener, Logge
 		cHistory.removeLastSnapshot();
 		refreshDimension();
 	}
+
+	public boolean isGridEnabled() {
+		return gridEnabled;
+	}
 	
+	public void setGridEnabled(final boolean enabled) {
+		gridEnabled = enabled;
+		refreshDimension();
+	}
 	
 	@Override
 	protected void paintComponent(final Graphics g) {
@@ -309,6 +413,7 @@ public class SVGCanvas extends JComponent implements LocaleChangeListener, Logge
 		for(ItemDescriptor item : content) {
 			item.wrapper.draw(g2d, this, item.selected);
 		}
+		
 		
 //		g2d.setColor(Color.red);
 //		g2d.drawLine(0, 0, (int)getConventionalSize().getWidth(), (int)getConventionalSize().getHeight());
@@ -350,27 +455,6 @@ public class SVGCanvas extends JComponent implements LocaleChangeListener, Logge
 	Iterable<ItemDescriptor> getDescriptors() {
 		return content;
 	}
-	
-	private void pickCoordinates(final Graphics2D g2d) {
-		final AffineTransform	at = new AffineTransform(g2d.getTransform());
-		final Dimension	awaitedSize = getConventionalSize();
-		final Dimension	effectiveSize = getEffectiveSize();
-		final Dimension	realSize = getSize();
-		final Dimension	size = new Rectangle(new Point(0,0), effectiveSize).intersection(new Rectangle(new Point(0,0), realSize)).getSize();
-		
-		at.translate(0, 0);
-		at.scale(size.getWidth()/awaitedSize.getWidth(), size.getHeight()/awaitedSize.getHeight());
-		g2d.setTransform(at);
-	}
-
-	private void fillBackground(final Graphics2D g2d) {
-		final Color	oldColor = g2d.getColor(); 
-		final Rectangle2D.Double rect = new Rectangle2D.Double(0, 0, getConventionalSize().getWidth(), getConventionalSize().getHeight());
-		
-		g2d.setColor(getBackground());
-		g2d.fill(rect);
-		g2d.setColor(oldColor);
-	}
 
 	void fireEvent(final LightWeightListenerCallback<StateChangedListener> callback) {
 		listeners.fireEvent(callback);
@@ -394,6 +478,49 @@ public class SVGCanvas extends JComponent implements LocaleChangeListener, Logge
 
 	double getEffectiveAngle(final double angle) {
 		return angle;
+	}
+	
+	private void pickCoordinates(final Graphics2D g2d) {
+		final AffineTransform	at = new AffineTransform(g2d.getTransform());
+		final Dimension	awaitedSize = getConventionalSize();
+		final Dimension	effectiveSize = getEffectiveSize();
+		final Dimension	realSize = getSize();
+		final Dimension	size = new Rectangle(new Point(0,0), effectiveSize).intersection(new Rectangle(new Point(0,0), realSize)).getSize();
+		
+		at.translate(0, 0);
+		at.scale(size.getWidth()/awaitedSize.getWidth(), size.getHeight()/awaitedSize.getHeight());
+		g2d.setTransform(at);
+	}
+
+	private void fillBackground(final Graphics2D g2d) {
+		final Color	oldColor = g2d.getColor(); 
+		final Rectangle2D.Double rect = new Rectangle2D.Double(0, 0, getConventionalSize().getWidth(), getConventionalSize().getHeight());
+		
+		g2d.setColor(getBackground());
+		g2d.fill(rect);
+		
+		if (isGridEnabled() && SwingUtils.getNearestOwner(this, AppWindow.class) != null) {
+			final int		step = (int)SwingUtils.getNearestOwner(this, AppWindow.class).getProperty(SettingsDialog.PropKeys.DEFAULT_GRID);
+			final int 		tenStep = 10 * step;
+			final double	size = 2*currentScale;
+			final double	halfSize = size/2;
+			
+			g2d.setColor(grayScale(getBackground()) < 64 ? Color.WHITE : Color.BLACK);
+			for(int y = 0; y < getConventionalSize().getHeight(); y += step) {
+				for(int x = 0; x < getConventionalSize().getWidth(); x += step) {
+					final Ellipse2D	circle;
+					
+					if (x % tenStep == 0 || y % tenStep == 0) {
+						circle = new Ellipse2D.Double(x-TEEN_GRID_SCALE*halfSize, y-TEEN_GRID_SCALE*halfSize, TEEN_GRID_SCALE*size, TEEN_GRID_SCALE*size);
+					}
+					else {
+						circle = new Ellipse2D.Double(x-halfSize, y-halfSize, size, size);
+					}
+					g2d.fill(circle);
+				}
+			}
+		}
+		g2d.setColor(oldColor);
 	}
 
 	private double calculateScale(final double currentScale, final double step) {
@@ -428,6 +555,10 @@ public class SVGCanvas extends JComponent implements LocaleChangeListener, Logge
 		
 	}
 
+	private static int grayScale(final Color color) {
+		return (int) (GS_RED*color.getRed()+GS_GREEN*color.getGreen()+GS_BLUE*color.getBlue());
+	}
+	
 	static class ItemDescriptor {
 		final PrimitiveWrapper	wrapper;
 		boolean					selected;
