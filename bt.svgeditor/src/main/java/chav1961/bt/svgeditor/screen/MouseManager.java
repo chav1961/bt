@@ -21,7 +21,7 @@ public class MouseManager implements MouseListener, MouseMotionListener, MouseWh
 	protected MouseManager() {
 	}
 
-	public void addListeners(final JComponent owner) {
+	protected void addListeners(final JComponent owner) {
 		if (owner == null) {
 			throw new NullPointerException("Owner can't be null"); 
 		}
@@ -32,7 +32,7 @@ public class MouseManager implements MouseListener, MouseMotionListener, MouseWh
 		}
 	}
 
-	public void removeListeners(final JComponent owner) {
+	protected void removeListeners(final JComponent owner) {
 		if (owner == null) {
 			throw new NullPointerException("Owner can't be null"); 
 		}
@@ -45,73 +45,49 @@ public class MouseManager implements MouseListener, MouseMotionListener, MouseWh
 	
 	@Override
 	public void mouseWheelMoved(final MouseWheelEvent e) {
-		// TODO Auto-generated method stub
-		
 	}
 
 	@Override
 	public void mouseDragged(final MouseEvent e) {
-		// TODO Auto-generated method stub
-		
 	}
 
 	@Override
 	public void mouseMoved(final MouseEvent e) {
-		// TODO Auto-generated method stub
-		
 	}
 
 	@Override
 	public void mouseClicked(final MouseEvent e) {
-		// TODO Auto-generated method stub
-		
 	}
 
 	@Override
 	public void mousePressed(final MouseEvent e) {
-		// TODO Auto-generated method stub
-		
 	}
 
 	@Override
 	public void mouseReleased(final MouseEvent e) {
-		// TODO Auto-generated method stub
-		
 	}
 
 	@Override
 	public void mouseEntered(final MouseEvent e) {
-		// TODO Auto-generated method stub
-		
 	}
 
 	@Override
 	public void mouseExited(final MouseEvent e) {
-		// TODO Auto-generated method stub
-		
 	}
 
 	@Override
 	public void localeChanged(Locale oldLocale, Locale newLocale) throws LocalizationException {
-		// TODO Auto-generated method stub
-		
 	}
 
 	@Override
 	public void close() throws RuntimeException {
-		// TODO Auto-generated method stub
-		
 	}
 
 	@Override
 	public void propertyChange(final PropertyChangeEvent evt) {
-		// TODO Auto-generated method stub
-		
 	}
 
 	@Override
 	public void propertiesChange(final PropertyGroupChangeEvent event) {
-		// TODO Auto-generated method stub
-		
 	}
 }

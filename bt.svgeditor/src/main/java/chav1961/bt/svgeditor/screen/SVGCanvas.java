@@ -21,6 +21,7 @@ import java.util.Locale;
 import java.util.function.Consumer;
 
 import javax.swing.JComponent;
+import javax.swing.JLayeredPane;
 
 import chav1961.bt.svgeditor.dialogs.SettingsDialog;
 import chav1961.bt.svgeditor.interfaces.StateChangedListener;
@@ -60,6 +61,9 @@ public class SVGCanvas extends JComponent implements LocaleChangeListener, Logge
 	private double				currentScale = 1;
 	private Point2D				currentMousePoint = new Point2D.Double(0, 0);
 	private CanvasSnapshot[]	currentCanvasSnapshot = null;
+	private int 				promptX, promptY;
+	private String				promptText = null;
+	
 
 	public SVGCanvas(final Localizer localizer) {
 		this(localizer, DEFAULT_MOUSE_WHEEL_SPEED);
@@ -100,6 +104,7 @@ public class SVGCanvas extends JComponent implements LocaleChangeListener, Logge
 			item.localeChanged(oldLocale, newLocale);
 		}
 		fillLocalizedStrings();
+		repaint();
 	}
 
 	@Override
@@ -129,7 +134,7 @@ public class SVGCanvas extends JComponent implements LocaleChangeListener, Logge
 		}
 	}
 	
-	public void popMouseManager() {
+	public MouseManager popMouseManager() {
 		if (mmList.isEmpty()) {
 			throw new IllegalStateException("Mouse manager stack exhausted");
 		}
@@ -137,10 +142,10 @@ public class SVGCanvas extends JComponent implements LocaleChangeListener, Logge
 			final MouseManager	mm = mmList.remove(0);
 			
 			mm.removeListeners(this);
-			mm.close();
 			if (!mmList.isEmpty()) {
 				mmList.get(0).addListeners(this);
 			}
+			return mm;
 		}
 	}
 	
@@ -232,6 +237,13 @@ loop:		for (PrimitiveWrapper item : wrappers) {
 				rollback();
 			}
 		}
+	}
+
+	public void setPrompt(final int x, final int y, final String text) {
+		promptX = x;
+		promptY = y;
+		promptText = text;
+		repaint();
 	}
 	
 	public boolean isSelected(final PrimitiveWrapper wrapper) {
@@ -414,11 +426,18 @@ loop:		for (PrimitiveWrapper wrapper : wrappers) {
 			item.wrapper.draw(g2d, this, item.selected);
 		}
 		
-		
-//		g2d.setColor(Color.red);
-//		g2d.drawLine(0, 0, (int)getConventionalSize().getWidth(), (int)getConventionalSize().getHeight());
-		
 		g2d.setTransform(oldAt);
+		if (promptText != null) {
+			final Color	oldColor = g2d.getColor();
+			
+			g2d.setColor(getForeground());
+			try {
+				g2d.drawString(localizer.getValue(promptText), promptX, promptY);
+			} catch (LocalizationException exc) {
+				g2d.drawString(promptText, promptX, promptY);
+			}
+			g2d.setColor(oldColor);
+		}
 	}
 
 	Point2D toScaledPoint(final Point2D point) {

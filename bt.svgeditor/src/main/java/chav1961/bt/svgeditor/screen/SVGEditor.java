@@ -21,6 +21,7 @@ import chav1961.bt.svgeditor.dialogs.SettingsDialog;
 import chav1961.bt.svgeditor.interfaces.StateChangedListener;
 import chav1961.bt.svgeditor.internal.AppWindow;
 import chav1961.bt.svgeditor.parser.CommandLineParser;
+import chav1961.bt.svgeditor.screen.InsertManager.PrimitiveType;
 import chav1961.purelib.basic.exceptions.CalculationException;
 import chav1961.purelib.basic.exceptions.CommandLineParametersException;
 import chav1961.purelib.basic.exceptions.LocalizationException;
@@ -56,7 +57,13 @@ public class SVGEditor extends JPanel implements LocaleChangeListener, LoggerFac
 	private byte[]	temp = new byte[0];
 
 	public static enum InsertAction {
-		INSERT_LINE
+		INSERT_LINE(InsertManager.PrimitiveType.LINE);
+
+		private final PrimitiveType	type;
+		
+		private InsertAction(final PrimitiveType type) {
+			this.type = type;
+		}
 	}
 	
 	public SVGEditor(final AppWindow owner, final Localizer localizer) {
@@ -76,7 +83,8 @@ public class SVGEditor extends JPanel implements LocaleChangeListener, LoggerFac
 			owner.getProperties().addPropertyChangeListener(canvas);
 			commandPanel.add(commandLabel, BorderLayout.WEST);
 			commandPanel.add(command, BorderLayout.CENTER);
-			canvas.setBackground(Color.black);
+			canvas.setBackground(Color.BLACK);
+			canvas.setForeground(Color.LIGHT_GRAY);
 			SwingUtilities.invokeLater(()->canvas.setGridEnabled(owner.getProperty(SettingsDialog.PropKeys.GRID_MODE)));
 			pane.add(canvas, JLayeredPane.FRAME_CONTENT_LAYER);
 			add(new JScrollPane(pane), BorderLayout.CENTER);
@@ -162,7 +170,7 @@ public class SVGEditor extends JPanel implements LocaleChangeListener, LoggerFac
 			if (isInInsertionNow()) {
 				endInsertion(false);
 			}
-			canvas.pushMouseManager(new InsertManager(canvas, action));
+			canvas.pushMouseManager(new InsertManager(canvas, action.type));
 			canvas.requestFocusInWindow();
 			insertionTurnedOn = true;
 		}
@@ -173,7 +181,11 @@ public class SVGEditor extends JPanel implements LocaleChangeListener, LoggerFac
 	}
 	
 	public void endInsertion(final boolean commit) {
-		canvas.popMouseManager();
+		try(final InsertManager	im = (InsertManager)canvas.popMouseManager()) {
+			if (commit) {
+				canvas.add(im.getResult());
+			}
+		}
 		setFocus();
 		insertionTurnedOn = false;
 	}
@@ -229,7 +241,7 @@ public class SVGEditor extends JPanel implements LocaleChangeListener, LoggerFac
 		};
 	}
 	
-	public void executeCommand(final String command) throws PureLibException {
+	public void executeCommand(final String command) throws CommandLineParametersException, CalculationException {
 		try{
 			parser.parse(command, canvas);
 			getLogger().message(Severity.info, APP_COMMAND_COMPLETED);

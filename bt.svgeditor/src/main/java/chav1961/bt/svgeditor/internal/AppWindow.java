@@ -36,6 +36,7 @@ import chav1961.bt.svgeditor.dialogs.SettingsDialog;
 import chav1961.bt.svgeditor.interfaces.StateChangedListener;
 import chav1961.bt.svgeditor.parser.PrimitiveWrapperTransferable;
 import chav1961.bt.svgeditor.screen.SVGEditor;
+import chav1961.bt.svgeditor.screen.SVGEditor.InsertAction;
 import chav1961.purelib.basic.PureLibSettings;
 import chav1961.purelib.basic.SubstitutableProperties;
 import chav1961.purelib.basic.exceptions.ContentException;
@@ -472,6 +473,7 @@ public class AppWindow extends JFrame implements LocaleChangeListener, LoggerFac
 	
 	@OnAction("action:/InsertLine")
 	private void insertLine() {
+		editor.startInsertion(InsertAction.INSERT_LINE);
 	}
 	
 	@OnAction("action:/InsertPolyline")

@@ -95,8 +95,8 @@
 		<key name="menu.main.edit.replace.tt">*</key>
 		<key name="menu.main.insert">Insert</key>
 		<key name="menu.main.insert.tt">Insert graphical primitives</key>
-		<key name="menu.main.insert.line">*</key>
-		<key name="menu.main.insert.line.tt">*</key>
+		<key name="menu.main.insert.line">Line</key>
+		<key name="menu.main.insert.line.tt">Line</key>
 		<key name="menu.main.insert.polyline">*</key>
 		<key name="menu.main.insert.polyline.tt">*</key>
 		<key name="menu.main.insert.text">*</key>
@@ -270,8 +270,8 @@
 		<key name="menu.main.edit.replace.tt">*</key>
 		<key name="menu.main.insert">Вставка</key>
 		<key name="menu.main.insert.tt">Вставка графических примитивов</key>
-		<key name="menu.main.insert.line">*</key>
-		<key name="menu.main.insert.line.tt">*</key>
+		<key name="menu.main.insert.line">Линия</key>
+		<key name="menu.main.insert.line.tt">Линия</key>
 		<key name="menu.main.insert.polyline">*</key>
 		<key name="menu.main.insert.polyline.tt">*</key>
 		<key name="menu.main.insert.text">*</key>

@@ -3,6 +3,7 @@ package chav1961.bt.svgeditor.primitives;
 import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Graphics2D;
+import java.awt.Point;
 import java.awt.Stroke;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Line2D;
@@ -12,12 +13,18 @@ import java.awt.geom.Rectangle2D;
 import chav1961.bt.svgeditor.screen.SVGCanvas;
 
 public class LineWrapper extends PrimitiveWrapper {
+	private static final long serialVersionUID = 1L;
+
 	private static final float[]	DASHED_LINE = new float[] {3.0f, 3.0f};
 	
 	private Point2D	from;
 	private Point2D	to;
 	private Line2D	line;
 	private float	lineWidth = 1.0f;
+
+	public LineWrapper(final Point p1, final Point p2) {
+		this(p1.x, p1.y, p2.x, p2.y);
+	}	
 	
 	public LineWrapper(int x1, int y1, int x2, int y2) {
 		this.from = new Point2D.Double(x1,y1);
