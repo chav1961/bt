@@ -53,7 +53,6 @@ public class SVGCanvas extends JComponent implements LocaleChangeListener, Logge
 	private final Localizer		localizer;
 	private final double		mouseWheelSpeed;
 	private final List<ItemDescriptor>	content = new ArrayList<>();
-	private final float			delta = 3;
 	private final CanvasHistory	cHistory = new CanvasHistory();
 	private final List<MouseManager>	mmList = new ArrayList<>();
 	private boolean				gridEnabled = false;
@@ -114,7 +113,7 @@ public class SVGCanvas extends JComponent implements LocaleChangeListener, Logge
 
 	@Override
 	public LoggerFacade getLogger() {
-		return SwingUtils.getNearestLogger(this);
+		return SwingUtils.getNearestLogger(getParent());
 	}
 	
 	public Undoable<CanvasSnapshot[]> getUndoable() {
@@ -413,6 +412,12 @@ loop:		for (PrimitiveWrapper wrapper : wrappers) {
 		gridEnabled = enabled;
 		refreshDimension();
 	}
+
+	public double getDelta() {
+		final AppWindow	owner = SwingUtils.getNearestOwner(this, AppWindow.class);
+		
+		return (Integer)owner.getProperty(SettingsDialog.PropKeys.DEFAULT_DISTANCE, "1");
+	}
 	
 	@Override
 	protected void paintComponent(final Graphics g) {
@@ -479,10 +484,6 @@ loop:		for (PrimitiveWrapper wrapper : wrappers) {
 		listeners.fireEvent(callback);
 	}
 
-	double getDelta() {
-		return delta;
-	}
-	
 	double getEffectiveX(final double x) {
 		return x;
 	}

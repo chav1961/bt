@@ -72,6 +72,31 @@ public class CommandLineParser {
 												new Optional("@", new Mark(1)),
 												ArgumentType.signedInt, ',', ArgumentType.signedInt 
 												),
+										new Command(CommandType.NEW_ENTITY, "dup[licate]", 
+												"dup[licate] {l[ast]|sel[ected]} [to] %1:point", "1", "1",
+												(parser,canvas,command,parameters)->{
+													new DuplicateProcessor(parameters).execute(canvas);
+												}, 
+												new Choise(
+														new Object[] {
+															"last", new Mark(1)	
+														},
+														new Object[] {
+															"l", new Mark(1)	
+														},
+														new Object[] {
+															"selected", new Mark(2)	
+														},
+														new Object[] {
+															"sel", new Mark(2)	
+														},
+														new Object[] {
+															new Mark(0)	
+														}
+													),
+												new Optional("to"),
+												ArgumentType.signedInt, ',', ArgumentType.signedInt 
+												),
 										new Command(CommandType.TRANSFORM_ENTITY, "m[ove]", 
 												"m[ove] {a[ll]|l[ast]|sel[ected]} %1:point [to] [@]%2:point\"", "1", "1",
 												(parser,canvas,command,parameters)->{
@@ -95,11 +120,14 @@ public class CommandLineParser {
 													},
 													new Object[] {
 														"sel", new Mark(3)	
+													},
+													new Object[] {
+														new Mark(4)	
 													}
 												),
 												ArgumentType.signedInt, ',', ArgumentType.signedInt, 
 												new Optional("to"),
-												new Optional("@", new Mark(4)),
+												new Optional("@", new Mark(5)),
 												ArgumentType.signedInt, ',', ArgumentType.signedInt 
 												),
 										new Command(CommandType.REMOVE_ENTITY, "del[ete]", 
@@ -218,6 +246,7 @@ public class CommandLineParser {
 																),
 																new Mark(6),
 																ArgumentType.signedInt, ',', ArgumentType.signedInt,
+																new Optional("to"),
 																new Optional("@", new Mark(10)),
 																ArgumentType.signedInt, ',', ArgumentType.signedInt
 															},
@@ -227,6 +256,7 @@ public class CommandLineParser {
 																),
 																new Mark(7),
 																ArgumentType.signedInt, ',', ArgumentType.signedInt,
+																new Optional("to"),
 																new Optional("@", new Mark(10)),
 																ArgumentType.signedInt, ',', ArgumentType.signedInt
 															},

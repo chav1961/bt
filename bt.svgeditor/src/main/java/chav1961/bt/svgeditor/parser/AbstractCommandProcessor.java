@@ -7,7 +7,6 @@ import chav1961.purelib.basic.exceptions.CalculationException;
 import chav1961.purelib.basic.exceptions.CommandLineParametersException;
 
 public abstract class AbstractCommandProcessor {
-	
 	public abstract void execute(SVGCanvas canvas) throws CalculationException;
 	
 	

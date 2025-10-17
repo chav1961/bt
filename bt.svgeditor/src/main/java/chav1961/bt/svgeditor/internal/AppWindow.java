@@ -560,7 +560,7 @@ public class AppWindow extends JFrame implements LocaleChangeListener, LoggerFac
 		temp.putAll(getProperties());
 		final SettingsDialog	dlg = new SettingsDialog(getLogger(), temp);
 		
-		if (ask(dlg, 300, 100)) {
+		if (ask(dlg, 300, 130)) {
 			getProperties().putAll(temp);
 		}
 	}

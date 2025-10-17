@@ -223,10 +223,8 @@ public class SelectionProcessor extends AbstractCommandProcessor {
 	
 	@Override
 	public void execute(final SVGCanvas canvas) throws CalculationException {
-		final AppWindow	owner = SwingUtils.getNearestOwner(canvas, AppWindow.class);
-		
 		if (dist <= 0) {	// Default property value for distance
-			dist = (Integer)owner.getProperty(SettingsDialog.PropKeys.DEFAULT_DISTANCE, "1");
+			dist = (int) canvas.getDelta();
 		}
 		
 		switch (action) {

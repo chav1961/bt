@@ -12,8 +12,12 @@ import javax.swing.JComponent;
 
 import chav1961.purelib.basic.SubstitutableProperties.PropertyGroupChangeEvent;
 import chav1961.purelib.basic.SubstitutableProperties.PropertyGroupChangeListener;
+import chav1961.purelib.basic.exceptions.CalculationException;
+import chav1961.purelib.basic.exceptions.CommandLineParametersException;
 import chav1961.purelib.basic.exceptions.LocalizationException;
+import chav1961.purelib.basic.interfaces.LoggerFacade.Severity;
 import chav1961.purelib.i18n.interfaces.Localizer.LocaleChangeListener;
+import chav1961.purelib.ui.swing.SwingUtils;
 
 public class MouseManager implements MouseListener, MouseMotionListener, MouseWheelListener, 
 							LocaleChangeListener, AutoCloseable, PropertyGroupChangeListener {
@@ -21,6 +25,14 @@ public class MouseManager implements MouseListener, MouseMotionListener, MouseWh
 	protected MouseManager() {
 	}
 
+	protected void executeCommand(final JComponent owner, final String command) {
+		try {
+			SwingUtils.getNearestOwner(owner, SVGEditor.class).executeCommand(command);
+		} catch (CommandLineParametersException | CalculationException e) {
+			SwingUtils.getNearestLogger(owner).message(Severity.error, e, e.getLocalizedMessage());
+		}
+	}
+	
 	protected void addListeners(final JComponent owner) {
 		if (owner == null) {
 			throw new NullPointerException("Owner can't be null"); 

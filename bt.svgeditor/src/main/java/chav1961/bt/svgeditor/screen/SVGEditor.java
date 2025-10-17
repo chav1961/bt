@@ -243,6 +243,7 @@ public class SVGEditor extends JPanel implements LocaleChangeListener, LoggerFac
 	
 	public void executeCommand(final String command) throws CommandLineParametersException, CalculationException {
 		try{
+			System.err.println("Cmd="+command);
 			parser.parse(command, canvas);
 			getLogger().message(Severity.info, APP_COMMAND_COMPLETED);
 		} catch (CommandLineParametersException | CalculationException exc) {

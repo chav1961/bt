@@ -6,16 +6,22 @@ import java.awt.event.MouseEvent;
 import java.awt.event.MouseWheelEvent;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Point2D;
+import java.awt.geom.Rectangle2D;
 
 import chav1961.bt.svgeditor.primitives.PrimitiveWrapper;
 import chav1961.bt.svgeditor.screen.SVGCanvas.ItemDescriptor;
+import chav1961.purelib.basic.exceptions.CalculationException;
+import chav1961.purelib.basic.exceptions.CommandLineParametersException;
+import chav1961.purelib.basic.interfaces.LoggerFacade.Severity;
+import chav1961.purelib.ui.swing.SwingUtils;
 
 class EditManager extends MouseManager {
 	private static enum Actions {
 		NONE,
 		MOVE,
 		ROTATE,
-		SCALE
+		SCALE,
+		SELECT
 	}
 	
 	private final SVGCanvas		canvas;
@@ -80,7 +86,7 @@ class EditManager extends MouseManager {
 		currentMousePoint = p;
 		switch (currentAction) {
 			case MOVE	:
-				moveEntity(currentWrapper, startMousePoint, p);
+				drawMoveEntity(currentWrapper, startMousePoint, p);
 				canvas.fireEvent((l)->l.locationChanged(e));
 				break;
 			case NONE	:
@@ -92,6 +98,17 @@ class EditManager extends MouseManager {
 				rotateEntity(currentWrapper, startMousePoint, canvas.getEffectiveAngle(angle));				
 				break;
 			case SCALE	:
+				break;
+			case SELECT :
+				final Rectangle2D area = new Rectangle2D.Double(
+												Math.min(startMousePoint.getX(), p.getX()),
+												Math.min(startMousePoint.getY(), p.getY()),
+												Math.abs(p.getX() - startMousePoint.getX()),
+												Math.abs(p.getY() - startMousePoint.getY()));
+				for(ItemDescriptor item : canvas.getDescriptors()) {
+					item.wrapper.setHighlight(item.wrapper.isInside(area));
+				}
+				canvas.repaint();
 				break;
 			default :
 				throw new UnsupportedOperationException("Action ["+currentAction+"] is not supported yet");
@@ -107,30 +124,39 @@ class EditManager extends MouseManager {
 
 	@Override
 	public void mousePressed(final MouseEvent e) {
-		final Point2D	p = canvas.toScaledPoint(e.getPoint());
-		
-		startMousePoint = p;
-		currentWrapper = null;
-		currentAction = Actions.NONE;
-				
-		for(ItemDescriptor item : canvas.getDescriptors()) {
-			if (item.wrapper.isAbout(p, canvas.getDelta())) {
-				currentWrapper = item.wrapper;
-				currentAction = (e.getModifiersEx() & MouseEvent.CTRL_DOWN_MASK) != 0 ? Actions.ROTATE : Actions.MOVE;
-				currentEntityScale = 1;				
-				currentWrapper.startDrag(p);
-				break;
+		if (!e.isConsumed()) {
+			final Point2D	p = canvas.toScaledPoint(e.getPoint());
+			
+			startMousePoint = p;
+			currentWrapper = null;
+			currentAction = Actions.NONE;
+			e.consume();
+					
+			for(ItemDescriptor item : canvas.getDescriptors()) {
+				if (item.wrapper.isAbout(p, canvas.getDelta())) {
+					currentWrapper = item.wrapper;
+					currentAction = (e.getModifiersEx() & MouseEvent.CTRL_DOWN_MASK) != 0 ? Actions.ROTATE : Actions.MOVE;
+					currentEntityScale = 1;				
+					currentWrapper.startDrag(p);
+					return;
+				}
 			}
+			currentAction = Actions.SELECT;
 		}
 	}
 
 	@Override
-	public void mouseReleased(MouseEvent e) {
+	public void mouseReleased(final MouseEvent e) {
+		final Point2D	p = canvas.toScaledPoint(e.getPoint());
+		
 		switch (currentAction) {
 			case MOVE	:
 				currentWrapper.endDrag();
-				currentWrapper.commitChanges();
 				currentWrapper.clearTransform();
+				executeCommand(canvas, String.format("move %1$d,%2$d to %3$d,%4$d",
+						(int)startMousePoint.getX(), (int)startMousePoint.getY(), 
+						(int)canvas.getEffectiveX(p.getX()), (int)canvas.getEffectiveY(p.getY()))
+				);
 				currentWrapper = null;
 				break;
 			case NONE	:
@@ -147,6 +173,11 @@ class EditManager extends MouseManager {
 				currentWrapper.clearTransform();
 				currentWrapper = null;
 				break;
+			case SELECT	:
+				executeCommand(canvas, String.format("select + window %1$d,%2$d to %3$d,%4$d", 
+						(int)startMousePoint.getX(), (int)startMousePoint.getY(),
+						(int)p.getX(), (int)p.getY()));
+				break;
 			default:
 				throw new UnsupportedOperationException("Action ["+currentAction+"] is not supported yet");
 		}
@@ -154,6 +185,22 @@ class EditManager extends MouseManager {
 		currentAction = Actions.NONE;
 	}
 
+	@Override
+	public void mouseClicked(final MouseEvent e) {
+		if (currentAction == Actions.NONE) {
+			final Point2D	p = canvas.toScaledPoint(e.getPoint());
+			
+			for(ItemDescriptor item : canvas.getDescriptors()) {
+				if (item.wrapper.isAbout(p, canvas.getDelta())) {
+					executeCommand(canvas, String.format("select %1$c at %2$d,%3$d",
+							canvas.isSelected(item.wrapper) ? '-' : '+',
+							(int)p.getX(), (int)p.getY()));
+					break;
+				}
+			}
+		}
+	}
+	
 	private void highlightSelections(final MouseEvent e) {
 		final Point2D		p = canvas.toScaledPoint(e.getPoint());
 		PrimitiveWrapper	oldItem = null, newItem = null;
@@ -185,14 +232,13 @@ class EditManager extends MouseManager {
 		}
 	}
 	
-	private void moveEntity(final PrimitiveWrapper entity, final Point2D anchor, final Point2D current) {
+	private void drawMoveEntity(final PrimitiveWrapper entity, final Point2D anchor, final Point2D current) {
 		final AffineTransform	at = new AffineTransform();
 		
-		canvas.beginTransaction("Move ["+entity.getClass().getSimpleName()+"]");
 		at.translate(canvas.getEffectiveX(current.getX()) - anchor.getX(), 
-				canvas.getEffectiveY(current.getY()) - anchor.getY());
+					 canvas.getEffectiveY(current.getY()) - anchor.getY());
 		entity.setTransform(at);
-		canvas.commit();
+		canvas.repaint();
 	}
 
 	private void rotateEntity(final PrimitiveWrapper entity, final Point2D anchor, double angle) {

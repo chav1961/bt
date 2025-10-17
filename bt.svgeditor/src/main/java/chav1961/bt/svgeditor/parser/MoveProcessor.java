@@ -1,21 +1,28 @@
 package chav1961.bt.svgeditor.parser;
 
 import java.awt.geom.AffineTransform;
+import java.awt.geom.Point2D;
 import java.util.ArrayList;
 import java.util.List;
 
+import javax.swing.SwingUtilities;
+
+import chav1961.bt.svgeditor.dialogs.SettingsDialog;
+import chav1961.bt.svgeditor.internal.AppWindow;
 import chav1961.bt.svgeditor.parser.AbstractCommandProcessor.Content;
 import chav1961.bt.svgeditor.primitives.PrimitiveWrapper;
 import chav1961.bt.svgeditor.screen.SVGCanvas;
 import chav1961.purelib.basic.CharUtils.Mark;
 import chav1961.purelib.basic.exceptions.CalculationException;
 import chav1961.purelib.basic.exceptions.CommandLineParametersException;
+import chav1961.purelib.ui.swing.SwingUtils;
 
 public class MoveProcessor extends AbstractCommandProcessor {
 	private static enum Action {
 		MOVE_ALL,
 		MOVE_LAST,
-		MOVE_SELECTED
+		MOVE_SELECTED,
+		MOVE_AT
 	}
 
 	private Action	action;
@@ -47,7 +54,7 @@ public class MoveProcessor extends AbstractCommandProcessor {
 									new Content<Mark>(Mark.class, new Mark(1), (c,v)->action = Action.MOVE_ALL),
 									new Content<Integer>(Integer.class, (c,v)->xFrom = v),
 									new Content<Integer>(Integer.class, (c,v)->yFrom = v),
-									new Content<Mark>(Mark.class, new Mark(4), (c,v)->{}),
+									new Content<Mark>(Mark.class, new Mark(5), (c,v)->{}),
 									new Content<Integer>(Integer.class, (c,v)->xTo = xFrom+v),
 									new Content<Integer>(Integer.class, (c,v)->yTo = yFrom+v)
 								};
@@ -55,7 +62,7 @@ public class MoveProcessor extends AbstractCommandProcessor {
 									new Content<Mark>(Mark.class, new Mark(2), (c,v)->action = Action.MOVE_LAST),
 									new Content<Integer>(Integer.class, (c,v)->xFrom = v),
 									new Content<Integer>(Integer.class, (c,v)->yFrom = v),
-									new Content<Mark>(Mark.class, new Mark(4), (c,v)->{}),
+									new Content<Mark>(Mark.class, new Mark(5), (c,v)->{}),
 									new Content<Integer>(Integer.class, (c,v)->xTo = xFrom+v),
 									new Content<Integer>(Integer.class, (c,v)->yTo = yFrom+v)
 								};
@@ -63,13 +70,28 @@ public class MoveProcessor extends AbstractCommandProcessor {
 									new Content<Mark>(Mark.class, new Mark(3), (c,v)->action = Action.MOVE_SELECTED),
 									new Content<Integer>(Integer.class, (c,v)->xFrom = v),
 									new Content<Integer>(Integer.class, (c,v)->yFrom = v),
-									new Content<Mark>(Mark.class, new Mark(4), (c,v)->{}),
+									new Content<Mark>(Mark.class, new Mark(5), (c,v)->{}),
+									new Content<Integer>(Integer.class, (c,v)->xTo = xFrom+v),
+									new Content<Integer>(Integer.class, (c,v)->yTo = yFrom+v)
+								};
+	private final Content<?>[]	VARIANT_7 = {
+									new Content<Mark>(Mark.class, new Mark(4), (c,v)->action = Action.MOVE_AT),
+									new Content<Integer>(Integer.class, (c,v)->xFrom = v),
+									new Content<Integer>(Integer.class, (c,v)->yFrom = v),
+									new Content<Integer>(Integer.class, (c,v)->xTo = v),
+									new Content<Integer>(Integer.class, (c,v)->yTo = v)
+								};
+	private final Content<?>[]	VARIANT_8 = {
+									new Content<Mark>(Mark.class, new Mark(4), (c,v)->action = Action.MOVE_AT),
+									new Content<Integer>(Integer.class, (c,v)->xFrom = v),
+									new Content<Integer>(Integer.class, (c,v)->yFrom = v),
+									new Content<Mark>(Mark.class, new Mark(5), (c,v)->{}),
 									new Content<Integer>(Integer.class, (c,v)->xTo = xFrom+v),
 									new Content<Integer>(Integer.class, (c,v)->yTo = yFrom+v)
 								};
 	
 	public MoveProcessor(final Object... parameters) throws CommandLineParametersException {
-		prepareProcessor(parameters, VARIANT_1, VARIANT_2, VARIANT_3, VARIANT_4, VARIANT_5, VARIANT_6);
+		prepareProcessor(parameters, VARIANT_1, VARIANT_2, VARIANT_3, VARIANT_4, VARIANT_5, VARIANT_6, VARIANT_7, VARIANT_8);
 	}
 	
 	@Override
@@ -89,6 +111,13 @@ public class MoveProcessor extends AbstractCommandProcessor {
 					}
 				});
 				break;
+			case MOVE_AT		:
+				canvas.forEach((item)->{
+					if (item.isAbout(new Point2D.Double(xFrom, yFrom), canvas.getDelta())) {
+						toMove.add(item);
+					}
+				});
+				break;
 			default:
 				throw new UnsupportedOperationException("Action ["+action+"] ia not supported yet");
 		}
@@ -104,5 +133,6 @@ public class MoveProcessor extends AbstractCommandProcessor {
 			}
 			canvas.commit();
 		}
+		SwingUtilities.invokeLater(()->canvas.repaint());
 	}
 }
